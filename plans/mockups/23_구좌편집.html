@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>구좌 편집 목업</title>
+<!-- 디자인 기준: AMOREAD Green UI v2.5.1. 색·글자·간격은 앱의 tokens.css를 그대로 읽는다 -->
+<link rel="stylesheet" href="../../workspace/amoread_app/planner/static/tokens.css">
+<style>
+@font-face { font-family: 'Pretendard Variable'; font-weight: 45 920; font-display: swap;
+  src: url('../../workspace/amoread_app/planner/static/fonts/PretendardVariable.woff2') format('woff2-variations'); }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--font); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); background: var(--bg); }
+button, input, select, textarea { font: inherit; }
+h1, h2, h3, p { margin: 0; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.cap { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+[hidden] { display: none !important; }
+
+.top { height: 72px; display: flex; align-items: center; gap: var(--s4); padding: 0 var(--s5); background: var(--shell); border-bottom: 1px solid var(--line); }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: var(--fw-title); font-size: var(--fs-h1); letter-spacing: -0.01em; }
+.logo i { width: 32px; height: 32px; border-radius: var(--r2); background: var(--ink); color: var(--surface); display: grid; place-items: center; font-style: normal; font-size: var(--fs-h1); }
+.crumb { color: var(--mute); font-size: var(--fs-sm); }
+.crumb a { color: var(--mute); text-decoration: none; }
+.crumb a:hover { color: var(--ink); }
+.top .grow { flex: 1; }
+.top .note { color: var(--mute); font-size: var(--fs-cap); }
+
+.page { max-width: 1440px; margin: 0 auto; padding: var(--s5) var(--s5) 64px; }
+.demo { background: var(--warn-soft); color: var(--warn); border-radius: var(--r); padding: 12px 16px; font-size: var(--fs-sm); line-height: var(--lh-label); margin-bottom: var(--s4); }
+.demo b { font-weight: var(--fw-strong); }
+.head { display: flex; align-items: flex-end; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s4); }
+.head .grow { flex: 1; min-width: 280px; }
+.overline { font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); color: var(--mute); margin-bottom: 4px; }
+.head h1 { font-size: var(--fs-masthead); line-height: var(--lh-masthead); font-weight: var(--fw-title); letter-spacing: -0.02em; }
+.head .acts { display: flex; gap: var(--s2); flex-wrap: wrap; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: var(--control-lg); padding: 0 16px; border: 0; border-radius: var(--r2);
+  background: var(--sunken); color: var(--ink); font-weight: var(--fw-strong); line-height: var(--lh-label); cursor: pointer; white-space: nowrap; text-decoration: none; }
+.btn:hover { background: var(--line-sub); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(.94); }
+.btn.ghost { background: transparent; }
+.btn.ghost:hover { background: var(--hover); }
+.btn.sm { height: var(--control-md); padding: 0 12px; font-size: var(--fs-sm); }
+.btn.xs { height: 28px; padding: 0 8px; font-size: var(--fs-cap); }
+.btn:disabled { color: var(--mute); cursor: default; filter: none; background: var(--sunken); }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 1px solid var(--line-sub); border-radius: var(--r2); background: var(--surface);
+  color: var(--ink2); font-size: var(--fs-cap); font-weight: var(--fw-medium); cursor: pointer; }
+.chip:hover { border-color: var(--line-strong); color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--sel-line); color: var(--accent); font-weight: var(--fw-strong); }
+.tag { display: inline-flex; align-items: center; border-radius: var(--r2); padding: 2px 8px; font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); background: var(--sunken); color: var(--ink2); white-space: nowrap; }
+.tag.demo-t { background: var(--warn-soft); color: var(--warn); }
+.tag.real { background: var(--accent-soft); color: var(--accent); }
+.seg { display: inline-flex; gap: 4px; padding: 4px; background: var(--sunken); border-radius: var(--r2); max-width: 100%; overflow-x: auto; }
+.seg > button { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; min-height: var(--control-sm); padding: 6px 12px; border-radius: 6px;
+  color: var(--mute); font-size: var(--fs-sm); line-height: var(--lh-label); font-weight: var(--fw-medium); white-space: nowrap; }
+.seg > button:hover { color: var(--ink); }
+.seg > button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-strong); }
+.seg > button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+input[type=text], input[type=number], input[type=search], select, textarea { border: 1px solid var(--line); border-radius: var(--r2); padding: 0 10px; color: var(--ink); background: var(--surface); width: 100%; min-width: 0; }
+input[type=text], input[type=number], input[type=search], select { height: var(--control-md); }
+textarea { padding: 8px 10px; resize: vertical; line-height: var(--lh-body); }
+input:hover, select:hover, textarea:hover { border-color: var(--line-strong); }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+
+/* ---------- 3열 ---------- */
+.ed { display: grid; grid-template-columns: 220px minmax(320px, 1fr) 400px; gap: var(--s4); align-items: start; }
+@media (max-width: 1180px) { .ed { grid-template-columns: 200px minmax(0, 1fr); } .panel { grid-column: 1 / -1; } }
+.card { background: var(--surface); border: 1px solid var(--line-sub); border-radius: var(--r); padding: var(--s4); }
+.card h2 { font-size: var(--fs-h2); line-height: var(--lh-h2); font-weight: var(--fw-strong); }
+
+.list ol { list-style: none; margin: var(--s3) 0 0; padding: 0; display: grid; gap: 4px; }
+.list li button { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 2px 6px; padding: 8px 10px; border: 1px solid transparent; border-radius: var(--r2); }
+.list li button:hover { background: var(--bg); }
+.list li button[aria-current="true"] { border-color: var(--accent); }
+.list .n { color: var(--mute); font-size: var(--fs-cap); font-variant-numeric: tabular-nums; }
+.list .nm { font-size: var(--fs-sm); font-weight: var(--fw-medium); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.list .st { grid-column: 2; font-size: var(--fs-cap); color: var(--mute); }
+.list .st .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--line-strong); margin-right: 4px; vertical-align: 1px; }
+.list .st .dot.ok { background: var(--accent); }
+
+/* 가운데: 기획안 전체 와이어프레임 (4), 고른 구좌 = 기획 구좌 와이어프레임 (3) */
+.stage { background: var(--sunken); border-radius: var(--r); padding: var(--s4); }
+.stage .cap.top-cap { margin-bottom: var(--s3); display: block; text-align: center; }
+.phone { width: 360px; max-width: 100%; margin: 0 auto; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.ws { all: unset; box-sizing: border-box; display: block; width: 100%; padding: 14px; border-bottom: 1px solid var(--line-sub); position: relative; cursor: pointer; }
+.ws:hover { background: var(--bg); }
+.ws[aria-current="true"] { box-shadow: inset 0 0 0 2px var(--accent); }
+.ws .lbl { position: absolute; top: 6px; right: 8px; font-size: 10px; color: var(--mute); }
+.ws h4 { margin: 0 0 4px; font-size: var(--fs-body); font-weight: var(--fw-strong); }
+.ws .sub { font-size: var(--fs-cap); color: var(--mute); margin-bottom: 8px; display: block; }
+.w-hero { height: 180px; border-radius: 8px; background: repeating-linear-gradient(135deg, var(--sunken) 0 10px, var(--surface) 10px 20px); display: grid; place-content: center; text-align: center; gap: 4px; padding: 0 16px; }
+.w-hero b { font-size: var(--fs-wire); line-height: var(--lh-wire); font-weight: var(--fw-strong); }
+.w-pills { display: flex; gap: 4px; overflow-x: auto; margin-bottom: 8px; }
+.w-pills span { flex: none; font-size: 11px; padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line-sub); color: var(--mute); }
+.w-pills span.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.w-grid { display: grid; gap: 8px; }
+.w-grid.g2 { grid-template-columns: 1fr 1fr; }
+.w-grid.g3 { grid-template-columns: 1fr 1fr 1fr; }
+.w-card { border: 1px dashed var(--line-strong); border-radius: 8px; min-height: 92px; padding: 6px; display: grid; align-content: end; gap: 2px; font-size: 11px; color: var(--mute); }
+.w-card.f { border-style: solid; border-color: var(--line); color: var(--ink2); background: var(--bg); }
+.w-card .img { height: 44px; border-radius: 4px; background: var(--sunken); margin-bottom: 4px; }
+.w-card .pct { color: var(--price); font-weight: var(--fw-strong); font-size: var(--fs-sm); }
+.w-card .sp { color: var(--price); font-weight: var(--fw-strong); }
+.w-card .op { text-decoration: line-through; color: var(--mute); }
+.w-sprice { font-size: var(--fs-sm); color: var(--price); font-weight: var(--fw-strong); margin-bottom: 6px; display: block; }
+.w-deal { background: var(--ink); color: var(--surface); border-radius: 8px; padding: 12px; font-size: var(--fs-cap); }
+.w-benefit { display: grid; gap: 6px; } .w-benefit span { height: 14px; border-radius: 4px; background: var(--warn-soft); }
+.w-cta { display: inline-block; margin-top: 8px; padding: 6px 14px; border-radius: 8px; background: var(--ink); color: var(--surface); font-size: var(--fs-cap); }
+
+/* 오른쪽 패널 */
+.panel { position: sticky; top: var(--s4); padding: 0; display: flex; flex-direction: column; max-height: calc(100vh - 32px); }
+.panel .ph-h { padding: var(--s4) var(--s4) var(--s3); border-bottom: 1px solid var(--line-sub); }
+.panel .ph-h h2 { font-size: var(--fs-h1); line-height: var(--lh-h1); }
+.panel .ph-h .row { display: flex; gap: var(--s2); align-items: center; margin-top: var(--s2); flex-wrap: wrap; }
+.panel .ph-h .row select { width: auto; }
+.panel .ph-tabs { padding: var(--s3) var(--s4) 0; }
+.panel .ph-b { padding: var(--s4); overflow: auto; display: grid; gap: var(--s4); align-content: start; }
+.f { display: grid; gap: 6px; }
+.f > span, .f > .l { font-size: var(--fs-sm); line-height: var(--lh-label); font-weight: var(--fw-strong); }
+.f em { font-style: normal; color: var(--mute); font-weight: var(--fw-medium); }
+.hint { font-size: var(--fs-cap); color: var(--mute); }
+.info-box { background: var(--accent-soft); color: var(--accent); border-radius: var(--r2); padding: 10px 12px; font-size: var(--fs-cap); line-height: var(--lh-cap); }
+.box { border: 1px solid var(--line-sub); border-radius: var(--r2); padding: var(--s3); display: grid; gap: var(--s2); }
+
+/* 탭 편집 */
+.tabs-ed { display: grid; gap: 6px; }
+.tabrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: center; padding: 4px; border-radius: var(--r2); border: 1px solid transparent; }
+.tabrow[aria-current="true"] { border-color: var(--sel-line); background: var(--accent-soft); }
+.tabrow .tools { display: flex; gap: 2px; }
+.ib { all: unset; cursor: pointer; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 6px; color: var(--mute); font-size: var(--fs-sm); }
+.ib:hover { background: var(--hover); color: var(--ink); }
+.ib:disabled { opacity: .35; cursor: default; }
+
+/* 상품 카드 */
+.slots { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.slot { border: 1px solid var(--line-sub); border-radius: var(--r2); padding: 10px; display: grid; gap: 8px; }
+.slot .sh { display: flex; gap: var(--s2); align-items: center; }
+.slot .sh .grow { flex: 1; min-width: 0; }
+.slot .sn { font-weight: var(--fw-medium); font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.slot .sn.none { color: var(--mute); }
+.price { display: grid; grid-template-columns: auto 92px auto 1fr; gap: 6px 8px; align-items: center; font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+.price .k { color: var(--mute); font-size: var(--fs-cap); }
+.price .rate { display: flex; align-items: center; gap: 4px; }
+.price .rate input { height: 30px; text-align: right; padding: 0 6px; }
+.price .sale { color: var(--price); font-weight: var(--fw-strong); }
+.price .draft { color: var(--accent); font-size: var(--fs-cap); font-weight: var(--fw-strong); }
+.judge { all: unset; cursor: pointer; justify-self: end; font-size: var(--fs-cap); line-height: var(--lh-cap); padding: 2px 8px; border-radius: var(--r2); font-weight: var(--fw-strong); white-space: nowrap; }
+.judge.ok { background: var(--ok-soft); color: var(--ok); }
+.judge.warn { background: var(--warn-soft); color: var(--warn); }
+.judge.err { background: var(--err-soft); color: var(--err); }
+.judge.none { background: var(--sunken); color: var(--mute); font-weight: var(--fw-medium); }
+.judge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.jpop { font-size: var(--fs-cap); line-height: var(--lh-cap); background: var(--bg); border-radius: 6px; padding: 8px 10px; color: var(--ink2); }
+.jpop b { font-weight: var(--fw-strong); }
+.applybar { position: sticky; bottom: 0; display: flex; gap: var(--s2); align-items: center; padding: 10px 12px; border-radius: var(--r2); background: var(--accent-soft); color: var(--accent); font-size: var(--fs-sm); font-weight: var(--fw-medium); }
+.applybar .grow { flex: 1; }
+
+/* 레퍼런스 */
+.refs { display: grid; gap: var(--s3); }
+.ref { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: var(--s3); padding: 10px; border: 1px solid var(--line-sub); border-radius: var(--r2); }
+.ref.att { border-color: var(--sel-line); background: var(--accent-soft); }
+.thumb { width: 72px; height: 96px; border-radius: 6px; border: 1px solid var(--line-sub); background: var(--bg); display: grid; place-items: center; padding: 3px; overflow: hidden; }
+.thumb img { display: block; max-width: 100%; max-height: 100%; }
+.ref .rn { font-weight: var(--fw-medium); font-size: var(--fs-sm); }
+.ref .ra { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.ref .why { font-size: var(--fs-cap); color: var(--ink2); }
+
+/* 서랍: 상품 고르기 */
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(480px, 100vw); background: var(--surface); border-left: 1px solid var(--line); z-index: 20; display: flex; flex-direction: column; box-shadow: -16px 0 48px -24px rgba(20,20,20,.2); }
+.drawer .dh { padding: var(--s4); border-bottom: 1px solid var(--line-sub); display: grid; gap: var(--s3); }
+.drawer .dh .row { display: flex; gap: var(--s2); align-items: center; }
+.drawer .dh h2 { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var(--fw-strong); flex: 1; }
+.drawer .db { padding: var(--s4); overflow: auto; display: grid; gap: var(--s4); align-content: start; }
+.drawer h3 { font-size: var(--fs-sm); font-weight: var(--fw-strong); margin-bottom: 6px; }
+.plist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.pitem { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--s2); align-items: center; padding: 8px 10px; border: 1px solid var(--line-sub); border-radius: var(--r2); }
+.pitem:hover { border-color: var(--line-strong); }
+.pitem .pn { font-size: var(--fs-sm); font-weight: var(--fw-medium); }
+.pitem .pm { grid-column: 1; font-size: var(--fs-cap); color: var(--mute); }
+.pitem .btn { grid-row: 1 / span 2; grid-column: 2; }
+.scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 19; }
+
+dialog { border: 1px solid var(--line); border-radius: var(--r); padding: 0; width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 64px); color: var(--ink); background: var(--surface); }
+dialog::backdrop { background: var(--scrim); }
+.dlg-h { padding: 20px 24px; border-bottom: 1px solid var(--line-sub); display: flex; gap: var(--s3); align-items: flex-start; }
+.dlg-h .grow { flex: 1; }
+.dlg-h h2 { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var(--fw-strong); }
+.dlg-b { padding: 20px 24px; overflow: auto; max-height: calc(100vh - 240px); display: grid; gap: var(--s3); }
+.dlg-f { padding: 16px 24px; border-top: 1px solid var(--line-sub); display: flex; justify-content: flex-end; gap: var(--s2); }
+table.t { border-collapse: collapse; width: 100%; font-size: var(--fs-cap); }
+table.t th { text-align: left; font-weight: var(--fw-medium); color: var(--mute); background: var(--bg); padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.t td { padding: 6px 8px; border-bottom: 1px solid var(--line-sub); white-space: nowrap; }
+table.t td.auto { color: var(--line-strong); }
+table.t td.pre { color: var(--accent); font-weight: var(--fw-medium); }
+table.t tr.chg td { background: var(--accent-soft); }
+.chips-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.tscroll { overflow: auto; }
+.thumb.big { width: 240px; height: 320px; padding: 6px; }
+.toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: var(--ink); color: var(--surface); border-radius: var(--r); padding: 14px 18px; font-size: var(--fs-sm);
+  box-shadow: 0 16px 48px -12px rgba(33, 33, 33, .15); opacity: 0; pointer-events: none; transition: opacity .2s var(--ease); z-index: 30; max-width: calc(100vw - 32px); }
+.toast.on { opacity: 1; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo"><i aria-hidden="true">a</i>AMOREAD</div>
+  <span class="crumb"><a href="20_홈_일정표.html">홈</a> › <a href="21_브리프_키워드확장.html">브리프</a> › <a href="22_구좌구성_추천.html">구좌 구성</a> › 구좌 편집</span>
+  <span class="grow"></span>
+  <span class="note">단계 이름·순서는 아직 정하지 않았어요</span>
+</header>
+
+<main class="page">
+  <p class="demo"><b>예시 화면이에요.</b> 상품, 가격, 원가, 레퍼런스는 모두 가상의 값이에요. 판정 기준(할인 후 원가율 45%)만 지금 툴과 같아요.</p>
+
+  <div class="head">
+    <div class="grow">
+      <div class="overline">기획안 · 구좌 편집</div>
+      <h1>봄 · 피크닉에서 누리는 차 한 잔의 여유</h1>
+    </div>
+    <div class="acts">
+      <button class="btn sm" id="xlsDown">상품 엑셀 양식 받기</button>
+      <button class="btn sm" id="xlsUp">엑셀 올리기</button>
+      <a class="btn sm ghost" href="22_구좌구성_추천.html">← 구좌 구성</a>
+      <button class="btn sm primary" id="nextBtn">미리보기·내보내기 →</button>
+    </div>
+  </div>
+
+  <div class="ed">
+    <nav class="card list" aria-labelledby="listH"><h2 id="listH">구좌 목록</h2><p class="cap">누르면 그 구좌를 편집해요</p><ol id="secList"></ol></nav>
+    <section class="stage" aria-label="기획안 전체 와이어프레임">
+      <span class="cap top-cap">기획안 전체 와이어프레임 · 고른 구좌가 초록 테두리예요 (상품 이미지는 아직 연결 전)</span>
+      <div class="phone" id="phone"></div>
+    </section>
+    <aside class="card panel" id="panel" aria-label="구좌 편집 패널"></aside>
+  </div>
+</main>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden aria-labelledby="drH" role="dialog"></aside>
+
+<dialog id="dlg" aria-labelledby="dlgH"><div class="dlg-h"><div class="grow"><div class="overline" id="dlgO"></div><h2 id="dlgH"></h2><p class="cap" id="dlgS"></p></div>
+  <form method="dialog"><button class="btn sm">닫기</button></form></div><div class="dlg-b" id="dlgB"></div><div class="dlg-f" id="dlgF"></div></dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+// ---------------- 예시 데이터 (가상) ----------------
+const COPY = '피크닉 가방에 차 한 병';
+const TARGET = 0.45;   // 할인 후 원가율 기준 (지금 툴 config와 같은 값)
+// cost는 가상 원가. 화면에는 판정 표시를 눌렀을 때만 할인 후 원가율로 보여준다
+const PRODUCTS = [
+  { seq: 'P101', name: '벚꽃 블렌딩 티 10입', price: 18000, cost: 4300, days: 210, ly: true, kw: [] },
+  { seq: 'P102', name: '피크닉 콜드브루 티 세트', price: 32000, cost: 9800, days: 95, ly: false, kw: ['피크닉', '보온병'] },
+  { seq: 'P103', name: '휴대용 티 텀블러 세트', price: 45000, cost: 16500, days: 400, ly: false, kw: ['보온병'] },
+  { seq: 'P104', name: '봄 꽃차 3종 선물 세트', price: 28000, cost: 8900, days: 33, ly: true, kw: [] },
+  { seq: 'P105', name: '스틱 아이스티 20입', price: 12000, cost: 3100, days: 150, ly: false, kw: ['피크닉'] },
+  { seq: 'P106', name: '말차 라떼 파우더', price: 15000, cost: 5200, days: 20, ly: true, kw: [] },
+  { seq: 'P107', name: '은은한 녹차 티백 40입', price: 22000, cost: 4800, days: 300, ly: false, kw: [] },
+  { seq: 'P108', name: '무카페인 허브 블렌드', price: 19000, cost: 4500, days: 180, ly: true, kw: [] },
+  { seq: 'P109', name: '달콤한 과일 티 세트', price: 26000, cost: 7400, days: 60, ly: false, kw: ['피크닉'] },
+  { seq: 'P110', name: '프리미엄 티 기프트 박스', price: 58000, cost: 21800, days: 75, ly: true, kw: [] },
+];
+const P = Object.fromEntries(PRODUCTS.map(p => [p.seq, p]));
+// 이 기획안의 상품·할인 (상품·할인 공간과 같은 값 하나). source: direct 직접 / excel 엑셀로 받음
+let items = [
+  { seq: 'P101', rate: 0.2, source: 'direct' }, { seq: 'P104', rate: 0.15, source: 'excel' }, { seq: 'P107', rate: 0.25, source: 'excel' },
+  { seq: 'P110', rate: 0.3, source: 'direct' },
+];
+const REFS = {
+  r1: { name: '봄 캠페인 메인 비주얼', page: '○○ 봄 캠페인', from: '외부', layout: 'hero', r: [4, 5], why: '구좌 구성에서 가져온 출처예요' },
+  r2: { name: '벚꽃 한정 3열', page: '봄맞이 티 컬렉션', from: '자사몰', layout: 'grid3', r: [3, 4], why: '구좌 구성에서 가져온 출처예요' },
+  r3: { name: '가격대별 선물 탭', page: '봄맞이 티 컬렉션', from: '자사몰', layout: 'grid2', r: [9, 16], why: '구좌 구성에서 가져온 출처예요' },
+  r4: { name: '피크닉 세트 큐레이션', page: '△△ 피크닉 기획전', from: '외부', layout: 'grid2', r: [1, 1], why: "고른 키워드 '피크닉'과 맞아요" },
+  r5: { name: '가로 배너형 상품 리스트', page: '□□ 티 브랜드', from: '외부', layout: null, r: [16, 9], why: '비슷한 구좌 종류예요 · 맞는 레이아웃이 없어 참고만' },
+  r6: { name: '혜택 한눈에 보기', page: '봄 나들이 티', from: '자사몰', layout: 'benefit', r: [3, 4], why: '비슷한 구좌 종류예요' },
+};
+const LAYOUTS = { hero: '단일 비주얼', 'text-cta': '텍스트와 버튼', grid2: '2열 상품', grid3: '3열 상품', split: '좌우 분할', benefit: '혜택 안내', 'deal-banner': '날짜별 특가' };
+const DISPLAYS = [['', '미정'], ['emphasis', '할인율 강조'], ['price', '가격 표시'], ['name', '이미지·상품명만'], ['section', '섹션 대표 가격']];
+let uidN = 0; const uid = p => `${p}${++uidN}`;
+const slot = (seq = null) => ({ id: uid('c'), seq, copy: '' });
+let secs = [
+  { id: 's1', name: '메인 비주얼', layout: 'hero', headline: COPY, subhead: '들고 나가는 봄, 한 병의 여유', cta: '', disp: '', sprice: null, refs: ['r1'], att: [], notes: '' },
+  { id: 's2', name: '벚꽃 한정', layout: 'grid3', headline: '벚꽃 한정', subhead: '', cta: '', disp: 'emphasis', sprice: null, refs: ['r2', 'r4'], att: [], notes: '', cards: [slot('P101'), slot('P104'), slot()] },
+  { id: 's3', name: '가격대별 선물 추천', layout: 'grid2', headline: '가격대별 선물 추천', subhead: '예산에 맞춰 골라 보세요', cta: '', disp: 'price', sprice: null, refs: ['r3', 'r5'], att: [], notes: '', tab: 0,
+    tabs: [{ id: 't1', name: '1만원대', cards: [slot('P107'), slot()] }, { id: 't2', name: '2만원대', cards: [slot(), slot()] }, { id: 't3', name: '3만원 이상', cards: [slot('P110'), slot()] }] },
+  { id: 's4', name: '하루특가', layout: 'deal-banner', headline: '오늘의 하루특가', subhead: '', cta: '', disp: '', sprice: null, refs: [], att: [], notes: '' },
+  { id: 's5', name: '혜택 안내', layout: 'benefit', headline: '봄맞이 혜택', subhead: '', cta: '혜택 받기', disp: '', sprice: null, refs: ['r6'], att: [], notes: '' },
+];
+
+// ---------------- 상태 ----------------
+let cur = 's3', tab = 'products', drafts = {}, saved = new Set(), openJudge = null, pickFor = null, pickTab = 'plan', q = '';
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const won = n => n == null ? '' : `${Math.round(n).toLocaleString('ko-KR')}원`;
+const S = () => secs.find(s => s.id === cur);
+const cardsOf = s => s.tabs ? s.tabs[s.tab].cards : (s.cards ||= []);   // 카드 없던 구좌를 상품형으로 바꾸면 빈 목록부터
+const allCards = s => s.tabs ? s.tabs.flatMap(t => t.cards) : (s.cards || []);
+
+// ---------------- 가격·판정 ----------------
+const itemOf = seq => items.find(i => i.seq === seq);
+const rateOf = seq => seq in drafts ? drafts[seq] : (itemOf(seq)?.rate ?? 0);
+const salePrice = (price, rate) => Math.round(price * (1 - rate) / 10) * 10;
+// 판정 (지금 툴 engine.check_plan의 기준을 줄인 것): 80% 이상 차단, 할인 후 원가율 45% 넘으면 주의
+function judge(seq, rate) {
+  const p = P[seq]; if (!rate) return { lv: 'none', t: '할인 없음' };
+  if (rate >= 0.8) return { lv: 'err', t: '확인 필요', why: '할인율 80% 이상은 막혀요' };
+  const cra = p.cost / (salePrice(p.price, rate) / 1.1);
+  return cra > TARGET ? { lv: 'warn', t: '주의', cra, why: `할인 후 원가율이 기준(${Math.round(TARGET * 100)}%)을 넘어요` } : { lv: 'ok', t: '괜찮음', cra, why: `기준(${Math.round(TARGET * 100)}%) 안이에요` };
+}
+const maxRate = seq => { const p = P[seq]; return Math.floor((1 - p.cost * 1.1 / TARGET / p.price) * 100); };   // 기준 안에서 가장 깊은 할인 (%)
+
+// ---------------- 그리기: 목록 ----------------
+function secState(s) {
+  if (s.layout === 'hero' || s.layout === 'benefit') return [s.headline ? '문구 있음' : '문구 없음', !!s.headline];
+  if (s.layout === 'deal-banner') return ['하루특가 편성에서', true];
+  const all = allCards(s), done = all.filter(c => c.seq).length;
+  return [`상품 ${done}/${all.length}`, done === all.length && all.length > 0];
+}
+function renderList() {
+  $('#secList').innerHTML = secs.map((s, i) => { const [t, ok] = secState(s); return `<li><button data-sec="${s.id}" ${s.id === cur ? 'aria-current="true"' : ''}>
+    <span class="n">${i + 1}</span><span class="nm">${esc(s.name)}</span><span class="st"><span class="dot ${ok ? 'ok' : ''}"></span>${esc(t)}${s.tabs ? ` · 탭 ${s.tabs.length}` : ''}</span></button></li>`; }).join('');
+}
+
+// ---------------- 그리기: 와이어프레임 ----------------
+function wCard(c, s) {
+  if (!c.seq) return '<div class="w-card"><span class="img"></span>상품 고르기</div>';
+  const p = P[c.seq], r = rateOf(c.seq), sp = salePrice(p.price, r);
+  const price = s.disp === 'emphasis' ? (r ? `<span class="pct">${Math.round(r * 100)}%</span>` : '')
+    : s.disp === 'price' ? `${r ? `<span class="op">${won(p.price)}</span>` : ''}<span class="sp">${won(sp)}</span>` : s.disp === '' ? '<span>가격 노출 미정</span>' : '';
+  return `<div class="w-card f"><span class="img"></span>${esc(p.name)}${c.copy ? `<span>${esc(c.copy)}</span>` : ''}${price}</div>`;
+}
+function renderPhone() {
+  $('#phone').innerHTML = secs.map((s, i) => {
+    let body = '';
+    if (s.layout === 'hero') body = `<div class="w-hero"><b>${esc(s.headline || '메인 카피')}</b>${s.subhead ? `<span class="cap">${esc(s.subhead)}</span>` : ''}</div>`;
+    else if (s.layout === 'deal-banner') body = '<div class="w-deal">오늘의 하루특가 · 날짜마다 바뀌어요<br><span class="cap">상품은 상품·할인의 하루특가 편성에서 정해요</span></div>';
+    else if (s.layout === 'benefit') body = '<div class="w-benefit"><span></span><span></span><span></span></div>';
+    else {
+      const pills = s.tabs ? `<div class="w-pills">${s.tabs.map((t, j) => `<span class="${j === s.tab ? 'on' : ''}">${esc(t.name)}</span>`).join('')}</div>` : '';
+      const sp = s.disp === 'section' && s.sprice ? `<span class="w-sprice">전 상품 ${won(s.sprice)}</span>` : '';
+      body = `${pills}${sp}<div class="w-grid ${s.layout === 'grid3' ? 'g3' : 'g2'}">${(cardsOf(s) || []).map(c => wCard(c, s)).join('')}</div>`;
+    }
+    const head = s.layout !== 'hero' ? `<h4>${esc(s.headline || s.name)}</h4>${s.subhead ? `<span class="sub">${esc(s.subhead)}</span>` : ''}` : '';
+    return `<button class="ws" data-sec="${s.id}" ${s.id === cur ? 'aria-current="true"' : ''} aria-label="${i + 1}번 구좌 ${esc(s.name)} 편집"><span class="lbl">${i + 1}</span>${head}${body}${s.cta ? `<span class="w-cta">${esc(s.cta)}</span>` : ''}</button>`;
+  }).join('');
+}
+
+// ---------------- 그리기: 패널 ----------------
+const TABS = [['copy', '문구'], ['products', '상품'], ['refs', '레퍼런스'], ['notes', '디자인 요청']];
+function renderPanel() {
+  const s = S(), i = secs.indexOf(s), hasProducts = !['hero', 'benefit', 'text-cta'].includes(s.layout);
+  if (tab === 'products' && !hasProducts) tab = 'copy';
+  $('#panel').innerHTML = `<div class="ph-h"><div class="overline">${String(i + 1).padStart(2, '0')} 구좌</div><h2>${esc(s.name)}</h2>
+      <div class="row"><span class="cap">구좌 종류</span><select data-layout aria-label="구좌 종류 바꾸기 (문구·상품·메모는 그대로)">${Object.entries(LAYOUTS).map(([k, v]) => `<option value="${k}" ${s.layout === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+        <span class="hint">바꿔도 문구·상품·메모는 그대로예요</span></div></div>
+    <div class="ph-tabs"><div class="seg" role="tablist" aria-label="편집 패널">${TABS.map(([k, n]) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}" ${k === 'products' && !hasProducts ? 'disabled title="상품 카드가 없는 구좌 종류예요"' : ''}>${n}${k === 'refs' && s.att.length ? ` ${s.att.length}` : ''}</button>`).join('')}</div></div>
+    <div class="ph-b" id="pbody">${tab === 'copy' ? copyTab(s) : tab === 'products' ? productsTab(s) : tab === 'refs' ? refsTab(s) : notesTab(s)}</div>`;
+}
+function copyTab(s) {
+  return `<label class="f"><span>구좌 이름</span><input type="text" data-sf="name" maxlength="40" value="${esc(s.name)}"><span class="hint">이 이름이 PROMO_WORK 카테고리명(엑셀 양식)으로도 쓰여요${s.tabs ? '. 탭 구좌는 탭 이름이 카테고리명이에요' : ''}</span></label>
+    <label class="f"><span>${s.layout === 'hero' ? '메인 카피' : '구좌 제목'}</span><input type="text" data-sf="headline" maxlength="120" value="${esc(s.headline)}">${s.layout === 'hero' ? '<span class="hint">브리프에서 정한 메인 카피예요. 여기서 고치면 브리프에도 바뀌어요</span>' : ''}</label>
+    <label class="f"><span>서브 카피 <em>(선택)</em></span><textarea data-sf="subhead" maxlength="400" rows="2">${esc(s.subhead)}</textarea></label>
+    <label class="f"><span>버튼 문구 <em>(비우면 버튼 없음)</em></span><input type="text" data-sf="cta" maxlength="40" value="${esc(s.cta)}"></label>
+    <div class="box"><span class="cap">문구 제안 <span class="tag demo-t">연결 예정</span></span><p class="hint">브리프의 메인 카피 제안처럼 이 구좌 제목·서브 카피를 제안해요. 카피 사례·방법론이 연결되면 여기에 나와요.</p></div>`;
+}
+function productsTab(s) {
+  if (s.layout === 'deal-banner') return `<div class="info-box">하루특가는 날짜마다 상품이 바뀌어서 상품·할인의 하루특가 편성에서 정해요. 여기서는 구좌 모양과 문구만 정해요.</div>
+    <button class="btn sm" data-toast="예시예요: 상품·할인의 하루특가 편성을 열어요">하루특가 편성 열기</button>`;
+  const cards = cardsOf(s), nDraft = Object.keys(drafts).length;
+  const tabsEd = s.tabs ? `<div class="f"><span class="l">탭 <em>탭 하나가 PROMO_WORK 칸 하나 · 고객은 첫 탭을 먼저 봐요</em></span><div class="tabs-ed">${s.tabs.map((t, j) => `<div class="tabrow" ${j === s.tab ? 'aria-current="true"' : ''}>
+        <input type="text" data-tabname="${j}" value="${esc(t.name)}" maxlength="40" aria-label="${j + 1}번 탭 이름">
+        <span class="tools"><button class="ib" data-tabpick="${j}" aria-label="${esc(t.name)} 탭 상품 보기" title="이 탭 상품 보기">▸</button><button class="ib" data-tabmv="${j}:-1" ${j ? '' : 'disabled'} aria-label="위로">↑</button><button class="ib" data-tabmv="${j}:1" ${j < s.tabs.length - 1 ? '' : 'disabled'} aria-label="아래로">↓</button><button class="ib" data-tabdel="${j}" ${s.tabs.length > 1 ? '' : 'disabled'} aria-label="${esc(t.name)} 탭 삭제">✕</button></span></div>`).join('')}</div>
+      <div><button class="btn xs" data-tabadd>+ 탭 추가</button></div></div>` : '';
+  return `${tabsEd}
+    <div class="f"><span class="l">상품${s.tabs ? ` · '${esc(s.tabs[s.tab].name)}' 탭` : ''} <em>${cards.filter(c => c.seq).length}/${cards.length}칸</em></span>
+      <ul class="slots">${cards.map((c, k) => slotHTML(c, k)).join('')}</ul>
+      <div><button class="btn xs" data-addcard>+ 빈 카드</button></div></div>
+    <div class="f"><span class="l">가격 노출 방식</span><div class="chips-row">${DISPLAYS.map(([v, l]) => `<button class="chip" data-disp="${v}" aria-pressed="${s.disp === v}">${l}</button>`).join(' ')}</div>
+      ${s.disp === 'section' ? `<label class="f"><span>섹션 대표 가격 (원)</span><input type="number" data-sprice min="0" step="100" value="${s.sprice ?? ''}" placeholder="예) 8800"></label>` : ''}</div>
+    ${nDraft ? `<div class="applybar" role="status"><span class="grow">할인 ${nDraft}건을 바꿨어요. 반영하면 상품·할인에도 같은 값이 들어가요</span><button class="btn xs" data-undo>되돌리기</button><button class="btn xs primary" data-apply>반영</button></div>` : ''}`;
+}
+function slotHTML(c, k) {
+  if (!c.seq) return `<li class="slot"><div class="sh"><span class="grow"><span class="sn none">카드 ${k + 1} · 상품 미정</span></span><button class="btn xs primary" data-pick="${c.id}">상품 고르기</button><button class="ib" data-rmcard="${c.id}" aria-label="카드 ${k + 1} 삭제">✕</button></div></li>`;
+  const p = P[c.seq], r = rateOf(c.seq), j = judge(c.seq, r), it = itemOf(c.seq);
+  const open = openJudge === c.id;
+  return `<li class="slot"><div class="sh"><span class="grow"><span class="sn">${esc(p.name)}</span><span class="cap">${esc(p.seq)}${it?.source === 'excel' ? ' · 엑셀로 받음' : ''}</span></span>
+      <button class="btn xs" data-pick="${c.id}">바꾸기</button><button class="ib" data-rmcard="${c.id}" aria-label="${esc(p.name)} 카드 삭제">✕</button></div>
+    <div class="price"><span class="k">정가</span><span>${won(p.price)}</span><span class="k">할인율</span>
+      <span class="rate"><input type="number" data-rate="${c.seq}" min="0" max="90" step="1" value="${Math.round(r * 100)}" aria-label="${esc(p.name)} 할인율 (%)">%${c.seq in drafts ? '<span class="draft">바꿈</span>' : ''}</span>
+      <span class="k">할인가</span><span class="sale">${won(salePrice(p.price, r))}</span>
+      <span></span><button class="judge ${j.lv}" data-judge="${c.id}" aria-expanded="${open}" title="눌러서 근거 보기">${j.t}</button></div>
+    ${open ? `<div class="jpop">${j.cra != null ? `할인 후 원가율 <b>${Math.round(j.cra * 100)}%</b> · ${esc(j.why)}<br>기준 안에서 가장 깊은 할인은 <b>${maxRate(c.seq)}%</b>예요. 원가 정보라 디자이너 기획안에는 넣지 않아요.` : esc(j.why || '할인 없이 구좌에 놓이는 상품이에요 (PROMO_WORK 큐레이션)')}</div>` : ''}
+    <input type="text" data-copy="${c.id}" maxlength="200" value="${esc(c.copy)}" placeholder="이 카드에만 보여줄 문구 (선택)" aria-label="카드 문구"></li>`;
+}
+function demoImg(w, h) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w * 40}" height="${h * 40}"><defs><pattern id="p" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="16" fill="#f3f3f3"/></pattern></defs><rect width="100%" height="100%" fill="#ffffff"/><rect width="100%" height="100%" fill="url(#p)"/><rect x="0.5" y="0.5" width="${w * 40 - 1}" height="${h * 40 - 1}" fill="none" stroke="#dedede"/></svg>`;
+  return `<img src="data:image/svg+xml,${encodeURIComponent(svg)}" alt="">`;
+}
+function refsTab(s) {
+  const cand = s.refs.concat(Object.keys(REFS).filter(k => !s.refs.includes(k) && REFS[k].layout === s.layout).slice(0, 1));
+  return `<p class="hint">이 구좌에 참고할 <b>원본 구좌 레퍼런스</b>예요. 자사몰과 외부 페이지에서 잘라 낸 구좌예요.</p>
+    <div class="refs">${cand.map(k => { const r = REFS[k], att = s.att.some(a => a.ref === k), canLay = r.layout && r.layout !== s.layout;
+      return `<div class="ref ${att ? 'att' : ''}"><span class="thumb">${demoImg(r.r[0], r.r[1])}</span><div>
+        <div class="rn">${esc(r.name)}</div><div class="cap"><span class="tag ${r.from === '자사몰' ? 'real' : ''}">${r.from}</span> ${esc(r.page)}</div><div class="why">${esc(r.why)}</div>
+        <div class="ra"><button class="btn xs" data-refview="${k}">미리보기</button>
+          <button class="btn xs ${att ? '' : 'primary'}" data-refatt="${k}" aria-pressed="${att}">${att ? '참고에서 빼기' : '참고로 붙이기'}</button>
+          <button class="btn xs" data-reflay="${k}" ${canLay ? '' : 'disabled'} title="${!r.layout ? '맞는 레이아웃이 없어요' : !canLay ? '지금과 같은 레이아웃이에요' : `${LAYOUTS[r.layout]}로 바꿔요 · 문구·상품·메모는 그대로`}">레이아웃 가져오기</button>
+          <button class="btn xs ghost" data-refsave="${k}" aria-pressed="${saved.has(k)}">${saved.has(k) ? '★ 저장됨' : '☆ 저장'}</button></div></div></div>`; }).join('')}</div>
+    <button class="btn sm" data-toast="예시예요: 레퍼런스 라이브러리(전체 프로모션·구좌별 사례)를 열어요">라이브러리에서 더 찾기</button>
+    <p class="hint">참고로 붙이기 = 디자이너에게 전달할 참고만 남겨요 (이 구좌는 바뀌지 않아요). 레이아웃 가져오기 = 이 구좌의 모양만 바꿔요. 저장 = 라이브러리 즐겨찾기.</p>`;
+}
+function notesTab(s) {
+  return `<label class="f"><span>디자이너에게 부탁할 것 <em>(선택)</em></span><textarea data-sf="notes" rows="5" maxlength="2000" placeholder="예) 피크닉 돗자리 위 연출 컷이 있으면 좋겠어요">${esc(s.notes)}</textarea></label>
+    <div class="f"><span class="l">붙인 레퍼런스 <em>${s.att.length}개</em></span>${s.att.length ? s.att.map(a => { const r = REFS[a.ref]; return `<div class="ref att"><span class="thumb">${demoImg(r.r[0], r.r[1])}</span><div>
+        <div class="rn">${esc(r.name)}</div><div class="cap">${r.from} · ${esc(r.page)}</div>
+        <input type="text" data-attnote="${a.ref}" value="${esc(a.note)}" maxlength="120" placeholder="이 레퍼런스에서 참고할 점 (예: 탭 모양만)" aria-label="${esc(r.name)} 참고할 점"></div></div>`; }).join('')
+      : '<p class="hint">레퍼런스 탭에서 [참고로 붙이기]를 누르면 여기 모여요.</p>'}</div>
+    <p class="hint">미리보기·내보내기의 디자이너 기획안에 그대로 들어가요. 원가와 판정은 넣지 않아요.</p>`;
+}
+function render() { renderList(); renderPhone(); renderPanel(); }
+
+// ---------------- 상품 고르기 서랍 ----------------
+function pickList() {
+  const s = S(), inSec = new Set(allCards(s).map(c => c.seq).filter(Boolean)), mark = p => inSec.has(p.seq) ? '<span class="tag">이 구좌에 있음</span>' : '';
+  const row = (p, meta) => `<li class="pitem"><span class="pn">${esc(p.name)} ${mark(p)}</span><span class="pm">${esc(meta)}</span><button class="btn xs ${inSec.has(p.seq) ? '' : 'primary'}" data-choose="${p.seq}">고르기</button></li>`;
+  const priceMeta = p => { const it = itemOf(p.seq); return `${p.seq} · ${won(p.price)}${it ? ` · 할인 ${Math.round(it.rate * 100)}%${it.source === 'excel' ? ' · 엑셀로 받음' : ''}` : ''}`; };
+  if (pickTab === 'plan') {
+    const list = items.map(i => P[i.seq]);
+    return list.length ? `<p class="hint">상품·할인에 직접 넣었거나 엑셀로 받은 상품이에요. 고르면 그 할인율 그대로 들어가요.</p><ul class="plist">${list.map(p => row(p, priceMeta(p))).join('')}</ul>`
+      : '<p class="hint">아직 이 기획안에 상품이 없어요. 전체 검색이나 추천에서 골라 보세요.</p>';
+  }
+  if (pickTab === 'search') {
+    const hits = PRODUCTS.filter(p => !q || p.name.includes(q) || p.seq.toLowerCase().includes(q.toLowerCase()));
+    return `<label class="f"><span class="sr-only">상품 검색</span><input type="search" id="pq" value="${esc(q)}" placeholder="상품명이나 SEQ" autocomplete="off"></label>
+      <ul class="plist" id="phits">${hits.map(p => row(p, priceMeta(p))).join('') || '<li class="hint">맞는 상품이 없어요</li>'}</ul>`;
+  }
+  const grp = (t, sub, list) => `<div><h3>${t}</h3><p class="hint">${sub}</p><ul class="plist">${list.map(([p, m]) => row(p, m)).join('') || '<li class="hint">없어요</li>'}</ul></div>`;
+  return `${grp('작년 비슷한 기획에서 쓴 상품', '봄맞이 티 컬렉션 (2026.03)', PRODUCTS.filter(p => p.ly).slice(0, 4).map(p => [p, priceMeta(p)]))}
+    ${grp('오래 행사에 안 쓴 상품', '마지막 행사가 오래된 순서', [...PRODUCTS].sort((a, b) => b.days - a.days).slice(0, 4).map(p => [p, `${priceMeta(p)} · 마지막 행사 ${p.days}일 전`]))}
+    ${grp("고른 키워드와 연결된 상품", "브리프 키워드 '피크닉' · '보온병'", PRODUCTS.filter(p => p.kw.length).map(p => [p, `${priceMeta(p)} · ${p.kw.join(', ')}`]))}
+    <p class="hint">추천은 예시 규칙이에요. 연결되면 실제 판매·행사 이력으로 골라요.</p>`;
+}
+function openPick(cardId) {
+  pickFor = cardId; const s = S();
+  $('#drawer').innerHTML = `<div class="dh"><div class="row"><h2 id="drH">상품 고르기</h2><button class="btn sm" data-close>닫기</button></div>
+      <p class="cap">${esc(s.name)}${s.tabs ? ` · '${esc(s.tabs[s.tab].name)}' 탭` : ''}의 카드에 넣을 상품</p>
+      <div class="seg" role="tablist" aria-label="상품 찾는 곳">${[['plan', `이 기획안 상품 ${items.length}`], ['search', '전체 검색'], ['rec', '추천']].map(([k, n]) => `<button role="tab" data-ptab="${k}" aria-selected="${pickTab === k}">${n}</button>`).join('')}</div></div>
+    <div class="db" id="pbodyD">${pickList()}</div>`;
+  $('#drawer').hidden = false; $('#scrim').hidden = false;
+  $('#drawer [data-ptab][aria-selected="true"]').focus();
+}
+function closePick() { $('#drawer').hidden = true; $('#scrim').hidden = true; pickFor = null; }
+function choose(seq) {
+  const c = allCards(S()).find(x => x.id === pickFor); if (!c) return;
+  c.seq = seq;
+  if (!itemOf(seq)) items.push({ seq, rate: 0, source: 'direct' });   // 기획안 상품·할인에도 들어감 (할인 없음으로 시작)
+  closePick(); render(); toast(`${P[seq].name}을 넣었어요${itemOf(seq).rate ? '' : '. 할인율은 카드에서 정해요'}`);
+}
+
+// ---------------- 엑셀 양식 ----------------
+// PROMO_WORK 붙여넣기 13열 (지금 툴 plans.py PROMO_WORK_HEADERS). 자동 열(요일·상품명·정가·할인가)은 비워 둠. 카테고리명 = 구좌 이름(탭 구좌는 탭 이름)
+const XLS_COLS = ['요일(자동)', '시작일', '종료일', '프로모션명', '유형', 'SEQ코드', '상품명(자동)', '카테고리명', '소구문구', '할인구분', '정가(자동)', '할인율', '할인가(자동)'];
+function templateRows() {
+  const out = [];
+  secs.filter(s => !['hero', 'benefit', 'text-cta', 'deal-banner'].includes(s.layout)).forEach(s => {
+    const groups = s.tabs ? s.tabs.map(t => [t.name, t.cards]) : [[s.name, s.cards || []]];
+    groups.forEach(([cat, cards]) => cards.forEach(c => out.push({ cat, seq: c.seq || '', rate: c.seq ? Math.round(rateOf(c.seq) * 100) + '%' : '' })));
+  });
+  return out;
+}
+function openTemplate() {
+  const rows = templateRows();
+  dlg('상품 엑셀 양식', '구좌 구성에 맞춘 양식', `열은 PROMO_WORK 붙여넣기와 같아요. 카테고리명에 구좌·탭 이름이, 카드 수만큼 줄이 들어가 있어요 (${rows.length}줄).`,
+    `<div class="tscroll"><table class="t"><thead><tr>${XLS_COLS.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr><td class="auto">-</td><td>2026-03-02</td><td>2026-03-15</td><td>봄 피크닉</td><td>상시</td><td>${esc(r.seq)}</td><td class="auto">-</td><td class="pre">${esc(r.cat)}</td><td></td><td>정율</td><td class="auto">-</td><td>${esc(r.rate)}</td><td class="auto">-</td></tr>`).join('')}</tbody></table></div>
+     <p class="hint">초록 글씨 = 미리 채운 칸. 회색 = PROMO_WORK에서 자동으로 채워지는 칸이라 비워 둬요. 이미 고른 상품은 SEQ와 할인율이 들어가 있어요.</p>`,
+    '<button class="btn sm primary" data-toast="예시예요: 실제로는 .xlsx 파일로 내려받아요">.xlsx 내려받기</button>');
+}
+function openUpload() {
+  // 예시: 올린 엑셀에서 '2만원대' 탭 두 칸과 '벚꽃 한정' 빈 칸이 채워졌다고 가정
+  const chg = [['가격대별 선물 추천 · 2만원대', '카드 1', 'P108', 0.1], ['가격대별 선물 추천 · 2만원대', '카드 2', 'P109', 0.15], ['벚꽃 한정', '카드 3', 'P102', 0.2]];
+  dlg('엑셀 올리기', '올린 파일: 봄피크닉_상품.xlsx (예시)', '바뀌는 것을 먼저 보여 드려요. 반영하면 상품·할인에도 같은 값이 들어가요.',
+    `<table class="t"><thead><tr><th>구좌·탭</th><th>자리</th><th>지금</th><th>엑셀</th><th>할인율</th></tr></thead><tbody>${chg.map(([a, b, seq, r]) => `<tr class="chg"><td>${esc(a)}</td><td>${b}</td><td class="auto">비어 있음</td><td>${esc(P[seq].name)}</td><td>${Math.round(r * 100)}%</td></tr>`).join('')}</tbody></table>
+     <p class="hint">카테고리명이 구좌·탭 이름과 맞지 않는 줄, SEQ를 찾을 수 없는 줄은 반영하지 않고 따로 알려 드려요.</p>`,
+    '<button class="btn sm primary" data-upapply>3건 반영</button>');
+  $('#dlg').dataset.chg = JSON.stringify(chg);
+}
+function applyUpload() {
+  const chg = JSON.parse($('#dlg').dataset.chg || '[]');
+  chg.forEach(([where, at, seq, rate]) => {
+    const [sn, tn] = where.split(' · '), s = secs.find(x => x.name === sn), list = tn ? s.tabs.find(t => t.name === tn).cards : s.cards;
+    const c = list[+at.replace(/\D/g, '') - 1]; if (c) c.seq = seq;
+    const it = itemOf(seq); if (it) { it.rate = rate; it.source = 'excel'; } else items.push({ seq, rate, source: 'excel' });
+  });
+  $('#dlg').close(); render(); toast(`엑셀에서 ${chg.length}건을 반영했어요`);
+}
+function dlg(o, h, sub, body, foot) {
+  $('#dlgO').textContent = o; $('#dlgH').textContent = h; $('#dlgS').textContent = sub; $('#dlgB').innerHTML = body; $('#dlgF').innerHTML = foot; $('#dlg').showModal();
+}
+
+// ---------------- 동작 ----------------
+document.addEventListener('click', e => {
+  const t = e.target, s = S();
+  const sec = t.closest('[data-sec]'); if (sec) { cur = sec.dataset.sec; openJudge = null; render(); return; }
+  const tb = t.closest('[data-tab]'); if (tb && !tb.disabled) { tab = tb.dataset.tab; renderPanel(); $(`[data-tab="${tab}"]`).focus(); return; }
+  if (t.closest('[data-close]') || t.id === 'scrim') { closePick(); return; }
+  const pt = t.closest('[data-ptab]'); if (pt) { pickTab = pt.dataset.ptab; openPick(pickFor); return; }
+  const ch = t.closest('[data-choose]'); if (ch) { choose(ch.dataset.choose); return; }
+  const pk = t.closest('[data-pick]'); if (pk) { openPick(pk.dataset.pick); return; }
+  const tt = t.closest('[data-toast]'); if (tt) { toast(tt.dataset.toast); return; }
+  if (t.closest('[data-upapply]')) { applyUpload(); return; }
+  if (!s) return;
+  const jd = t.closest('[data-judge]'); if (jd) { openJudge = openJudge === jd.dataset.judge ? null : jd.dataset.judge; renderPanel(); $(`[data-judge="${jd.dataset.judge}"]`)?.focus(); return; }
+  const rm = t.closest('[data-rmcard]'); if (rm) { const list = cardsOf(s); list.splice(list.findIndex(c => c.id === rm.dataset.rmcard), 1); render(); return; }
+  if (t.closest('[data-addcard]')) { cardsOf(s).push(slot()); render(); return; }
+  const dp = t.closest('[data-disp]'); if (dp) { s.disp = dp.dataset.disp; if (s.disp !== 'section') s.sprice = null; render(); return; }
+  if (t.closest('[data-apply]')) { Object.entries(drafts).forEach(([seq, r]) => { const it = itemOf(seq); if (it) it.rate = r; }); const n = Object.keys(drafts).length; drafts = {}; render(); toast(`할인 ${n}건을 반영했어요. 상품·할인에도 같은 값이에요`); return; }
+  if (t.closest('[data-undo]')) { drafts = {}; render(); toast('바꾼 할인을 되돌렸어요'); return; }
+  const tp = t.closest('[data-tabpick]'); if (tp) { s.tab = +tp.dataset.tabpick; render(); return; }
+  const tm = t.closest('[data-tabmv]'); if (tm) { const [j, d] = tm.dataset.tabmv.split(':').map(Number); [s.tabs[j], s.tabs[j + d]] = [s.tabs[j + d], s.tabs[j]]; s.tab = j + d; render(); return; }
+  const td = t.closest('[data-tabdel]'); if (td) { const j = +td.dataset.tabdel; if (s.tabs[j].cards.some(c => c.seq) && !confirm(`'${s.tabs[j].name}' 탭의 상품도 이 구좌에서 빠져요. 지울까요?`)) return; s.tabs.splice(j, 1); s.tab = Math.min(s.tab, s.tabs.length - 1); render(); return; }
+  if (t.closest('[data-tabadd]')) { s.tabs.push({ id: uid('t'), name: '새 탭', cards: [slot(), slot()] }); s.tab = s.tabs.length - 1; render(); $(`[data-tabname="${s.tab}"]`)?.select(); return; }
+  const rv = t.closest('[data-refview]'); if (rv) { const r = REFS[rv.dataset.refview]; dlg('원본 구좌 레퍼런스 · 미리보기', r.name, `${r.from} · ${r.page} — 미리보기만 해요. 이 구좌는 바뀌지 않아요.`, `<div class="thumb">${demoImg(r.r[0], r.r[1])}</div><p class="hint">원본 비율 ${r.r[0]}:${r.r[1]} (예시). 캡처를 연결하면 실제 이미지가 보여요. [전체 페이지 보기]로 원본 프로모션 전체 페이지에서 이 구좌 위치를 볼 수 있어요.</p>`, '<button class="btn sm" data-toast="예시예요: 원본 프로모션 전체 페이지를 열어요">전체 페이지 보기</button>'); $('#dlgB .thumb').classList.add('big'); return; }
+  const ra = t.closest('[data-refatt]'); if (ra) { const k = ra.dataset.refatt, i = s.att.findIndex(a => a.ref === k); if (i >= 0) s.att.splice(i, 1); else s.att.push({ ref: k, note: '' }); render(); toast(i >= 0 ? '참고에서 뺐어요' : '참고로 붙였어요. 디자인 요청 탭에서 참고할 점을 적을 수 있어요'); return; }
+  const rl = t.closest('[data-reflay]'); if (rl && !rl.disabled) { const r = REFS[rl.dataset.reflay]; s.layout = r.layout; render(); toast(`레이아웃을 '${LAYOUTS[r.layout]}'로 가져왔어요. 문구·상품·메모는 그대로예요`); return; }
+  const rs = t.closest('[data-refsave]'); if (rs) { const k = rs.dataset.refsave; saved.has(k) ? saved.delete(k) : saved.add(k); renderPanel(); toast(saved.has(k) ? '라이브러리에 저장했어요' : '저장을 뺐어요'); return; }
+});
+document.addEventListener('input', e => {
+  const t = e.target, s = S();
+  if (t.id === 'pq') { q = t.value; $('#phits').outerHTML = (() => { const tmp = document.createElement('div'); tmp.innerHTML = pickList(); return tmp.querySelector('#phits').outerHTML; })(); return; }
+  if (!s) return;
+  if (t.dataset.sf) { s[t.dataset.sf] = t.value; renderPhone(); renderList(); if (t.dataset.sf === 'name') $('#panel h2').textContent = s.name; return; }
+  if (t.dataset.copy) { allCards(s).find(c => c.id === t.dataset.copy).copy = t.value; renderPhone(); return; }
+  if (t.dataset.tabname != null) { s.tabs[+t.dataset.tabname].name = t.value; renderPhone(); renderList(); return; }
+  if (t.dataset.attnote) { s.att.find(a => a.ref === t.dataset.attnote).note = t.value; return; }
+  if (t.matches('[data-sprice]')) { s.sprice = t.value === '' ? null : Math.max(0, Math.round(+t.value)); renderPhone(); return; }
+});
+document.addEventListener('change', e => {
+  const t = e.target, s = S(); if (!s) return;
+  if (t.dataset.rate) {
+    const seq = t.dataset.rate, v = Math.min(90, Math.max(0, Math.round(+t.value || 0))) / 100;
+    if (v === (itemOf(seq)?.rate ?? 0)) delete drafts[seq]; else drafts[seq] = v;
+    renderPanel(); renderPhone(); $(`[data-rate="${seq}"]`)?.focus(); return;
+  }
+  if (t.matches('[data-layout]')) { s.layout = t.value; render(); toast('구좌 종류를 바꿨어요. 문구·상품·메모는 그대로예요'); }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#drawer').hidden) closePick(); });
+$('#xlsDown').addEventListener('click', openTemplate);
+$('#xlsUp').addEventListener('click', openUpload);
+$('#nextBtn').addEventListener('click', () => toast(Object.keys(drafts).length ? '반영하지 않은 할인이 있어요. 상품 탭에서 반영하거나 되돌려 주세요' : '예시예요: 미리보기·내보내기로 넘어가요'));
+
+let toastT;
+function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2800); }
+render();
+</script>
+</body>
+</html>
