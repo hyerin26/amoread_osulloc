@@ -78,7 +78,9 @@ h1, h2, h3, p { margin: 0; }
 .cand h3 { font-size: var(--fs-h2); line-height: var(--lh-h2); font-weight: var(--fw-strong); }
 .cand .why { font-size: var(--fs-sm); color: var(--ink2); }
 .cand .body { display: grid; gap: var(--s3); }
-.cand .body { grid-template-columns: 150px minmax(0, 1fr); align-items: start; }   /* 세로형 틀 옆에 맞는 이유·한눈에 (2개·3개 모두 같은 틀 크기) */
+.cand .body { grid-template-columns: 150px minmax(0, 1fr); align-items: start; }   /* 세로형 틀 옆에 구좌 구성 (2개·3개 모두 같은 틀 크기). 맞는 이유·한눈에는 그 아래 */
+.cand .facts2 { padding-top: var(--s3); border-top: 1px solid var(--line-sub); }
+.cand .body ol .ln { flex-direction: column; align-items: flex-start; }   /* 좁은 옆자리라 출처는 이름 아래 줄로 */
 .cand ol { margin: 0; padding: 0 0 0 18px; font-size: var(--fs-sm); display: grid; gap: 4px; }
 .cand ol li::marker { color: var(--mute); }
 .cand ol .ly { color: var(--mute); font-size: var(--fs-cap); }
@@ -397,10 +399,10 @@ function renderCands() {
     return `<article class="cand n${list.length}" ${chosen === c.id ? 'aria-current="true"' : ''} aria-labelledby="c${c.id}">
       <div class="head"><span class="letter">${c.id}</span><div class="grow"><h3 id="c${c.id}">${esc(c.title)}</h3><p class="cap">${esc(basisOf(c))}</p></div>${headTag(c)}</div>
       <p class="why">${esc(c.why)}</p>
-      <div class="body">${visual(c)}<div class="facts2">
+      <div class="body">${visual(c)}<ol>${c.secs.map(s => `<li>${cardLine(c, s)}</li>`).join('')}</ol></div>
+      <div class="facts2">
         <div class="match" aria-label="이번 브리프와 겹치는 것">${c.match.map(([t, on]) => `<span class="mt ${on ? 'on' : ''}">${on ? '' : '<span class="sr-only">겹치지 않음: </span>'}${esc(t)}</span>`).join('')}</div>
-        <p class="glance">${glance(c)}</p></div></div>
-      <ol>${c.secs.map(s => `<li>${cardLine(c, s)}</li>`).join('')}</ol>
+        <p class="glance">${glance(c)}</p></div>
       <div class="acts">
         ${c.type === 'single' ? `<button class="btn sm" data-orig="${c.page}">원본 페이지 보기</button>` : c.type === 'mix' ? `<button class="btn sm" data-src="${c.id}">출처 보기</button>` : ''}
         <button class="btn sm ${chosen === c.id ? '' : 'primary'}" data-choose="${c.id}">${chosen === c.id ? '고른 구성안' : '이 구성 고르기'}</button>
