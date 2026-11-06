@@ -29,7 +29,7 @@ h1, h2, h3, p { margin: 0; }
 .top .grow { flex: 1; }
 .top .note { color: var(--mute); font-size: var(--fs-cap); }
 
-.page { max-width: 1280px; margin: 0 auto; padding: var(--s6) var(--s5) 160px; }
+.page { max-width: 1280px; margin: 0 auto; padding: var(--s6) var(--s5) 64px; }
 .demo { background: var(--warn-soft); color: var(--warn); border-radius: var(--r); padding: 12px 16px; font-size: var(--fs-sm); line-height: var(--lh-label); margin-bottom: var(--s5); }
 .demo b { font-weight: var(--fw-strong); }
 
@@ -105,23 +105,28 @@ h1, h2, h3, p { margin: 0; }
 .side .acts { margin-top: var(--s5); display: grid; gap: var(--s2); }
 .side .sub { color: var(--mute); font-size: var(--fs-sm); margin-top: 4px; }
 
-/* ---------- 아래 고정: 고른 키워드 → 컨셉 ---------- */
-.dock { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); z-index: 5; }
-.dock-in { max-width: 1280px; margin: 0 auto; padding: var(--s4) var(--s5); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s3) var(--s5); align-items: end; }
-.pickbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 32px; grid-column: 1 / -1; }
-.pickbar .l { font-size: var(--fs-sm); font-weight: var(--fw-strong); margin-right: 6px; }
+/* ---------- 정리: 고른 키워드 → 컨셉 → 누구에게 → 메인 카피 ---------- */
+.sum { margin-top: var(--s5); }
+.sum .rows { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: var(--s4) var(--s4); align-items: start; }
+.sum .rl { font-size: var(--fs-sm); line-height: var(--control-lg); font-weight: var(--fw-strong); }
+.sum .rl em { font-style: normal; color: var(--mute); font-weight: var(--fw-medium); }
+@media (max-width: 800px) { .sum .rows { grid-template-columns: minmax(0, 1fr); gap: 6px; } .sum .rl { line-height: var(--lh-label); margin-top: var(--s3); } }
+.pickbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: var(--control-lg); }
+.sugs { display: grid; gap: var(--s2); margin-top: var(--s2); }
+.sug { all: unset; box-sizing: border-box; cursor: pointer; display: flex; gap: var(--s3); align-items: center; padding: 10px 12px; border: 1px solid var(--line-sub); border-radius: var(--r2); }
+.sug:hover { border-color: var(--line-strong); }
+.sug[aria-pressed="true"] { border-color: var(--sel-line); background: var(--accent-soft); }
+.sug .c { flex: 1; font-size: var(--fs-body); font-weight: var(--fw-medium); }
+.sug[aria-pressed="true"] .c { color: var(--accent); font-weight: var(--fw-strong); }
+.sugbar { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; margin-top: var(--s3); }
+.sum .foot { display: flex; justify-content: flex-end; align-items: center; gap: var(--s3); margin-top: var(--s5); padding-top: var(--s4); border-top: 1px solid var(--line-sub); flex-wrap: wrap; }
 .pk { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 6px 0 10px; border-radius: var(--r2); background: var(--accent-soft); color: var(--accent); font-size: var(--fs-sm); font-weight: var(--fw-strong); }
 .pk button { all: unset; cursor: pointer; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 4px; }
 .pk button:hover { background: rgba(0, 122, 70, .12); }
-.fields { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: var(--s3); }
-@media (max-width: 800px) { .fields, .dock-in { grid-template-columns: minmax(0, 1fr); } }
-.fld { display: grid; gap: 6px; }
-.fld > span { font-size: var(--fs-sm); line-height: var(--lh-label); font-weight: var(--fw-strong); }
-.fld > span em { font-style: normal; color: var(--mute); font-weight: var(--fw-medium); }
 input[type=text] { height: var(--control-lg); border: 1px solid var(--line); border-radius: var(--r2); padding: 0 12px; color: var(--ink); background: var(--surface); width: 100%; }
 input[type=text]:hover { border-color: var(--line-strong); }
 input[type=text]:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
-.toast { position: fixed; left: 50%; bottom: 180px; transform: translateX(-50%); background: var(--ink); color: var(--surface); border-radius: var(--r); padding: 14px 18px; font-size: var(--fs-sm);
+.toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: var(--ink); color: var(--surface); border-radius: var(--r); padding: 14px 18px; font-size: var(--fs-sm);
   box-shadow: 0 16px 48px -12px rgba(33, 33, 33, .15); opacity: 0; pointer-events: none; transition: opacity .2s var(--ease); z-index: 9; }
 .toast.on { opacity: 1; }
 </style>
@@ -170,18 +175,28 @@ input[type=text]:focus { outline: 2px solid var(--accent); outline-offset: 0; bo
 
     <aside class="card side" id="side" aria-live="polite"></aside>
   </div>
-</main>
 
-<div class="dock" role="region" aria-label="고른 키워드와 컨셉">
-  <div class="dock-in">
-    <div class="pickbar" id="picked"></div>
-    <div class="fields">
-      <label class="fld"><span>컨셉 한 줄</span><input type="text" id="concept" maxlength="120" placeholder="예) 피크닉에서 누리는 차 한 잔의 여유"></label>
-      <label class="fld"><span>누구에게, 어떤 때 <em>(선택)</em></span><input type="text" id="who" maxlength="120" placeholder="예) 주말 한강 피크닉을 준비하는 20~30대"></label>
+  <section class="card sum" aria-labelledby="sumH">
+    <div class="sec-head"><h2 id="sumH">정리</h2><span class="cap">위에서 고른 키워드로 컨셉과 메인 카피를 정해요</span></div>
+    <div class="rows">
+      <span class="rl" id="pickedL">고른 키워드</span>
+      <div class="pickbar" id="picked" aria-labelledby="pickedL"></div>
+      <label class="rl" for="concept">컨셉 한 줄</label>
+      <input type="text" id="concept" maxlength="120" placeholder="예) 피크닉에서 누리는 차 한 잔의 여유">
+      <label class="rl" for="who">누구에게, 어떤 때 <em>(선택)</em></label>
+      <input type="text" id="who" maxlength="120" placeholder="예) 주말 한강 피크닉을 준비하는 20~30대">
+      <label class="rl" for="copy">메인 카피 <em>(나중에 써도 돼요)</em></label>
+      <div>
+        <input type="text" id="copy" maxlength="60" placeholder="페이지 첫 화면의 한 줄">
+        <div class="sugbar"><span class="cap">제안</span><span class="tag demo-t">예시 · 규칙으로 만든 문장</span><span class="cap" id="sugBasis"></span></div>
+        <div class="sugs" id="sugs" role="group" aria-label="메인 카피 제안"></div>
+        <div class="sugbar"><button class="btn sm" id="moreSug">다른 제안 보기</button>
+          <span class="cap">누르면 메인 카피 칸에 들어가요. 가격·쿠폰·효능 표현은 넣지 않아요.</span></div>
+      </div>
     </div>
-    <button class="btn primary" id="nextBtn">메인 카피로 →</button>
-  </div>
-</div>
+    <div class="foot"><span class="cap" id="footNote"></span><button class="btn primary" id="nextBtn">구좌 구성 추천 받기 →</button></div>
+  </section>
+</main>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -304,6 +319,31 @@ function renderSide() {
 function renderDock() {
   $('#picked').innerHTML = '<span class="l">고른 키워드</span>' + (picked.length ? picked.map(k => `<span class="pk">${esc(k)}<button data-unpick="${esc(k)}" aria-label="${esc(k)} 빼기">✕</button></span>`).join('')
     : '<span class="cap">마인드맵에서 키워드를 골라 주세요. 여러 개 골라도 돼요.</span>');
+  renderSugs();
+}
+// 메인 카피 제안 (DEMO): 고른 키워드·명분으로 방법별 틀에 끼운 문장. 나중에 카피 사례·방법론 출처로 바꾼다 (plans/15 2장 '제안 출처')
+const METHODS = [
+  ['장면형', k => `${k}에 차 한 잔을 더하면`],
+  ['재정의형', k => `봄은 ${k}의 계절`],
+  ['감각 묘사형', k => `${k} 사이로 번지는 찻잎 향`],
+  ['질문형', k => `이번 봄, ${k} 준비됐나요?`],
+  ['대비형', k => `바쁜 봄에도 ${k}의 여유`],
+  ['한정형', k => `봄에만 만나는 ${k} 티타임`],
+];
+let sugPage = 0;
+function copyIdeas() {
+  const ks = picked.length ? picked : [ROOT], out = [];
+  for (let i = 0; i < METHODS.length * ks.length; i++) { const [m, f] = METHODS[i % METHODS.length], k = ks[Math.floor(i / METHODS.length) % ks.length]; out.push({ m, t: f(k), k }); }
+  const c = $('#concept').value.trim();
+  return c ? [{ m: '컨셉 그대로', t: c, k: '' }, ...out] : out;
+}
+function renderSugs() {
+  const all = copyIdeas(), n = 3, start = (sugPage * n) % all.length, cur = $('#copy').value;
+  const show = Array.from({ length: Math.min(n, all.length) }, (_, i) => all[(start + i) % all.length]);
+  const who = $('#who').value.trim();
+  $('#sugBasis').textContent = `근거: ${picked.length ? `고른 키워드(${picked.join(', ')})` : '명분(봄)'}${$('#concept').value.trim() ? ' · 컨셉' : ''}${who ? ' · 누구에게' : ''}`;
+  $('#sugs').innerHTML = show.map(s => `<button class="sug" data-copy="${esc(s.t)}" aria-pressed="${cur === s.t}"><span class="c">${esc(s.t)}</span><span class="tag">${esc(s.m)}</span></button>`).join('');
+  $('#footNote').textContent = cur.trim() ? '' : '메인 카피가 비어 있어도 넘어갈 수 있어요. 구좌 구성 화면에서도 쓸 수 있어요.';
 }
 let keepFocus = null;   // 다시 그린 뒤에도 키보드 위치를 잃지 않게
 function render() { renderPath(); renderFilters(); renderMap(); renderSide(); renderDock();
@@ -354,10 +394,15 @@ document.addEventListener('click', e => {
 $('#chClear').addEventListener('click', () => { chOn.clear(); render(); });
 $('#resetBtn').addEventListener('click', () => { path = [ROOT]; center = 0; focus = ROOT; render(); });
 $('#title').addEventListener('input', () => { titleTouched = true; });
-$('#concept').addEventListener('input', autoTitle);
+$('#concept').addEventListener('input', () => { autoTitle(); renderSugs(); });
+$('#who').addEventListener('input', renderSugs);
+$('#copy').addEventListener('input', renderSugs);
+$('#sugs').addEventListener('click', e => { const s = e.target.closest('[data-copy]'); if (!s) return; $('#copy').value = s.dataset.copy; renderSugs(); $('#copy').focus(); });
+$('#moreSug').addEventListener('click', () => { sugPage++; renderSugs(); });
 $('#nextBtn').addEventListener('click', () => {
   if (!picked.length && !$('#concept').value.trim()) { toast('키워드를 하나 이상 고르거나 컨셉을 적어 주세요'); return; }
-  toast(`예시예요: 고른 키워드(${picked.join(', ') || '없음'})와 컨셉으로 메인 카피 화면으로 넘어가요`);
+  const empty = !$('#copy').value.trim();
+  toast(`${empty ? '메인 카피가 비어 있어요. 구좌 구성 화면에서도 쓸 수 있어요. ' : ''}예시예요: 구좌 구성 추천으로 넘어가요`);
 });
 let toastT;
 function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600); }
