@@ -78,6 +78,9 @@ h1, h2, h3, h4, p { margin: 0; }
 .exp .row b { font-size: var(--fs-sm); font-weight: var(--fw-strong); }
 .exp .row .cap { grid-column: 1; }
 .exp .row .btn { grid-row: 1 / span 2; grid-column: 2; }
+.exp .row.zip { border-color: var(--sel-line); }
+.zipfiles { grid-column: 1 / -1; display: grid; gap: 4px; padding-top: 8px; border-top: 1px solid var(--line-sub); }
+.zipfiles .ck { display: flex; gap: 6px; align-items: baseline; font-size: var(--fs-sm); cursor: pointer; flex-wrap: wrap; }
 .log { list-style: none; margin: var(--s2) 0 0; padding: 0; display: grid; gap: 4px; font-size: var(--fs-cap); color: var(--mute); }
 
 /* 디자이너 기획안 (문서) */
@@ -189,11 +192,20 @@ textarea.req:focus { outline: 2px solid var(--accent); outline-offset: 0; border
 .lnk { all: unset; cursor: pointer; color: var(--accent); font-weight: var(--fw-strong); text-decoration: underline; text-underline-offset: 2px; }
 .lnk:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .doc { max-width: 1040px; }
+.pagewf { width: 390px; max-width: 100%; margin: 0 auto; border: 1px solid var(--line); border-radius: 20px; overflow: hidden; background: var(--surface); }
+.pw-s { position: relative; border-bottom: 1px dashed var(--line-sub); }
+.pw-s:last-child { border-bottom: 0; }
+.pw-s .sw { border: 0; border-radius: 0; }
+.pw-n { position: absolute; top: 6px; right: 8px; font-size: 10px; color: var(--mute); z-index: 1; }
 /* 카드 문구표 */
-.tbl-wrap { overflow-x: auto; }
+.doc, .doc > *, .lay > * { min-width: 0; }   /* 표가 넓어도 칸을 밀어내지 않고 상자 안에서 가로로 넘김 */
+.tbl-wrap { overflow-x: auto; max-width: 100%; border: 1px solid var(--line-sub); border-radius: var(--r2); }
 table.cc { border-collapse: collapse; width: 100%; font-size: var(--fs-cap); }
 table.cc th { text-align: left; font-weight: var(--fw-medium); color: var(--mute); background: var(--bg); padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 table.cc td { padding: 6px 8px; border-bottom: 1px solid var(--line-sub); white-space: nowrap; vertical-align: top; }
+table.cc td.wrap { white-space: normal; min-width: 96px; max-width: 200px; word-break: keep-all; overflow-wrap: anywhere; }   /* 긴 글 칸만 줄바꿈, 숫자 칸은 한 줄 */
+table.cc th:first-child, table.cc td:first-child { position: sticky; left: 0; background: var(--surface); }
+table.cc th:first-child { background: var(--bg); }
 table.cc td.num { text-align: right; font-variant-numeric: tabular-nums; }
 table.cc td.sale { color: var(--price); font-weight: var(--fw-strong); }
 table.cc td.empty { color: var(--line-strong); }
@@ -226,8 +238,12 @@ table.cc td.empty { color: var(--line-strong); }
       <section class="card" aria-labelledby="chkH"><h2 id="chkH">확인할 것 <span class="cap" id="chkN"></span></h2><div id="chk"></div></section>
       <section class="card" aria-labelledby="expH"><h2 id="expH">내보내기</h2>
         <div class="exp">
-          <div class="row"><b>디자이너 기획안 (HTML)</b><span class="cap">한 파일에 이미지·글꼴까지 담아요. 원가·판정은 넣지 않아요.</span><button class="btn sm primary" data-exp="html">내보내기</button></div>
-          <div class="row"><b>카드 문구표 (엑셀)</b><span class="cap">구좌별 카드 글을 칸별로. 디자이너가 그대로 옮겨 쓰게.</span><button class="btn sm" data-exp="cards">내려받기</button></div>
+          <div class="row zip"><b>디자이너 전달 묶음 (ZIP)</b><span class="cap">고른 파일을 ZIP 하나로 내려받아요. 원가·판정은 넣지 않아요.</span><button class="btn sm primary" data-exp="zip">내려받기</button>
+            <div class="zipfiles" role="group" aria-label="묶음에 넣을 파일">
+              <label class="ck"><input type="checkbox" data-zf="doc" checked> 기획안.html <span class="cap">요약 + 구좌별 와이어프레임·메모</span></label>
+              <label class="ck"><input type="checkbox" data-zf="page" checked> 페이지_와이어프레임.html <span class="cap">페이지 전체 모양만</span></label>
+              <label class="ck"><input type="checkbox" data-zf="cards" checked> 카드_문구표.xlsx <span class="cap">카드 글 칸별로</span></label>
+              <span class="cap">HTML은 파일마다 이미지·글꼴까지 담아서 하나만 열어도 돼요.</span></div></div>
           <div class="row"><b>PROMO_WORK 붙여넣기 (엑셀)</b><span class="cap">할인 행 13열 + 검증 시트. 추가 혜택(2단)은 검증 시트에만.</span><button class="btn sm" data-exp="promo">내려받기</button></div>
           <div class="row"><b>PDF로 저장</b><span class="cap">디자이너 기획안을 인쇄 화면으로 열어요.</span><button class="btn sm ghost" data-exp="pdf">열기</button></div>
         </div>
@@ -237,7 +253,7 @@ table.cc td.empty { color: var(--line-strong); }
 
     <section aria-labelledby="docH">
       <div class="head"><div class="grow"><h2 id="docH" class="doc-title">디자이너 기획안 미리보기</h2></div>
-        <div class="seg" role="tablist" aria-label="미리보기"><button role="tab" data-view="doc" aria-selected="true">기획안</button><button role="tab" data-view="cards" aria-selected="false">카드 문구표</button></div></div>
+        <div class="seg" role="tablist" aria-label="미리보기"><button role="tab" data-view="doc" aria-selected="true">기획안</button><button role="tab" data-view="page" aria-selected="false">페이지 와이어프레임</button><button role="tab" data-view="cards" aria-selected="false">카드 문구표</button></div></div>
       <div class="docwrap"><article class="doc" id="doc"></article></div>
     </section>
   </div>
@@ -390,6 +406,13 @@ function renderDoc() {
   document.getElementById('doc').innerHTML = `${cover}<div class="dbody"><aside class="dside"><h4>전체 와이어프레임</h4>${overview()}<p class="cap">누르면 그 구좌로 가요</p></aside><div class="dmain">${SECS.map(sec).join('')}</div></div>`;
 }
 
+// 페이지 와이어프레임 (따로 내보내는 파일): 메모 없이 페이지 하나로. 구좌 사이 경계만 얇게
+function renderPage() {
+  document.getElementById('doc').innerHTML = `<header class="dh"><div class="overline">페이지 와이어프레임 · 따로 내보내는 파일이에요</div><h2>${esc(PLAN.title)}</h2>
+      <p class="cap">고객이 위에서 아래로 보는 순서 그대로예요. 카드 칸에는 요소 이름만 있고, 실제 글은 카드 문구표에 있어요.</p></header>
+    <div class="pagewf">${SECS.map((s, i) => `<div class="pw-s"><span class="pw-n">${i + 1}</span>${secWire(s, i)}</div>`).join('')}</div>`;
+}
+
 // ================= 카드 문구표 =================
 // 칸은 구좌에서 켜진 요소만. 숫자는 서비스가 계산한 값 (옮겨 적기 실수 방지)
 const COLS = [['label', '모서리 라벨'], ['pill', '알약'], ['appeal', '소구문구'], ['tag', '이름 앞 태그'], ['name', '상품명'], ['list', '정가'], ['first', '1단 가격'], ['pct', '할인율'], ['pname', '가격 이름'], ['sale', '판매가'], ['copy', '카드 문구']];
@@ -408,13 +431,13 @@ function renderCards() {
     <p class="cap">구좌에서 켜진 요소만 칸으로 보여요. 가격은 서비스가 계산한 값이라 그대로 옮겨 쓰면 돼요.</p></header>`
     + cardTables().map((t, ti) => `<section><div class="cc-h"><h4>${esc(t.s.name)} <span class="cap">${esc(LNAME[t.s.layout])} · ${t.rows.length}칸</span></h4><button class="btn xs" data-copy="${ti}">표 복사</button></div>
       <div class="tbl-wrap"><table class="cc"><thead><tr><th>구좌·탭</th><th>#</th>${t.cols.map(([, n]) => `<th>${n}</th>`).join('')}</tr></thead>
-      <tbody>${t.rows.map((cd, j) => `<tr><td>${esc(cd.tab || t.s.name)}</td><td class="num">${j + 1}</td>${t.cols.map(([k]) => { const v = cellOf(k, cd); return `<td class="${['list', 'first', 'pct', 'sale'].includes(k) ? 'num' : ''} ${k === 'sale' ? 'sale' : ''} ${v ? '' : 'empty'}">${esc(v || '-')}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div></section>`).join('');
+      <tbody>${t.rows.map((cd, j) => `<tr><td>${esc(cd.tab || t.s.name)}</td><td class="num">${j + 1}</td>${t.cols.map(([k]) => { const v = cellOf(k, cd); return `<td class="${['list', 'first', 'pct', 'sale'].includes(k) ? 'num' : ''} ${['pill', 'appeal', 'name', 'copy'].includes(k) ? 'wrap' : ''} ${k === 'sale' ? 'sale' : ''} ${v ? '' : 'empty'}">${esc(v || '-')}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div></section>`).join('');
 }
 
 // ================= 동작 =================
 let view = 'doc', log = [];
 const $ = s => document.querySelector(s);
-function render() { renderChecks(); view === 'doc' ? renderDoc() : renderCards(); document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-selected', b.dataset.view === view)); }
+function render() { renderChecks(); ({ doc: renderDoc, page: renderPage, cards: renderCards })[view](); document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-selected', b.dataset.view === view)); }
 document.addEventListener('click', e => {
   const t = e.target;
   const vb = t.closest('[data-view]'); if (vb) { view = vb.dataset.view; render(); return; }
@@ -425,7 +448,9 @@ document.addEventListener('click', e => {
   const ex = t.closest('[data-exp]'); if (ex) {
     const w = checks().filter(x => x.lv === 'warn').length, k = ex.dataset.exp;
     if (k !== 'pdf' && w && !confirm(`꼭 볼 것이 ${w}건 남아 있어요. 그래도 내보낼까요?`)) return;
-    const name = { html: '디자이너 기획안 (HTML 한 파일)', cards: '카드 문구표 (엑셀)', promo: 'PROMO_WORK 붙여넣기 (엑셀)', pdf: 'PDF 인쇄 화면' }[k];
+    const files = [...document.querySelectorAll('[data-zf]:checked')].map(x => ({ doc: '기획안.html', page: '페이지_와이어프레임.html', cards: '카드_문구표.xlsx' })[x.dataset.zf]);
+    if (k === 'zip' && !files.length) { toast('묶음에 넣을 파일을 하나 이상 골라 주세요'); return; }
+    const name = { zip: `디자이너 전달 묶음 (ZIP: ${files.join(', ')})`, promo: 'PROMO_WORK 붙여넣기 (엑셀)', pdf: 'PDF 인쇄 화면' }[k];
     if (k === 'pdf') { window.print(); return; }
     log.unshift(`${new Date().toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} · ${name}`);
     $('#log').innerHTML = log.map(x => `<li>${esc(x)}</li>`).join('');
