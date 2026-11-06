@@ -36,9 +36,16 @@ SEASON_CSV = SETTINGS_DIR / "명분사전.csv"                 # 명분 사전(�
 TREND_CSV = SETTINGS_DIR / "트렌드키워드.csv"              # 검색 트렌드 키워드 그룹 ↔ 오설록 상품 연결
 TREND_CACHE = DATA_DIR / "trends.json"                     # 네이버 데이터랩 응답 캐시
 
-# 외부 신호 — 네이버 데이터랩 검색어 트렌드 (키는 osulloc_ops\.env 에만, 화면·로그에 노출 금지)
+# 외부 신호 — 네이버 검색·데이터랩(검색어 트렌드). 2026년부터 NAVER API HUB(네이버 클라우드)로 옮겨 감:
+# 주소·헤더·키가 모두 바뀜. 예전 개발자센터(openapi.naver.com) 키는 HUB에서 안 됨 → HUB 콘솔에서 새로 받은 키를 넣는다
+# (키는 .env 에만, 화면·로그에 노출 금지)
 NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID") or ""
 NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET") or ""
+NAVER_API_BASE = "https://naverapihub.apigw.ntruss.com"
+
+
+def naver_headers():
+    return {"X-NCP-APIGW-API-KEY-ID": NAVER_CLIENT_ID, "X-NCP-APIGW-API-KEY": NAVER_CLIENT_SECRET}
 TREND_REFRESH_MIN_GAP_MIN = 10   # 새로 받기 최소 간격 (데이터랩 일 1,000회 제한 보호)
 # 브리프 키워드 확장 — 네이버 검색광고 키워드 도구 (광고시스템 › 도구 › API 사용 관리에서 발급, .env에만)
 NAVER_AD_API_KEY = os.getenv("NAVER_AD_API_KEY") or ""          # 액세스 라이선스

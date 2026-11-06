@@ -29,7 +29,7 @@ from . import config, engine, trends
 from .engine import DATA, _f
 from .schedule import efficacy_flags
 
-SEARCH_URL = "https://openapi.naver.com/v1/search/{kind}.json"
+SEARCH_URL = config.NAVER_API_BASE + "/search/v1/{kind}"   # NAVER API HUB (응답 모양은 예전과 같음)
 QUERY_CSV = config.SETTINGS_DIR / "스카우트질의.csv"
 RESULT = config.DATA_DIR / "scout.json"
 STATE = config.DATA_DIR / "scout_state.json"
@@ -139,14 +139,13 @@ def _clean(s):
 
 def _search(kind, query, display=100):
     url = SEARCH_URL.format(kind=kind) + "?" + urllib.parse.urlencode({"query": query, "display": display, "sort": "date"})
-    req = urllib.request.Request(url, headers={"X-Naver-Client-Id": config.NAVER_CLIENT_ID,
-                                               "X-Naver-Client-Secret": config.NAVER_CLIENT_SECRET})
+    req = urllib.request.Request(url, headers=config.naver_headers())
     try:
         with urllib.request.urlopen(req, timeout=15) as res:
             return json.loads(res.read().decode("utf-8")).get("items") or []
     except urllib.error.HTTPError as e:
-        msg = {401: "네이버 API 키가 올바르지 않습니다.",
-               403: "이 애플리케이션에 '검색' API 권한이 없습니다. 네이버 개발자센터에서 '검색'을 추가하세요.",
+        msg = {401: "네이버 API 키가 올바르지 않습니다 (NAVER API HUB에서 받은 키인지 확인하세요. 예전 개발자센터 키는 안 됩니다).",
+               403: "이 Application에 '검색' API가 없습니다. 네이버 클라우드 콘솔 › NAVER API HUB › Application에서 추가하세요.",
                429: "네이버 검색 하루 한도를 넘었습니다."}.get(e.code, f"네이버 검색 오류 (HTTP {e.code})")
         raise ScoutError(msg)
     except (urllib.error.URLError, TimeoutError):

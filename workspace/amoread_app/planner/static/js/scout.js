@@ -38,10 +38,10 @@ function render() {
   let html = '';
   if (!data.has_keys) {
     html += `<div class="card setup"><h2>네이버 키 하나로 스카우트와 검색량 검증을 둘 다 돌려요 <span class="cap">무료</span></h2>
-      <ol class="sm"><li><b>developers.naver.com</b> → Application → 애플리케이션 등록 (이미 있으면 그 앱 수정)</li>
-      <li>사용 API에 <b>검색</b>과 <b>데이터랩(검색어트렌드)</b> 두 개를 추가 · 환경 WEB · http://127.0.0.1</li>
+      <ol class="sm"><li><b>네이버 클라우드 콘솔</b> → NAVER API HUB → 신청하기(약관 동의) → Application 등록 (예전 개발자센터 키는 안 돼요)</li>
+      <li>API에 <b>검색</b>과 <b>검색어 트렌드</b>를 고르고 → Application 관리 › 인증 정보에서 Client ID·Secret 복사</li>
       <li><code>osulloc_ops\\.env</code>에 <code>NAVER_CLIENT_ID=…</code> <code>NAVER_CLIENT_SECRET=…</code> → 기획 도우미 다시 켜기</li></ol>
-      <p class="cap">보내는 것: 아래 '넓은 질의'와 후보 말뿐 (실적·고객 정보 없음). 검색 API 하루 25,000회 무료, 한 번 모을 때 약 ${(data.queries || []).length * 2}회.</p></div>`;
+      <p class="cap">보내는 것: 아래 '넓은 질의'와 후보 말뿐 (실적·고객 정보 없음). 검색 API 하루 25,000회 (지금은 한시 무료, 유료 전환 때 미리 공지), 한 번 모을 때 약 ${(data.queries || []).length * 2}회.</p></div>`;
   }
   const cards = data.cards || [];
   if (cards.length) {

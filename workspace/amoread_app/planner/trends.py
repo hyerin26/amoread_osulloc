@@ -25,7 +25,7 @@ from datetime import date, datetime, timedelta
 from . import config, engine
 from .engine import DATA, _f
 
-API_URL = "https://openapi.naver.com/v1/datalab/search"
+API_URL = config.NAVER_API_BASE + "/search-trend/v1/search"   # NAVER API HUB 검색어 트렌드 (요청·응답 모양은 예전 데이터랩과 같음)
 HEAD = ["그룹", "검색어(;로 구분)", "상품명 포함어(;로 구분)", "카테고리", "메모"]
 _last_fetch = {"t": 0.0}
 
@@ -96,14 +96,13 @@ def _last_sunday(today=None):
 
 def _post(body):
     req = urllib.request.Request(API_URL, data=json.dumps(body).encode("utf-8"), method="POST", headers={
-        "X-Naver-Client-Id": config.NAVER_CLIENT_ID, "X-Naver-Client-Secret": config.NAVER_CLIENT_SECRET,
-        "Content-Type": "application/json"})
+        **config.naver_headers(), "Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=20) as res:
             return json.loads(res.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
-        msg = {401: "네이버 API 키가 올바르지 않습니다 (.env의 NAVER_CLIENT_ID / NAVER_CLIENT_SECRET 확인).",
-               403: "이 애플리케이션에 '데이터랩(검색어트렌드)' API 권한이 없습니다. 네이버 개발자센터에서 API를 추가하세요.",
+        msg = {401: "네이버 API 키가 올바르지 않습니다 (.env의 NAVER_CLIENT_ID / NAVER_CLIENT_SECRET이 NAVER API HUB에서 받은 키인지 확인).",
+               403: "이 Application에 '검색어 트렌드' API가 없습니다. 네이버 클라우드 콘솔 › NAVER API HUB › Application에서 추가하세요.",
                429: "네이버 데이터랩 하루 호출 한도를 넘었습니다. 내일 다시 시도하세요."}.get(e.code, f"네이버 데이터랩 오류 (HTTP {e.code})")
         raise TrendError(msg)
     except (urllib.error.URLError, TimeoutError):
