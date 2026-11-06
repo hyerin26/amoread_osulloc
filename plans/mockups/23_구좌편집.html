@@ -388,6 +388,7 @@ let secs = [
 ];
 
 // ================= 상태 =================
+let moodLink = false;   // 느낌 레퍼런스 '링크 붙이기' 칸 펼침
 let cur = 's2', tab = 'products', drafts = {}, saved = new Set(), openJudge = null, openMore = null, pickFor = null, pickTab = 'plan', q = '', moodAdd = false;
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -620,13 +621,18 @@ function refsTab(s) {
 function moodBlock(s) {
   const ms = s.moods, left = Object.keys(MOODS).filter(k => !ms.some(m => m.id === k));
   return `<div class="f"><span class="sub">느낌 레퍼런스 <span class="hint">이 구좌의 색감·연출 참고 · 구조가 없어 레이아웃은 가져오지 않아요</span></span>
-    ${ms.map(m => { const r = MOODS[m.id]; return `<div class="ref att"><span class="thumb">${demoImg(r.r[0], r.r[1])}</span><div>
+    ${ms.map(m => { const r = MOODS[m.id]; return `<div class="ref att"><span class="thumb">${moodThumb(r)}</span><div>
       <div class="rn">${esc(r.name)}</div><div class="cap">${esc(r.src)} <span class="tag demo-t">예시</span></div>
       <div class="ra"><span class="cap">참고할 점</span>${POINTS.map(p => `<button class="pt" data-mpt="${m.id}|${p}" aria-pressed="${m.pts.has(p)}">${p}</button>`).join('')}</div>
       <div class="ra"><button class="btn xs" data-mrm="${m.id}">빼기</button></div></div></div>`; }).join('')}
-    <div><button class="btn xs" data-moodadd aria-expanded="${moodAdd}">+ 느낌 레퍼런스 추가</button> <button class="btn xs ghost" data-toast="예시예요: 링크나 캡처 이미지를 붙여 넣어 느낌 레퍼런스로 담아요">붙여 넣기</button></div>
-    ${moodAdd ? `<div class="moods">${left.map(k => { const r = MOODS[k]; return `<button class="mood" data-madd="${k}" title="${esc(r.src)}"><span class="thumb">${demoImg(r.r[0], r.r[1])}</span><span class="cap">${esc(r.name)}</span></button>`; }).join('') || '<span class="hint">더 고를 예시가 없어요</span>'}</div>` : ''}</div>`;
+    <div><button class="btn xs" data-moodadd aria-expanded="${moodAdd}">+ 느낌 레퍼런스 추가</button> <label class="btn xs ghost">파일 첨부<input type="file" data-moodfile accept="image/*,.pdf" hidden></label> <button class="btn xs ghost" data-moodlink aria-expanded="${moodLink}">링크 붙이기</button></div>
+    ${moodLink ? `<div class="two"><input type="text" id="moodUrl" placeholder="https://… (핀터레스트·외부 페이지 등)" aria-label="참고한 링크"><button class="btn xs primary" data-moodurl>붙이기</button></div>` : ''}
+    <span class="hint">라이브러리에 없어도 그때 참고한 파일이나 링크를 붙일 수 있어요. 파일은 이 PC에서 미리보기만 하고, 링크는 주소만 저장해요 (열어 보지 않아요).</span>
+    ${moodAdd ? `<div class="moods">${left.map(k => { const r = MOODS[k]; return `<button class="mood" data-madd="${k}" title="${esc(r.src)}"><span class="thumb">${moodThumb(r)}</span><span class="cap">${esc(r.name)}</span></button>`; }).join('') || '<span class="hint">더 고를 예시가 없어요</span>'}</div>` : ''}</div>`;
 }
+// 직접 붙인 느낌 레퍼런스: 이미지 파일은 미리보기, PDF·링크는 종류 표시 (서버로 보내지 않는 목업)
+function moodThumb(r) { return r.img ? `<img src="${r.img}" alt="">` : r.kind ? `<span class="cap">${r.kind}</span>` : demoImg(r.r[0], r.r[1]); }
+function addMood(s, m) { const id = uid('u'); MOODS[id] = m; s.moods.push({ id, pts: new Set() }); moodLink = false; render(); toast('느낌 레퍼런스로 붙였어요. 참고할 점을 골라 주세요'); }
 function notesTab(s) {
   return `<label class="f"><span>디자이너에게 부탁할 것 <em>(선택)</em></span><textarea data-sf="notes" rows="5" maxlength="2000" placeholder="예) 피크닉 돗자리 위 연출 컷이 있으면 좋겠어요">${esc(s.notes)}</textarea></label>
     <div class="f"><span class="l">붙인 레퍼런스 <em>${s.att.length}개</em></span>${s.att.length ? s.att.map(a => { const r = REFS[a.ref]; return `<div class="ref att"><span class="thumb">${demoImg(r.r[0], r.r[1])}</span><div>
@@ -739,6 +745,10 @@ document.addEventListener('click', e => {
   if (d('refatt')) { const k = v('refatt'), i = s.att.findIndex(a => a.ref === k); if (i >= 0) s.att.splice(i, 1); else s.att.push({ ref: k, note: '' }); render(); toast(i >= 0 ? '참고에서 뺐어요' : '참고로 붙였어요. 디자인 요청 탭에서 참고할 점을 적을 수 있어요'); return; }
   if (d('reflay') && !d('reflay').disabled) { const r = REFS[v('reflay')]; setLayout(s, r.layout); render(); toast(`레이아웃을 '${LNAME[r.layout]}'로 가져왔어요. 문구·메모는 그대로예요`); return; }
   if (d('refsave')) { const k = v('refsave'); saved.has(k) ? saved.delete(k) : saved.add(k); renderPanel(); return; }
+  if (d('moodlink')) { moodLink = !moodLink; renderPanel(); refocus(moodLink ? '#moodUrl' : '[data-moodlink]'); return; }
+  if (d('moodurl')) { const raw = $('#moodUrl').value.trim(); let u; try { u = new URL(raw); } catch { u = null; }
+    if (!u || !/^https?:$/.test(u.protocol)) { toast('http나 https로 시작하는 주소를 넣어 주세요'); return; }
+    addMood(s, { name: u.hostname.replace(/^www\./, ''), src: `직접 첨부 · 링크 ${raw.length > 40 ? raw.slice(0, 40) + '…' : raw}`, kind: '링크', url: raw, r: [3, 4] }); return; }
   if (d('moodadd')) { moodAdd = !moodAdd; renderPanel(); refocus('[data-moodadd]'); return; }
   if (d('madd')) { s.moods.push({ id: v('madd'), pts: new Set() }); moodAdd = false; renderPanel(); return; }
   if (d('mrm')) { s.moods = s.moods.filter(m => m.id !== v('mrm')); renderPanel(); return; }
@@ -772,6 +782,9 @@ document.addEventListener('change', e => {
   if (t.matches('[data-num]')) { s.num = t.checked; render(); return; }
   if (t.matches('[data-ctaon]')) { s.ctaOn = t.checked; if (s.ctaOn && !s.cta) s.cta = kindOf(s.layout) === 'product' ? `${s.scope || s.name} 더보기` : kindOf(s.layout) === 'event' ? '참여하기' : '자세히 보기'; render(); refocus('[data-ctaon]'); return; }
   if (t.matches('[data-evlogin]')) { s.ev.login = t.checked; return; }
+  if (t.matches('[data-moodfile]')) { const f = t.files[0]; if (!f) return; const isImg = f.type.startsWith('image/');
+    if (!isImg && f.type !== 'application/pdf') { toast('이미지나 PDF 파일만 붙일 수 있어요'); return; }
+    addMood(s, { name: f.name.length > 24 ? f.name.slice(0, 24) + '…' : f.name, src: '직접 첨부 · 파일', kind: isImg ? '' : 'PDF', img: isImg ? URL.createObjectURL(f) : '', r: [3, 4] }); return; }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#drawer').hidden) closePick(); });
 $('#xlsDown').addEventListener('click', openTemplate);

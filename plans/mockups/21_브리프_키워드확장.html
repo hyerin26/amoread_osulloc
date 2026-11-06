@@ -213,8 +213,10 @@ input[type=text]:focus { outline: 2px solid var(--accent); outline-offset: 0; bo
         <div class="sugbar"><span class="tag demo-t">예시</span><span class="cap" id="moodBasis"></span></div>
         <div class="moods" id="moods"></div>
         <div id="moodPicked"></div>
-        <div class="sugbar"><button class="btn sm" id="moodPaste">링크·이미지 붙여 넣기</button><button class="btn sm ghost" id="moodLib">라이브러리에서 더 보기</button>
+        <div class="sugbar"><label class="btn sm">파일 첨부<input type="file" id="moodFile" accept="image/*,.pdf" hidden></label><button class="btn sm" id="moodLinkBtn" aria-expanded="false">링크 붙이기</button><button class="btn sm ghost" id="moodLib">라이브러리에서 더 보기</button>
           <span class="cap">고른 이미지는 기획안 전체의 느낌으로 디자이너 전달에 들어가요.</span></div>
+        <div class="sugbar" id="moodLinkRow" hidden><input type="text" id="moodUrl" placeholder="https://… (핀터레스트·외부 페이지 등)" aria-label="참고한 링크"><button class="btn sm primary" id="moodUrlAdd">붙이기</button></div>
+        <p class="cap">라이브러리에 없어도 그때 참고한 파일이나 링크를 붙일 수 있어요. 파일은 이 PC에서 미리보기만 하고, 링크는 주소만 저장해요 (열어 보지 않아요).</p>
       </div>
     </div>
     <div class="foot"><span class="cap" id="footNote"></span><button class="btn primary" id="nextBtn">구좌 구성 추천 받기 →</button></div>
@@ -442,15 +444,24 @@ function moodImg(w, h) {
 }
 function renderMoods() {
   const keys = [ROOT, ...picked], score = m => m.tags.filter(t => keys.includes(t)).length;
-  const list = [...MOODS].sort((a, b) => score(b) - score(a)).slice(0, 5);
+  const own = MOODS.filter(m => m.own), list = own.concat([...MOODS].filter(m => !m.own).sort((a, b) => score(b) - score(a)).slice(0, 5));   // 직접 붙인 것은 늘 앞에
   $('#moodBasis').textContent = `명분 '봄'${picked.length ? ` · 고른 키워드(${picked.join(', ')})` : ''}로 먼저 거른 이미지예요`;
-  $('#moods').innerHTML = list.map(m => `<button class="mood" data-mood="${m.id}" aria-pressed="${moodSel.has(m.id)}" title="${esc(m.src)}"><span class="fr">${moodImg(m.r[0], m.r[1])}</span><span class="mn">${esc(m.name)}</span><span class="cap">${esc(m.src)}</span></button>`).join('');
+  $('#moods').innerHTML = list.map(m => `<button class="mood" data-mood="${m.id}" aria-pressed="${moodSel.has(m.id)}" title="${esc(m.src)}"><span class="fr">${m.img ? `<img src="${m.img}" alt="">` : m.kind ? `<span class="cap">${m.kind}</span>` : moodImg(m.r[0], m.r[1])}</span><span class="mn">${esc(m.name)}</span><span class="cap">${esc(m.src)}</span></button>`).join('');
   $('#moodPicked').innerHTML = [...moodSel].map(([id, pts]) => { const m = MOODS.find(x => x.id === id); return `<div class="mpick"><b>${esc(m.name)}</b><span class="cap">참고할 점</span>
     ${POINTS.map(p => `<button class="pt" data-pt="${id}|${p}" aria-pressed="${pts.has(p)}">${p}</button>`).join('')}</div>`; }).join('');
 }
 $('#moods').addEventListener('click', e => { const b = e.target.closest('[data-mood]'); if (!b) return; const id = b.dataset.mood; moodSel.has(id) ? moodSel.delete(id) : moodSel.set(id, new Set()); renderMoods(); $(`[data-mood="${id}"]`)?.focus(); });
 $('#moodPicked').addEventListener('click', e => { const b = e.target.closest('[data-pt]'); if (!b) return; const [id, p] = b.dataset.pt.split('|'), s = moodSel.get(id); s.has(p) ? s.delete(p) : s.add(p); renderMoods(); $(`[data-pt="${id}|${p}"]`)?.focus(); });
-$('#moodPaste').addEventListener('click', () => toast('예시예요: 핀터레스트·외부 페이지 링크나 캡처 이미지를 붙여 넣어 느낌 레퍼런스로 담아요'));
+// 직접 붙이기: 이미지는 이 PC에서 미리보기만, PDF·링크는 종류 표시. 붙이면 바로 고른 상태
+let ownN = 0;
+function addOwn(m) { const id = `own${++ownN}`; MOODS.push({ id, own: true, tags: [], r: [3, 4], ...m }); moodSel.set(id, new Set()); renderMoods(); toast('느낌 레퍼런스로 붙였어요. 참고할 점을 골라 주세요'); }
+$('#moodFile').addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; const isImg = f.type.startsWith('image/');
+  if (!isImg && f.type !== 'application/pdf') { toast('이미지나 PDF 파일만 붙일 수 있어요'); return; }
+  addOwn({ name: f.name.length > 16 ? f.name.slice(0, 16) + '…' : f.name, src: '직접 첨부 · 파일', kind: isImg ? '' : 'PDF', img: isImg ? URL.createObjectURL(f) : '' }); e.target.value = ''; });
+$('#moodLinkBtn').addEventListener('click', e => { const row = $('#moodLinkRow'); row.hidden = !row.hidden; e.currentTarget.setAttribute('aria-expanded', !row.hidden); if (!row.hidden) $('#moodUrl').focus(); });
+$('#moodUrlAdd').addEventListener('click', () => { const raw = $('#moodUrl').value.trim(); let u; try { u = new URL(raw); } catch { u = null; }
+  if (!u || !/^https?:$/.test(u.protocol)) { toast('http나 https로 시작하는 주소를 넣어 주세요'); return; }
+  addOwn({ name: u.hostname.replace(/^www\./, ''), src: '직접 첨부 · 링크', kind: '링크', url: raw }); $('#moodUrl').value = ''; $('#moodLinkRow').hidden = true; });
 $('#moodLib').addEventListener('click', () => toast('예시예요: 레퍼런스 라이브러리의 느낌 레퍼런스 탭을 열어요'));
 $('#nextBtn').addEventListener('click', () => {
   if (!picked.length && !$('#concept').value.trim()) { toast('키워드를 하나 이상 고르거나 컨셉을 적어 주세요'); return; }
