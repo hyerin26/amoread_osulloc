@@ -223,6 +223,9 @@ const SECS = [
 ];
 const LNAME = { hero: '메인 비주얼', feat: '대표 1 + 2열', grid2: '2열 상품', 'deal-banner': '날짜별 특가', review: '후기 모음', 'ev-ugc': '이벤트 · 댓글·사진 인증', benefit: '혜택 총정리', notice: '유의사항' };
 
+// 문구 칸 합치기 (구좌 편집과 같음): 제목 = 구좌 이름 + 구좌 제목, 설명 = 역할 한 줄 + 서브 카피
+SECS.forEach(s => { s.name = s.headline || s.name; s.role = s.role || s.subhead || ''; delete s.headline; delete s.subhead; });
+SECS[1].lines = ['오늘 돗자리 위에 처음 따를 차를 골라 보세요'];
 // ================= 가격 (구좌 편집과 같은 규칙) =================
 const r10 = n => Math.round(n / 10) * 10;
 const won = n => `${Math.round(n).toLocaleString('ko-KR')}원`;
@@ -271,7 +274,7 @@ function demoImg(w, h) {
 // 기획안 전체 와이어프레임 (4) — mark = 강조할 구좌 (구좌마다 그 구좌만 강조 = 기획 구좌 와이어프레임 (3)의 자리)
 function wire(mark = -1, only = -1) {
   const body = s => {
-    if (s.layout === 'hero') return `<span class="blk2 hero">${esc(s.headline)}</span>`;
+    if (s.layout === 'hero') return `<span class="blk2 hero">${esc(s.name)}</span>`;
     if (s.layout === 'feat') return '<span class="row g2 feat"><span class="blk2 crd"></span><span class="blk2 crd"></span><span class="blk2 crd"></span></span>';
     if (s.layout === 'grid2') return `${s.tabs ? '<span class="pl"><span></span><span></span><span></span></span>' : ''}<span class="row g2"><span class="blk2 crd"></span><span class="blk2 crd"></span></span>`;
     if (s.layout === 'review') return '<span class="blk2 ln"></span><span class="blk2 ln"></span>';
@@ -300,11 +303,9 @@ function renderDoc() {
     const cards = cardsOf(s), kv = [];
     if (s.layout !== 'hero') kv.push(['구좌 종류', LNAME[s.layout]]);
     if (s.scope) kv.push(['담는 것', s.scope]);
-    if (s.headline && s.layout !== 'hero') kv.push(['제목', s.headline]);
-    if (s.subhead) kv.push(['서브 카피', s.subhead]);
     kv.push(['버튼', s.cta ? `${s.cta[0]} → ${s.cta[1] || '어디로 미정'}` : '없음']);
     return `<section class="dsec" aria-label="${i + 1}번 구좌"><div>${wire(i, i)}</div><div>
-      ${s.num ? `<div class="num">${String(n[i]).padStart(2, '0')}</div>` : ''}<h3>${esc(s.name)}</h3>${s.role ? `<p class="role">${esc(s.role)}</p>` : '<p class="role"></p>'}
+      ${s.num ? `<div class="num">${String(n[i]).padStart(2, '0')}</div>` : ''}<h3>${esc(s.name)}</h3><p class="role">${esc(s.role)}${(s.lines || []).map(l => `<br>${esc(l)}`).join('')}</p>
       <div class="kv">${kv.map(([k, v]) => `<span>${k}</span><span>${esc(v)}</span>`).join('')}</div>
       ${cards.length ? `<div class="blk"><h4>상품 ${cards.filter(x => x.seq).length}/${cards.length} <span class="cap">카드 글은 카드 문구표에 칸별로 있어요</span></h4><ul class="plist">${cards.map(cardLine).join('')}</ul></div>` : ''}
       ${s.layout === 'deal-banner' ? '<div class="blk"><h4>날짜별 상품</h4><p class="cap">상품·할인의 하루특가 편성 기준으로 날짜마다 바뀌어요 (편성표를 함께 보내요)</p></div>' : ''}

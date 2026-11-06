@@ -201,6 +201,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .tabrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: center; padding: 4px; border-radius: var(--r2); border: 1px solid transparent; }
 .tabrow[aria-current="true"] { border-color: var(--sel-line); background: var(--accent-soft); }
 .tabrow .tools { display: flex; gap: 2px; }
+.lnrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: center; }
+.lnrow .tools { display: flex; gap: 2px; }
 
 /* 레퍼런스 */
 .refs { display: grid; gap: var(--s3); }
@@ -396,6 +398,9 @@ let secs = [
   { id: 's8', name: '유의사항', layout: 'notice', headline: '', subhead: '', role: '', scope: '', num: false, cta: '', ctaOn: false, ctaTo: '', refs: [], att: [], notes: '', moods: [] },
 ];
 
+// 문구 칸 합치기 (2026-11-07 결정): 제목 = 구좌 이름 + 구좌 제목, 설명 = 역할 한 줄 + 서브 카피. 더 쓰고 싶으면 '문구 한 줄 추가'
+secs.forEach(s => { s.name = s.headline || s.name; s.role = s.role || s.subhead || ''; s.lines = []; s.cat = ''; delete s.headline; delete s.subhead; });
+secs.find(s => s.id === 's2').lines = [{ id: 'l1', text: '오늘 돗자리 위에 처음 따를 차를 골라 보세요' }];
 // ================= 상태 =================
 let moodLink = false;   // 느낌 레퍼런스 '링크 붙이기' 칸 펼침
 let cur = 's2', tab = 'shape', drafts = {}, saved = new Set(), openJudge = null, openMore = null, pickFor = null, pickTab = 'plan', q = '', moodAdd = false;
@@ -449,7 +454,7 @@ function secState(s) {
   if (k === 'review') { const n = s.rv.order.length; return [`후기 ${n}개`, n > 0]; }
   if (k === 'event') { const e = s.ev; const ok = e.how && e.reward && e.when; return [ok ? '운영 조건 있음' : '운영 조건 채우기', !!ok]; }
   if (k === 'deal') return ['하루특가 편성에서', true];
-  return [s.headline || s.subhead ? '문구 있음' : '문구 없음', !!(s.headline || s.subhead)];
+  return [s.name || s.role ? '문구 있음' : '문구 없음', !!(s.name || s.role)];
 }
 function renderList() {
   $('#secList').innerHTML = secs.map((s, i) => { const [t, ok] = secState(s); return `<li draggable="true" data-li="${s.id}"><button data-sec="${s.id}" ${s.id === cur ? 'aria-current="true"' : ''} aria-label="${i + 1}번 구좌 ${esc(s.name)} (Alt+↑↓로 옮기기)">
@@ -484,7 +489,7 @@ function wCard(c, s) {
 }
 function wBody(s) {
   const k = kindOf(s.layout);
-  if (s.layout === 'hero') return `<div class="w-hero"><b>${esc(s.headline || '메인 카피')}</b>${s.subhead ? `<span class="cap">${esc(s.subhead)}</span>` : ''}</div>`;
+  if (s.layout === 'hero') return `<div class="w-hero"><b>${esc(s.name || '메인 카피')}</b>${s.role ? `<span class="cap">${esc(s.role)}</span>` : ''}${s.lines.filter(l => l.text).map(l => `<span class="cap">${esc(l.text)}</span>`).join('')}</div>`;
   if (k === 'deal') return '<div class="w-deal">오늘 특가 마감까지 00:00:00<br><span class="cap">날짜마다 바뀌어요 · 상품은 상품·할인의 하루특가 편성에서</span></div>';
   if (k === 'product') {
     const pills = s.tabs ? `<div class="w-pills">${s.tabs.map((t, j) => `<span class="${j === s.tab ? 'on' : ''}">${esc(t.name)}</span>`).join('')}</div>` : '';
@@ -508,7 +513,8 @@ function wBody(s) {
 }
 function renderPhone() {
   $('#phone').innerHTML = secs.map((s, i) => {
-    const head = s.layout === 'hero' ? '' : `${s.num ? `<span class="num">${String(numOf(s)).padStart(2, '0')}</span>` : ''}<h4>${esc(s.headline || s.name)}</h4>${s.role ? `<span class="role">${esc(s.role)}</span>` : s.subhead ? `<span class="role">${esc(s.subhead)}</span>` : ''}`;
+    const lines = s.lines.filter(l => l.text).map(l => `<span class="role">${esc(l.text)}</span>`).join('');
+    const head = s.layout === 'hero' ? '' : `${s.num ? `<span class="num">${String(numOf(s)).padStart(2, '0')}</span>` : ''}<h4>${esc(s.name)}</h4>${s.role ? `<span class="role">${esc(s.role)}</span>` : ''}${lines}`;
     const tail = kindOf(s.layout) !== 'event' && s.ctaOn && s.cta ? `<span class="w-more">${esc(s.cta)}</span>` : '';   // 이벤트는 버튼이 조건 상자 안에
     return `<button class="ws" data-sec="${s.id}" ${s.id === cur ? 'aria-current="true"' : ''} aria-label="${i + 1}번 구좌 ${esc(s.name)} 편집"><span class="lbl">${i + 1}</span>${head}${wBody(s)}${tail}</button>`;
   }).join('');
@@ -527,19 +533,25 @@ function renderPanel() {
     <div class="ph-tabs"><div class="seg" role="tablist" aria-label="편집 패널">${tabs.map(([k, n]) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}">${n}${k === 'refs' && (s.att.length + s.moods.length) ? ` ${s.att.length + s.moods.length}` : ''}</button>`).join('')}</div></div>
     <div class="ph-b" id="pbody">${({ copy: copyTab, shape: shapeTab, products: productsTab, event: eventTab, review: reviewTab, refs: refsTab, notes: notesTab })[tab](s)}</div>`;
 }
+// 문구 탭: 고객에게 보이는 글(와이어프레임 위에서 아래 순서) / 기획용(안 보임)
 function copyTab(s) {
-  const hero = s.layout === 'hero';
-  return `<div class="f"><span class="l">구좌 이름 <em>컨셉 이름 (예: 마중차, GIFT ROOM)</em></span><input type="text" data-sf="name" maxlength="40" value="${esc(s.name)}">
-      <label class="ck"><input type="checkbox" data-num ${s.num ? 'checked' : ''}> 번호 붙이기 (01, 02 …)</label>
-      <span class="hint">구좌 이름이 PROMO_WORK 카테고리명(엑셀 양식)으로도 쓰여요${s.tabs ? '. 탭 구좌는 탭 이름이 카테고리명이에요' : ''}</span></div>
-    ${hero ? '' : `<label class="f"><span>실제로 담는 것 <em>(선택) 고객에게는 안 보여요</em></span><input type="text" data-sf="scope" maxlength="40" value="${esc(s.scope)}" placeholder="예) 티백, 선물 세트, 티푸드"></label>
-    <label class="f"><span>역할 한 줄 <em>(선택) 구좌 이름 아래 보여요</em></span><input type="text" data-sf="role" maxlength="60" value="${esc(s.role)}" placeholder="예) 첫 인사를 건네며 입맛을 돋궈줄 차"></label>`}
-    <label class="f"><span>${hero ? '메인 카피' : '구좌 제목'} <em>${hero ? '' : '(비우면 구좌 이름을 써요)'}</em></span><input type="text" data-sf="headline" maxlength="120" value="${esc(s.headline)}">${hero ? '<span class="hint">브리프에서 정한 메인 카피예요. 여기서 고치면 브리프에도 바뀌어요</span>' : ''}</label>
-    <label class="f"><span>서브 카피 <em>(선택)</em></span><textarea data-sf="subhead" maxlength="400" rows="2">${esc(s.subhead)}</textarea></label>
-    <div class="f"><span class="l">구좌 버튼</span><label class="ck"><input type="checkbox" data-ctaon ${s.ctaOn ? 'checked' : ''}> 이 구좌에 버튼 넣기</label>
-      ${s.ctaOn ? `<div class="two"><label class="f"><span class="hint">버튼 문구</span><input type="text" data-sf="cta" maxlength="30" value="${esc(s.cta)}" placeholder="${kindOf(s.layout) === 'product' ? '예) 티백 더보기' : kindOf(s.layout) === 'event' ? '예) 참여하기' : '예) 혜택 받기'}"></label>
-        <label class="f"><span class="hint">어디로 <em>(선택) 디자이너 전달에 적어요</em></span><input type="text" data-sf="ctaTo" maxlength="60" value="${esc(s.ctaTo)}" placeholder="예) 티백 카테고리, 쿠폰 받기"></label></div>` : '<span class="hint">버튼 없이 둬요. 언제든 다시 켤 수 있어요.</span>'}</div>
-    <div class="box"><span class="cap">문구 제안 <span class="tag demo-t">연결 예정</span></span><p class="hint">브리프 컨셉으로 구좌 이름·역할 한 줄을 이야기 순서(코스·방·여정)로 제안해요. 예) 가을 차회: 01 마중차 · 첫 인사를 건네며 입맛을 돋궈줄 차</p></div>`;
+  const hero = s.layout === 'hero', k = kindOf(s.layout);
+  return `<span class="sub">고객에게 보이는 글 <span class="hint">와이어프레임 위에서 아래 순서</span></span>
+    ${hero ? '' : `<label class="ck"><input type="checkbox" data-num ${s.num ? 'checked' : ''}> 번호 붙이기 (01, 02 …)</label>`}
+    <label class="f"><span>${hero ? '메인 카피' : '제목'}</span><input type="text" data-sf="name" maxlength="60" value="${esc(s.name)}" placeholder="${hero ? '' : '예) 마중차, GIFT ROOM'}">
+      <span class="hint">${hero ? '브리프에서 정한 메인 카피예요. 여기서 고치면 브리프에도 바뀌어요' : '구좌 목록에도 이 제목으로 보여요'}</span></label>
+    <label class="f"><span>설명 <em>(선택) 제목 아래 한두 줄</em></span><textarea data-sf="role" maxlength="200" rows="2" placeholder="예) 첫 인사를 건네며 입맛을 돋궈줄 차">${esc(s.role)}</textarea></label>
+    ${s.lines.map((l, j) => `<div class="f"><span class="l">추가 문구 ${j + 1}</span><div class="lnrow"><input type="text" data-line="${j}" maxlength="120" value="${esc(l.text)}" aria-label="추가 문구 ${j + 1}">
+      <span class="tools"><button class="ib" data-linemv="${j}:-1" ${j ? '' : 'disabled'} aria-label="위로">↑</button><button class="ib" data-linemv="${j}:1" ${j < s.lines.length - 1 ? '' : 'disabled'} aria-label="아래로">↓</button><button class="ib" data-linedel="${j}" aria-label="추가 문구 ${j + 1} 삭제">✕</button></span></div></div>`).join('')}
+    <div><button class="btn xs" data-lineadd>+ 문구 한 줄 추가</button></div>
+    <div class="f"><span class="l">버튼</span><label class="ck"><input type="checkbox" data-ctaon ${s.ctaOn ? 'checked' : ''}> 이 구좌에 버튼 넣기</label>
+      ${s.ctaOn ? `<div class="two"><label class="f"><span class="hint">버튼 문구</span><input type="text" data-sf="cta" maxlength="30" value="${esc(s.cta)}" placeholder="${k === 'product' ? '예) 티백 더보기' : k === 'event' ? '예) 참여하기' : '예) 혜택 받기'}"></label>
+        <label class="f"><span class="hint">어디로 <em>(선택)</em></span><input type="text" data-sf="ctaTo" maxlength="60" value="${esc(s.ctaTo)}" placeholder="예) 티백 카테고리, 쿠폰 받기"></label></div>` : '<span class="hint">버튼 없이 둬요. 언제든 다시 켤 수 있어요.</span>'}</div>
+    <span class="sub">기획용 <span class="hint">고객에게 안 보여요</span></span>
+    ${hero ? '' : `<label class="f"><span>담는 것 <em>(선택)</em></span><input type="text" data-sf="scope" maxlength="40" value="${esc(s.scope)}" placeholder="예) 티백, 선물 세트, 티푸드"></label>`}
+    ${k === 'product' ? `<label class="f"><span>엑셀 카테고리명 <em>(선택) PROMO_WORK 카테고리명</em></span><input type="text" data-sf="cat" maxlength="40" value="${esc(s.cat)}" placeholder="비워 둬요">
+      <span class="hint">지난 PROMO_WORK에는 비어 있거나('가을 차회') 제목과 다른 이름('혜택 02 쿠폰가')이 섞여 있어요. 어떻게 쓸지 멘토님께 확인 중이라 기본은 비워 둬요.${s.tabs ? ' 탭 구좌는 탭마다 정해요(확인 후).' : ''}</span></label>` : ''}
+    <div class="box"><span class="cap">문구 제안 <span class="tag demo-t">연결 예정</span></span><p class="hint">브리프 컨셉으로 제목·설명을 이야기 순서(코스·방·여정)로 제안해요. 예) 가을 차회: 01 마중차 · 첫 인사를 건네며 입맛을 돋궈줄 차</p></div>`;
 }
 // 카드 모양 탭: 이 구좌의 카드 모두에 같은 모양 (요소 켜고 끄기·순서). 위에 견본 카드를 바로 보여줌
 function shapeTab(s) {
@@ -710,22 +722,22 @@ const XLS_COLS = ['요일(자동)', '시작일', '종료일', '프로모션명',
 function templateRows() {
   const out = [];
   secs.filter(s => kindOf(s.layout) === 'product').forEach(s => {
-    (s.tabs ? s.tabs.map(t => [t.name, t.cards]) : [[s.name, s.cards || []]]).forEach(([cat, cards]) => cards.forEach(c => out.push({ cat, seq: c.seq || '', appeal: c.seq ? (itemOf(c.seq)?.appeal || '') : '', rate: c.seq ? Math.round(rateOf(c.seq) * 100) + '%' : '', ex: c.seq ? extraOf(c.seq) : null })));
+    (s.tabs ? s.tabs.map(t => [`${s.name} · ${t.name}`, t.cat || '', t.cards]) : [[s.name, s.cat || '', s.cards || []]]).forEach(([where, cat, cards]) => cards.forEach(c => out.push({ where, cat, seq: c.seq || '', appeal: c.seq ? (itemOf(c.seq)?.appeal || '') : '', rate: c.seq ? Math.round(rateOf(c.seq) * 100) + '%' : '', ex: c.seq ? extraOf(c.seq) : null })));
   });
   return out;
 }
 function openTemplate() {
   const rows = templateRows();
-  dlg('상품 엑셀 양식', '구좌 구성에 맞춘 양식', `열은 PROMO_WORK 붙여넣기와 같아요. 카테고리명에 구좌·탭 이름이, 카드 수만큼 줄이 들어가 있어요 (${rows.length}줄).`,
-    `<div class="tscroll"><table class="t"><thead><tr>${XLS_COLS.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr><td class="auto">-</td><td>2026-03-02</td><td>2026-03-15</td><td>봄 피크닉</td><td>상시</td><td>${esc(r.seq)}</td><td class="auto">-</td><td class="pre">${esc(r.cat)}</td><td>${esc(r.appeal)}</td><td>정율</td><td class="auto">-</td><td>${esc(r.rate)}</td><td class="auto">-</td></tr>`).join('')}</tbody></table></div>
-     <p class="hint">초록 글씨 = 미리 채운 칸. 회색 = PROMO_WORK에서 자동으로 채워지는 칸. 추가 혜택(얼리버드 등 2단)은 넣는 방법을 확인하기 전까지 '검증' 시트와 메모에만 적어요 (${rows.filter(r => r.ex).length}줄).</p>`,
+  dlg('상품 엑셀 양식', '구좌 구성에 맞춘 양식', `맨 앞에 구좌·탭 열 하나, 그다음은 PROMO_WORK 붙여넣기와 같은 13열이에요. 카드 수만큼 줄이 들어가 있어요 (${rows.length}줄).`,
+    `<div class="tscroll"><table class="t"><thead><tr><th>구좌·탭 (붙여넣지 않음)</th>${XLS_COLS.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr><td class="pre">${esc(r.where)}</td><td class="auto">-</td><td>2026-03-02</td><td>2026-03-15</td><td>봄 피크닉</td><td>상시</td><td>${esc(r.seq)}</td><td class="auto">-</td><td>${esc(r.cat) || '<span class="auto">비움</span>'}</td><td>${esc(r.appeal)}</td><td>정율</td><td class="auto">-</td><td>${esc(r.rate)}</td><td class="auto">-</td></tr>`).join('')}</tbody></table></div>
+     <p class="hint">맨 앞 '구좌·탭' 열은 올릴 때 어느 구좌인지 맞추는 열이라 PROMO_WORK에는 붙여 넣지 않아요 (그다음 열부터 복사). 카테고리명은 정한 구좌만 채우고 나머지는 비워 둬요. 회색 = PROMO_WORK에서 자동으로 채워지는 칸. 추가 혜택(얼리버드 등 2단)은 넣는 방법을 확인하기 전까지 '검증' 시트와 메모에만 적어요 (${rows.filter(r => r.ex).length}줄).</p>`,
     '<button class="btn sm primary" data-toast="예시예요: 실제로는 .xlsx 파일로 내려받아요">.xlsx 내려받기</button>');
 }
 function openUpload() {
   const chg = [['가격대별 선물 추천 · 2만원대', '카드 1', 'P108', 0.1], ['가격대별 선물 추천 · 2만원대', '카드 2', 'P109', 0.15], ['첫 잔, 벚꽃', '카드 4', 'P102', 0.2]];
   dlg('엑셀 올리기', '올린 파일: 봄피크닉_상품.xlsx (예시)', '바뀌는 것을 먼저 보여 드려요. 반영하면 상품·할인에도 같은 값이 들어가요.',
     `<table class="t"><thead><tr><th>구좌·탭</th><th>자리</th><th>지금</th><th>엑셀</th><th>할인율</th></tr></thead><tbody>${chg.map(([a, b, seq, r]) => `<tr class="chg"><td>${esc(a)}</td><td>${b}</td><td class="auto">비어 있음</td><td>${esc(P[seq].name)}</td><td>${Math.round(r * 100)}%</td></tr>`).join('')}</tbody></table>
-     <p class="hint">카테고리명이 구좌·탭 이름과 맞지 않는 줄, SEQ를 찾을 수 없는 줄은 반영하지 않고 따로 알려 드려요.</p>`, '<button class="btn sm primary" data-upapply>3건 반영</button>');
+     <p class="hint">'구좌·탭' 열이 이 기획안의 구좌·탭과 맞지 않는 줄, SEQ를 찾을 수 없는 줄은 반영하지 않고 따로 알려 드려요.</p>`, '<button class="btn sm primary" data-upapply>3건 반영</button>');
   $('#dlg').dataset.chg = JSON.stringify(chg);
 }
 function applyUpload() {
@@ -742,6 +754,9 @@ function dlg(o, h, sub, body, foot) { $('#dlgO').textContent = o; $('#dlgH').tex
 const refocus = sel => { const el = document.querySelector(sel); el?.focus(); return !!el; };
 document.addEventListener('click', e => {
   const t = e.target, s = S(), d = k => t.closest(`[data-${k}]`), v = k => d(k)?.dataset[k.replace(/-(.)/g, (_, c) => c.toUpperCase())];
+  if (d('lineadd')) { s.lines.push({ id: uid('l'), text: '' }); render(); refocus(`[data-line="${s.lines.length - 1}"]`); return; }
+  if (d('linedel')) { s.lines.splice(+v('linedel'), 1); render(); return; }
+  if (d('linemv')) { const [j, dd] = v('linemv').split(':').map(Number); [s.lines[j], s.lines[j + dd]] = [s.lines[j + dd], s.lines[j]]; render(); refocus(`[data-linemv="${j + dd}:${dd}"]`); return; }
   if (d('secmv')) { const [id, dd] = v('secmv').split(':'); if (moveSec(id, +dd)) { render(); refocus(`[data-secmv="${id}:${dd}"]:not([disabled])`) || refocus(`[data-sec="${id}"]`); } return; }
   if (d('sec')) { cur = v('sec'); openJudge = openMore = null; render(); return; }
   if (d('tab')) { tab = v('tab'); renderPanel(); refocus(`[data-tab="${tab}"]`); return; }
@@ -799,6 +814,7 @@ document.addEventListener('input', e => {
   if (t.dataset.sf) { s[t.dataset.sf] = t.value; renderPhone(); renderList(); if (t.dataset.sf === 'name') $('#panel h2').textContent = s.name; return; }
   if (t.dataset.cf) { const c = allCards(s).find(x => x.id === openMore); if (c) { c[t.dataset.cf] = t.value; renderPhone(); } return; }
   if (t.dataset.appeal) { const it = itemOf(t.dataset.appeal); if (it) it.appeal = t.value; renderPhone(); return; }
+  if (t.dataset.line != null) { s.lines[+t.dataset.line].text = t.value; renderPhone(); return; }
   if (t.dataset.tabname != null) { s.tabs[+t.dataset.tabname].name = t.value; renderPhone(); renderList(); return; }
   if (t.dataset.attnote) { s.att.find(a => a.ref === t.dataset.attnote).note = t.value; return; }
   if (t.dataset.ev) { s.ev[t.dataset.ev] = t.value; renderPhone(); renderList(); return; }
