@@ -175,7 +175,7 @@ table.t td .draft { color: var(--accent); font-size: 10px; font-weight: var(--fw
   box-shadow: 0 16px 48px -12px rgba(33, 33, 33, .15); opacity: 0; pointer-events: none; transition: opacity .2s var(--ease); z-index: 30; max-width: calc(100vw - 32px); }
 .toast.on { opacity: 1; }
 
-/* 서랍 (상품 상세 · 지난 성과로 보기) — 예전 '상품'·'지난 성과' 메뉴가 이 공간 안으로 */
+/* 서랍 (상품 상세 · 지난 행사 할인 기준) — 예전 '상품'·'지난 성과' 메뉴가 이 공간 안으로 */
 [hidden] { display: none !important; }
 .scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 19; }
 .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 100vw); background: var(--surface); border-left: 1px solid var(--line); z-index: 20; display: flex; flex-direction: column; box-shadow: -16px 0 48px -24px rgba(20,20,20,.2); }
@@ -184,7 +184,18 @@ table.t td .draft { color: var(--accent); font-size: 10px; font-weight: var(--fw
 .drawer .dh h2 { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var(--fw-strong); word-break: keep-all; }
 .drawer .db { padding: var(--s4); overflow: auto; display: grid; gap: var(--s4); align-content: start; }
 .drawer .db > * { min-width: 0; }
-.drawer h4 { font-size: var(--fs-sm); font-weight: var(--fw-strong); margin-bottom: 6px; }
+.drawer .dh .grow { display: grid; gap: 4px; }
+.drawer .dh .overline { margin-bottom: 0; }
+.drawer .ps { display: grid; gap: var(--s2); align-content: start; min-width: 0; }
+.drawer h4 { font-size: var(--fs-sm); line-height: var(--lh-label); font-weight: var(--fw-strong); }
+.drawer h4 .hint { font-weight: var(--fw-medium); margin-left: 4px; }
+.drawer .kv { grid-template-columns: 128px minmax(0, 1fr); gap: var(--s2) var(--s3); line-height: var(--lh-label); }
+.drawer .kv .hint { margin-left: 4px; }
+.drawer table.t td:first-child { white-space: normal; min-width: 140px; }
+.drawer .tbl-wrap { border: 1px solid var(--line-sub); border-radius: var(--r2); }
+.drawer .tbl-wrap table.t tr:last-child td { border-bottom: 0; }
+.drawer .is-over { color: var(--warn); }
+.drawer .mini { gap: var(--s1, 4px); line-height: var(--lh-label); }
 .linkbtn { all: unset; cursor: pointer; font-weight: var(--fw-medium); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; }
 .linkbtn:hover { text-decoration-color: var(--ink); }
 .linkbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
@@ -195,7 +206,8 @@ table.t td .draft { color: var(--accent); font-size: 10px; font-weight: var(--fw
 .spark { display: flex; align-items: flex-end; gap: 2px; height: 48px; }
 .spark i { flex: 1; min-width: 2px; background: var(--line-strong); border-radius: 2px 2px 0 0; height: var(--h, 10%); }
 .spark i.ev { background: var(--accent); }
-.simrow { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; font-size: var(--fs-sm); }
+.simrow { display: flex; gap: var(--s2) var(--s4); align-items: center; flex-wrap: wrap; font-size: var(--fs-sm); }
+.simrow label { display: inline-flex; gap: var(--s2); align-items: center; }
 .puts { display: flex; gap: 6px; flex-wrap: wrap; }
 @media (max-width: 560px) { .lvb { grid-template-columns: 1fr; } }
 </style>
@@ -213,7 +225,7 @@ table.t td .draft { color: var(--accent); font-size: 10px; font-weight: var(--fw
     <p>어떤 상품을 얼마에, 언제 팔지 정해요. 구좌 편집에서 고친 할인과 같은 값이에요. 원가율 숫자는 이 공간에서만 보여요.</p></div>
     <div class="acts"><button class="btn sm" data-toast="예시예요: 구좌 편집과 같은 상품 엑셀 양식(맨 앞 '구좌·탭' 열 + PROMO_WORK 13열)을 내려받아요">상품 엑셀 양식 받기</button>
       <button class="btn sm" data-toast="예시예요: 올린 엑셀에서 바뀌는 것을 먼저 보여 주고 반영해요 (구좌 편집과 같은 창)">엑셀 올리기</button>
-      <button class="btn sm" data-levers>지난 성과로 보기</button></div></div>
+      <button class="btn sm" data-levers>지난 행사 할인 기준</button></div></div>
   <div class="sum" id="sum"></div>
   <div class="tabbar"><div class="seg" role="tablist" aria-label="상품·할인" id="tabs"></div></div>
   <div id="body"></div>
@@ -454,7 +466,7 @@ function poolTab() {
       <span class="acts"><button class="btn xs primary" data-role="${k}|item">할인 상품으로</button><button class="btn xs" data-role="${k}|deal">하루특가 후보로</button><button class="btn xs" data-role="${k}|none">할인 없이</button><button class="btn xs" data-pair="${x.seq}">묶어 보기</button><button class="btn xs ghost" data-role="${k}|drop">빼기</button></span></div>`; }).join('') || '<p class="hint">후보 상품이 없어요</p>'}</div></section>`;
 }
 
-// ================= 서랍: 상품 상세 / 지난 성과로 보기 (예전 '상품'·'지난 성과' 메뉴를 이 공간 안으로) =================
+// ================= 서랍: 상품 상세 / 지난 행사 할인 기준 (예전 '상품'·'지난 성과' 메뉴를 이 공간 안으로) =================
 // 상품 상세는 상품 이름을 누르면 열림 (할인 상품 표·근거·하루특가·후보 상품). 앱에서는 구좌 편집의 상품 고르기에서도 같은 서랍
 let drawer = null;   // { kind: 'product', seq } | { kind: 'levers' }
 const pname = seq => `<button class="linkbtn" data-pd="${seq}">${esc(P[seq].name)}</button>`;
@@ -482,18 +494,18 @@ function productDrawer(seq) {
       <span>작년 이맘때</span><span>앞 4주 매출 작년 대비 ${pct(dt.ly)}</span>
       <span>마지막 행사</span><span>${esc(p.last)} · 특가 쉰 지 ${p.days}일</span>
       <span>재고 <em class="hint">참고</em></span><span>${dt.stock.toLocaleString('ko-KR')}개 <span class="hint">기획 계산엔 안 써요</span></span></div>
-    <div><h4>할인 시뮬레이션 <span class="hint">추가 혜택 빼고 1단만</span></h4>
+    <div class="ps"><h4>할인 시뮬레이션 <span class="hint">추가 혜택 빼고 1단만</span></h4>
       <div class="simrow"><label>할인율 <select data-sim="${seq}" aria-label="할인율">${[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50].map(r => `<option value="${r}" ${r === sim ? 'selected' : ''}>${r}%</option>`).join('')}</select></label>
-        <span>할인가 <b>${won(sp.fin)}</b></span><span>할인 후 원가율 <b class="${cra > TARGET ? 'warnline' : ''}">${cra == null ? '-' : Math.round(cra * 100) + '%'}</b></span><span>개당 이익 <b>${won(unit)}</b></span></div>
+        <span>할인가 <b>${won(sp.fin)}</b></span><span>할인 후 원가율 <b class="${cra > TARGET ? 'is-over' : ''}">${cra == null ? '-' : Math.round(cra * 100) + '%'}</b></span><span>개당 이익 <b>${won(unit)}</b></span></div>
       <div class="puts"><button class="btn xs primary" data-put="${seq}|item|${sim}">이 할인으로 할인 상품에</button><button class="btn xs" data-put="${seq}|deal|${sim}">하루특가 후보로</button><button class="btn xs" data-put="${seq}|none|0">할인 없이</button><button class="btn xs" data-put="${seq}|pool|0">역할은 나중에</button><button class="btn xs ghost" data-pair="${seq}">묶을 짝 보기</button></div></div>
-    <div><h4>최근 90일 주별 판매 <span class="hint">진하게 = 행사 주</span></h4><div class="spark" aria-label="13주 판매 수량">${dt.weeks.map((w, i) => `<i data-h="${Math.round(w / mx * 100)}" class="${i === 4 || i === 5 ? 'ev' : ''}" title="${w}개"></i>`).join('')}</div></div>
-    <div><h4>지난 행사 성과</h4><div class="tbl-wrap"><table class="t"><thead><tr><th>행사</th><th>유형</th><th class="num">할인</th><th class="num">하루 수량</th><th class="num">평소 대비</th><th class="num">원가율</th></tr></thead>
+    <div class="ps"><h4>최근 90일 주별 판매 <span class="hint">진하게 = 행사 주</span></h4><div class="spark" aria-label="13주 판매 수량">${dt.weeks.map((w, i) => `<i data-h="${Math.round(w / mx * 100)}" class="${i === 4 || i === 5 ? 'ev' : ''}" title="${w}개"></i>`).join('')}</div></div>
+    <div class="ps"><h4>지난 행사 성과</h4><div class="tbl-wrap"><table class="t"><thead><tr><th>행사</th><th>유형</th><th class="num">할인</th><th class="num">하루 수량</th><th class="num">평소 대비</th><th class="num">원가율</th></tr></thead>
       <tbody>${dt.past.map(r => `<tr><td>${esc(r[0])}</td><td>${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td><td class="num">${r[4]}</td><td class="num">${r[5]}</td></tr>`).join('')}</tbody></table></div></div>
-    <div><h4>할인 반응: 다음엔 몇 %?</h4><p class="cap">지난 행사에서 할인을 깊게 할수록 판매가 늘었지만 ${dt.next}%를 넘으면 늘어나는 폭이 줄었어요 → <b>${dt.next}% 안팎</b>을 권해요 (기준 안 최대 ${m}%)</p></div>
-    <div><h4>고객 리뷰</h4><ul class="mini"><li>평점 ${dt.rating} · 선물 언급 ${dt.gift}건 · 재구매 언급 ${dt.again}건 <span class="hint">최근 8주</span></li><li>"${esc(dt.review)}"</li></ul></div>
+    <div class="ps"><h4>할인 반응: 다음엔 몇 %?</h4><p class="cap">지난 행사에서 할인을 깊게 할수록 판매가 늘었지만 ${dt.next}%를 넘으면 늘어나는 폭이 줄었어요 → <b>${dt.next}% 안팎</b>을 권해요 (기준 안 최대 ${m}%)</p></div>
+    <div class="ps"><h4>고객 리뷰</h4><ul class="mini"><li>평점 ${dt.rating} · 선물 언급 ${dt.gift}건 · 재구매 언급 ${dt.again}건 <span class="hint">최근 8주</span></li><li>"${esc(dt.review)}"</li></ul></div>
   </div>`;
 }
-// 지난 성과로 보기: 예전 '지난 성과' 레버 보드 + 할인 패턴 (지난 실적 관찰값, 예시)
+// 지난 행사 할인 기준: 예전 '지난 성과' 레버 보드 + 할인 패턴 (지난 실적 관찰값, 예시)
 const LEVERS = [
   ['요일', '특가 없는 날보다 월·수 특가 날 매출이 1.6배', '하루특가는 월·수에 몰아 두면 좋아요'],
   ['할인 깊이', '선물 세트는 25%까지 반응이 크게 늘고 그 뒤로 완만', '세트는 25~30%에서 멈춰도 돼요'],
@@ -504,10 +516,10 @@ const LEVERS = [
 ];
 const PATTERN = [['상시 · 1만원대', '10%', '15%', '20%', '30%'], ['상시 · 2만원대', '15%', '20%', '25%', '35%'], ['상시 · 3만원 이상', '15%', '20%', '28%', '33%'], ['하루특가 · 전체', '30%', '35%', '40%', '50%']];
 function leversDrawer() {
-  return `<div class="dh"><div class="grow"><div class="overline">지난 성과로 보기</div><h2 id="drH">할인을 정할 때 볼 지난 기준</h2><span class="cap">지난 행사 실적에서 본 값이에요 (예시). 약속이 아니라 참고예요</span></div><button class="btn sm" data-close>닫기</button></div>
+  return `<div class="dh"><div class="grow"><div class="overline">지난 행사 할인 기준</div><h2 id="drH">언제, 얼마나, 몇 개를 할인했을 때 잘 팔렸나</h2><span class="cap">요일 · 할인 깊이 · 쉰 기간 · 하루 품목 수 · 상시 길이 · 계절, 그리고 유형·가격대별 할인율이에요. 지난 행사 실적에서 본 값(예시)이고 약속은 아니에요</span></div><button class="btn sm" data-close>닫기</button></div>
   <div class="db">
     <div class="lvb">${LEVERS.map(([k, obs, say]) => `<div><b>${k}</b><span class="cap">${esc(obs)}</span><span class="say">${esc(say)}</span></div>`).join('')}</div>
-    <div><h4>유형 × 가격대별 할인율 <span class="hint">지난 행사 분포</span></h4><div class="tbl-wrap"><table class="t"><thead><tr><th>유형 · 가격대</th><th class="num">하위 25%</th><th class="num">중앙</th><th class="num">상위 25%</th><th class="num">최대</th></tr></thead>
+    <div class="ps"><h4>유형 × 가격대별 할인율 <span class="hint">지난 행사 분포</span></h4><div class="tbl-wrap"><table class="t"><thead><tr><th>유형 · 가격대</th><th class="num">하위 25%</th><th class="num">중앙</th><th class="num">상위 25%</th><th class="num">최대</th></tr></thead>
       <tbody>${PATTERN.map(r => `<tr><td>${r[0]}</td>${r.slice(1).map(c => `<td class="num">${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>
     <p class="hint">회차별 성과·작년 행사 다시 쓰기는 홈의 '지난 기획안'에서, 계획 대비 실적은 나중에 붙여요.</p>
   </div>`;
