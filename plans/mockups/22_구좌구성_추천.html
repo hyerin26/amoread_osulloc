@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>구좌 구성 목업</title>
+<!-- 디자인 기준: AMOREAD Green UI v2.5.1. 색·글자·간격은 앱의 tokens.css를 그대로 읽는다 -->
+<link rel="stylesheet" href="../../workspace/amoread_app/planner/static/tokens.css">
+<style>
+@font-face { font-family: 'Pretendard Variable'; font-weight: 45 920; font-display: swap;
+  src: url('../../workspace/amoread_app/planner/static/fonts/PretendardVariable.woff2') format('woff2-variations'); }
+:root { --cls-season: #e2f0ee; --cls-season-ink: #1f5f57; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--font); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); background: var(--bg); }
+button, input, select { font: inherit; }
+h1, h2, h3, p { margin: 0; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.cap { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); }
+
+.top { height: 72px; display: flex; align-items: center; gap: var(--s4); padding: 0 var(--s5); background: var(--shell); border-bottom: 1px solid var(--line); }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: var(--fw-title); font-size: var(--fs-h1); letter-spacing: -0.01em; }
+.logo i { width: 32px; height: 32px; border-radius: var(--r2); background: var(--ink); color: var(--surface); display: grid; place-items: center; font-style: normal; font-size: var(--fs-h1); }
+.crumb { color: var(--mute); font-size: var(--fs-sm); }
+.crumb a { color: var(--mute); text-decoration: none; }
+.crumb a:hover { color: var(--ink); }
+.top .grow { flex: 1; }
+.top .note { color: var(--mute); font-size: var(--fs-cap); }
+
+.page { max-width: 1280px; margin: 0 auto; padding: var(--s6) var(--s5) 64px; }
+.demo { background: var(--warn-soft); color: var(--warn); border-radius: var(--r); padding: 12px 16px; font-size: var(--fs-sm); line-height: var(--lh-label); margin-bottom: var(--s5);
+  display: flex; gap: var(--s3); align-items: center; flex-wrap: wrap; }
+.demo b { font-weight: var(--fw-strong); }
+.demo .grow { flex: 1; min-width: 240px; }
+
+.masthead { margin-bottom: var(--s5); }
+.overline { font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); color: var(--mute); margin-bottom: 4px; }
+.masthead h1 { font-size: var(--fs-masthead); line-height: var(--lh-masthead); font-weight: var(--fw-title); letter-spacing: -0.02em; }
+.brief { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; margin-top: var(--s3); }
+.fact { display: inline-flex; gap: 6px; align-items: center; height: var(--control-sm); padding: 0 10px; border-radius: var(--r2); background: var(--sunken); font-size: var(--fs-sm); }
+.fact .k { color: var(--mute); }
+.fact.cls { background: var(--cls-season); color: var(--cls-season-ink); }
+.link { all: unset; cursor: pointer; color: var(--mute); font-size: var(--fs-sm); text-decoration: underline; text-underline-offset: 3px; }
+.link:hover { color: var(--ink); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: var(--control-lg); padding: 0 16px; border: 0; border-radius: var(--r2);
+  background: var(--sunken); color: var(--ink); font-weight: var(--fw-strong); line-height: var(--lh-label); cursor: pointer; white-space: nowrap; }
+.btn:hover { background: var(--line-sub); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(.94); }
+.btn.ghost { background: transparent; }
+.btn.ghost:hover { background: var(--hover); }
+.btn.sm { height: var(--control-md); padding: 0 12px; font-size: var(--fs-sm); }
+.btn:disabled { color: var(--mute); cursor: default; filter: none; }
+.seg { display: inline-flex; gap: 4px; padding: 4px; background: var(--surface); border-radius: var(--r2); }
+.seg > button { all: unset; cursor: pointer; padding: 4px 10px; border-radius: 6px; font-size: var(--fs-cap); color: var(--mute); font-weight: var(--fw-medium); }
+.seg > button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-strong); }
+.tag { display: inline-flex; align-items: center; border-radius: var(--r2); padding: 2px 8px; font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); background: var(--sunken); color: var(--ink2); white-space: nowrap; }
+.tag.demo-t { background: var(--warn-soft); color: var(--warn); }
+.tag.real { background: var(--accent-soft); color: var(--accent); }
+.card { background: var(--surface); border: 1px solid var(--line-sub); border-radius: var(--r); padding: var(--s-card); }
+.sec-head { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin-bottom: var(--s4); }
+.sec-head h2 { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var(--fw-strong); letter-spacing: -0.01em; }
+.sec-head .grow { flex: 1; }
+
+/* ---------- 추천 구성안: 2개면 두 칸, 3개면 세 칸 ---------- */
+.cands { display: grid; gap: var(--s4); }
+.cands.n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cands.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 960px) { .cands.n3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .cands.n2, .cands.n3 { grid-template-columns: minmax(0, 1fr); } }
+.cand { border: 1px solid var(--line-sub); border-radius: var(--r); padding: var(--s4); display: flex; flex-direction: column; gap: var(--s3); background: var(--surface); }
+.cand[aria-current="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.cand .head { display: flex; gap: var(--s2); align-items: flex-start; }
+.cand .head .grow { flex: 1; min-width: 0; }
+.cand .letter { width: 24px; height: 24px; border-radius: 6px; background: var(--sunken); display: grid; place-items: center; font-size: var(--fs-cap); font-weight: var(--fw-strong); flex: none; }
+.cand[aria-current="true"] .letter { background: var(--accent); color: var(--accent-ink); }
+.cand h3 { font-size: var(--fs-h2); line-height: var(--lh-h2); font-weight: var(--fw-strong); }
+.cand .why { font-size: var(--fs-sm); color: var(--ink2); }
+.cand .body { display: grid; gap: var(--s3); }
+.cand.n2 .body { grid-template-columns: 148px minmax(0, 1fr); align-items: start; }   /* 칸이 넓으면 와이어프레임 옆에 구좌 목록 */
+.cand ol { margin: 0; padding: 0 0 0 18px; font-size: var(--fs-sm); display: grid; gap: 4px; }
+.cand ol li::marker { color: var(--mute); }
+.cand ol .ly { color: var(--mute); font-size: var(--fs-cap); }
+.cand .acts { display: flex; gap: var(--s2); flex-wrap: wrap; margin-top: auto; }
+.cand .acts .btn { flex: 1; }
+
+/* ---------- 기획안 전체 와이어프레임 (4) — 구좌 종류별 작은 모양 ---------- */
+.wf { display: grid; gap: 4px; padding: 6px; border-radius: var(--r2); background: var(--bg); border: 1px solid var(--line-sub); }
+.wf .s { border-radius: 4px; background: var(--surface); border: 1px solid var(--line-sub); padding: 4px; display: grid; gap: 3px; position: relative; }
+.wf .s .nm { font-size: 10px; line-height: 12px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wf .blk { background: var(--line-sub); border-radius: 2px; }
+.wf .row { display: grid; gap: 3px; }
+.wf .hero .blk { height: 34px; }
+.wf .grid2 .row { grid-template-columns: 1fr 1fr; } .wf .grid2 .blk { height: 18px; }
+.wf .grid3 .row { grid-template-columns: 1fr 1fr 1fr; } .wf .grid3 .blk { height: 14px; }
+.wf .split .row { grid-template-columns: 1fr 1fr; } .wf .split .blk { height: 22px; }
+.wf .benefit .blk { height: 12px; background: var(--warn-soft); }
+.wf .text-cta .blk { height: 5px; } .wf .text-cta .btnb { height: 8px; width: 40%; background: var(--line-strong); border-radius: 2px; }
+.wf .deal-banner .row { grid-template-columns: repeat(4, 1fr); } .wf .deal-banner .blk { height: 12px; background: var(--deal-soft); }
+.wf.big { gap: 6px; padding: 10px; }
+.wf.big .s { padding: 8px; gap: 6px; }
+.wf.big .s .nm { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--ink2); }
+.wf.big .hero .blk { height: 120px; display: grid; place-items: center; font-size: var(--fs-sm); font-weight: var(--fw-strong); color: var(--ink2); padding: 0 12px; text-align: center; }
+.wf.big .grid2 .blk { height: 64px; } .wf.big .grid3 .blk { height: 44px; } .wf.big .split .blk { height: 72px; }
+.wf.big .benefit .blk { height: 36px; } .wf.big .text-cta .blk { height: 8px; } .wf.big .text-cta .btnb { height: 24px; }
+.wf.big .deal-banner .blk { height: 40px; }
+.wf .s.on { border-color: var(--accent); }
+
+/* ---------- 고른 구성 편집 ---------- */
+.edit { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--s5); align-items: start; margin-top: var(--s5); }
+@media (max-width: 1000px) { .edit { grid-template-columns: minmax(0, 1fr); } }
+.rows { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.r { display: grid; grid-template-columns: 28px 24px minmax(120px, 1fr) 140px minmax(160px, 1.6fr) auto; gap: var(--s2); align-items: center; padding: 8px; border: 1px solid var(--line-sub); border-radius: var(--r2); background: var(--surface); }
+.r.on { border-color: var(--sel-line); }
+.r.drag { opacity: .4; }
+.r.over { box-shadow: 0 -2px 0 var(--move); }
+@media (max-width: 760px) { .r { grid-template-columns: 28px 24px minmax(0, 1fr) auto; } .r .why-in, .r select { grid-column: 3 / -1; } }
+.handle { all: unset; cursor: grab; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 6px; color: var(--mute); }
+.handle:hover { background: var(--hover); color: var(--ink); }
+.r .no { font-size: var(--fs-cap); color: var(--mute); text-align: center; font-variant-numeric: tabular-nums; }
+input[type=text], select { height: var(--control-md); border: 1px solid var(--line); border-radius: var(--r2); padding: 0 10px; color: var(--ink); background: var(--surface); width: 100%; min-width: 0; }
+input[type=text]:hover, select:hover { border-color: var(--line-strong); }
+input[type=text]:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+.r .name-in { font-weight: var(--fw-medium); }
+.r .why-in { color: var(--ink2); font-size: var(--fs-sm); }
+.r .tools { display: flex; gap: 2px; }
+.ib { all: unset; cursor: pointer; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 6px; color: var(--mute); font-size: var(--fs-sm); }
+.ib:hover { background: var(--hover); color: var(--ink); }
+.ib:disabled { opacity: .35; cursor: default; }
+.addrow { margin-top: var(--s3); display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; }
+.preview { position: sticky; top: var(--s5); }
+.preview h3 { font-size: var(--fs-h2); line-height: var(--lh-h2); font-weight: var(--fw-strong); margin-bottom: 4px; }
+.preview .wf { margin-top: var(--s3); max-width: 300px; }
+.foot { display: flex; justify-content: flex-end; align-items: center; gap: var(--s3); margin-top: var(--s5); padding-top: var(--s4); border-top: 1px solid var(--line-sub); flex-wrap: wrap; }
+.foot .grow { flex: 1; }
+.empty-pick { border: 1px dashed var(--line); border-radius: var(--r); padding: 28px; text-align: center; color: var(--mute); font-size: var(--fs-sm); }
+
+/* ---------- 원본 프로모션 전체 페이지 (1) 보기 ---------- */
+dialog { border: 1px solid var(--line); border-radius: var(--r); padding: 0; width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 64px); color: var(--ink); background: var(--surface); }
+dialog::backdrop { background: var(--scrim); }
+.dlg-h { padding: 20px 24px; border-bottom: 1px solid var(--line-sub); display: flex; gap: var(--s3); align-items: flex-start; }
+.dlg-h .grow { flex: 1; }
+.dlg-h h2 { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var(--fw-strong); }
+.dlg-b { padding: 20px 24px; overflow: auto; max-height: calc(100vh - 220px); }
+.orig { display: grid; gap: 8px; }
+.oseg { border: 1px dashed var(--line-strong); border-radius: var(--r2); padding: 10px 12px; background: var(--bg); }
+.oseg .t { display: flex; gap: var(--s2); align-items: center; font-size: var(--fs-sm); font-weight: var(--fw-medium); }
+.oseg .t .grow { flex: 1; }
+.oseg .ph { margin-top: 8px; border-radius: 4px; background: repeating-linear-gradient(135deg, var(--sunken) 0 8px, var(--surface) 8px 16px); }
+.note-gap { margin-top: var(--s3); }
+.toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: var(--ink); color: var(--surface); border-radius: var(--r); padding: 14px 18px; font-size: var(--fs-sm);
+  box-shadow: 0 16px 48px -12px rgba(33, 33, 33, .15); opacity: 0; pointer-events: none; transition: opacity .2s var(--ease); z-index: 9; }
+.toast.on { opacity: 1; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo"><i aria-hidden="true">a</i>AMOREAD</div>
+  <span class="crumb"><a href="20_홈_일정표.html">홈</a> › <a href="21_브리프_키워드확장.html">브리프</a> › 구좌 구성</span>
+  <span class="grow"></span>
+  <span class="note">단계 이름·순서는 아직 정하지 않았어요</span>
+</header>
+
+<main class="page">
+  <div class="demo">
+    <p class="grow"><b>예시 화면이에요.</b> 구성안, 지난 행사, 원본 페이지는 모두 가상의 값이에요. 원본 페이지 캡처는 아직 연결하지 않았어요.</p>
+    <span class="cap">목업 보기용: 추천 구성안 개수</span>
+    <div class="seg" role="group" aria-label="추천 구성안 개수 (목업 보기용)"><button data-n="2" aria-pressed="false">2개</button><button data-n="3" aria-pressed="true">3개</button></div>
+  </div>
+
+  <div class="masthead">
+    <div class="overline">기획안 · 구좌 구성</div>
+    <h1>봄 · 피크닉에서 누리는 차 한 잔의 여유</h1>
+    <div class="brief">
+      <span class="fact cls">시즌</span>
+      <span class="fact"><span class="k">기간</span>3/2(월) ~ 3/15(일)</span>
+      <span class="fact"><span class="k">키워드</span>피크닉 · 보온병</span>
+      <span class="fact"><span class="k">메인 카피</span>피크닉 가방에 차 한 병</span>
+      <a class="link" href="21_브리프_키워드확장.html">브리프 고치기</a>
+    </div>
+  </div>
+
+  <section class="card" aria-labelledby="candH">
+    <div class="sec-head">
+      <h2 id="candH">추천 구성안</h2>
+      <span class="cap" id="candCap"></span>
+      <span class="grow"></span>
+      <button class="btn sm ghost" id="blankBtn">빈 페이지에서 시작</button>
+    </div>
+    <div class="cands" id="cands"></div>
+
+    <div class="edit">
+      <div>
+        <div class="sec-head"><h2 id="editH">고른 구성</h2><span class="cap" id="editCap">구성안을 고르면 여기서 순서와 이름을 고쳐요</span></div>
+        <div id="editBody"></div>
+      </div>
+      <aside class="preview" aria-labelledby="pvH">
+        <h3 id="pvH">기획안 전체 와이어프레임</h3>
+        <p class="cap">고른 구성을 위에서부터 쌓은 모양이에요. 자세한 문구와 상품은 다음 화면에서 채워요.</p>
+        <div id="pv"></div>
+      </aside>
+    </div>
+
+    <div class="foot">
+      <span class="cap grow">상품 엑셀 양식은 다음 화면에서 구좌를 확정한 뒤 받을 수 있어요.</span>
+      <a class="btn ghost" href="21_브리프_키워드확장.html">← 브리프로</a>
+      <button class="btn primary" id="nextBtn">이 구성으로 구좌 편집 →</button>
+    </div>
+  </section>
+</main>
+
+<dialog id="origDlg" aria-labelledby="origH">
+  <div class="dlg-h"><div class="grow"><div class="overline">원본 프로모션 전체 페이지 <span class="tag demo-t">예시</span></div><h2 id="origH"></h2><p class="cap" id="origSub"></p></div>
+    <form method="dialog"><button class="btn sm">닫기</button></form></div>
+  <div class="dlg-b"><div class="orig" id="origBody"></div>
+    <p class="cap note-gap" id="origNote"></p></div>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+// ---------------- 예시 데이터 (가상) ----------------
+const LAYOUTS = { hero: '단일 비주얼', 'text-cta': '텍스트와 버튼', grid2: '2열 상품', grid3: '3열 상품', split: '좌우 분할', benefit: '혜택 안내', 'deal-banner': '날짜별 특가' };
+const COPY = '피크닉 가방에 차 한 병';
+// kind: rule = 분류 규칙, past = 지난 비슷한 행사(원본 프로모션 전체 페이지가 있음), ai = 연결 후
+const CANDS = [
+  { id: 'A', kind: 'rule', title: '시즌 기본형', why: '시즌 프로모션의 기본 틀에 고른 키워드를 넣었어요', basis: '분류: 시즌',
+    secs: [['메인 비주얼', 'hero', '명분과 메인 카피를 첫 화면에 크게'], ['피크닉 추천 차', 'grid2', "고른 키워드 '피크닉'에 맞는 상품"], ['하루특가', 'deal-banner', '날짜마다 바뀌는 특가로 다시 찾게'], ['혜택 안내', 'benefit', '쿠폰·사은품 같은 혜택을 한곳에']] },
+  { id: 'B', kind: 'past', title: '작년 봄 기획전처럼', why: '작년 같은 시기, 같은 명분의 시즌 프로모션 구성이에요', basis: '지난 행사: 봄맞이 티 컬렉션 (2026.03.02~03.15)',
+    secs: [['메인 비주얼', 'hero', '명분과 메인 카피를 첫 화면에 크게'], ['벚꽃 한정', 'grid3', '시즌 한정 상품을 먼저'], ['3만원 이하 선물', 'grid2', '가격대로 고르기 쉽게'], ['베스트', 'grid3', '많이 팔린 상품으로 안심'], ['혜택 안내', 'benefit', '혜택을 한곳에']] },
+  { id: 'C', kind: 'past', title: '작년 나들이 기획전처럼', why: "고른 키워드 '피크닉'과 비슷한 지난 행사 구성이에요", basis: '지난 행사: 봄 나들이 티 (2026.04.13~04.26)',
+    secs: [['메인 비주얼', 'hero', '명분과 메인 카피를 첫 화면에 크게'], ['나들이 이야기', 'split', '장면을 먼저 보여 주고 상품으로'], ['들고 가기 좋은 차', 'grid2', '휴대하기 좋은 상품'], ['함께 사면 좋은', 'grid3', '객단가를 높이는 묶음'], ['혜택 안내', 'benefit', '혜택을 한곳에']] },
+];
+
+// ---------------- 상태 ----------------
+let n = 3;          // 목업 보기용: 2개 / 3개
+let chosen = null;  // 고른 구성안 id ('blank'은 빈 페이지)
+let rows = [];      // 고른 구성: { id, name, layout, why }
+let sel = null;     // 고른 구좌 (미리보기에 테두리)
+let uidN = 0;
+const uid = () => `s${++uidN}`;
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// 기획안 전체 와이어프레임 (4): 구좌 종류별 작은 모양을 쌓는다
+function wire(secs, big = false) {
+  const inner = (ly, nm) => {
+    const b = '<span class="blk"></span>';
+    if (ly === 'hero') return `<span class="blk">${big ? esc(COPY) : ''}</span>`;
+    if (ly === 'grid2') return `<span class="row">${b.repeat(2)}</span>`;
+    if (ly === 'grid3') return `<span class="row">${b.repeat(3)}</span>`;
+    if (ly === 'split') return `<span class="row">${b.repeat(2)}</span>`;
+    if (ly === 'deal-banner') return `<span class="row">${b.repeat(4)}</span>`;
+    if (ly === 'text-cta') return `${b}${b}<span class="btnb"></span>`;
+    return b;   // benefit
+  };
+  return `<div class="wf ${big ? 'big' : ''}" aria-hidden="true">${secs.map(s => `<div class="s ${s.layout} ${big && s.id === sel ? 'on' : ''}"><span class="nm">${esc(s.name)}</span>${inner(s.layout, s.name)}</div>`).join('')}</div>`;
+}
+const toRows = c => c.secs.map(([name, layout, why]) => ({ id: uid(), name, layout, why }));
+
+function renderCands() {
+  const list = CANDS.slice(0, n), box = $('#cands');
+  box.className = `cands n${list.length}`;
+  $('#candCap').textContent = `브리프(분류·키워드·메인 카피)와 지난 행사로 ${list.length}개를 만들었어요`;
+  box.innerHTML = list.map(c => {
+    const secs = c.secs.map(([name, layout]) => ({ name, layout }));
+    return `<article class="cand n${list.length}" ${chosen === c.id ? 'aria-current="true"' : ''} aria-labelledby="c${c.id}">
+      <div class="head"><span class="letter">${c.id}</span><div class="grow"><h3 id="c${c.id}">${esc(c.title)}</h3><p class="cap">${esc(c.basis)}</p></div>
+        ${c.kind === 'past' ? '<span class="tag real" title="연결되면 PROMO_WORK 지난 행사 데이터">지난 행사</span>' : '<span class="tag">규칙</span>'}</div>
+      <p class="why">${esc(c.why)}</p>
+      <div class="body">${wire(secs)}<ol>${c.secs.map(([nm, ly]) => `<li>${esc(nm)} <span class="ly">${LAYOUTS[ly]}</span></li>`).join('')}</ol></div>
+      <div class="acts">
+        ${c.kind === 'past' ? `<button class="btn sm" data-orig="${c.id}">원본 페이지 보기</button>` : ''}
+        <button class="btn sm ${chosen === c.id ? '' : 'primary'}" data-choose="${c.id}">${chosen === c.id ? '고른 구성안' : '이 구성 고르기'}</button>
+      </div></article>`;
+  }).join('');
+}
+
+function renderEdit() {
+  const body = $('#editBody');
+  if (!chosen) {
+    $('#editCap').textContent = '구성안을 고르면 여기서 순서와 이름을 고쳐요';
+    body.innerHTML = '<div class="empty-pick">위 추천 구성안 중 하나를 골라 주세요. 빈 페이지에서 시작할 수도 있어요.</div>';
+    $('#nextBtn').disabled = true; $('#pv').innerHTML = ''; return;
+  }
+  const c = CANDS.find(x => x.id === chosen);
+  $('#editCap').textContent = c ? `${c.id} ${c.title}에서 시작했어요 · 끌거나 ↑↓로 순서를 바꿔요` : '빈 페이지에서 시작했어요';
+  $('#nextBtn').disabled = !rows.length;
+  body.innerHTML = `<ol class="rows" id="rowList">${rows.map((r, i) => `<li class="r ${sel === r.id ? 'on' : ''}" data-id="${r.id}" draggable="true">
+      <button class="handle" aria-label="${esc(r.name)} 옮기기 (Alt+↑↓)" title="끌어서 옮기기">⋮⋮</button>
+      <span class="no">${i + 1}</span>
+      <input type="text" class="name-in" data-f="name" value="${esc(r.name)}" maxlength="40" aria-label="${i + 1}번 구좌 이름">
+      <select data-f="layout" aria-label="${i + 1}번 구좌 종류">${Object.entries(LAYOUTS).map(([k, v]) => `<option value="${k}" ${r.layout === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+      <input type="text" class="why-in" data-f="why" value="${esc(r.why)}" maxlength="80" placeholder="이 구좌를 넣은 이유 (선택)" aria-label="${i + 1}번 구좌를 넣은 이유">
+      <span class="tools"><button class="ib" data-mv="-1" ${i ? '' : 'disabled'} aria-label="위로">↑</button><button class="ib" data-mv="1" ${i < rows.length - 1 ? '' : 'disabled'} aria-label="아래로">↓</button>
+        <button class="ib" data-del aria-label="${esc(r.name)} 삭제">✕</button></span></li>`).join('')}</ol>
+    <div class="addrow"><button class="btn sm" id="addBtn">+ 구좌 추가</button><span class="cap">${rows.length}개 구좌</span></div>`;
+  $('#pv').innerHTML = rows.length ? wire(rows, true) : '<p class="cap">구좌가 없어요</p>';
+}
+function render() { renderCands(); renderEdit(); $$('.demo .seg [data-n]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.n === n)); }
+
+// ---------------- 동작 ----------------
+let dirty = false;   // 고른 구성을 고쳤는지 (다른 안을 고를 때 덮어쓰기 확인)
+function choose(id) {
+  if (chosen && chosen !== id && dirty && !confirm('고친 구성이 있어요. 다른 구성안으로 바꿀까요? (고친 내용은 사라져요)')) return;
+  chosen = id; rows = id === 'blank' ? [{ id: uid(), name: '메인 비주얼', layout: 'hero', why: '' }] : toRows(CANDS.find(c => c.id === id));
+  sel = null; dirty = false; render();
+  $('#editH').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function move(id, d) {
+  const i = rows.findIndex(r => r.id === id), j = i + d; if (i < 0 || j < 0 || j >= rows.length) return;
+  [rows[i], rows[j]] = [rows[j], rows[i]]; dirty = true; sel = id; renderEdit();
+  $(`.r[data-id="${id}"] .handle`)?.focus();
+}
+document.addEventListener('click', e => {
+  const t = e.target;
+  const nb = t.closest('.demo .seg [data-n]');
+  if (nb) { n = +nb.dataset.n; if (chosen && !CANDS.slice(0, n).some(c => c.id === chosen)) { chosen = null; rows = []; } render(); return; }
+  const ch = t.closest('[data-choose]'); if (ch) { choose(ch.dataset.choose); return; }
+  const og = t.closest('[data-orig]'); if (og) { openOrig(og.dataset.orig); return; }
+  const r = t.closest('.r');
+  if (r) {
+    const id = r.dataset.id;
+    if (t.closest('[data-mv]')) { move(id, +t.closest('[data-mv]').dataset.mv); return; }
+    if (t.closest('[data-del]')) { rows = rows.filter(x => x.id !== id); dirty = true; if (sel === id) sel = null; renderEdit(); return; }
+    if (sel !== id) { sel = id; $$('.r').forEach(x => x.classList.toggle('on', x.dataset.id === id)); $('#pv').innerHTML = wire(rows, true); }
+  }
+  if (t.closest('#addBtn')) { const nr = { id: uid(), name: '새 구좌', layout: 'grid2', why: '' }; rows.push(nr); sel = nr.id; dirty = true; renderEdit(); $(`.r[data-id="${nr.id}"] .name-in`)?.select(); }
+});
+$('#blankBtn').addEventListener('click', () => choose('blank'));
+$('#editBody').addEventListener('input', e => {
+  const f = e.target.dataset.f, r = rows.find(x => x.id === e.target.closest('.r')?.dataset.id); if (!f || !r) return;
+  r[f] = e.target.value; dirty = true; $('#pv').innerHTML = wire(rows, true);
+});
+$('#editBody').addEventListener('keydown', e => {
+  if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+  const r = e.target.closest('.r'); if (!r) return; e.preventDefault(); move(r.dataset.id, e.key === 'ArrowUp' ? -1 : 1);
+});
+// 끌어서 순서 바꾸기
+let dragId = null;
+$('#editBody').addEventListener('dragstart', e => { const r = e.target.closest('.r'); if (!r) return; dragId = r.dataset.id; r.classList.add('drag'); e.dataTransfer.effectAllowed = 'move'; });
+$('#editBody').addEventListener('dragover', e => { const r = e.target.closest('.r'); if (!r || !dragId) return; e.preventDefault(); $$('.r').forEach(x => x.classList.toggle('over', x === r && x.dataset.id !== dragId)); });
+$('#editBody').addEventListener('dragend', () => { dragId = null; $$('.r').forEach(x => x.classList.remove('drag', 'over')); });
+$('#editBody').addEventListener('drop', e => {
+  const r = e.target.closest('.r'); if (!r || !dragId) return; e.preventDefault();
+  const from = rows.findIndex(x => x.id === dragId), item = rows.splice(from, 1)[0];
+  rows.splice(rows.findIndex(x => x.id === r.dataset.id), 0, item); dirty = true; sel = dragId; dragId = null; renderEdit();
+});
+$('#nextBtn').addEventListener('click', () => toast(`예시예요: ${rows.length}개 구좌로 구좌 편집 화면으로 넘어가요`));
+
+// 원본 프로모션 전체 페이지 (1): 그 안의 구좌 하나하나가 원본 구좌 레퍼런스 (2)
+function openOrig(id) {
+  const c = CANDS.find(x => x.id === id);
+  $('#origH').textContent = c.basis.replace('지난 행사: ', '');
+  $('#origSub').textContent = '실제로 몰에 걸렸던 페이지 한 장 전체예요';
+  $('#origBody').innerHTML = c.secs.map(([nm, ly], i) => `<div class="oseg"><div class="t"><span class="grow">${i + 1}. ${esc(nm)}</span><span class="tag">원본 구좌 레퍼런스</span></div>
+    <div class="ph" aria-hidden="true" data-h="${ly === 'hero' ? 120 : ly === 'benefit' ? 40 : 72}"></div></div>`).join('');
+  $$('#origBody .ph').forEach(p => { p.style.height = `${p.dataset.h}px`; });
+  $('#origNote').textContent = '캡처를 연결하기 전이라 빗금 자리로 보여요. 각 칸(원본 구좌 레퍼런스)은 다음 화면 구좌 편집에서 참고로 붙이거나 레이아웃을 가져올 수 있어요.';
+  $('#origDlg').showModal();
+}
+
+let toastT;
+function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600); }
+render();
+</script>
+</body>
+</html>
