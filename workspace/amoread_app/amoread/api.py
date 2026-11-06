@@ -167,8 +167,17 @@ class PoolItem(BaseModel):
     source: str = Field(default="", max_length=40)
 
 
+class V2Meta(BaseModel):
+    """새 버전(/v2) 화면만 쓰는 값. 예전 화면은 보내지 않으므로, 안 보내면 저장된 값을 그대로 둔다 (store.save)."""
+    cls: Literal["", "season", "brand", "launch", "collab", "clear"] = ""   # 분류 5종 (plans/20 §4-1)
+    seed: str = Field(default="", max_length=20)       # 홈 [시작]에서 고른 출발점 (명분이 아닌 분류의 씨앗)
+    keywords: list[Annotated[str, Field(max_length=20)]] = Field(default_factory=list, max_length=30)   # 브리프에서 고른 키워드
+    stage: Literal["brief", "compose", "editor", "preview", "deals"] = "brief"   # 마지막으로 연 단계 (홈 목록 '지금 단계')
+
+
 class ProjectReq(BaseModel):
     id: str | None = Field(default=None, max_length=32)
+    v2: V2Meta | None = None
     title: str = Field(default="", max_length=80)
     status: Literal["planning", "confirmed", "reflected"] = "planning"
     origin: Origin | None = None

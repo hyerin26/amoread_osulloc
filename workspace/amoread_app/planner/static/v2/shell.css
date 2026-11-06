@@ -25,6 +25,7 @@
 .v2space { display: inline-flex; align-items: center; height: 36px; padding: 0 12px; border-radius: var(--r2); border: 1px solid var(--line-strong); font-size: var(--fs-sm); font-weight: var(--fw-strong); color: var(--ink); text-decoration: none; }
 .v2space:hover { background: var(--hover); }
 .v2space[aria-current="page"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.v2saved { font-size: var(--fs-cap); color: var(--mute); }
 .v2btn { display: inline-flex; align-items: center; height: var(--control-md); padding: 0 12px; border: 0; border-radius: var(--r2); background: var(--sunken); color: var(--ink); font: inherit; font-size: var(--fs-sm); font-weight: var(--fw-strong); text-decoration: none; cursor: pointer; white-space: nowrap; }
 .v2btn:hover { background: var(--line-sub); }
 .v2btn.primary { background: var(--accent); color: var(--accent-ink); }

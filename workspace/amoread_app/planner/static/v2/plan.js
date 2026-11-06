@@ -1,0 +1,48 @@
+// 새 버전 기획안 잇기 (plans/23 §3-1): 주소의 ?id=로 기획안 하나를 읽고, 기획안 막대를 채우고, 저장을 맡는다.
+// 저장은 예전 화면과 같은 /api/am/projects (같은 파일). 새 버전만 쓰는 값은 doc.v2 (예전 화면이 저장해도 안 지워짐).
+// id가 없으면 '예시 기획안'으로 보여 주고 저장하지 않는다.
+const PLAN = (() => {
+  const STEPS = ['brief', 'compose', 'editor', 'preview', 'deals'];
+  const here = location.pathname.split('/').pop();
+  const raw = new URLSearchParams(location.search).get('id') || '';
+  const st = { id: /^[0-9a-f]{32}$/.test(raw) ? raw : null, doc: null };
+  const say = t => { const el = document.getElementById('v2saved'); if (el) el.textContent = t; };
+  // 기획안 안의 화면으로 가는 링크에 id를 붙여 같은 기획안으로 이동
+  const tagLinks = () => document.querySelectorAll('a[href^="/v2/"]').forEach(a => {
+    const u = new URL(a.getAttribute('href'), location.origin);
+    if (!STEPS.includes(u.pathname.split('/').pop())) return;
+    u.searchParams.set('id', st.id);
+    a.setAttribute('href', u.pathname + u.search + u.hash);
+  });
+  st.ready = (async () => {
+    if (!st.id) { say('예시 기획안이에요 · 홈에서 새로 만들면 저장돼요'); return null; }
+    try {
+      st.doc = await v2api(`/api/am/projects/${st.id}`);
+    } catch (e) {
+      say(`기획안을 열지 못했어요: ${e.message}`);
+      st.id = null;
+      return null;
+    }
+    st.doc.v2 = { cls: '', seed: '', keywords: [], stage: 'brief', ...(st.doc.v2 || {}) };
+    const ident = document.querySelector('.v2ident');
+    if (ident) { ident.textContent = st.doc.title; ident.title = st.doc.title; }
+    tagLinks();
+    say(`저장됨 ${String(st.doc.updated_at || '').slice(5, 16)}`);
+    if (STEPS.includes(here) && st.doc.v2.stage !== here) st.save(d => { d.v2.stage = here; }, true);   // 홈 목록의 '지금 단계'
+    return st.doc;
+  })();
+  // 고친 뒤 부른다. 0.7초 모아서 한 번에, 저장은 차례로 (응답이 와도 그 사이 고친 내용을 덮지 않음)
+  let timer = null, chain = Promise.resolve();
+  st.save = (mutate, now = false) => {
+    if (!st.doc) return;
+    if (mutate) mutate(st.doc);
+    say('저장 중…');
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      chain = chain.then(() => v2api('/api/am/projects', st.doc)
+        .then(d => { st.doc.updated_at = d.updated_at; say(`저장했어요 ${String(d.updated_at).slice(11, 16)}`); })
+        .catch(e => say(`저장 못 했어요: ${e.message}`)));
+    }, now ? 0 : 700);
+  };
+  return st;
+})();

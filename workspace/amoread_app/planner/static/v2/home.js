@@ -1,5 +1,5 @@
 // ---------------- 예시 데이터 (가상) ----------------
-const TODAY = '2026-11-06';
+const TODAY = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);   // 한국 날짜 (몰 이벤트·명분은 아직 예시라 이 날짜 근처에만 있어요)
 const CLS = {
   season: { name: '시즌', seed: null },
   brand: { name: '브랜드기획전', seed: ['주인공 상품·라인', '예) 말차 라인'] },
@@ -18,11 +18,12 @@ const EVENTS = [
 const PLAN_STATE = { p1: '준비 중', p4: '준비 중', p2: '준비 중', p3: '날짜 미정' };
 // 지난 기획안 (목록에만): 다시 쓰기 = 상품·할인·구성을 올해 날짜로 가져와 새 기획안
 const PAST = [
-  { id: 'q0', name: '가을 티타임 기획전', cls: 'season', s: '2026-10-19', e: '2026-11-08', state: '진행 중' },
-  { id: 'q1', name: '설 선물 얼리버드', cls: 'season', s: '2026-01-06', e: '2026-01-21', state: '지난 기획안' },
-  { id: 'q2', name: '감사선물전 얼리버드', cls: 'season', s: '2026-04-08', e: '2026-04-29', state: '지난 기획안' },
-  { id: 'q3', name: '헬로키티 콜라보', cls: 'collab', s: '2025-07-10', e: '2025-07-31', state: '지난 기획안' },
+  { id: 'q0', name: '가을 티타임 기획전 (예시)', cls: 'season', s: '2026-10-19', e: '2026-11-08', state: '진행 중' },
+  { id: 'q1', name: '설 선물 얼리버드 (예시)', cls: 'season', s: '2026-01-06', e: '2026-01-21', state: '지난 기획안' },
+  { id: 'q2', name: '감사선물전 얼리버드 (예시)', cls: 'season', s: '2026-04-08', e: '2026-04-29', state: '지난 기획안' },
+  { id: 'q3', name: '헬로키티 콜라보 (예시)', cls: 'collab', s: '2025-07-10', e: '2025-07-31', state: '지난 기획안' },
 ];
+const clsName = k => CLS[k]?.name || '분류 미정';   // 예전 화면에서 만든 기획안은 분류가 없어요
 const PLANS = [
   { id: 'p1', name: '블프 말차 묶음전', cls: 'season', s: '2026-11-23', e: '2026-12-06', step: '02 구성', next: ['디자인 착수', '2026-11-12'] },
   { id: 'p4', name: '홈카페 말차 기획전', cls: 'brand', s: '2026-12-01', e: '2026-12-14', step: '01 브리프', next: ['틀 기획 완료', '2026-11-17'] },
@@ -211,7 +212,7 @@ function renderPlans() {
   const all = [...PLANS.map(p => ({ ...p, state: PLAN_STATE[p.id] })), ...PAST];
   const ok = p => (plF === '전체' || p.state === plF) && (!plq || [p.name, p.s || '날짜 미정'].join(' ').includes(plq));
   const STEPN = { '01 브리프': 1, '02 구성': 2 };
-  const row = p => `<li class="prow"><span class="nm"><button class="linkbtn" data-openplan="${p.id}">${esc(p.name)}</button><span class="tag cls c-${p.cls}">${esc(CLS[p.cls].name)}</span></span>
+  const row = p => `<li class="prow"><span class="nm"><button class="linkbtn" data-openplan="${p.id}">${esc(p.name)}</button><span class="tag cls c-${p.cls}">${esc(clsName(p.cls))}</span></span>
       <span>${p.s ? `${md(p.s)} ~ ${md(p.e)}` : '<span class="cap">날짜 미정</span>'}</span><span><span class="tag">${p.state}</span></span>
       <span>${p.next ? `${esc(p.next[0])} ${md(p.next[1])} <span class="dd ${diff(TODAY, p.next[1]) > 7 ? 'calm' : ''}">D-${diff(TODAY, p.next[1])}</span>` : p.step ? `<span class="cap">${esc(p.step)}</span>` : '<span class="cap">-</span>'}</span>
       <span><button class="btn xs" data-openplan="${p.id}">${p.state === '지난 기획안' ? '다시 쓰기' : '열기'}</button></span></li>`;
@@ -227,7 +228,7 @@ function renderPlans() {
 }
 document.addEventListener('click', e => {
   const f = e.target.closest('[data-pf]'); if (f) { plF = f.dataset.pf; renderPlans(); return; }
-  const o = e.target.closest('[data-openplan]'); if (o) { const id = o.dataset.openplan; toast(PAST.some(p => p.id === id && p.state === '지난 기획안') ? '예시예요: 지난 기획안을 올해 날짜로 가져와 새 기획안을 만들어요' : '예시예요: 이 기획안의 지금 단계로 이동해요'); return; }
+  const o = e.target.closest('[data-openplan]'); if (o) { const id = o.dataset.openplan, rp = PLANS.find(p => p.id === id && p.real); if (rp) { location.assign(planUrl(rp)); return; } toast(PAST.some(p => p.id === id && p.state === '지난 기획안') ? '예시예요: 지난 기획안을 올해 날짜로 가져와 새 기획안을 만들어요' : '예시예요: 이 기획안의 지금 단계로 이동해요'); return; }
   const so = e.target.closest('[data-soon]'); if (so) { e.preventDefault(); toast(`예시예요: ${so.dataset.soon}`); }
 });
 document.addEventListener('input', e => { if (e.target.id === 'plq') { plq = e.target.value.trim(); renderPlans(); } });
@@ -253,7 +254,7 @@ function renderSide() {
   }
   if (selected?.type === 'plan') {
     const p = PLANS.find(x => x.id === selected.id);
-    el.innerHTML = `${back}<div class="overline">내 기획안 · ${esc(CLS[p.cls].name)}</div><h2>${esc(p.name)}</h2>
+    el.innerHTML = `${back}<div class="overline">내 기획안 · ${esc(clsName(p.cls))}</div><h2>${esc(p.name)}</h2>
       <dl class="facts"><dt>기간</dt><dd>${p.s ? `${md(p.s)} ~ ${md(p.e)}` : '날짜 미정'}</dd><dt>지금 단계</dt><dd>${esc(p.step)}</dd>
         <dt>다음 마감</dt><dd>${p.next ? `${esc(p.next[0])} ${md(p.next[1])} <span class="dd">D-${diff(TODAY, p.next[1])}</span>` : '기간을 정하면 계산해요'}</dd></dl>
       <div class="acts"><button class="btn primary" data-open="${p.id}">이어서 하기 →</button></div>`;
@@ -318,7 +319,7 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-back]')) { selected = null; render(); return; }
   const sm = e.target.closest('[data-start-m]');
   if (sm) { const m = SEASONS.find(x => x.id === sm.dataset.startM); openStart({ cls: 'season', m: m.id, s: add(m.d, -13), e: m.d, why: `명분일(${md(m.d)})까지 2주로 넣었어요.` }); return; }
-  if (e.target.closest('[data-open]')) { location.assign('/v2/brief'); return; }   // shortcut: 기획안 저장이 붙기 전이라 늘 브리프로 (예시 기획안)
+  const op = e.target.closest('[data-open]'); if (op) { const p = PLANS.find(x => x.id === op.dataset.open); location.assign(p?.real ? planUrl(p) : '/v2/brief'); return; }
   const af = e.target.closest('[data-after]');
   if (af) { const x = EVENTS.find(ev => ev.id === af.dataset.after), s = add(x.e, 1); openStart({ s, e: add(s, 13), why: `${x.name}이 끝난 다음 날부터 2주예요.` }); return; }
   const t = e.target.closest('[data-type]'); if (!t) return;
@@ -367,7 +368,34 @@ $('#startForm').addEventListener('submit', e => {
   if (!seed) { e.preventDefault(); toast(dlg.cls === 'season' ? '명분을 하나 골라 주세요' : `${CLS[dlg.cls].seed[0]}을 적어 주세요`); return; }
   if (!noDate && (!s || !en || en < s)) { e.preventDefault(); toast('기간을 확인해 주세요. 나중에 정해도 돼요'); return; }
   e.preventDefault();
-  location.assign(`/v2/brief?seed=${encodeURIComponent(seed.slice(0, 20))}`);   // 명분·씨앗을 브리프 중심 키워드로 (기간·분류 저장은 기획안 저장이 붙을 때)
+  // 기획안 만들기 → 브리프로. 명분으로 시작하면 명분이 브리프 중심 키워드, 아니면 씨앗이 중심 키워드
+  const m = dlg.cls === 'season' ? SEASONS.find(x => x.id === dlg.m) : null, sd = seed.slice(0, 20);
+  const doc = { title: `${sd} 기획안`, origin: { type: m ? 'calendar' : 'brief', ref: m ? m.name.slice(0, 120) : '' },
+    brief: { myeongbun: m ? m.name : '', period: noDate ? null : { start: s, end: en }, season_ref: m ? { name: m.name.slice(0, 30), date: m.d } : null },
+    v2: { cls: dlg.cls, seed: sd, keywords: [], stage: 'brief' } };
+  const btn = e.submitter; if (btn) btn.disabled = true;
+  v2api('/api/am/projects', doc).then(d => location.assign(`/v2/brief?id=${d.id}`))
+    .catch(err => { if (btn) btn.disabled = false; toast(`기획안을 만들지 못했어요: ${err.message}`); });
 });
+// ================= 실제 데이터 (새 버전): 기획안 목록·만들기 =================
+// 목록은 예전 화면과 같은 저장소(/api/am/projects). 일정표의 몰 이벤트·명분·지난 기획안(예시)은 아직 예시
+const STEP_NAME = { brief: '01 브리프', compose: '02 구좌 구성', editor: '03 구좌 편집', preview: '04 미리보기', deals: '상품·할인' };
+const planUrl = p => `/v2/${p.stage || 'brief'}?id=${p.id}`;
+function stateOf(s, e) { return !s ? '날짜 미정' : e < TODAY ? '지난 기획안' : s <= TODAY ? '진행 중' : '준비 중'; }
+function loadPlans() {
+  v2api('/api/am/projects').then(r => {
+    PLANS.length = 0;
+    for (const k of Object.keys(PLAN_STATE)) delete PLAN_STATE[k];
+    for (const p of r.projects) {
+      const s = p.period?.start || null, e = p.period?.end || null;
+      PLANS.push({ id: p.id, name: p.title, cls: p.cls || 'none', s, e, step: STEP_NAME[p.stage] || STEP_NAME.brief, stage: p.stage || 'brief', next: null, real: true });
+      PLAN_STATE[p.id] = stateOf(s, e);
+    }
+    if (selected?.type === 'plan' && !PLANS.some(p => p.id === selected.id)) selected = null;
+    render();
+  }).catch(e => toast(`기획안 목록을 불러오지 못했어요: ${e.message}`));
+}
+loadPlans();
+
 
 render();

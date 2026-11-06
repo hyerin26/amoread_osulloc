@@ -50,7 +50,8 @@ def summary(d: dict) -> dict:
             "page_kind": b.get("page_kind") or "이벤트", "origin": (d.get("origin") or {}).get("type") or "",
             "rows": len(rows), "deal_rows": sum(1 for r in rows if r.get("type") == "하루특가"),
             "sections": len((page or {}).get("sections") or []) if page else None,
-            "updated_at": d.get("updated_at"), "created_at": d.get("created_at")}
+            "updated_at": d.get("updated_at"), "created_at": d.get("created_at"),
+            "cls": (d.get("v2") or {}).get("cls") or "", "stage": (d.get("v2") or {}).get("stage") or ""}
 
 
 def list_projects() -> list:
@@ -85,6 +86,7 @@ def save(doc: dict) -> dict:
         "deal_plan": doc.get("deal_plan"),   # 하루특가 설정 (하루 자리 수, 후보 상품). 없으면 null
         "pool": (doc.get("pool") or [])[:100],   # 후보 상품 (역할 미정)
         "page": doc.get("page"),
+        "v2": doc.get("v2") if doc.get("v2") is not None else prev.get("v2"),   # 새 버전 값: 예전 화면이 저장해도 지워지지 않게
         "links": doc.get("links") or prev.get("links") or {"legacy_plan_id": None, "promo_work_keys": []},
         "snapshot": prev.get("snapshot"),
         "rationale": str(doc.get("rationale") or "")[:20000],

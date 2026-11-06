@@ -30,7 +30,7 @@ const info = k => T[k] || { ch: ['search'], flow: '예시 데이터가 아직 �
 
 // ---------------- 상태 ----------------
 // 홈 [시작]에서 고른 명분·씨앗이 중심 키워드 (없으면 예시 '봄'). 예시 가지는 '봄'에만 있어요
-const ROOT = (new URLSearchParams(location.search).get('seed') || '').trim().slice(0, 20) || '봄';
+let ROOT = (new URLSearchParams(location.search).get('seed') || '').trim().slice(0, 20) || '봄';   // 기획안을 열면 저장된 명분으로 바뀜 (setRoot)
 if (!T[ROOT]) T[ROOT] = { ch: [], kids: [] };
 document.getElementById('rootName').textContent = ROOT;
 let path = [ROOT];       // 지나온 길 (한 갈래만 펼침). path[i+1]은 path[i]의 가지
@@ -175,7 +175,7 @@ function openK(k) {
   if (i - center >= MAX_DEPTH) center = i - 1;   // 3단계를 넘으면 한 단계 위를 가운데로
   focus = k; render();
 }
-function pick(k) { picked = picked.includes(k) ? picked.filter(x => x !== k) : picked.concat(k); autoTitle(); render(); }
+function pick(k) { picked = picked.includes(k) ? picked.filter(x => x !== k) : picked.concat(k); autoTitle(); render(); saveBrief(); }
 let titleTouched = false;
 function autoTitle() { if (titleTouched) return; const c = $('#concept').value.trim(); $('#title').value = c ? `${ROOT} · ${c}` : `${ROOT}${picked.length ? ` · ${picked.join(', ')}` : ''} 기획안`; }
 let clickT = null;
@@ -308,3 +308,34 @@ let toastT;
 function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600); }
 
 autoTitle(); render();
+
+// ================= 기획안 잇기 (새 버전) =================
+// 기획안을 열면 저장된 명분·키워드·컨셉·누구에게·메인 카피를 채우고, 고칠 때마다 저장 (plan.js)
+const CLSN = { season: '시즌', brand: '브랜드기획전', launch: '런칭', collab: '콜라보', clear: '클리어런스' };
+const mdw = d => { const t = new Date(`${d}T00:00:00`); return `${t.getMonth() + 1}/${t.getDate()}(${'일월화수목금토'[t.getDay()]})`; };
+function setRoot(r) {
+  ROOT = r; if (!T[ROOT]) T[ROOT] = { ch: [], kids: [] };
+  $('#rootName').textContent = ROOT; path = [ROOT]; center = 0; focus = ROOT;
+}
+function saveBrief() {
+  PLAN.save(d => {
+    d.title = $('#title').value.trim().slice(0, 80) || d.title;
+    d.brief = { ...d.brief, concept: $('#concept').value.trim().slice(0, 300), audience: $('#who').value.trim().slice(0, 300), key_copy: $('#copy').value.trim().slice(0, 120) };
+    d.v2.keywords = picked.filter(k => k.length <= 20).slice(0, 30);
+  });
+}
+PLAN.ready.then(doc => {
+  if (!doc) return;
+  const b = doc.brief || {};
+  setRoot((b.myeongbun || doc.v2.seed || ROOT).slice(0, 20));
+  picked = (doc.v2.keywords || []).slice();
+  $('#title').value = doc.title || ''; titleTouched = !!doc.title;
+  $('#concept').value = b.concept || ''; $('#who').value = b.audience || ''; $('#copy').value = b.key_copy || '';
+  const fact = (k, html) => { const el = document.querySelector(`[data-edit="${k}"]`); if (el) el.innerHTML = html; };
+  fact('분류', esc(CLSN[doc.v2.cls] || '분류 미정'));
+  fact('기간', `<span class="k">기간</span>${b.period ? `${mdw(b.period.start)} ~ ${mdw(b.period.end)}` : '날짜 미정'}`);
+  fact('페이지', `<span class="k">페이지</span>${esc(b.page_kind || '이벤트')}`);
+  render();
+});
+document.addEventListener('input', e => { if (['title', 'concept', 'who', 'copy'].includes(e.target.id)) saveBrief(); });
+document.addEventListener('click', e => { if (e.target.closest('#sugs [data-copy]')) setTimeout(saveBrief); });   // 제안 문장을 메인 카피로 (키워드 고르기는 pick()에서 저장)
