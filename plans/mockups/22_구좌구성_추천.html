@@ -106,6 +106,19 @@ h1, h2, h3, p { margin: 0; }
 .wf.big .benefit .blk { height: 36px; } .wf.big .text-cta .blk { height: 8px; } .wf.big .text-cta .btnb { height: 24px; }
 .wf.big .deal-banner .blk { height: 40px; }
 .wf .s.on { border-color: var(--accent); }
+.wf .pills { display: flex; gap: 2px; }
+.wf .pills span { height: 5px; flex: 0 0 18%; border-radius: 2px; background: var(--line-sub); }
+.wf .pills span.on { background: var(--line-strong); }
+.wf.big .pills { gap: 4px; flex-wrap: wrap; }
+.wf.big .pills span { height: auto; flex: none; padding: 1px 6px; font-size: 10px; line-height: 14px; color: var(--mute); background: var(--sunken); }
+.wf.big .pills span.on { background: var(--ink); color: var(--surface); }
+/* 묶음 줄 (탭 구좌 / 따로 구좌) */
+.r .grp { grid-column: 3 / -1; display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; }
+.gseg { display: inline-flex; gap: 2px; padding: 2px; background: var(--sunken); border-radius: var(--r2); }
+.gseg button { all: unset; cursor: pointer; padding: 3px 10px; border-radius: 6px; font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); font-weight: var(--fw-medium); }
+.gseg button:hover { color: var(--ink); }
+.gseg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-strong); cursor: default; }
+.gseg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
 /* ---------- 고른 구성 편집 ---------- */
 .edit { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--s5); align-items: start; margin-top: var(--s5); }
@@ -227,7 +240,10 @@ const CANDS = [
   { id: 'A', kind: 'rule', title: '시즌 기본형', why: '시즌 프로모션의 기본 틀에 고른 키워드를 넣었어요', basis: '분류: 시즌',
     secs: [['메인 비주얼', 'hero', '명분과 메인 카피를 첫 화면에 크게'], ['피크닉 추천 차', 'grid2', "고른 키워드 '피크닉'에 맞는 상품"], ['하루특가', 'deal-banner', '날짜마다 바뀌는 특가로 다시 찾게'], ['혜택 안내', 'benefit', '쿠폰·사은품 같은 혜택을 한곳에']] },
   { id: 'B', kind: 'past', title: '작년 봄 기획전처럼', why: '작년 같은 시기, 같은 명분의 시즌 프로모션 구성이에요', basis: '지난 행사: 봄맞이 티 컬렉션 (2026.03.02~03.15)',
-    secs: [['메인 비주얼', 'hero', '명분과 메인 카피를 첫 화면에 크게'], ['벚꽃 한정', 'grid3', '시즌 한정 상품을 먼저'], ['3만원 이하 선물', 'grid2', '가격대로 고르기 쉽게'], ['베스트', 'grid3', '많이 팔린 상품으로 안심'], ['혜택 안내', 'benefit', '혜택을 한곳에']] },
+    // 4번째 값 = 지난 행사 Zone에서 묶은 것: kind(진열 유형, 이름 규칙으로 추정), tabs(Zone 하나 = 탭 하나). 같은 유형·같은 칸 수라 '탭 하나로'가 기본 (plans/17)
+    secs: [['메인 비주얼', 'hero', '명분과 메인 카피를 첫 화면에 크게'], ['벚꽃 한정', 'grid3', '시즌 한정 상품을 먼저'],
+      ['가격대별 선물 추천', 'grid2', '예산이 정해진 선물 고객이 먼저 고르게', { kind: '가격대', tabs: ['1만원대', '2만원대', '3만원 이상'] }],
+      ['취향별 추천', 'grid2', '맛 취향으로 고르기 쉽게', { kind: '취향·테마', tabs: ['달콤한', '은은한', '무카페인'] }], ['혜택 안내', 'benefit', '혜택을 한곳에']] },
   { id: 'C', kind: 'past', title: '작년 나들이 기획전처럼', why: "고른 키워드 '피크닉'과 비슷한 지난 행사 구성이에요", basis: '지난 행사: 봄 나들이 티 (2026.04.13~04.26)',
     secs: [['메인 비주얼', 'hero', '명분과 메인 카피를 첫 화면에 크게'], ['나들이 이야기', 'split', '장면을 먼저 보여 주고 상품으로'], ['들고 가기 좋은 차', 'grid2', '휴대하기 좋은 상품'], ['함께 사면 좋은', 'grid3', '객단가를 높이는 묶음'], ['혜택 안내', 'benefit', '혜택을 한곳에']] },
 ];
@@ -235,7 +251,7 @@ const CANDS = [
 // ---------------- 상태 ----------------
 let n = 3;          // 목업 보기용: 2개 / 3개
 let chosen = null;  // 고른 구성안 id ('blank'은 빈 페이지)
-let rows = [];      // 고른 구성: { id, name, layout, why }
+let rows = [];      // 고른 구성: { id, name, layout, why, kind?, tabs?(탭 구좌일 때), gk?(묶음 열쇠), gname?(묶음 이름, 따로 둘 때) }
 let sel = null;     // 고른 구좌 (미리보기에 테두리)
 let uidN = 0;
 const uid = () => `s${++uidN}`;
@@ -255,21 +271,35 @@ function wire(secs, big = false) {
     if (ly === 'text-cta') return `${b}${b}<span class="btnb"></span>`;
     return b;   // benefit
   };
-  return `<div class="wf ${big ? 'big' : ''}" aria-hidden="true">${secs.map(s => `<div class="s ${s.layout} ${big && s.id === sel ? 'on' : ''}"><span class="nm">${esc(s.name)}</span>${inner(s.layout, s.name)}</div>`).join('')}</div>`;
+  const pills = s => s.tabs ? `<span class="pills">${s.tabs.map((t, i) => `<span class="${i ? '' : 'on'}">${big ? esc(t) : ''}</span>`).join('')}</span>` : '';
+  return `<div class="wf ${big ? 'big' : ''}" aria-hidden="true">${secs.map(s => `<div class="s ${s.layout} ${big && s.id === sel ? 'on' : ''}"><span class="nm">${esc(s.name)}</span>${pills(s)}${inner(s.layout, s.name)}</div>`).join('')}</div>`;
 }
-const toRows = c => c.secs.map(([name, layout, why]) => ({ id: uid(), name, layout, why }));
+const toRows = c => c.secs.map(([name, layout, why, g]) => ({ id: uid(), name, layout, why, ...(g ? { kind: g.kind, tabs: [...g.tabs], gk: uid() } : {}) }));
+const cardLine = ([nm, ly, , g]) => g ? `${esc(nm)} <span class="ly">탭 ${g.tabs.length} · ${LAYOUTS[ly]}</span>` : `${esc(nm)} <span class="ly">${LAYOUTS[ly]}</span>`;
+
+// 탭 구좌 ↔ 따로 구좌: 탭 하나로 = 탭 하나가 PROMO_WORK Zone 하나 / 따로 = 탭마다 구좌 하나 (같은 묶음 열쇠 gk로 다시 묶을 수 있음)
+function splitGroup(id) {
+  const i = rows.findIndex(r => r.id === id), g = rows[i]; if (!g?.tabs) return;
+  rows.splice(i, 1, ...g.tabs.map(t => ({ id: uid(), name: t, layout: g.layout, why: '', kind: g.kind, gk: g.gk, gname: g.name })));
+}
+function mergeGroup(gk) {
+  const parts = rows.filter(r => r.gk === gk && !r.tabs); if (parts.length < 2) return;
+  const at = rows.indexOf(parts[0]);
+  const merged = { id: uid(), name: parts[0].gname || `${parts[0].kind}별 추천`, layout: parts[0].layout, why: '', kind: parts[0].kind, tabs: parts.map(p => p.name), gk };
+  rows = rows.filter(r => !parts.includes(r)); rows.splice(at, 0, merged);
+}
 
 function renderCands() {
   const list = CANDS.slice(0, n), box = $('#cands');
   box.className = `cands n${list.length}`;
   $('#candCap').textContent = `브리프(분류·키워드·메인 카피)와 지난 행사로 ${list.length}개를 만들었어요`;
   box.innerHTML = list.map(c => {
-    const secs = c.secs.map(([name, layout]) => ({ name, layout }));
+    const secs = c.secs.map(([name, layout, , g]) => ({ name, layout, tabs: g?.tabs }));
     return `<article class="cand n${list.length}" ${chosen === c.id ? 'aria-current="true"' : ''} aria-labelledby="c${c.id}">
       <div class="head"><span class="letter">${c.id}</span><div class="grow"><h3 id="c${c.id}">${esc(c.title)}</h3><p class="cap">${esc(c.basis)}</p></div>
         ${c.kind === 'past' ? '<span class="tag real" title="연결되면 PROMO_WORK 지난 행사 데이터">지난 행사</span>' : '<span class="tag">규칙</span>'}</div>
       <p class="why">${esc(c.why)}</p>
-      <div class="body">${wire(secs)}<ol>${c.secs.map(([nm, ly]) => `<li>${esc(nm)} <span class="ly">${LAYOUTS[ly]}</span></li>`).join('')}</ol></div>
+      <div class="body">${wire(secs)}<ol>${c.secs.map(s => `<li>${cardLine(s)}</li>`).join('')}</ol></div>
       <div class="acts">
         ${c.kind === 'past' ? `<button class="btn sm" data-orig="${c.id}">원본 페이지 보기</button>` : ''}
         <button class="btn sm ${chosen === c.id ? '' : 'primary'}" data-choose="${c.id}">${chosen === c.id ? '고른 구성안' : '이 구성 고르기'}</button>
@@ -294,9 +324,20 @@ function renderEdit() {
       <select data-f="layout" aria-label="${i + 1}번 구좌 종류">${Object.entries(LAYOUTS).map(([k, v]) => `<option value="${k}" ${r.layout === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
       <input type="text" class="why-in" data-f="why" value="${esc(r.why)}" maxlength="80" placeholder="이 구좌를 넣은 이유 (선택)" aria-label="${i + 1}번 구좌를 넣은 이유">
       <span class="tools"><button class="ib" data-mv="-1" ${i ? '' : 'disabled'} aria-label="위로">↑</button><button class="ib" data-mv="1" ${i < rows.length - 1 ? '' : 'disabled'} aria-label="아래로">↓</button>
-        <button class="ib" data-del aria-label="${esc(r.name)} 삭제">✕</button></span></li>`).join('')}</ol>
+        <button class="ib" data-del aria-label="${esc(r.name)} 삭제">✕</button></span>${groupLine(r, i)}</li>`).join('')}</ol>
     <div class="addrow"><button class="btn sm" id="addBtn">+ 구좌 추가</button><span class="cap">${rows.length}개 구좌</span></div>`;
   $('#pv').innerHTML = rows.length ? wire(rows, true) : '<p class="cap">구좌가 없어요</p>';
+}
+// 묶음 줄: 탭 구좌면 탭 이름들 + 바꾸기 / 따로 둔 묶음은 첫 구좌에만 바꾸기 (진열 유형은 보기만, 고치기는 구좌 편집에서)
+function groupLine(r, i) {
+  if (!r.gk) return '';
+  const first = !r.tabs && rows.findIndex(x => x.gk === r.gk) === i, parts = rows.filter(x => x.gk === r.gk && !x.tabs).length;
+  if (!r.tabs && !first) return `<div class="grp"><span class="tag">${esc(r.kind)}</span><span class="cap">'${esc(r.gname)}' 묶음에서 나눈 구좌</span></div>`;
+  const seg = `<span class="gseg" role="group" aria-label="${esc(r.tabs ? r.name : r.gname)} 보여주는 방식">
+      <button data-group="tab" data-gk="${r.gk}" aria-pressed="${!!r.tabs}" ${!r.tabs && parts < 2 ? 'disabled title="남은 구좌가 하나라 묶을 수 없어요"' : ''}>탭 하나로</button>
+      <button data-group="split" data-gk="${r.gk}" data-gid="${r.id}" aria-pressed="${!r.tabs}">따로 구좌로</button></span>`;
+  return `<div class="grp"><span class="tag">${esc(r.kind)}</span>${seg}
+    <span class="cap">${r.tabs ? `탭 ${r.tabs.length}개: ${r.tabs.map(esc).join(' · ')} · 탭 하나가 PROMO_WORK 칸 하나` : `'${esc(r.gname)}' 묶음을 구좌 ${parts}개로 나눴어요`} · 지난 행사에서 추정</span></div>`;
 }
 function render() { renderCands(); renderEdit(); $$('.demo .seg [data-n]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.n === n)); }
 
@@ -319,6 +360,12 @@ document.addEventListener('click', e => {
   if (nb) { n = +nb.dataset.n; if (chosen && !CANDS.slice(0, n).some(c => c.id === chosen)) { chosen = null; rows = []; } render(); return; }
   const ch = t.closest('[data-choose]'); if (ch) { choose(ch.dataset.choose); return; }
   const og = t.closest('[data-orig]'); if (og) { openOrig(og.dataset.orig); return; }
+  const gb = t.closest('[data-group]');
+  if (gb) {
+    if (gb.getAttribute('aria-pressed') === 'true') return;
+    if (gb.dataset.group === 'split') splitGroup(gb.dataset.gid); else mergeGroup(gb.dataset.gk);
+    dirty = true; sel = null; renderEdit(); return;
+  }
   const r = t.closest('.r');
   if (r) {
     const id = r.dataset.id;
