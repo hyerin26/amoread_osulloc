@@ -4,6 +4,7 @@
 
 출처 (출처마다 연결 상태를 같이 돌려준다. 키가 없으면 'no_key' → 화면은 '연결 안 됨'으로 표시)
 - 네이버 검색광고 키워드 도구: 연관 키워드 + 월간 PC·모바일 검색수 + 경쟁 정도 → 마인드맵 가지
+- 네이버 데이터랩 검색어 트렌드: 씨앗 + 연관 상위 4개의 주별 지수 52주 → 언제 많이 찾나 (trends._post 재사용)
 - 네이버 검색 API(뉴스·블로그): 씨앗 키워드의 최신 글 → 근거 패널 (scout._search 재사용)
 빅카인즈·구글 트렌드·캐릿은 공식 이용 조건·명세 확인 전이라 연결하지 않는다 (plans/20 §3).
 
@@ -18,6 +19,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import timedelta
 
 from . import config, scout, trends
 
@@ -105,6 +107,27 @@ def _articles(seed):
     return out
 
 
+def _change(vals):
+    a, b = vals[-4:], vals[-8:-4]
+    if len(b) < 4 or not sum(b):
+        return None
+    return round(sum(a) / sum(b) - 1, 2)
+
+
+def _trend(words):
+    """데이터랩 주별 검색 지수 52주. 한 요청 안의 상대값이라 이 키워드들끼리는 크기 비교가 된다."""
+    end = trends._last_sunday()
+    res = trends._post({"startDate": (end - timedelta(days=7 * 52)).isoformat(), "endDate": end.isoformat(),
+                        "timeUnit": "week", "keywordGroups": [{"groupName": w, "keywords": [w]} for w in words]})
+    out = []
+    for w, r in zip(words, res.get("results") or []):
+        pts = [(str(d["period"]), float(d["ratio"])) for d in r.get("data") or [] if d.get("period")]
+        vals = [v for _, v in pts]
+        peak = max(pts, key=lambda p: p[1])[0] if pts else ""
+        out.append({"keyword": w, "weekly": pts, "change_4w": _change(vals), "peak_month": int(peak[5:7]) if peak else None})
+    return out
+
+
 def _load():
     try:
         return json.loads(config.KEYWORD_CACHE.read_text(encoding="utf-8"))
@@ -124,7 +147,7 @@ def _source(fn, ok_keys, seed):
         return {"status": "no_key", "items": []}
     try:
         return {"status": "ok", "items": fn(seed)}
-    except (KeywordError, scout.ScoutError) as e:
+    except (KeywordError, scout.ScoutError, trends.TrendError) as e:
         return {"status": "error", "message": str(e), "items": []}
 
 
@@ -134,13 +157,19 @@ def expand(q, refresh=False):
     hit = cache.get(seed)
     if hit and not refresh and time.time() - hit.get("t", 0) < CACHE_TTL_SEC:
         return {**hit["data"], "cached": True}
+    ad = {"name": "네이버 검색광고 키워드 도구", "basis": "연관 키워드 · 최근 30일 검색수", **_source(_related, has_ad_keys(), seed)}
+    top = [seed] + [r["keyword"] for r in ad["items"][:4]]   # 데이터랩은 한 요청에 5개까지
     data = {"seed": seed, "sources": {
-        "searchad": {"name": "네이버 검색광고 키워드 도구", "basis": "연관 키워드 · 최근 30일 검색수",
-                     **_source(_related, has_ad_keys(), seed)},
+        "searchad": ad,
+        "datalab": {"name": "네이버 데이터랩 검색어 트렌드", "basis": "주별 검색 지수 52주 (씨앗 + 검색수 상위 연관 4개, 서로 상대값)",
+                    **_source(lambda _: _trend(top), trends.has_keys(), seed)},
         "naver_search": {"name": "네이버 검색 (뉴스·블로그)", "basis": "최신 글 10건씩",
                          **_source(_articles, trends.has_keys(), seed)},
     }}
     st = [s["status"] for s in data["sources"].values()]
+    if any(s != "no_key" for s in st):   # 실제로 부른 게 있을 때만 남김 (키워드 자체는 적지 않음)
+        trends._log({"service": "keywords_expand", **{k: v["status"] for k, v in data["sources"].items()},
+                     "success": "error" not in st})
     if "ok" in st and "error" not in st:   # 실패가 섞인 결과는 6시간 붙잡아 두지 않음
         cache[seed] = {"t": time.time(), "data": data}
         _save(cache)
