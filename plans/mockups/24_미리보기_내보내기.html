@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미리보기 내보내기 목업</title>
+<!-- 디자인 기준: AMOREAD Green UI v2.5.1. 색·글자·간격은 앱의 tokens.css를 그대로 읽는다 -->
+<link rel="stylesheet" href="../../workspace/amoread_app/planner/static/tokens.css">
+<style>
+@font-face { font-family: 'Pretendard Variable'; font-weight: 45 920; font-display: swap;
+  src: url('../../workspace/amoread_app/planner/static/fonts/PretendardVariable.woff2') format('woff2-variations'); }
+:root { --cls-season: #e2f0ee; --cls-season-ink: #1f5f57; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--font); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); background: var(--bg); }
+button, input, textarea { font: inherit; }
+h1, h2, h3, h4, p { margin: 0; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.cap { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); }
+.top { height: 72px; display: flex; align-items: center; gap: var(--s4); padding: 0 var(--s5); background: var(--shell); border-bottom: 1px solid var(--line); }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: var(--fw-title); font-size: var(--fs-h1); letter-spacing: -0.01em; }
+.logo i { width: 32px; height: 32px; border-radius: var(--r2); background: var(--ink); color: var(--surface); display: grid; place-items: center; font-style: normal; font-size: var(--fs-h1); }
+.crumb { color: var(--mute); font-size: var(--fs-sm); }
+.crumb a { color: var(--mute); text-decoration: none; }
+.crumb a:hover { color: var(--ink); }
+.top .grow { flex: 1; }
+.top .note { color: var(--mute); font-size: var(--fs-cap); }
+.page { max-width: 1440px; margin: 0 auto; padding: var(--s5) var(--s5) 64px; }
+.demo { background: var(--warn-soft); color: var(--warn); border-radius: var(--r); padding: 12px 16px; font-size: var(--fs-sm); line-height: var(--lh-label); margin-bottom: var(--s4); }
+.demo b { font-weight: var(--fw-strong); }
+.head { display: flex; align-items: flex-end; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s4); }
+.head .grow { flex: 1; min-width: 280px; }
+.overline { font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); color: var(--mute); margin-bottom: 4px; }
+.head h1 { font-size: var(--fs-masthead); line-height: var(--lh-masthead); font-weight: var(--fw-title); letter-spacing: -0.02em; }
+.head p { margin-top: 6px; color: var(--mute); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: var(--control-lg); padding: 0 16px; border: 0; border-radius: var(--r2);
+  background: var(--sunken); color: var(--ink); font-weight: var(--fw-strong); line-height: var(--lh-label); cursor: pointer; white-space: nowrap; text-decoration: none; }
+.btn:hover { background: var(--line-sub); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(.94); }
+.btn.ghost { background: transparent; }
+.btn.ghost:hover { background: var(--hover); }
+.btn.sm { height: var(--control-md); padding: 0 12px; font-size: var(--fs-sm); }
+.btn.xs { height: 28px; padding: 0 8px; font-size: var(--fs-cap); }
+.tag { display: inline-flex; align-items: center; border-radius: var(--r2); padding: 2px 8px; font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); background: var(--sunken); color: var(--ink2); white-space: nowrap; }
+.tag.demo-t { background: var(--warn-soft); color: var(--warn); }
+.tag.real { background: var(--accent-soft); color: var(--accent); }
+.tag.cls { background: var(--cls-season); color: var(--cls-season-ink); }
+.seg { display: inline-flex; gap: 4px; padding: 4px; background: var(--sunken); border-radius: var(--r2); }
+.seg > button { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; min-height: var(--control-sm); padding: 6px 12px; border-radius: 6px;
+  color: var(--mute); font-size: var(--fs-sm); line-height: var(--lh-label); font-weight: var(--fw-medium); white-space: nowrap; }
+.seg > button:hover { color: var(--ink); }
+.seg > button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-strong); }
+.seg > button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.card { background: var(--surface); border: 1px solid var(--line-sub); border-radius: var(--r); padding: var(--s4); }
+.card > h2, .sec-h h2 { font-size: var(--fs-h2); line-height: var(--lh-h2); font-weight: var(--fw-strong); }
+
+.lay { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: var(--s5); align-items: start; }
+@media (max-width: 1080px) { .lay { grid-template-columns: minmax(0, 1fr); } }
+.side { position: sticky; top: var(--s4); display: grid; gap: var(--s4); }
+
+/* 확인할 것 */
+.chk { list-style: none; margin: var(--s3) 0 0; padding: 0; display: grid; gap: 6px; }
+.chk li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: start; padding: 8px 10px; border-radius: var(--r2); font-size: var(--fs-sm); }
+.chk li.warn { background: var(--warn-soft); }
+.chk li.info { background: var(--bg); }
+.chk li.ok { background: var(--ok-soft); color: var(--ok); }
+.chk .lv { font-size: var(--fs-cap); font-weight: var(--fw-strong); white-space: nowrap; }
+.chk li.warn .lv { color: var(--warn); }
+.chk li.info .lv { color: var(--mute); }
+.chk .go { all: unset; cursor: pointer; font-size: var(--fs-cap); color: var(--accent); font-weight: var(--fw-strong); white-space: nowrap; }
+.chk .go:hover { text-decoration: underline; }
+.chk .go:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chk-h { font-size: var(--fs-cap); font-weight: var(--fw-strong); color: var(--ink2); margin-top: var(--s3); }
+
+/* 내보내기 */
+.exp { display: grid; gap: var(--s2); margin-top: var(--s3); }
+.exp .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px var(--s3); align-items: center; padding: 10px 12px; border: 1px solid var(--line-sub); border-radius: var(--r2); }
+.exp .row b { font-size: var(--fs-sm); font-weight: var(--fw-strong); }
+.exp .row .cap { grid-column: 1; }
+.exp .row .btn { grid-row: 1 / span 2; grid-column: 2; }
+.log { list-style: none; margin: var(--s2) 0 0; padding: 0; display: grid; gap: 4px; font-size: var(--fs-cap); color: var(--mute); }
+
+/* 디자이너 기획안 (문서) */
+.docwrap { background: var(--sunken); border-radius: var(--r); padding: var(--s5); }
+.doc { max-width: 880px; margin: 0 auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 40px; display: grid; gap: 32px; }
+.doc .dh .overline { margin-bottom: 8px; }
+.doc .dh h2 { font-size: var(--fs-masthead); line-height: var(--lh-masthead); font-weight: var(--fw-title); letter-spacing: -0.02em; }
+.doc .facts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s3); }
+.doc dl { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 8px var(--s4); margin: 0; font-size: var(--fs-sm); }
+.doc dt { color: var(--mute); }
+.doc dd { margin: 0; }
+.doc dd .copy { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var(--fw-strong); }
+.doc h3 { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var(--fw-strong); }
+.doc h4 { font-size: var(--fs-sm); font-weight: var(--fw-strong); margin-bottom: 6px; }
+.dsec { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: var(--s5); padding-top: 28px; border-top: 1px solid var(--line-sub); }
+@media (max-width: 760px) { .dsec, .doc .cover { grid-template-columns: minmax(0, 1fr); } }
+.dsec .num { font-size: var(--fs-cap); color: var(--mute); }
+.dsec .role { color: var(--ink2); font-size: var(--fs-sm); margin: 2px 0 var(--s3); }
+.dsec .kv { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 4px var(--s3); font-size: var(--fs-sm); }
+.dsec .kv span:nth-child(odd) { color: var(--mute); }
+.dsec .blk { display: grid; gap: 6px; margin-top: var(--s4); }
+.undef { display: inline-flex; font-size: var(--fs-cap); padding: 1px 6px; border-radius: 4px; background: var(--warn-soft); color: var(--warn); font-weight: var(--fw-strong); }
+.doc .cover { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: var(--s5); align-items: start; }
+.refrow { display: flex; flex-wrap: wrap; gap: var(--s3); }
+.refc { width: 120px; display: grid; gap: 4px; font-size: var(--fs-cap); }
+.refc .fr { width: 120px; height: 160px; border: 1px solid var(--line-sub); border-radius: 6px; background: var(--bg); display: grid; place-items: center; padding: 4px; overflow: hidden; }
+.refc .fr img { display: block; max-width: 100%; max-height: 100%; }
+.refc b { font-weight: var(--fw-medium); font-size: var(--fs-cap); color: var(--ink); }
+.refc .pts { color: var(--accent); }
+textarea.req { width: 100%; border: 1px solid var(--line); border-radius: var(--r2); padding: 8px 10px; resize: vertical; line-height: var(--lh-body); color: var(--ink); background: var(--surface); }
+textarea.req:hover { border-color: var(--line-strong); }
+textarea.req:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+.plist { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: var(--fs-sm); }
+.plist li { display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+.plist .pp { color: var(--price); font-weight: var(--fw-strong); }
+.rvq { border-left: 3px solid var(--line); padding: 2px 10px; font-size: var(--fs-sm); color: var(--ink2); }
+.rvq b { color: var(--ink); display: block; }
+
+/* 와이어프레임 (작게) */
+.wf { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); }
+.wf .s { padding: 8px; border-bottom: 1px solid var(--line-sub); display: grid; gap: 4px; }
+.wf .s:last-child { border-bottom: 0; }
+.wf .s .nm { font-size: 10px; color: var(--mute); }
+.wf .s.on { box-shadow: inset 0 0 0 2px var(--accent); }
+.wf .blk2 { background: var(--sunken); border-radius: 3px; }
+.wf .row { display: grid; gap: 3px; } .wf .g2 { grid-template-columns: 1fr 1fr; } .wf .g3 { grid-template-columns: 1fr 1fr 1fr; }
+.wf .hero { height: 70px; display: grid; place-items: center; font-size: 11px; font-weight: var(--fw-strong); text-align: center; padding: 0 8px; }
+.wf .crd { height: 34px; } .wf .feat > :first-child { grid-column: 1 / -1; height: 48px; }
+.wf .ln { height: 8px; } .wf .ln.y { background: var(--warn-soft); }
+.wf .bt { height: 14px; width: 50%; background: var(--ink); border-radius: 3px; justify-self: center; }
+.wf .pl { display: flex; gap: 3px; } .wf .pl span { height: 6px; width: 22%; background: var(--line-sub); border-radius: 2px; } .wf .pl span:first-child { background: var(--ink); }
+
+/* 카드 문구표 */
+.tbl-wrap { overflow-x: auto; }
+table.cc { border-collapse: collapse; width: 100%; font-size: var(--fs-cap); }
+table.cc th { text-align: left; font-weight: var(--fw-medium); color: var(--mute); background: var(--bg); padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.cc td { padding: 6px 8px; border-bottom: 1px solid var(--line-sub); white-space: nowrap; vertical-align: top; }
+table.cc td.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.cc td.sale { color: var(--price); font-weight: var(--fw-strong); }
+table.cc td.empty { color: var(--line-strong); }
+.cc-h { display: flex; gap: var(--s3); align-items: center; margin: var(--s4) 0 var(--s2); flex-wrap: wrap; }
+.cc-h h4 { margin: 0; }
+.doc-title { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var(--fw-strong); }
+.note-gap { margin-top: var(--s3); }
+/* PDF로 저장: 문서만 인쇄 */
+@media print { .top, .demo, .page > .head, .side, .seg, .toast { display: none !important; } .lay { display: block; } .docwrap { padding: 0; background: none; } .doc { border: 0; padding: 0; max-width: none; } textarea.req { border: 0; resize: none; } }
+.toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: var(--ink); color: var(--surface); border-radius: var(--r); padding: 14px 18px; font-size: var(--fs-sm);
+  box-shadow: 0 16px 48px -12px rgba(33, 33, 33, .15); opacity: 0; pointer-events: none; transition: opacity .2s var(--ease); z-index: 30; max-width: calc(100vw - 32px); }
+.toast.on { opacity: 1; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo"><i aria-hidden="true">a</i>AMOREAD</div>
+  <span class="crumb"><a href="20_홈_일정표.html">홈</a> › <a href="21_브리프_키워드확장.html">브리프</a> › <a href="22_구좌구성_추천.html">구좌 구성</a> › <a href="23_구좌편집.html">구좌 편집</a> › 미리보기·내보내기</span>
+  <span class="grow"></span>
+  <span class="note">단계 이름·순서는 아직 정하지 않았어요</span>
+</header>
+<main class="page">
+  <p class="demo"><b>예시 화면이에요.</b> 구좌 편집 목업과 같은 예시 기획안이에요. 상품, 가격, 후기, 레퍼런스는 모두 가상의 값이에요.</p>
+  <div class="head"><div class="grow"><div class="overline">기획안 · 미리보기·내보내기</div><h1>디자이너에게 보낼 기획안</h1>
+    <p>확인할 것을 보고, 디자이너 기획안과 카드 문구표, PROMO_WORK 엑셀을 내보내요. 확인할 것이 남아 있어도 내보낼 수 있어요.</p></div>
+    <a class="btn sm ghost" href="23_구좌편집.html">← 구좌 편집</a></div>
+
+  <div class="lay">
+    <div class="side">
+      <section class="card" aria-labelledby="chkH"><h2 id="chkH">확인할 것 <span class="cap" id="chkN"></span></h2><div id="chk"></div></section>
+      <section class="card" aria-labelledby="expH"><h2 id="expH">내보내기</h2>
+        <div class="exp">
+          <div class="row"><b>디자이너 기획안 (HTML)</b><span class="cap">한 파일에 이미지·글꼴까지 담아요. 원가·판정은 넣지 않아요.</span><button class="btn sm primary" data-exp="html">내보내기</button></div>
+          <div class="row"><b>카드 문구표 (엑셀)</b><span class="cap">구좌별 카드 글을 칸별로. 디자이너가 그대로 옮겨 쓰게.</span><button class="btn sm" data-exp="cards">내려받기</button></div>
+          <div class="row"><b>PROMO_WORK 붙여넣기 (엑셀)</b><span class="cap">할인 행 13열 + 검증 시트. 추가 혜택(2단)은 검증 시트에만.</span><button class="btn sm" data-exp="promo">내려받기</button></div>
+          <div class="row"><b>PDF로 저장</b><span class="cap">디자이너 기획안을 인쇄 화면으로 열어요.</span><button class="btn sm ghost" data-exp="pdf">열기</button></div>
+        </div>
+        <h3 class="chk-h">내보낸 기록</h3><ul class="log" id="log"><li>아직 내보내지 않았어요</li></ul>
+      </section>
+    </div>
+
+    <section aria-labelledby="docH">
+      <div class="head"><div class="grow"><h2 id="docH" class="doc-title">디자이너 기획안 미리보기</h2></div>
+        <div class="seg" role="tablist" aria-label="미리보기"><button role="tab" data-view="doc" aria-selected="true">기획안</button><button role="tab" data-view="cards" aria-selected="false">카드 문구표</button></div></div>
+      <div class="docwrap"><article class="doc" id="doc"></article></div>
+    </section>
+  </div>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+// ================= 예시 기획안 (구좌 편집 목업 23과 같은 값, 가상) =================
+const PLAN = { title: '봄 · 피크닉에서 누리는 차 한 잔의 여유', cls: '시즌', period: '2026-03-02(월) ~ 03-15(일)', page: '이벤트 페이지', myeongbun: '봄',
+  concept: '피크닉에서 누리는 차 한 잔의 여유', copy: '피크닉 가방에 차 한 병', who: '주말 한강 피크닉을 준비하는 20~30대', keywords: ['피크닉', '보온병'] };
+const PRODUCTS = {
+  P101: { name: '벚꽃 블렌딩 티 10입', price: 18000, cost: 4300, after: 15300, rating: 4.8, reviews: 312 },
+  P104: { name: '봄 꽃차 3종 선물 세트', price: 28000, cost: 8900, after: 25200, rating: 4.9, reviews: 509 },
+  P106: { name: '말차 라떼 파우더', price: 15000, cost: 5200, after: 13500, rating: 4.8, reviews: 809 },
+  P107: { name: '은은한 녹차 티백 40입', price: 22000, cost: 4800, after: 19800, rating: 4.7, reviews: 233 },
+  P110: { name: '프리미엄 티 기프트 박스', price: 58000, cost: 21800, after: 52200, rating: 4.9, reviews: 420 },
+};
+const ITEMS = { P101: { rate: 0.2, appeal: '봄에만 만나는 벚꽃 향' }, P104: { rate: 0.15, appeal: '(재구매 1위) 받는 분도 좋아하는 꽃차' }, P106: { rate: 0.1, appeal: '' },
+  P107: { rate: 0.25, appeal: '매일 마시기 좋은 기본 녹차' }, P110: { rate: 0.24, appeal: '세작부터 블렌딩까지 담은' } };
+const EXTRAS = [{ name: '얼리버드', pct: 0.05, seqs: ['P110', 'P104'] }];
+const REVIEWS = { v1: { seq: 'P106', rating: 5, text: '물 조금 넣고 흔든 뒤 우유에 부으면 바로 말차라떼가 돼서 출근 전에도 부담 없이 마실 수 있어요.' },
+  v3: { seq: 'P104', rating: 5, text: '어머니 선물로 드렸는데 포장이 예쁘고 향이 은은하다고 좋아하셨어요.' } };
+const BRIEF_MOODS = [{ name: '돗자리 위 티타임', src: '핀터레스트 보드 · 봄 피크닉', pts: ['색감', '소품'], r: [2, 3] }, { name: '연둣빛 봄 색감', src: '외부 캠페인 일부', pts: ['색감'], r: [4, 5] }];
+const ON_SALE = ['img', 'label', 'pill', 'appeal', 'tag', 'name', 'list', 'first', 'pct', 'pname', 'sale'];
+const ON_PRICE = ['img', 'label', 'appeal', 'tag', 'name', 'list', 'pname', 'sale'];
+const c = (seq, x = {}) => ({ seq, label: '', tag: '', pill: '', copy: '', off: [], ...x });
+const SECS = [
+  { name: '메인 비주얼', layout: 'hero', headline: PLAN.copy, subhead: '들고 나가는 봄, 한 병의 여유', num: false, cta: null,
+    refs: [{ name: '봄 캠페인 메인 비주얼', page: '○○ 봄 캠페인 · 외부', note: '상단 여백과 손글씨 느낌', r: [4, 5] }], moods: [{ name: '보온병 들고 산책', src: '핀터레스트 보드 · 아웃도어', pts: ['구도'], r: [9, 16] }], notes: '' },
+  { name: '첫 잔, 벚꽃', layout: 'feat', role: '돗자리를 펴고 처음 따르는 봄 한 잔', scope: '시즌 한정 티', num: true, cta: ['시즌 한정 더보기', '시즌 한정 카테고리'], on: ON_SALE,
+    cards: [c('P101', { label: 'BEST', tag: '봄 한정', pill: 'up' }), c('P104', { tag: '보자기' }), c('P106'), c(null)],
+    refs: [{ name: '마중차 대표+2열', page: '가을 차회 · 자사몰', note: '대표 1 + 2×2 배치', r: [9, 16] }], moods: [], notes: '첫 카드는 돗자리 위 연출 컷이면 좋겠어요' },
+  { name: '가격대별 선물 추천', layout: 'grid2', subhead: '예산에 맞춰 골라 보세요', scope: '선물 세트', num: true, cta: null, on: ON_PRICE,
+    tabs: [['1만원대', [c('P107'), c(null)]], ['2만원대', [c(null), c(null)]], ['3만원 이상', [c('P110', { label: 'PRESTIGE', tag: '한정 보자기' }), c(null)]]], refs: [], moods: [], notes: '' },
+  { name: '오늘의 하루특가', layout: 'deal-banner', num: false, cta: null, refs: [], moods: [], notes: '' },
+  { name: '먼저 마셔 본 후기', layout: 'review', subhead: '재구매가 많은 상품의 실제 후기', num: true, cta: null, rv: [['v1', '작고 간편해서 매일 손이 가요'], ['v3', '선물로 드렸더니 좋아하셨어요']],
+    refs: [{ name: '재구매 BEST 후기', page: '멤버십 리뉴얼 · 자사몰', note: '제목 + 본문 + 별점 순서', r: [16, 9] }], moods: [], notes: '' },
+  { name: '피크닉 사진 인증', layout: 'ev-ugc', subhead: '우리의 봄 피크닉을 보여 주세요', num: true, cta: ['참여하기', '참여 화면 (댓글 쓰기)'],
+    ev: { how: '피크닉 사진과 함께 댓글 남기기', reward: '포인트 · 추첨 50명 1,000P', pick: '추첨 50명', when: '3/2(월) ~ 3/15(일)', login: true, notice: '' }, refs: [{ name: '암호 서신 공유', page: '한글날 · 자사몰', note: '참여 버튼 크기', r: [3, 4] }], moods: [], notes: '' },
+  { name: '봄맞이 혜택', layout: 'benefit', num: false, cta: ['혜택 받기', '쿠폰 받기'], refs: [], moods: [], notes: '' },
+  { name: '유의사항', layout: 'notice', num: false, cta: null, refs: [], moods: [], notes: '' },
+];
+const LNAME = { hero: '메인 비주얼', feat: '대표 1 + 2열', grid2: '2열 상품', 'deal-banner': '날짜별 특가', review: '후기 모음', 'ev-ugc': '이벤트 · 댓글·사진 인증', benefit: '혜택 총정리', notice: '유의사항' };
+
+// ================= 가격 (구좌 편집과 같은 규칙) =================
+const r10 = n => Math.round(n / 10) * 10;
+const won = n => `${Math.round(n).toLocaleString('ko-KR')}원`;
+const esc = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+const extraOf = seq => EXTRAS.find(e => e.seqs.includes(seq)) || null;
+function priceOf(seq) {
+  const p = PRODUCTS[seq], r = ITEMS[seq]?.rate || 0, first = r10(p.price * (1 - r)), ex = extraOf(seq), fin = ex ? r10(first * (1 - ex.pct)) : first;
+  return { list: p.price, first, fin, ex, pct: Math.round((1 - fin / p.price) * 100), pname: ex ? `${ex.name}가` : r ? '할인가' : '판매가' };
+}
+const judgeLv = seq => { const p = PRODUCTS[seq], pr = priceOf(seq); return pr.fin >= p.price ? 'none' : p.cost / (pr.fin / 1.1) > 0.45 ? 'warn' : 'ok'; };
+function pillText(cd) {
+  if (cd.pill !== 'up') return '';
+  const p = PRODUCTS[cd.seq], d = p.after == null ? 0 : p.after - priceOf(cd.seq).fin;
+  return d > 0 ? `특가 종료 시 ${d.toLocaleString('ko-KR')}원 비싸져요` : '';
+}
+const cardsOf = s => s.tabs ? s.tabs.flatMap(([t, cs]) => cs.map(x => ({ ...x, tab: t }))) : (s.cards || []);
+const nums = () => { let n = 0; return SECS.map(s => s.num ? ++n : 0); };
+
+// ================= 확인할 것 =================
+function checks() {
+  const out = [], go = i => ({ i });   // 구좌 번호만 붙임 (글은 t에)
+  SECS.forEach((s, i) => {
+    cardsOf(s).forEach(cd => { if (cd.seq && judgeLv(cd.seq) === 'warn') out.push({ lv: 'warn', t: `${PRODUCTS[cd.seq].name}: 최종가 기준 원가율 주의 (판정)`, ...go(i) }); });
+    const empty = cardsOf(s).filter(cd => !cd.seq).length; if (empty) out.push({ lv: 'info', t: `${s.name}: 상품 미정 카드 ${empty}개 (디자이너 기획안에 '미정'으로 보여요)`, ...go(i) });
+    cardsOf(s).forEach(cd => { if (cd.seq && cd.pill === 'up' && !pillText(cd)) out.push({ lv: 'warn', t: `${PRODUCTS[cd.seq].name}: 가격 오름 예고를 계산하지 못했어요`, ...go(i) }); });
+    if (s.layout === 'review') out.push({ lv: 'info', t: `${s.name}: 후기를 페이지에 써도 되는지 운영·법무 확인 필요`, ...go(i) });
+    if (s.ev && !s.ev.notice) out.push({ lv: 'warn', t: `${s.name}: 이벤트 유의사항이 비어 있어요 (운영·법무 기준 확인 필요)`, ...go(i) });
+    if (s.layout === 'deal-banner') out.push({ lv: 'info', t: '하루특가: 날짜별 상품은 상품·할인의 하루특가 편성 기준이에요', ...go(i) });
+  });
+  return out;
+}
+function renderChecks() {
+  const cs = checks(), w = cs.filter(x => x.lv === 'warn'), n = cs.filter(x => x.lv === 'info');
+  document.getElementById('chkN').textContent = `주의 ${w.length} · 알림 ${n.length}`;
+  const li = x => `<li class="${x.lv}"><span class="lv">${x.lv === 'warn' ? '주의' : '알림'}</span><span>${esc(x.t)}</span><button class="go" data-go="${x.i}">구좌 보기</button></li>`;
+  document.getElementById('chk').innerHTML = (w.length ? `<h3 class="chk-h">꼭 볼 것</h3><ul class="chk">${w.map(li).join('')}</ul>` : '<ul class="chk"><li class="ok"><span class="lv">✓</span><span>꼭 볼 것이 없어요</span></li></ul>')
+    + (n.length ? `<h3 class="chk-h">알아 두기</h3><ul class="chk">${n.map(li).join('')}</ul>` : '')
+    + '<p class="cap note-gap">남아 있어도 내보낼 수 있어요. 내보낼 때 한 번 더 알려 드려요.</p>';
+}
+
+// ================= 디자이너 기획안 =================
+function demoImg(w, h) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w * 40}" height="${h * 40}"><defs><pattern id="p" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="16" fill="#f3f3f3"/></pattern></defs><rect width="100%" height="100%" fill="#ffffff"/><rect width="100%" height="100%" fill="url(#p)"/><rect x="0.5" y="0.5" width="${w * 40 - 1}" height="${h * 40 - 1}" fill="none" stroke="#dedede"/></svg>`;
+  return `<img src="data:image/svg+xml,${encodeURIComponent(svg)}" alt="">`;
+}
+// 기획안 전체 와이어프레임 (4) — mark = 강조할 구좌 (구좌마다 그 구좌만 강조 = 기획 구좌 와이어프레임 (3)의 자리)
+function wire(mark = -1, only = -1) {
+  const body = s => {
+    if (s.layout === 'hero') return `<span class="blk2 hero">${esc(s.headline)}</span>`;
+    if (s.layout === 'feat') return '<span class="row g2 feat"><span class="blk2 crd"></span><span class="blk2 crd"></span><span class="blk2 crd"></span></span>';
+    if (s.layout === 'grid2') return `${s.tabs ? '<span class="pl"><span></span><span></span><span></span></span>' : ''}<span class="row g2"><span class="blk2 crd"></span><span class="blk2 crd"></span></span>`;
+    if (s.layout === 'review') return '<span class="blk2 ln"></span><span class="blk2 ln"></span>';
+    if (s.layout === 'benefit') return '<span class="blk2 ln y"></span><span class="blk2 ln y"></span>';
+    return '<span class="blk2 ln"></span>';
+  };
+  return `<div class="wf" aria-hidden="true">${SECS.map((s, i) => only >= 0 && i !== only ? '' : `<div class="s ${i === mark ? 'on' : ''}"><span class="nm">${esc(s.name)}</span>${body(s)}${s.cta ? '<span class="bt"></span>' : ''}</div>`).join('')}</div>`;
+}
+const refCards = list => `<div class="refrow">${list.map(r => `<div class="refc"><span class="fr">${demoImg(r.r[0], r.r[1])}</span><b>${esc(r.name)}</b><span class="cap">${esc(r.page || r.src)}</span>${r.note ? `<span>${esc(r.note)}</span>` : ''}${r.pts ? `<span class="pts">${r.pts.join(' · ')}</span>` : ''}</div>`).join('')}</div>`;
+function cardLine(cd) {
+  if (!cd.seq) return `<li><span class="undef">미정</span>${cd.tab ? ` <span class="cap">${esc(cd.tab)} 탭</span>` : ''} 상품을 고르는 중이에요</li>`;
+  const p = PRODUCTS[cd.seq], pr = priceOf(cd.seq), pill = pillText(cd);
+  return `<li>${cd.tab ? `<span class="tag">${esc(cd.tab)}</span>` : ''}${cd.label ? `<span class="tag">${esc(cd.label)}</span>` : ''}<b>${cd.tag ? `[${esc(cd.tag)}] ` : ''}${esc(p.name)}</b>
+    <span class="pp">${pr.pct ? `${pr.pct}% ` : ''}${esc(pr.pname)} ${won(pr.fin)}</span>${pill ? `<span class="cap">${esc(pill)}</span>` : ''}</li>`;
+}
+function renderDoc() {
+  const n = nums();
+  const cover = `<header class="dh"><div class="overline">AMOREAD · 디자이너 기획안 · 2026-11-06</div><h2>${esc(PLAN.title)}</h2>
+      <div class="facts"><span class="tag cls">${PLAN.cls}</span><span class="tag">${PLAN.period}</span><span class="tag">${PLAN.page}</span><span class="tag">구좌 ${SECS.length}개</span></div></header>
+    <section class="cover"><dl><dt>명분</dt><dd>${esc(PLAN.myeongbun)}</dd><dt>컨셉</dt><dd>${esc(PLAN.concept)}</dd><dt>메인 카피</dt><dd><span class="copy">${esc(PLAN.copy)}</span></dd>
+        <dt>누구에게</dt><dd>${esc(PLAN.who)}</dd><dt>키워드</dt><dd>${PLAN.keywords.map(esc).join(' · ')}</dd>
+        <dt>추가 혜택</dt><dd>${EXTRAS.map(e => `${esc(e.name)}: 할인가에서 ${Math.round(e.pct * 100)}% 더 (${e.seqs.map(q => esc(PRODUCTS[q].name)).join(', ')})`).join('<br>')}</dd>
+        <dt>기획안 전체 느낌</dt><dd>${refCards(BRIEF_MOODS)}</dd></dl>
+      <div><h4>기획안 전체 와이어프레임</h4>${wire()}</div></section>`;
+  const sec = (s, i) => {
+    const cards = cardsOf(s), kv = [];
+    if (s.layout !== 'hero') kv.push(['구좌 종류', LNAME[s.layout]]);
+    if (s.scope) kv.push(['담는 것', s.scope]);
+    if (s.headline && s.layout !== 'hero') kv.push(['제목', s.headline]);
+    if (s.subhead) kv.push(['서브 카피', s.subhead]);
+    kv.push(['버튼', s.cta ? `${s.cta[0]} → ${s.cta[1] || '어디로 미정'}` : '없음']);
+    return `<section class="dsec" aria-label="${i + 1}번 구좌"><div>${wire(i, i)}</div><div>
+      ${s.num ? `<div class="num">${String(n[i]).padStart(2, '0')}</div>` : ''}<h3>${esc(s.name)}</h3>${s.role ? `<p class="role">${esc(s.role)}</p>` : '<p class="role"></p>'}
+      <div class="kv">${kv.map(([k, v]) => `<span>${k}</span><span>${esc(v)}</span>`).join('')}</div>
+      ${cards.length ? `<div class="blk"><h4>상품 ${cards.filter(x => x.seq).length}/${cards.length} <span class="cap">카드 글은 카드 문구표에 칸별로 있어요</span></h4><ul class="plist">${cards.map(cardLine).join('')}</ul></div>` : ''}
+      ${s.layout === 'deal-banner' ? '<div class="blk"><h4>날짜별 상품</h4><p class="cap">상품·할인의 하루특가 편성 기준으로 날짜마다 바뀌어요 (편성표를 함께 보내요)</p></div>' : ''}
+      ${s.rv ? `<div class="blk"><h4>후기 <span class="cap">원문 그대로 · 작성자 숨김</span></h4>${s.rv.map(([id, title]) => { const v = REVIEWS[id]; return `<div class="rvq"><b>${esc(title)}</b>${esc(v.text)}<br><span class="cap">${'★'.repeat(v.rating)} · ${esc(PRODUCTS[v.seq].name)}</span></div>`; }).join('')}</div>` : ''}
+      ${s.ev ? `<div class="blk"><h4>운영 조건</h4><div class="kv"><span>참여 방법</span><span>${esc(s.ev.how)}</span><span>보상</span><span>${esc(s.ev.reward)}</span><span>당첨</span><span>${esc(s.ev.pick)}</span><span>기간</span><span>${esc(s.ev.when)}</span><span>로그인</span><span>${s.ev.login ? '필요' : '필요 없음'}</span><span>유의사항</span><span>${s.ev.notice ? esc(s.ev.notice) : '<span class="undef">미정</span>'}</span></div></div>` : ''}
+      ${s.refs.length ? `<div class="blk"><h4>참고 레퍼런스 (원본 구좌)</h4>${refCards(s.refs)}</div>` : ''}
+      ${s.moods.length ? `<div class="blk"><h4>느낌 레퍼런스</h4>${refCards(s.moods)}</div>` : ''}
+      <div class="blk"><h4>디자인 요청 <span class="cap">여기서 고쳐도 구좌 편집과 같은 값이에요</span></h4><textarea class="req" data-req="${i}" rows="2" placeholder="따로 부탁할 것이 없어요">${esc(s.notes)}</textarea></div>
+      </div></section>`;
+  };
+  document.getElementById('doc').innerHTML = cover + SECS.map(sec).join('');
+}
+
+// ================= 카드 문구표 =================
+// 칸은 구좌에서 켜진 요소만. 숫자는 서비스가 계산한 값 (옮겨 적기 실수 방지)
+const COLS = [['label', '모서리 라벨'], ['pill', '알약'], ['appeal', '소구문구'], ['tag', '이름 앞 태그'], ['name', '상품명'], ['list', '정가'], ['first', '1단 가격'], ['pct', '할인율'], ['pname', '가격 이름'], ['sale', '판매가'], ['copy', '카드 문구']];
+function cellOf(k, cd) {
+  if (!cd.seq) return k === 'name' ? '미정' : '';
+  const p = PRODUCTS[cd.seq], pr = priceOf(cd.seq);
+  return { label: cd.label, pill: pillText(cd), appeal: ITEMS[cd.seq]?.appeal || '', tag: cd.tag ? `[${cd.tag}]` : '', name: p.name, list: pr.fin < pr.list ? won(pr.list) : '',
+    first: pr.ex ? won(pr.first) : '', pct: pr.pct ? `${pr.pct}%` : '', pname: pr.pname, sale: won(pr.fin), copy: cd.copy }[k] || '';
+}
+function cardTables() {
+  return SECS.filter(s => s.on).map(s => { const cols = COLS.filter(([k]) => s.on.includes(k) || k === 'copy' && cardsOf(s).some(x => x.copy)), rows = cardsOf(s);
+    return { s, cols, rows, tsv: [['구좌·탭', '순서', ...cols.map(c => c[1])].join('\t'), ...rows.map((cd, j) => [cd.tab ? `${s.name} · ${cd.tab}` : s.name, j + 1, ...cols.map(([k]) => cellOf(k, cd))].join('\t'))].join('\n') }; });
+}
+function renderCards() {
+  document.getElementById('doc').innerHTML = `<header class="dh"><div class="overline">카드 문구표 · 같은 내용을 엑셀로도 내려받을 수 있어요</div><h2>${esc(PLAN.title)}</h2>
+    <p class="cap">구좌에서 켜진 요소만 칸으로 보여요. 가격은 서비스가 계산한 값이라 그대로 옮겨 쓰면 돼요.</p></header>`
+    + cardTables().map((t, ti) => `<section><div class="cc-h"><h4>${esc(t.s.name)} <span class="cap">${esc(LNAME[t.s.layout])} · ${t.rows.length}칸</span></h4><button class="btn xs" data-copy="${ti}">표 복사</button></div>
+      <div class="tbl-wrap"><table class="cc"><thead><tr><th>구좌·탭</th><th>#</th>${t.cols.map(([, n]) => `<th>${n}</th>`).join('')}</tr></thead>
+      <tbody>${t.rows.map((cd, j) => `<tr><td>${esc(cd.tab || t.s.name)}</td><td class="num">${j + 1}</td>${t.cols.map(([k]) => { const v = cellOf(k, cd); return `<td class="${['list', 'first', 'pct', 'sale'].includes(k) ? 'num' : ''} ${k === 'sale' ? 'sale' : ''} ${v ? '' : 'empty'}">${esc(v || '-')}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div></section>`).join('');
+}
+
+// ================= 동작 =================
+let view = 'doc', log = [];
+const $ = s => document.querySelector(s);
+function render() { renderChecks(); view === 'doc' ? renderDoc() : renderCards(); document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-selected', b.dataset.view === view)); }
+document.addEventListener('click', e => {
+  const t = e.target;
+  const vb = t.closest('[data-view]'); if (vb) { view = vb.dataset.view; render(); return; }
+  const g = t.closest('[data-go]'); if (g) { toast(`예시예요: 구좌 편집에서 ${+g.dataset.go + 1}번 구좌 '${SECS[+g.dataset.go].name}'을 열어요`); return; }
+  const cp = t.closest('[data-copy]'); if (cp) { const tsv = cardTables()[+cp.dataset.copy].tsv;
+    (navigator.clipboard?.writeText(tsv) || Promise.reject()).then(() => toast('표를 복사했어요. 엑셀이나 피그마에 붙여 넣을 수 있어요'), () => toast('이 브라우저에서는 복사가 막혀 있어요. 엑셀로 내려받아 주세요')); return; }
+  const ex = t.closest('[data-exp]'); if (ex) {
+    const w = checks().filter(x => x.lv === 'warn').length, k = ex.dataset.exp;
+    if (k !== 'pdf' && w && !confirm(`꼭 볼 것이 ${w}건 남아 있어요. 그래도 내보낼까요?`)) return;
+    const name = { html: '디자이너 기획안 (HTML 한 파일)', cards: '카드 문구표 (엑셀)', promo: 'PROMO_WORK 붙여넣기 (엑셀)', pdf: 'PDF 인쇄 화면' }[k];
+    if (k === 'pdf') { window.print(); return; }
+    log.unshift(`${new Date().toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} · ${name}`);
+    $('#log').innerHTML = log.map(x => `<li>${esc(x)}</li>`).join('');
+    toast(`예시예요: ${name}을 내보냈어요. 실제로는 파일이 내려받아져요`); return;
+  }
+});
+document.addEventListener('input', e => { const r = e.target.dataset.req; if (r != null) SECS[+r].notes = e.target.value; });
+let toastT;
+function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2800); }
+render();
+</script>
+</body>
+</html>

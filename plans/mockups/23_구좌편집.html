@@ -75,9 +75,14 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .card { background: var(--surface); border: 1px solid var(--line-sub); border-radius: var(--r); padding: var(--s4); }
 .card h2 { font-size: var(--fs-h2); line-height: var(--lh-h2); font-weight: var(--fw-strong); }
 .list ol { list-style: none; margin: var(--s3) 0 0; padding: 0; display: grid; gap: 4px; }
-.list li button { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 2px 6px; padding: 8px 10px; border: 1px solid transparent; border-radius: var(--r2); }
-.list li button:hover { background: var(--bg); }
-.list li button[aria-current="true"] { border-color: var(--accent); }
+.list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px; border-radius: var(--r2); }
+.list li.drag { opacity: .4; }
+.list li.over { box-shadow: 0 -2px 0 var(--move); }
+.list li .mv { display: flex; flex-direction: column; }
+.list li .mv .ib { width: 22px; height: 18px; font-size: 11px; }
+.list li > button { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 2px 6px; padding: 8px 10px; border: 1px solid transparent; border-radius: var(--r2); }
+.list li > button:hover { background: var(--bg); }
+.list li > button[aria-current="true"] { border-color: var(--accent); }
 .list .n { color: var(--mute); font-size: var(--fs-cap); font-variant-numeric: tabular-nums; }
 .list .nm { font-size: var(--fs-sm); font-weight: var(--fw-medium); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .list .st { grid-column: 2; font-size: var(--fs-cap); color: var(--mute); }
@@ -271,7 +276,7 @@ table.t tr.chg td { background: var(--accent-soft); }
     </div>
   </div>
   <div class="ed">
-    <nav class="card list" aria-labelledby="listH"><h2 id="listH">구좌 목록</h2><p class="cap">누르면 그 구좌를 편집해요</p><ol id="secList"></ol></nav>
+    <nav class="card list" aria-labelledby="listH"><h2 id="listH">구좌 목록</h2><p class="cap">누르면 편집해요 · 끌거나 ↑↓로 순서를 바꿔요</p><ol id="secList"></ol></nav>
     <section class="stage" aria-label="기획안 전체 와이어프레임">
       <span class="cap top-cap">기획안 전체 와이어프레임 · 고른 구좌가 초록 테두리예요 (이미지는 아직 연결 전)</span>
       <div class="phone" id="phone"></div>
@@ -443,8 +448,14 @@ function secState(s) {
   return [s.headline || s.subhead ? '문구 있음' : '문구 없음', !!(s.headline || s.subhead)];
 }
 function renderList() {
-  $('#secList').innerHTML = secs.map((s, i) => { const [t, ok] = secState(s); return `<li><button data-sec="${s.id}" ${s.id === cur ? 'aria-current="true"' : ''}>
-    <span class="n">${i + 1}</span><span class="nm">${s.num ? `${String(numOf(s)).padStart(2, '0')} ` : ''}${esc(s.name)}</span><span class="st"><span class="dot ${ok ? 'ok' : ''}"></span>${esc(t)} · ${esc(LNAME[s.layout])}</span></button></li>`; }).join('');
+  $('#secList').innerHTML = secs.map((s, i) => { const [t, ok] = secState(s); return `<li draggable="true" data-li="${s.id}"><button data-sec="${s.id}" ${s.id === cur ? 'aria-current="true"' : ''} aria-label="${i + 1}번 구좌 ${esc(s.name)} (Alt+↑↓로 옮기기)">
+    <span class="n">${i + 1}</span><span class="nm">${s.num ? `${String(numOf(s)).padStart(2, '0')} ` : ''}${esc(s.name)}</span><span class="st"><span class="dot ${ok ? 'ok' : ''}"></span>${esc(t)} · ${esc(LNAME[s.layout])}</span></button>
+    <span class="mv"><button class="ib" data-secmv="${s.id}:-1" ${i ? '' : 'disabled'} aria-label="${esc(s.name)} 위로">↑</button><button class="ib" data-secmv="${s.id}:1" ${i < secs.length - 1 ? '' : 'disabled'} aria-label="${esc(s.name)} 아래로">↓</button></span></li>`; }).join('');
+}
+// 구좌 순서 바꾸기 (↑↓, Alt+↑↓, 끌기). 번호(01, 02…)와 와이어프레임 순서가 함께 바뀜
+function moveSec(id, d) {
+  const i = secs.findIndex(s => s.id === id), j = i + d; if (i < 0 || j < 0 || j >= secs.length) return false;
+  [secs[i], secs[j]] = [secs[j], secs[i]]; return true;
 }
 function wCard(c, s) {
   if (!c.seq) return '<div class="w-card"><span class="img"></span>상품 고르기</div>';
@@ -709,9 +720,10 @@ function applyUpload() {
 function dlg(o, h, sub, body, foot) { $('#dlgO').textContent = o; $('#dlgH').textContent = h; $('#dlgS').textContent = sub; $('#dlgB').innerHTML = body; $('#dlgF').innerHTML = foot; $('#dlg').showModal(); }
 
 // ================= 동작 =================
-const refocus = sel => { const el = document.querySelector(sel); el?.focus(); };
+const refocus = sel => { const el = document.querySelector(sel); el?.focus(); return !!el; };
 document.addEventListener('click', e => {
   const t = e.target, s = S(), d = k => t.closest(`[data-${k}]`), v = k => d(k)?.dataset[k.replace(/-(.)/g, (_, c) => c.toUpperCase())];
+  if (d('secmv')) { const [id, dd] = v('secmv').split(':'); if (moveSec(id, +dd)) { render(); refocus(`[data-secmv="${id}:${dd}"]:not([disabled])`) || refocus(`[data-sec="${id}"]`); } return; }
   if (d('sec')) { cur = v('sec'); openJudge = openMore = null; render(); return; }
   if (d('tab')) { tab = v('tab'); renderPanel(); refocus(`[data-tab="${tab}"]`); return; }
   if (d('close') || t.id === 'scrim') { closePick(); return; }
@@ -786,7 +798,18 @@ document.addEventListener('change', e => {
     if (!isImg && f.type !== 'application/pdf') { toast('이미지나 PDF 파일만 붙일 수 있어요'); return; }
     addMood(s, { name: f.name.length > 24 ? f.name.slice(0, 24) + '…' : f.name, src: '직접 첨부 · 파일', kind: isImg ? '' : 'PDF', img: isImg ? URL.createObjectURL(f) : '', r: [3, 4] }); return; }
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#drawer').hidden) closePick(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('#drawer').hidden) closePick();
+  const b = e.target.closest?.('#secList [data-sec]');
+  if (b && e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) { e.preventDefault(); const id = b.dataset.sec; if (moveSec(id, e.key === 'ArrowUp' ? -1 : 1)) { render(); refocus(`#secList [data-sec="${id}"]`); } }
+});
+// 구좌 목록 끌어서 옮기기
+let dragSec = null;
+$('#secList').addEventListener('dragstart', e => { const li = e.target.closest('[data-li]'); if (!li) return; dragSec = li.dataset.li; li.classList.add('drag'); e.dataTransfer.effectAllowed = 'move'; });
+$('#secList').addEventListener('dragover', e => { const li = e.target.closest('[data-li]'); if (!li || !dragSec) return; e.preventDefault(); document.querySelectorAll('#secList [data-li]').forEach(x => x.classList.toggle('over', x === li && x.dataset.li !== dragSec)); });
+$('#secList').addEventListener('dragend', () => { dragSec = null; document.querySelectorAll('#secList [data-li]').forEach(x => x.classList.remove('drag', 'over')); });
+$('#secList').addEventListener('drop', e => { const li = e.target.closest('[data-li]'); if (!li || !dragSec) return; e.preventDefault();
+  const item = secs.splice(secs.findIndex(s => s.id === dragSec), 1)[0]; secs.splice(secs.findIndex(s => s.id === li.dataset.li), 0, item); dragSec = null; render(); });
 $('#xlsDown').addEventListener('click', openTemplate);
 $('#xlsUp').addEventListener('click', openUpload);
 $('#nextBtn').addEventListener('click', () => toast(Object.keys(drafts).length ? '반영하지 않은 할인이 있어요. 상품 탭에서 반영하거나 되돌려 주세요' : '예시예요: 미리보기·내보내기로 넘어가요'));
