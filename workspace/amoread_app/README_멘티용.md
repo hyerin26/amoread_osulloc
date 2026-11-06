@@ -15,6 +15,7 @@
 AI 기능(기획안 만들기·수정 대화)은 이 PC에 **Claude Code가 설치·로그인**돼 있어야 동작합니다.
 한 번 부를 때 시간이 꽤 걸리고 사용량이 차감되니 필요할 때만 쓰세요. 나머지 화면은 AI 없이 동작합니다.
 네이버 검색 트렌드는 API 키가 없어 비어 있습니다 (`.env`에 `NAVER_CLIENT_ID`/`NAVER_CLIENT_SECRET`을 넣으면 켜짐 — 키는 절대 코드에 쓰지 마세요).
+브리프 키워드 확장의 연관 키워드·검색수는 네이버 검색광고 API 키가 있어야 켜집니다 (`.env`에 `NAVER_AD_API_KEY`/`NAVER_AD_SECRET`/`NAVER_AD_CUSTOMER_ID`, 광고시스템 › 도구 › API 사용 관리에서 발급).
 
 ## 폴더
 

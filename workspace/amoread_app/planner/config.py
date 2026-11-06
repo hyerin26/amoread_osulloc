@@ -40,6 +40,11 @@ TREND_CACHE = DATA_DIR / "trends.json"                     # 네이버 데이터
 NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID") or ""
 NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET") or ""
 TREND_REFRESH_MIN_GAP_MIN = 10   # 새로 받기 최소 간격 (데이터랩 일 1,000회 제한 보호)
+# 브리프 키워드 확장 — 네이버 검색광고 키워드 도구 (광고시스템 › 도구 › API 사용 관리에서 발급, .env에만)
+NAVER_AD_API_KEY = os.getenv("NAVER_AD_API_KEY") or ""          # 액세스 라이선스
+NAVER_AD_SECRET = os.getenv("NAVER_AD_SECRET") or ""            # 비밀키
+NAVER_AD_CUSTOMER_ID = os.getenv("NAVER_AD_CUSTOMER_ID") or ""  # 광고계정 ID
+KEYWORD_CACHE = DATA_DIR / "keywords.json"                      # 씨앗 키워드별 결과 캐시 (6시간)
 # 고객 리뷰 — 리뷰 주간 수집기(review_weekly_collector) 결과 CSV를 읽기만 한다 (작성자 열은 읽지 않음)
 REVIEW_DIR = Path(os.getenv("PLANNER_REVIEW_DIR") or (core_config.BASE_DIR / "data" / "sample" / "reviews"))
 REVIEW_WEEKS = 8

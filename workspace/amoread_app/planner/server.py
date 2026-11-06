@@ -26,7 +26,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from . import claude_agent, config, engine, ideas, plans, refresh, replan, review, reviews, sapsales, schedule, scout, timeline, trends
+from . import claude_agent, config, engine, ideas, keywords, plans, refresh, replan, review, reviews, sapsales, schedule, scout, timeline, trends
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 TOKEN = secrets.token_urlsafe(32)
@@ -333,6 +333,20 @@ def run_scout():
     try:
         return scout.run()
     except (scout.ScoutError, trends.TrendError) as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+
+
+# ---------- 브리프 키워드 확장 (검색광고 연관 키워드 + 네이버 뉴스·블로그, 보내는 것은 키워드뿐) ----------
+class KeywordReq(BaseModel):
+    q: str = Field(min_length=1, max_length=20)
+    refresh: bool = False
+
+
+@app.post("/api/keywords/expand")
+def keywords_expand(req: KeywordReq):
+    try:
+        return keywords.expand(req.q, req.refresh)
+    except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
 
 
