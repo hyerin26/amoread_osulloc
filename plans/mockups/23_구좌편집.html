@@ -371,20 +371,20 @@ let uidN = 0; const uid = p => `${p}${++uidN}`;
 const slot = (seq = null, x = {}) => ({ id: uid('c'), seq, copy: '', label: '', tag: '', pill: '', pillText: '', off: [], ...x });
 const cardShape = preset => ({ order: [...ORDER], on: { ...PRESETS[preset] } });
 let secs = [
-  { id: 's1', name: '메인 비주얼', layout: 'hero', headline: COPY, subhead: '들고 나가는 봄, 한 병의 여유', role: '', scope: '', num: false, more: '', cta: '', refs: ['r1'], att: [], notes: '', moods: [{ id: 'm3', pts: new Set(['구도']) }] },
-  { id: 's2', name: '첫 잔, 벚꽃', layout: 'feat', headline: '', subhead: '', role: '돗자리를 펴고 처음 따르는 봄 한 잔', scope: '시즌 한정 티', num: true, more: '시즌 한정 더보기', cta: '', refs: ['r2', 'r4'], att: [], notes: '', moods: [],
+  { id: 's1', name: '메인 비주얼', layout: 'hero', headline: COPY, subhead: '들고 나가는 봄, 한 병의 여유', role: '', scope: '', num: false, cta: '', ctaOn: false, ctaTo: '', refs: ['r1'], att: [], notes: '', moods: [{ id: 'm3', pts: new Set(['구도']) }] },
+  { id: 's2', name: '첫 잔, 벚꽃', layout: 'feat', headline: '', subhead: '', role: '돗자리를 펴고 처음 따르는 봄 한 잔', scope: '시즌 한정 티', num: true, cta: '시즌 한정 더보기', ctaOn: true, ctaTo: '시즌 한정 카테고리', refs: ['r2', 'r4'], att: [], notes: '', moods: [],
     card: { order: [...ORDER], on: { ...PRESETS['할인율 강조'], pill: 1 } }, cards: [slot('P101', { label: 'BEST', tag: '봄 한정', pill: 'up' }), slot('P104', { tag: '보자기' }), slot('P106'), slot()] },
-  { id: 's3', name: '가격대별 선물 추천', layout: 'grid2', headline: '', subhead: '예산에 맞춰 골라 보세요', role: '', scope: '선물 세트', num: true, more: '', cta: '', refs: ['r3'], att: [], notes: '', moods: [], tab: 0,
+  { id: 's3', name: '가격대별 선물 추천', layout: 'grid2', headline: '', subhead: '예산에 맞춰 골라 보세요', role: '', scope: '선물 세트', num: true, cta: '', ctaOn: false, ctaTo: '', refs: ['r3'], att: [], notes: '', moods: [], tab: 0,
     card: cardShape('가격 표시'), tabs: [{ id: 't1', name: '1만원대', cards: [slot('P107'), slot()] }, { id: 't2', name: '2만원대', cards: [slot(), slot()] }, { id: 't3', name: '3만원 이상', cards: [slot('P110', { label: 'PRESTIGE', tag: '한정 보자기' }), slot()] }] },
-  { id: 's4', name: '오늘의 하루특가', layout: 'deal-banner', headline: '', subhead: '', role: '', scope: '', num: false, more: '', cta: '', refs: [], att: [], notes: '', moods: [] },
-  { id: 's5', name: '먼저 마셔 본 후기', layout: 'review', headline: '', subhead: '재구매가 많은 상품의 실제 후기', role: '', scope: '', num: true, more: '', cta: '', refs: ['r6'], att: [], notes: '', moods: [],
+  { id: 's4', name: '오늘의 하루특가', layout: 'deal-banner', headline: '', subhead: '', role: '', scope: '', num: false, cta: '', ctaOn: false, ctaTo: '', refs: [], att: [], notes: '', moods: [] },
+  { id: 's5', name: '먼저 마셔 본 후기', layout: 'review', headline: '', subhead: '재구매가 많은 상품의 실제 후기', role: '', scope: '', num: true, cta: '', ctaOn: false, ctaTo: '', refs: ['r6'], att: [], notes: '', moods: [],
     // order = 화면에 보이는 후기 순서 (상품이 달라도 섞어서 바꿀 수 있음). show = 후기 카드에 함께 보일 상품 정보
     rv: { shape: 'mix', groups: [{ seq: 'P106', picks: [{ id: 'v1', title: '작고 간편해서 매일 손이 가요', titleSrc: '직접' }] }, { seq: 'P104', picks: [{ id: 'v3', title: '선물로 드렸더니 좋아하셨어요', titleSrc: '직접' }] }],
       order: ['v1', 'v3'], show: { img: 1, name: 1, price: 0 }, author: 'hide' } },
-  { id: 's6', name: '피크닉 사진 인증', layout: 'ev-ugc', headline: '', subhead: '우리의 봄 피크닉을 보여 주세요', role: '', scope: '', num: true, more: '', cta: '참여하기', refs: ['r5'], att: [], notes: '', moods: [],
+  { id: 's6', name: '피크닉 사진 인증', layout: 'ev-ugc', headline: '', subhead: '우리의 봄 피크닉을 보여 주세요', role: '', scope: '', num: true, cta: '참여하기', ctaOn: true, ctaTo: '참여 화면 (댓글 쓰기)', refs: ['r5'], att: [], notes: '', moods: [],
     ev: { how: '피크닉 사진과 함께 댓글 남기기', reward: '포인트', rewardText: '추첨 50명 1,000P', pick: '추첨', count: '50', when: '3/2(월) ~ 3/15(일)', login: true, notice: '' } },
-  { id: 's7', name: '봄맞이 혜택', layout: 'benefit', headline: '', subhead: '', role: '', scope: '', num: false, more: '', cta: '혜택 받기', refs: ['r7'], att: [], notes: '', moods: [] },
-  { id: 's8', name: '유의사항', layout: 'notice', headline: '', subhead: '', role: '', scope: '', num: false, more: '', cta: '', refs: [], att: [], notes: '', moods: [] },
+  { id: 's7', name: '봄맞이 혜택', layout: 'benefit', headline: '', subhead: '', role: '', scope: '', num: false, cta: '혜택 받기', ctaOn: true, ctaTo: '쿠폰 받기', refs: ['r7'], att: [], notes: '', moods: [] },
+  { id: 's8', name: '유의사항', layout: 'notice', headline: '', subhead: '', role: '', scope: '', num: false, cta: '', ctaOn: false, ctaTo: '', refs: [], att: [], notes: '', moods: [] },
 ];
 
 // ================= 상태 =================
@@ -478,7 +478,7 @@ function wBody(s) {
     const seqs = [...new Set(picks.map(x => x.v.seq))];
     return `<div class="w-rvwrap">${seqs.map(seq => `<div class="w-rvgrp">${showProd ? prod(seq) : ''}${picks.filter(x => x.v.seq === seq).map(x => card(x, false)).join('')}</div>`).join('')}</div>`;
   }
-  if (k === 'event') { const e = s.ev; return `<div class="w-event"><span>${esc(e.how || '참여 방법')}</span><span>보상: ${esc(e.rewardText || e.reward || '미정')} · ${esc(e.when || '기간 미정')}</span>${s.cta ? `<span class="go">${esc(s.cta)}</span>` : ''}</div>`; }
+  if (k === 'event') { const e = s.ev; return `<div class="w-event"><span>${esc(e.how || '참여 방법')}</span><span>보상: ${esc(e.rewardText || e.reward || '미정')} · ${esc(e.when || '기간 미정')}</span>${s.ctaOn && s.cta ? `<span class="go">${esc(s.cta)}</span>` : ''}</div>`; }
   if (s.layout === 'notice') return '<div class="w-lines"><span></span><span></span><span></span></div>';
   if (s.layout === 'benefit') return '<div class="w-lines"><span class="y"></span><span class="y"></span><span class="y"></span></div>';
   return '<div class="w-lines"><span></span><span></span></div>';
@@ -486,7 +486,7 @@ function wBody(s) {
 function renderPhone() {
   $('#phone').innerHTML = secs.map((s, i) => {
     const head = s.layout === 'hero' ? '' : `${s.num ? `<span class="num">${String(numOf(s)).padStart(2, '0')}</span>` : ''}<h4>${esc(s.headline || s.name)}</h4>${s.role ? `<span class="role">${esc(s.role)}</span>` : s.subhead ? `<span class="role">${esc(s.subhead)}</span>` : ''}`;
-    const tail = s.more ? `<span class="w-more">${esc(s.more)}</span>` : kindOf(s.layout) !== 'event' && s.cta ? `<span class="w-more">${esc(s.cta)}</span>` : '';
+    const tail = kindOf(s.layout) !== 'event' && s.ctaOn && s.cta ? `<span class="w-more">${esc(s.cta)}</span>` : '';   // 이벤트는 버튼이 조건 상자 안에
     return `<button class="ws" data-sec="${s.id}" ${s.id === cur ? 'aria-current="true"' : ''} aria-label="${i + 1}번 구좌 ${esc(s.name)} 편집"><span class="lbl">${i + 1}</span>${head}${wBody(s)}${tail}</button>`;
   }).join('');
 }
@@ -513,8 +513,9 @@ function copyTab(s) {
     <label class="f"><span>역할 한 줄 <em>(선택) 구좌 이름 아래 보여요</em></span><input type="text" data-sf="role" maxlength="60" value="${esc(s.role)}" placeholder="예) 첫 인사를 건네며 입맛을 돋궈줄 차"></label>`}
     <label class="f"><span>${hero ? '메인 카피' : '구좌 제목'} <em>${hero ? '' : '(비우면 구좌 이름을 써요)'}</em></span><input type="text" data-sf="headline" maxlength="120" value="${esc(s.headline)}">${hero ? '<span class="hint">브리프에서 정한 메인 카피예요. 여기서 고치면 브리프에도 바뀌어요</span>' : ''}</label>
     <label class="f"><span>서브 카피 <em>(선택)</em></span><textarea data-sf="subhead" maxlength="400" rows="2">${esc(s.subhead)}</textarea></label>
-    ${kindOf(s.layout) === 'product' ? `<label class="f"><span>더보기 버튼 <em>(선택) 카테고리로 가는 버튼</em></span><input type="text" data-sf="more" maxlength="30" value="${esc(s.more)}" placeholder="예) 티백 더보기"></label>`
-      : `<label class="f"><span>버튼 문구 <em>(비우면 버튼 없음)</em></span><input type="text" data-sf="cta" maxlength="40" value="${esc(s.cta)}"></label>`}
+    <div class="f"><span class="l">구좌 버튼</span><label class="ck"><input type="checkbox" data-ctaon ${s.ctaOn ? 'checked' : ''}> 이 구좌에 버튼 넣기</label>
+      ${s.ctaOn ? `<div class="two"><label class="f"><span class="hint">버튼 문구</span><input type="text" data-sf="cta" maxlength="30" value="${esc(s.cta)}" placeholder="${kindOf(s.layout) === 'product' ? '예) 티백 더보기' : kindOf(s.layout) === 'event' ? '예) 참여하기' : '예) 혜택 받기'}"></label>
+        <label class="f"><span class="hint">어디로 <em>(선택) 디자이너 전달에 적어요</em></span><input type="text" data-sf="ctaTo" maxlength="60" value="${esc(s.ctaTo)}" placeholder="예) 티백 카테고리, 쿠폰 받기"></label></div>` : '<span class="hint">버튼 없이 둬요. 언제든 다시 켤 수 있어요.</span>'}</div>
     <div class="box"><span class="cap">문구 제안 <span class="tag demo-t">연결 예정</span></span><p class="hint">브리프 컨셉으로 구좌 이름·역할 한 줄을 이야기 순서(코스·방·여정)로 제안해요. 예) 가을 차회: 01 마중차 · 첫 인사를 건네며 입맛을 돋궈줄 차</p></div>`;
 }
 function productsTab(s) {
@@ -769,6 +770,7 @@ document.addEventListener('change', e => {
   if (t.dataset.elon) { s.card.on[t.dataset.elon] = t.checked ? 1 : 0; render(); refocus(`[data-elon="${t.dataset.elon}"]`); return; }
   if (t.dataset.cf === 'label' || t.dataset.cf === 'pill') { const c = allCards(s).find(x => x.id === openMore); if (c) c[t.dataset.cf] = t.value; render(); return; }
   if (t.matches('[data-num]')) { s.num = t.checked; render(); return; }
+  if (t.matches('[data-ctaon]')) { s.ctaOn = t.checked; if (s.ctaOn && !s.cta) s.cta = kindOf(s.layout) === 'product' ? `${s.scope || s.name} 더보기` : kindOf(s.layout) === 'event' ? '참여하기' : '자세히 보기'; render(); refocus('[data-ctaon]'); return; }
   if (t.matches('[data-evlogin]')) { s.ev.login = t.checked; return; }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#drawer').hidden) closePick(); });
