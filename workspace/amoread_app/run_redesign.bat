@@ -5,8 +5,9 @@ set PYTHONIOENCODING=utf-8
 set PYTHONUTF8=1
 rem Redesign branch copy. Port 9751 so it can run next to the main copy (9741) and the mentor original (9731).
 set PLANNER_PORT=9751
-rem Reuse the main copy's venv (same packages); data\ and planner\data\ here are local copies, not tracked by git.
-set VENV_PY=%~dp0..\..\..\amoread\workspace\amoread_app\.venv\Scripts\python.exe
+rem Use the mentor original's venv (same one the 9741 copy runs on; the main copy's .venv has no packages). Only the interpreter is used, nothing there is changed.
+rem data\ and planner\data\ here are local copies, not tracked by git.
+set VENV_PY=%USERPROFILE%\Downloads\멘토님께받은기존자료\planner_mentee_20261103\planner_mentee\.venv\Scripts\python.exe
 if not exist "%VENV_PY%" (
     echo Python venv not found: %VENV_PY%
     pause
