@@ -198,6 +198,14 @@ table.t td.auto { color: var(--line-strong); }
 table.t td.pre { color: var(--accent); font-weight: var(--fw-medium); }
 table.t tr.chg td { background: var(--accent-soft); }
 .chips-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.moodsec { padding-top: var(--s4); border-top: 1px solid var(--line-sub); }
+.moods { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.mood { all: unset; box-sizing: border-box; cursor: pointer; width: 72px; display: grid; gap: 4px; }
+.mood:hover .thumb { border-color: var(--line-strong); }
+.mood:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.pt { all: unset; cursor: pointer; font-size: var(--fs-cap); line-height: var(--lh-cap); padding: 2px 8px; border-radius: var(--r2); background: var(--surface); color: var(--mute); border: 1px solid var(--line-sub); }
+.pt[aria-pressed="true"] { color: var(--accent); border-color: var(--sel-line); font-weight: var(--fw-strong); }
+.pt:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .tscroll { overflow: auto; }
 .thumb.big { width: 240px; height: 320px; padding: 6px; }
 .toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: var(--ink); color: var(--surface); border-radius: var(--r); padding: 14px 18px; font-size: var(--fs-sm);
@@ -277,12 +285,23 @@ const REFS = {
   r5: { name: '가로 배너형 상품 리스트', page: '□□ 티 브랜드', from: '외부', layout: null, r: [16, 9], why: '비슷한 구좌 종류예요 · 맞는 레이아웃이 없어 참고만' },
   r6: { name: '혜택 한눈에 보기', page: '봄 나들이 티', from: '자사몰', layout: 'benefit', r: [3, 4], why: '비슷한 구좌 종류예요' },
 };
+// 느낌 레퍼런스 (5): 구조가 없는 이미지 한 장. 레이아웃 가져오기에는 안 씀. BRIEF_MOODS = 브리프에서 고른 기획안 전체의 느낌
+const MOODS = {
+  m1: { name: '돗자리 위 티타임', src: '핀터레스트 보드 · 봄 피크닉', r: [2, 3] },
+  m2: { name: '연둣빛 봄 색감', src: '외부 캠페인 일부', r: [4, 5] },
+  m3: { name: '보온병 들고 산책', src: '핀터레스트 보드 · 아웃도어', r: [9, 16] },
+  m4: { name: '벚꽃 아래 찻잔', src: '자사몰 지난 행사 일부', r: [3, 4] },
+  m6: { name: '한강 노을 피크닉', src: '외부 캠페인 일부', r: [3, 4] },
+};
+const BRIEF_MOODS = [['m1', ['색감', '소품']], ['m2', ['색감']]];
+const POINTS = ['색감', '구도', '소품', '글씨', '카피 톤'];
+let moodAdd = false;   // 레퍼런스 탭의 '느낌 레퍼런스 추가' 목록 펼침
 const LAYOUTS = { hero: '단일 비주얼', 'text-cta': '텍스트와 버튼', grid2: '2열 상품', grid3: '3열 상품', split: '좌우 분할', benefit: '혜택 안내', 'deal-banner': '날짜별 특가' };
 const DISPLAYS = [['', '미정'], ['emphasis', '할인율 강조'], ['price', '가격 표시'], ['name', '이미지·상품명만'], ['section', '섹션 대표 가격']];
 let uidN = 0; const uid = p => `${p}${++uidN}`;
 const slot = (seq = null) => ({ id: uid('c'), seq, copy: '' });
 let secs = [
-  { id: 's1', name: '메인 비주얼', layout: 'hero', headline: COPY, subhead: '들고 나가는 봄, 한 병의 여유', cta: '', disp: '', sprice: null, refs: ['r1'], att: [], notes: '' },
+  { id: 's1', name: '메인 비주얼', layout: 'hero', headline: COPY, subhead: '들고 나가는 봄, 한 병의 여유', cta: '', disp: '', sprice: null, refs: ['r1'], att: [], notes: '', moods: [{ id: 'm3', pts: new Set(['구도']) }] },
   { id: 's2', name: '벚꽃 한정', layout: 'grid3', headline: '벚꽃 한정', subhead: '', cta: '', disp: 'emphasis', sprice: null, refs: ['r2', 'r4'], att: [], notes: '', cards: [slot('P101'), slot('P104'), slot()] },
   { id: 's3', name: '가격대별 선물 추천', layout: 'grid2', headline: '가격대별 선물 추천', subhead: '예산에 맞춰 골라 보세요', cta: '', disp: 'price', sprice: null, refs: ['r3', 'r5'], att: [], notes: '', tab: 0,
     tabs: [{ id: 't1', name: '1만원대', cards: [slot('P107'), slot()] }, { id: 't2', name: '2만원대', cards: [slot(), slot()] }, { id: 't3', name: '3만원 이상', cards: [slot('P110'), slot()] }] },
@@ -411,7 +430,20 @@ function refsTab(s) {
           <button class="btn xs" data-reflay="${k}" ${canLay ? '' : 'disabled'} title="${!r.layout ? '맞는 레이아웃이 없어요' : !canLay ? '지금과 같은 레이아웃이에요' : `${LAYOUTS[r.layout]}로 바꿔요 · 문구·상품·메모는 그대로`}">레이아웃 가져오기</button>
           <button class="btn xs ghost" data-refsave="${k}" aria-pressed="${saved.has(k)}">${saved.has(k) ? '★ 저장됨' : '☆ 저장'}</button></div></div></div>`; }).join('')}</div>
     <button class="btn sm" data-toast="예시예요: 레퍼런스 라이브러리(전체 프로모션·구좌별 사례)를 열어요">라이브러리에서 더 찾기</button>
-    <p class="hint">참고로 붙이기 = 디자이너에게 전달할 참고만 남겨요 (이 구좌는 바뀌지 않아요). 레이아웃 가져오기 = 이 구좌의 모양만 바꿔요. 저장 = 라이브러리 즐겨찾기.</p>`;
+    <p class="hint">참고로 붙이기 = 디자이너에게 전달할 참고만 남겨요 (이 구좌는 바뀌지 않아요). 레이아웃 가져오기 = 이 구좌의 모양만 바꿔요. 저장 = 라이브러리 즐겨찾기.</p>
+    ${moodBlock(s)}`;
+}
+// 구좌마다 느낌 레퍼런스: 구조 레퍼런스와 따로. 고른 것마다 참고할 점 칩
+function moodBlock(s) {
+  const ms = s.moods ||= [], left = Object.keys(MOODS).filter(k => !ms.some(m => m.id === k));
+  return `<div class="f moodsec"><span class="l">느낌 레퍼런스 <em>이 구좌의 색감·연출 참고 · 구조가 없어 레이아웃은 가져오지 않아요</em></span>
+    ${ms.map(m => { const r = MOODS[m.id]; return `<div class="ref att"><span class="thumb">${demoImg(r.r[0], r.r[1])}</span><div>
+      <div class="rn">${esc(r.name)}</div><div class="cap">${esc(r.src)} <span class="tag demo-t">예시</span></div>
+      <div class="ra"><span class="cap">참고할 점</span>${POINTS.map(p => `<button class="pt" data-mpt="${m.id}|${p}" aria-pressed="${m.pts.has(p)}">${p}</button>`).join('')}</div>
+      <div class="ra"><button class="btn xs" data-mrm="${m.id}">빼기</button></div></div></div>`; }).join('')}
+    <div><button class="btn xs" data-moodadd aria-expanded="${moodAdd}">+ 느낌 레퍼런스 추가</button> <button class="btn xs ghost" data-toast="예시예요: 링크나 캡처 이미지를 붙여 넣어 느낌 레퍼런스로 담아요">붙여 넣기</button></div>
+    ${moodAdd ? `<div class="moods">${left.map(k => { const r = MOODS[k]; return `<button class="mood" data-madd="${k}" title="${esc(r.src)}"><span class="thumb">${demoImg(r.r[0], r.r[1])}</span><span class="cap">${esc(r.name)}</span></button>`; }).join('') || '<span class="hint">더 고를 예시가 없어요</span>'}</div>
+      <p class="hint">브리프의 명분·키워드로 거른 예시예요. 라이브러리의 느낌 레퍼런스 탭에서 더 찾을 수 있어요.</p>` : ''}</div>`;
 }
 function notesTab(s) {
   return `<label class="f"><span>디자이너에게 부탁할 것 <em>(선택)</em></span><textarea data-sf="notes" rows="5" maxlength="2000" placeholder="예) 피크닉 돗자리 위 연출 컷이 있으면 좋겠어요">${esc(s.notes)}</textarea></label>
@@ -419,6 +451,8 @@ function notesTab(s) {
         <div class="rn">${esc(r.name)}</div><div class="cap">${r.from} · ${esc(r.page)}</div>
         <input type="text" data-attnote="${a.ref}" value="${esc(a.note)}" maxlength="120" placeholder="이 레퍼런스에서 참고할 점 (예: 탭 모양만)" aria-label="${esc(r.name)} 참고할 점"></div></div>`; }).join('')
       : '<p class="hint">레퍼런스 탭에서 [참고로 붙이기]를 누르면 여기 모여요.</p>'}</div>
+    <div class="f"><span class="l">이 구좌의 느낌 레퍼런스 <em>${(s.moods || []).length}개</em></span>${(s.moods || []).length ? `<p class="hint">${s.moods.map(m => `${esc(MOODS[m.id].name)}${m.pts.size ? ` (${[...m.pts].join('·')})` : ''}`).join(' / ')}</p>` : '<p class="hint">레퍼런스 탭 아래에서 추가할 수 있어요.</p>'}</div>
+    <div class="f"><span class="l">기획안 전체 느낌 <em>브리프에서 고름 · 모든 구좌 공통</em></span><p class="hint">${BRIEF_MOODS.map(([id, pts]) => `${esc(MOODS[id].name)} (${pts.join('·')})`).join(' / ')}</p></div>
     <p class="hint">미리보기·내보내기의 디자이너 기획안에 그대로 들어가요. 원가와 판정은 넣지 않아요.</p>`;
 }
 function render() { renderList(); renderPhone(); renderPanel(); }
@@ -526,6 +560,10 @@ document.addEventListener('click', e => {
   const rv = t.closest('[data-refview]'); if (rv) { const r = REFS[rv.dataset.refview]; dlg('원본 구좌 레퍼런스 · 미리보기', r.name, `${r.from} · ${r.page} — 미리보기만 해요. 이 구좌는 바뀌지 않아요.`, `<div class="thumb">${demoImg(r.r[0], r.r[1])}</div><p class="hint">원본 비율 ${r.r[0]}:${r.r[1]} (예시). 캡처를 연결하면 실제 이미지가 보여요. [전체 페이지 보기]로 원본 프로모션 전체 페이지에서 이 구좌 위치를 볼 수 있어요.</p>`, '<button class="btn sm" data-toast="예시예요: 원본 프로모션 전체 페이지를 열어요">전체 페이지 보기</button>'); $('#dlgB .thumb').classList.add('big'); return; }
   const ra = t.closest('[data-refatt]'); if (ra) { const k = ra.dataset.refatt, i = s.att.findIndex(a => a.ref === k); if (i >= 0) s.att.splice(i, 1); else s.att.push({ ref: k, note: '' }); render(); toast(i >= 0 ? '참고에서 뺐어요' : '참고로 붙였어요. 디자인 요청 탭에서 참고할 점을 적을 수 있어요'); return; }
   const rl = t.closest('[data-reflay]'); if (rl && !rl.disabled) { const r = REFS[rl.dataset.reflay]; s.layout = r.layout; render(); toast(`레이아웃을 '${LAYOUTS[r.layout]}'로 가져왔어요. 문구·상품·메모는 그대로예요`); return; }
+  if (t.closest('[data-moodadd]')) { moodAdd = !moodAdd; renderPanel(); $('[data-moodadd]')?.focus(); return; }
+  const ma = t.closest('[data-madd]'); if (ma) { s.moods.push({ id: ma.dataset.madd, pts: new Set() }); moodAdd = false; renderPanel(); toast('느낌 레퍼런스를 붙였어요. 참고할 점을 골라 주세요'); return; }
+  const mr = t.closest('[data-mrm]'); if (mr) { s.moods = s.moods.filter(m => m.id !== mr.dataset.mrm); renderPanel(); return; }
+  const mp = t.closest('[data-mpt]'); if (mp) { const [id, p] = mp.dataset.mpt.split('|'), m = s.moods.find(x => x.id === id); m.pts.has(p) ? m.pts.delete(p) : m.pts.add(p); renderPanel(); $(`[data-mpt="${id}|${p}"]`)?.focus(); return; }
   const rs = t.closest('[data-refsave]'); if (rs) { const k = rs.dataset.refsave; saved.has(k) ? saved.delete(k) : saved.add(k); renderPanel(); toast(saved.has(k) ? '라이브러리에 저장했어요' : '저장을 뺐어요'); return; }
 });
 document.addEventListener('input', e => {
