@@ -108,7 +108,7 @@ function renderSide() {
   if (k === ROOT && center === 0) {
     const rec = live(k);
     el.innerHTML = `<div class="overline">중심 키워드 · 명분</div><h2>${esc(k)}</h2>
-      <p class="sub">${info(k).kids.length ? '여기서 뻗어 나간 키워드 중 마음에 드는 걸 눌러 보세요. 명분을 그대로 써도 좋으면 중심 키워드를 골라도 돼요.' : '아직 가지가 없어요. 예시 가지는 \'봄\'에만 있고, 검색광고 키를 넣으면 연관 키워드로 가지가 생겨요.'}</p>
+      <p class="sub">${info(k).kids.length ? '여기서 뻗어 나간 키워드 중 마음에 드는 걸 눌러 보세요. 명분을 그대로 써도 좋으면 중심 키워드를 골라도 돼요.' : rec.state === 'loading' ? '가지를 찾는 중이에요…' : '이 말과 함께 나온 말을 찾지 못했어요. 검색광고 키를 넣으면 연관 키워드로도 찾아요.'}</p>
       <h3>검색 <span class="tag ok-t">실제</span></h3>${liveSearch(rec)}
       <h3>글 <span class="tag ok-t">실제</span></h3>${livePosts(rec)}
       <div class="acts"><button class="btn" data-pick="${esc(k)}">${picked.includes(k) ? '고른 키워드에서 빼기' : '이 키워드 그대로 쓰기'}</button></div>`;
@@ -117,7 +117,7 @@ function renderSide() {
   const canOpen = d.kids.length > 0, isOpen = path.includes(k) && path.indexOf(k) < path.length - 1;
   const deep = path.indexOf(k) >= 0 ? path.indexOf(k) - center : parentOf(k) - center + 1;
   const rec = live(k);
-  el.innerHTML = `<div class="overline">키워드 <span class="tag demo-t">가지·우리 데이터는 예시</span></div><h2>${esc(k)}</h2>
+  el.innerHTML = `<div class="overline">키워드 <span class="tag demo-t">우리 데이터는 예시</span></div><h2>${esc(k)}</h2>
     <h3>어디서 왔나요</h3><div class="tags">${d.ch.map(c => `<span class="tag" title="${esc(CH_SRC[c])}">${CH[c]}</span>`).join('') || '<span class="cap">-</span>'}</div>
     <h3>검색 <span class="tag ok-t">실제</span></h3>${liveSearch(rec)}
     <h3>글 <span class="tag ok-t">실제</span></h3>${livePosts(rec)}
@@ -217,10 +217,27 @@ function live(k) {
   const rec = { state: 'loading' };
   LIVE.set(k, rec);
   v2api('/api/keywords/expand', { q: k })
-    .then(d => { rec.state = 'ok'; rec.data = d; })
+    .then(d => { rec.state = 'ok'; rec.data = d; rec.grew = applyBranches(k, d); })
     .catch(e => { rec.state = 'error'; rec.msg = e.message; })
-    .finally(() => { if (focus === k) renderSide(); });
+    .finally(() => { if (rec.grew) render(); else if (focus === k) renderSide(); });
   return rec;
+}
+// 가지: 검색광고 연관 키워드(키가 있으면 먼저) + 이 말이 나온 뉴스·블로그에서 여러 글에 함께 나온 말. 이미 펼쳐 둔 갈래는 바꾸지 않음
+function applyBranches(k, d) {
+  const t = T[k] || (T[k] = { ch: ['text'], flow: '', posts: [], ours: [], kids: [] });
+  if (t.realKids || (path.includes(k) && path.indexOf(k) < path.length - 1)) return false;
+  const ad = d.sources.searchad?.status === 'ok' ? d.sources.searchad.items.map(x => x.keyword) : [];
+  const seen = new Set([k, ...path]), kids = [];
+  for (const w of [...ad.slice(0, 5), ...(d.words || [])]) {
+    const x = String(w).trim().slice(0, 20);
+    if (!x || seen.has(x)) continue;
+    seen.add(x); kids.push(x);
+    if (kids.length >= 8) break;
+  }
+  if (!kids.length) return false;
+  for (const w of kids) if (!T[w]) T[w] = { ch: [ad.includes(w) ? 'search' : 'text'], flow: '', posts: [], ours: [], kids: [] };
+  t.kids = kids; t.realKids = true;
+  return true;
 }
 const trendWords = t => t.change_4w == null ? '' : t.change_4w >= 0.2 ? '요즘 오르는 중' : t.change_4w <= -0.2 ? '요즘 줄어드는 중' : '꾸준해요';
 function liveSearch(rec) {
@@ -302,7 +319,10 @@ $('#moodLib').addEventListener('click', () => toast('예시예요: 레퍼런스 
 $('#nextBtn').addEventListener('click', () => {
   if (!picked.length && !$('#concept').value.trim()) { toast('키워드를 하나 이상 고르거나 컨셉을 적어 주세요'); return; }
   const empty = !$('#copy').value.trim();
-  toast(`${empty ? '메인 카피가 비어 있어요. 구좌 구성 화면에서도 쓸 수 있어요. ' : ''}예시예요: 구좌 구성 추천으로 넘어가요`);
+  if (!PLAN.id) { toast(`${empty ? '메인 카피가 비어 있어요. 구좌 구성 화면에서도 쓸 수 있어요. ' : ''}예시 기획안이에요: 홈에서 기획안을 만들면 구좌 구성으로 넘어가요`); return; }
+  saveBrief();
+  if (empty) toast('메인 카피가 비어 있어요. 구좌 구성 화면에서도 쓸 수 있어요');
+  PLAN.flush().then(() => setTimeout(() => location.assign(`/v2/compose?id=${PLAN.id}`), empty ? 800 : 0));   // 저장을 마친 뒤 이동
 });
 let toastT;
 function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600); }

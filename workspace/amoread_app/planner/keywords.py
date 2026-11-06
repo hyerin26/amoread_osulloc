@@ -19,6 +19,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections import Counter
 from datetime import timedelta
 
 from . import config, scout, trends, usage
@@ -152,12 +153,42 @@ def _source(fn, ok_keys, seed):
         return {"status": "error", "message": str(e), "items": []}
 
 
+WORD = re.compile(r"[가-힣A-Za-z][가-힣A-Za-z0-9]{1,13}")
+# 꾸미는 말·움직임 말 끝 (가지로 쓰기 어려운 말). 명사도 조금 걸러질 수 있지만 가지 후보라 괜찮음
+NOT_NOUN = ("는", "던", "니다", "했다", "한다", "된다", "했던", "하고", "하며", "해서", "하게", "하는", "있게", "없이", "처럼", "까지", "부터",
+            "적인", "스러운", "다운", "로운", "롭게", "같은", "좋은", "많은", "위한", "대한", "통해", "에도", "에는", "으며",
+            "다", "다고", "하", "한", "했", "던데", "지만", "는데")
+FILLER = set("함께 그런데 대신 가장 여러 분들 담은 전면 주제 시작 진행 이번 이후 지난 오늘 올해 모두 다양 최근 관련 위해 대해 특히 바로 정도 경우 이상 "
+             "이하 사이 직접 자신 우리 다시 먼저 하나 처음 마지막 가지 모습 소개 확인 제공 운영 예정 기간 당일 시간 사람 생각 이야기 내용 방문 참여 "
+             "에서 이라 이고 역시 또한 때문 그리고 하지만 평소 상대 전년 대비 오후 오전 자정 즐기 즐겨 맛있 배우 앵커 기자 증가 감소 앞두고 앞둔 맞아 맞이해 맞이".split())
+
+
+def related_words(items, seed, n=8):
+    """뉴스·블로그 제목·요약에서 **여러 글에 함께 나온 말** (규칙, AI 아님) → 마인드맵 가지 후보. 부르는 횟수는 늘지 않음."""
+    me = seed.replace(" ", "")
+    df = Counter()
+    for it in items:
+        words = {scout._strip_josa(w) for w in WORD.findall(f"{it.get('title', '')} {it.get('summary', '')}")}
+        for w in words:
+            if (not scout._ok(w) or me in w or w in me or w.endswith(NOT_NOUN) or w in FILLER
+                    or re.fullmatch(r"[A-Za-z0-9]+", w)                       # 영문만인 말 (기사 표기·약어)
+                    or (len(w) == 2 and w[1] in "에을를은는이가도의로과와")):     # 두 글자 + 조사 (봄에, 회를)
+                continue
+            df[w] += 1
+    return [w for w, c in df.most_common(n * 3) if c >= 2][:n]
+
+
+def _with_words(data):
+    s = data["sources"].get("naver_search") or {}
+    return {**data, "words": related_words(s.get("items") or [], data["seed"]) if s.get("status") == "ok" else []}
+
+
 def expand(q, refresh=False):
     seed = clean_seed(q)
     cache = _load()
     hit = cache.get(seed)
     if hit and not refresh and time.time() - hit.get("t", 0) < CACHE_TTL_SEC:
-        return {**hit["data"], "cached": True}
+        return {**_with_words(hit["data"]), "cached": True}
     ad = {"name": "네이버 검색광고 키워드 도구", "basis": "연관 키워드 · 최근 30일 검색수", **_source(_related, has_ad_keys(), seed)}
     top = [seed] + [r["keyword"] for r in ad["items"][:4]]   # 데이터랩은 한 요청에 5개까지
     data = {"seed": seed, "sources": {
@@ -174,4 +205,4 @@ def expand(q, refresh=False):
     if "ok" in st and "error" not in st:   # 실패가 섞인 결과는 6시간 붙잡아 두지 않음
         cache[seed] = {"t": time.time(), "data": data}
         _save(cache)
-    return {**data, "cached": False}
+    return {**_with_words(data), "cached": False}

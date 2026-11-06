@@ -33,16 +33,27 @@ const PLAN = (() => {
   })();
   // 고친 뒤 부른다. 0.7초 모아서 한 번에, 저장은 차례로 (응답이 와도 그 사이 고친 내용을 덮지 않음)
   let timer = null, chain = Promise.resolve();
+  const run = () => {
+    timer = null;
+    chain = chain.then(() => v2api('/api/am/projects', st.doc)
+      .then(d => { st.doc.updated_at = d.updated_at; say(`저장했어요 ${String(d.updated_at).slice(11, 16)}`); })
+      .catch(e => say(`저장 못 했어요: ${e.message}`)));
+  };
   st.save = (mutate, now = false) => {
     if (!st.doc) return;
     if (mutate) mutate(st.doc);
     say('저장 중…');
     clearTimeout(timer);
-    timer = setTimeout(() => {
-      chain = chain.then(() => v2api('/api/am/projects', st.doc)
-        .then(d => { st.doc.updated_at = d.updated_at; say(`저장했어요 ${String(d.updated_at).slice(11, 16)}`); })
-        .catch(e => say(`저장 못 했어요: ${e.message}`)));
-    }, now ? 0 : 700);
+    timer = setTimeout(run, now ? 0 : 700);
   };
+  // 기다리는 저장을 바로 보내고, 끝날 때까지 기다림 (화면을 옮기기 전에)
+  st.flush = () => { if (timer) { clearTimeout(timer); run(); } return chain; };
+  // 저장이 기다리는 중에 다른 화면 링크를 누르면, 저장을 마친 뒤 이동 (고친 내용이 사라지지 않게)
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href^="/v2/"]');
+    if (!a || !timer || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    e.preventDefault();
+    st.flush().then(() => location.assign(a.getAttribute('href')));
+  });
   return st;
 })();

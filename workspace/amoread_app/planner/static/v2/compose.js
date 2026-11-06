@@ -233,7 +233,7 @@ $('#editBody').addEventListener('drop', e => {
   const from = rows.findIndex(x => x.id === dragId), item = rows.splice(from, 1)[0];
   rows.splice(rows.findIndex(x => x.id === r.dataset.id), 0, item); dirty = true; sel = dragId; dragId = null; renderEdit();
 });
-$('#nextBtn').addEventListener('click', () => { if (!PLAN.id) { toast(`예시예요: ${rows.length}개 구좌로 구좌 편집 화면으로 넘어가요`); return; } location.assign(`/v2/editor?id=${PLAN.id}`); });
+$('#nextBtn').addEventListener('click', () => { if (!PLAN.id) { toast(`예시예요: ${rows.length}개 구좌로 구좌 편집 화면으로 넘어가요`); return; } PLAN.flush().then(() => location.assign(`/v2/editor?id=${PLAN.id}`)); });
 
 // 원본 프로모션 전체 페이지 (1): 그 안의 구좌 하나하나가 원본 구좌 레퍼런스 (2)
 // mark = 이번 구성안이 가져온 원본 구좌 (출처 보기에서 열었을 때 표시)

@@ -550,7 +550,7 @@ $('#secList').addEventListener('drop', e => { const li = e.target.closest('[data
   const item = secs.splice(secs.findIndex(s => s.id === dragSec), 1)[0]; secs.splice(secs.findIndex(s => s.id === li.dataset.li), 0, item); dragSec = null; render(); });
 $('#xlsDown').addEventListener('click', openTemplate);
 $('#xlsUp').addEventListener('click', openUpload);
-$('#nextBtn').addEventListener('click', () => { if (Object.keys(drafts).length) { toast('반영하지 않은 할인이 있어요. 상품 탭에서 반영하거나 되돌려 주세요'); return; } if (!PLAN.id) { toast('예시예요: 미리보기·내보내기로 넘어가요'); return; } location.assign(`/v2/preview?id=${PLAN.id}`); });
+$('#nextBtn').addEventListener('click', () => { if (Object.keys(drafts).length) { toast('반영하지 않은 할인이 있어요. 상품 탭에서 반영하거나 되돌려 주세요'); return; } if (!PLAN.id) { toast('예시예요: 미리보기·내보내기로 넘어가요'); return; } PLAN.flush().then(() => location.assign(`/v2/preview?id=${PLAN.id}`)); });
 let toastT;
 function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2800); }
 render();
