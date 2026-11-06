@@ -110,6 +110,10 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .w-grid.g3 { grid-template-columns: 1fr 1fr 1fr; }
 .w-grid.feat > :first-child { grid-column: 1 / -1; }
 .w-card { border: 1px dashed var(--line-strong); border-radius: 8px; padding: 6px; display: grid; align-content: start; gap: 2px; font-size: 11px; line-height: 15px; color: var(--mute); min-height: 92px; }
+.w-card.ph > span:not(.img):not(.hint), .w-card.ph .pr span { color: var(--line-strong) !important; }
+.w-card.ph .lab, .w-card.ph .bt { background: var(--line-strong); color: var(--surface) !important; }
+.sample { width: 180px; }
+.sample .w-card { font-size: 12px; line-height: 17px; }
 .w-card.f { border-style: solid; border-color: var(--line); color: var(--ink2); background: var(--bg); }
 .w-card .img { height: 52px; border-radius: 4px; background: var(--sunken); margin-bottom: 4px; position: relative; }
 .w-grid.feat > :first-child .img { height: 92px; }
@@ -394,7 +398,7 @@ let secs = [
 
 // ================= 상태 =================
 let moodLink = false;   // 느낌 레퍼런스 '링크 붙이기' 칸 펼침
-let cur = 's2', tab = 'products', drafts = {}, saved = new Set(), openJudge = null, openMore = null, pickFor = null, pickTab = 'plan', q = '', moodAdd = false;
+let cur = 's2', tab = 'shape', drafts = {}, saved = new Set(), openJudge = null, openMore = null, pickFor = null, pickTab = 'plan', q = '', moodAdd = false;
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const won = n => n == null ? '' : `${Math.round(n).toLocaleString('ko-KR')}원`;
@@ -458,7 +462,14 @@ function moveSec(id, d) {
   [secs[i], secs[j]] = [secs[j], secs[i]]; return true;
 }
 function wCard(c, s) {
-  if (!c.seq) return '<div class="w-card"><span class="img"></span>상품 고르기</div>';
+  if (!c.seq) {   // 상품을 고르기 전: 켜진 요소마다 예시 글 (모양을 먼저 볼 수 있게)
+    const on = k => s.card.on[k] && !c.off.includes(k);
+    const ph = { img: () => `<span class="img">${on('label') ? '<span class="lab">라벨</span>' : ''}</span>`, label: () => '', pill: () => '<span class="pill">알약 문구</span>', appeal: () => '<span class="ap">소구문구</span>',
+      tag: () => '', name: () => `<span class="nm">${on('tag') ? '[태그] ' : ''}상품명</span>`, list: () => '<span class="op">정가</span>', first: () => '<span class="op">1단 가격</span>', pct: () => '', pname: () => '',
+      sale: () => `<span class="pr">${on('pct') ? '<span class="pct">00%</span>' : ''}${on('pname') ? '<span class="pn">가격 이름</span>' : ''}${on('sale') ? '<span class="sp">판매가</span>' : ''}</span>`,
+      rating: () => '<span class="st">★ 별점(리뷰 수)</span>', review: () => '<span class="rv">“후기 한 줄”</span>', ai: () => '', copy: () => '<span>카드 문구</span>', btn: () => '<span class="bt">버튼</span>' };
+    return `<div class="w-card ph">${s.card.order.filter(k => on(k) || (k === 'sale' && (on('pct') || on('pname')))).map(k => ph[k]()).join('')}<span class="hint">상품 고르기</span></div>`;
+  }
   const p = P[c.seq], pr = priceOf(c.seq), on = k => s.card.on[k] && !c.off.includes(k), it = itemOf(c.seq);
   const parts = { img: () => `<span class="img">${on('label') && c.label ? `<span class="lab">${esc(c.label)}</span>` : ''}</span>`, label: () => '',
     pill: () => { const t = pillText(c); return t ? `<span class="pill">${esc(t).replace(/(\d[\d,]*원|\d+%)/, '<b>$1</b>')}</span>` : ''; },
@@ -505,8 +516,8 @@ function renderPhone() {
 
 // ================= 패널 =================
 function tabsFor(s) {
-  const k = kindOf(s.layout), mid = k === 'product' || k === 'deal' ? ['products', '상품'] : k === 'event' ? ['event', '운영 조건'] : k === 'review' ? ['review', '후기'] : null;
-  return [['copy', '문구'], ...(mid ? [mid] : []), ['refs', '레퍼런스'], ['notes', '디자인 요청']];
+  const k = kindOf(s.layout), mid = k === 'product' ? [['shape', '카드 모양'], ['products', '상품']] : k === 'deal' ? [['products', '상품']] : k === 'event' ? [['event', '운영 조건']] : k === 'review' ? [['review', '후기']] : [];
+  return [['copy', '문구'], ...mid, ['refs', '레퍼런스'], ['notes', '디자인 요청']];
 }
 function renderPanel() {
   const s = S(), i = secs.indexOf(s), tabs = tabsFor(s);
@@ -514,7 +525,7 @@ function renderPanel() {
   $('#panel').innerHTML = `<div class="ph-h"><div class="overline">${String(i + 1).padStart(2, '0')} 구좌 · ${esc(LNAME[s.layout])}</div><h2>${esc(s.name)}</h2>
       <div class="row"><span class="cap">구좌 종류</span><select data-layout aria-label="구좌 종류 바꾸기 (문구·메모는 그대로)">${LAYOUTS.map(([g, ls]) => `<optgroup label="${g}">${ls.map(([k, n]) => `<option value="${k}" ${s.layout === k ? 'selected' : ''}>${n}</option>`).join('')}</optgroup>`).join('')}</select></div></div>
     <div class="ph-tabs"><div class="seg" role="tablist" aria-label="편집 패널">${tabs.map(([k, n]) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}">${n}${k === 'refs' && (s.att.length + s.moods.length) ? ` ${s.att.length + s.moods.length}` : ''}</button>`).join('')}</div></div>
-    <div class="ph-b" id="pbody">${({ copy: copyTab, products: productsTab, event: eventTab, review: reviewTab, refs: refsTab, notes: notesTab })[tab](s)}</div>`;
+    <div class="ph-b" id="pbody">${({ copy: copyTab, shape: shapeTab, products: productsTab, event: eventTab, review: reviewTab, refs: refsTab, notes: notesTab })[tab](s)}</div>`;
 }
 function copyTab(s) {
   const hero = s.layout === 'hero';
@@ -530,6 +541,19 @@ function copyTab(s) {
         <label class="f"><span class="hint">어디로 <em>(선택) 디자이너 전달에 적어요</em></span><input type="text" data-sf="ctaTo" maxlength="60" value="${esc(s.ctaTo)}" placeholder="예) 티백 카테고리, 쿠폰 받기"></label></div>` : '<span class="hint">버튼 없이 둬요. 언제든 다시 켤 수 있어요.</span>'}</div>
     <div class="box"><span class="cap">문구 제안 <span class="tag demo-t">연결 예정</span></span><p class="hint">브리프 컨셉으로 구좌 이름·역할 한 줄을 이야기 순서(코스·방·여정)로 제안해요. 예) 가을 차회: 01 마중차 · 첫 인사를 건네며 입맛을 돋궈줄 차</p></div>`;
 }
+// 카드 모양 탭: 이 구좌의 카드 모두에 같은 모양 (요소 켜고 끄기·순서). 위에 견본 카드를 바로 보여줌
+function shapeTab(s) {
+  const sample = cardsOf(s).find(c => c.seq) || slot();
+  const sh = s.card;
+  return `<div class="f"><span class="l">견본 카드 <em>${sample.seq ? '첫 상품으로 보여요' : '상품이 없어도 예시 글로 자리를 채워요'}</em></span><div class="sample">${wCard(sample, s)}</div></div>
+    <div class="f"><span class="l">카드 모양 <em>이 구좌의 카드 모두 · 순서는 ↑↓</em></span>
+      <div class="chips-row"><span class="cap">빠른 설정</span>${Object.keys(PRESETS).map(k => `<button class="chip" data-preset="${k}">${k}</button>`).join('')}</div>
+      <ul class="els">${sh.order.map((k, j) => `<li class="el ${sh.on[k] ? '' : 'off'}"><input type="checkbox" data-elon="${k}" ${sh.on[k] ? 'checked' : ''} ${k === 'ai' ? 'disabled' : ''} aria-label="${ELS[k][0]} 보이기">
+        <span><span class="nm">${ELS[k][0]}</span> <span class="src">${ELS[k][1]}</span></span>
+        <span class="tools"><button class="ib" data-elmv="${j}:-1" ${j ? '' : 'disabled'} aria-label="${ELS[k][0]} 위로">↑</button><button class="ib" data-elmv="${j}:1" ${j < sh.order.length - 1 ? '' : 'disabled'} aria-label="${ELS[k][0]} 아래로">↓</button></span></li>`).join('')}</ul>
+      <span class="hint">요소 목록은 늘릴 수 있어요. 지금 목록은 자사몰 지난 페이지에서 본 것이에요.</span></div>
+`;
+}
 function productsTab(s) {
   if (s.layout === 'deal-banner') return `<div class="info-box">하루특가는 날짜마다 상품이 바뀌어서 상품·할인의 하루특가 편성에서 정해요. 여기서는 구좌 모양과 문구만 정해요.</div>
     <button class="btn sm" data-toast="예시예요: 상품·할인의 하루특가 편성을 열어요">하루특가 편성 열기</button>`;
@@ -538,13 +562,8 @@ function productsTab(s) {
         <input type="text" data-tabname="${j}" value="${esc(t.name)}" maxlength="40" aria-label="${j + 1}번 탭 이름">
         <span class="tools"><button class="ib" data-tabpick="${j}" aria-label="${esc(t.name)} 탭 상품 보기" title="이 탭 상품 보기">▸</button><button class="ib" data-tabmv="${j}:-1" ${j ? '' : 'disabled'} aria-label="위로">↑</button><button class="ib" data-tabmv="${j}:1" ${j < s.tabs.length - 1 ? '' : 'disabled'} aria-label="아래로">↓</button><button class="ib" data-tabdel="${j}" ${s.tabs.length > 1 ? '' : 'disabled'} aria-label="${esc(t.name)} 탭 삭제">✕</button></span></div>`).join('')}</div>
       <div><button class="btn xs" data-tabadd>+ 탭 추가</button></div></div>` : '';
-  return `<div class="f"><span class="l">카드 모양 <em>이 구좌의 카드 모두 · 순서는 ↑↓</em></span>
-      <div class="chips-row"><span class="cap">빠른 설정</span>${Object.keys(PRESETS).map(k => `<button class="chip" data-preset="${k}">${k}</button>`).join('')}</div>
-      <ul class="els">${sh.order.map((k, j) => `<li class="el ${sh.on[k] ? '' : 'off'}"><input type="checkbox" data-elon="${k}" ${sh.on[k] ? 'checked' : ''} ${k === 'ai' ? 'disabled' : ''} aria-label="${ELS[k][0]} 보이기">
-        <span><span class="nm">${ELS[k][0]}</span> <span class="src">${ELS[k][1]}</span></span>
-        <span class="tools"><button class="ib" data-elmv="${j}:-1" ${j ? '' : 'disabled'} aria-label="${ELS[k][0]} 위로">↑</button><button class="ib" data-elmv="${j}:1" ${j < sh.order.length - 1 ? '' : 'disabled'} aria-label="${ELS[k][0]} 아래로">↓</button></span></li>`).join('')}</ul>
-      <span class="hint">요소 목록은 늘릴 수 있어요. 지금 목록은 자사몰 지난 페이지에서 본 것이에요.</span></div>
-    ${tabsEd}
+  return `    ${tabsEd}
+    <p class="hint">카드에 무엇을 보일지는 '카드 모양' 탭에서 정해요. 여기서는 어떤 상품을 넣을지와 할인만 다뤄요.</p>
     <div class="f"><span class="l">카드${s.tabs ? ` · '${esc(s.tabs[s.tab].name)}' 탭` : ''} <em>${cards.filter(c => c.seq).length}/${cards.length}칸 · 할인율은 1단(할인 행), 금액은 최종가</em></span>
       <ul class="slots">${cards.map((c, k) => slotHTML(c, k, s)).join('')}</ul>
       <div><button class="btn xs" data-addcard>+ 빈 카드</button></div></div>
