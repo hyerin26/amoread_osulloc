@@ -130,6 +130,65 @@ textarea.req:focus { outline: 2px solid var(--accent); outline-offset: 0; border
 .wf .bt { height: 14px; width: 50%; background: var(--ink); border-radius: 3px; justify-self: center; }
 .wf .pl { display: flex; gap: 3px; } .wf .pl span { height: 6px; width: 22%; background: var(--line-sub); border-radius: 2px; } .wf .pl span:first-child { background: var(--ink); }
 
+/* 기획안: 위 요약 → 왼쪽 전체 와이어프레임(고정) + 오른쪽 구좌별 큰 와이어프레임과 메모 */
+.doc .brief { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 6px var(--s4); margin: var(--s4) 0 0; font-size: var(--fs-sm); }
+.doc .brief dt { color: var(--mute); } .doc .brief dd { margin: 0; }
+.dbody { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: var(--s5); align-items: start; }
+@media (max-width: 900px) { .dbody { grid-template-columns: minmax(0, 1fr); } .dside { position: static !important; } }
+.dside { position: sticky; top: var(--s4); display: grid; gap: var(--s2); }
+.ov { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); }
+.ov-s { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 4px; width: 100%; padding: 6px 8px; border-bottom: 1px solid var(--line-sub); }
+.ov-s:last-child { border-bottom: 0; }
+.ov-s:hover { background: var(--bg); }
+.ov-s:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.ov-n { font-size: 11px; line-height: 14px; color: var(--ink2); font-weight: var(--fw-medium); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ov-hero { height: 56px; border-radius: 4px; background: repeating-linear-gradient(135deg, var(--sunken) 0 6px, var(--surface) 6px 12px); }
+.ov-grid { display: grid; gap: 3px; } .ov-grid.g2 { grid-template-columns: 1fr 1fr; } .ov-grid.g4 { grid-template-columns: repeat(4, 1fr); }
+.ov-grid span { height: 22px; border-radius: 3px; background: var(--sunken); } .ov-grid .w2 { grid-column: 1 / -1; height: 34px; }
+.ov-tabs { display: flex; gap: 3px; } .ov-tabs i { width: 24px; height: 6px; border-radius: 2px; background: var(--line-sub); } .ov-tabs i:first-child { background: var(--ink); }
+.ov-lines { display: grid; gap: 3px; } .ov-lines i { height: 7px; border-radius: 2px; background: var(--sunken); } .ov-lines.y i { background: var(--warn-soft); }
+.ov-box { height: 30px; border-radius: 4px; border: 1px dashed var(--line-strong); }
+.ov-bt { justify-self: center; width: 50%; height: 8px; border-radius: 2px; background: var(--ink); }
+.dmain { display: grid; gap: var(--s5); }
+.dsec { display: block; padding-top: var(--s5); border-top: 1px solid var(--line-sub); scroll-margin-top: var(--s5); }   /* 앞의 2열 규칙을 덮음 */
+.dsec-h { display: flex; gap: var(--s2); align-items: center; margin-bottom: var(--s3); flex-wrap: wrap; }
+.dsec-h .dn { width: 22px; height: 22px; border-radius: 6px; background: var(--ink); color: var(--surface); display: grid; place-items: center; font-size: var(--fs-cap); font-weight: var(--fw-strong); }
+.dsec-h h3 { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var(--fw-strong); }
+.dsec-b { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: var(--s4); align-items: start; }
+@media (max-width: 1180px) { .dsec-b { grid-template-columns: minmax(0, 1fr); } }
+/* 구좌 와이어프레임 (크게) */
+.sw { border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 6px; background: var(--surface); }
+.sw-num { font-size: var(--fs-cap); color: var(--mute); }
+.sw-title { font-size: var(--fs-h2); line-height: var(--lh-h2); font-weight: var(--fw-strong); }
+.sw-desc { font-size: var(--fs-sm); color: var(--ink2); }
+.sw-hero { height: 220px; border-radius: 8px; background: repeating-linear-gradient(135deg, var(--sunken) 0 10px, var(--surface) 10px 20px); display: grid; place-content: center; text-align: center; gap: 6px; padding: 0 16px; }
+.sw-hero .sw-title { font-size: var(--fs-h1); line-height: var(--lh-h1); }
+.sw-tag { justify-self: center; font-size: 10px; color: var(--mute); background: var(--surface); border-radius: 4px; padding: 1px 6px; }
+.sw-tabs, .sw-dates { display: flex; gap: 4px; flex-wrap: wrap; }
+.sw-tabs span, .sw-dates span { font-size: 11px; padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line-sub); color: var(--mute); }
+.sw-tabs span.on, .sw-dates span.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.sw-grid { display: grid; gap: 6px; } .sw-grid.g2, .sw-grid.feat { grid-template-columns: 1fr 1fr; }
+.sw-card { border: 1px dashed var(--line-strong); border-radius: 8px; padding: 6px; display: grid; gap: 3px; align-content: start; }
+.sw-grid.feat .sw-card.big { grid-column: 1 / -1; }
+.sw-img { position: relative; height: 54px; border-radius: 4px; background: var(--sunken); display: grid; place-items: center; font-size: 10px; color: var(--mute); }
+.sw-card.big .sw-img { height: 96px; }
+.sw-img b { position: absolute; left: 0; top: 0; font-size: 9px; font-weight: var(--fw-medium); background: var(--ink); color: var(--surface); padding: 1px 5px; border-radius: 4px 0 4px 0; }
+.sw-img.sm { width: 44px; height: 44px; flex: none; font-size: 9px; text-align: center; }
+.sw-el { font-size: 10px; line-height: 14px; color: var(--mute); background: var(--bg); border-radius: 3px; padding: 1px 5px; }
+.sw-rv { display: grid; gap: 6px; }
+.sw-rvc { display: flex; gap: 8px; border: 1px solid var(--line-sub); border-radius: 8px; padding: 8px; font-size: var(--fs-cap); }
+.sw-rvc b { display: block; font-size: var(--fs-cap); }
+.sw-q { display: block; color: var(--ink2); margin: 2px 0; }
+.sw-ev { display: grid; gap: 4px; border: 1px dashed var(--line-strong); border-radius: 8px; padding: 10px; }
+.sw-lines { display: grid; gap: 4px; } .sw-lines span { font-size: 10px; color: var(--mute); background: var(--sunken); border-radius: 4px; padding: 4px 6px; } .sw-lines.y span { background: var(--warn-soft); }
+.sw-note { font-size: 10px; color: var(--mute); }
+.sw-btn { justify-self: center; margin-top: 4px; padding: 6px 18px; border-radius: 8px; background: var(--ink); color: var(--surface); font-size: var(--fs-cap); font-weight: var(--fw-strong); }
+.notes { display: grid; gap: var(--s3); align-content: start; }
+.nt { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: var(--s2); font-size: var(--fs-sm); }
+.nt .k { color: var(--mute); }
+.lnk { all: unset; cursor: pointer; color: var(--accent); font-weight: var(--fw-strong); text-decoration: underline; text-underline-offset: 2px; }
+.lnk:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.doc { max-width: 1040px; }
 /* 카드 문구표 */
 .tbl-wrap { overflow-x: auto; }
 table.cc { border-collapse: collapse; width: 100%; font-size: var(--fs-cap); }
@@ -143,7 +202,7 @@ table.cc td.empty { color: var(--line-strong); }
 .doc-title { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var(--fw-strong); }
 .note-gap { margin-top: var(--s3); }
 /* PDF로 저장: 문서만 인쇄 */
-@media print { .top, .demo, .page > .head, .side, .seg, .toast { display: none !important; } .lay { display: block; } .docwrap { padding: 0; background: none; } .doc { border: 0; padding: 0; max-width: none; } textarea.req { border: 0; resize: none; } }
+@media print { .dside { position: static !important; } .dsec { break-inside: avoid; } .top, .demo, .page > .head, .side, .seg, .toast { display: none !important; } .lay { display: block; } .docwrap { padding: 0; background: none; } .doc { border: 0; padding: 0; max-width: none; } textarea.req { border: 0; resize: none; } }
 .toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: var(--ink); color: var(--surface); border-radius: var(--r); padding: 14px 18px; font-size: var(--fs-sm);
   box-shadow: 0 16px 48px -12px rgba(33, 33, 33, .15); opacity: 0; pointer-events: none; transition: opacity .2s var(--ease); z-index: 30; max-width: calc(100vw - 32px); }
 .toast.on { opacity: 1; }
@@ -267,56 +326,68 @@ function renderChecks() {
 }
 
 // ================= 디자이너 기획안 =================
+// 카드 글(상품명·가격 등)은 카드 문구표에 있으니, 여기서는 페이지 구성과 구좌별 요소가 잘 보이게 한다
 function demoImg(w, h) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w * 40}" height="${h * 40}"><defs><pattern id="p" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="16" fill="#f3f3f3"/></pattern></defs><rect width="100%" height="100%" fill="#ffffff"/><rect width="100%" height="100%" fill="url(#p)"/><rect x="0.5" y="0.5" width="${w * 40 - 1}" height="${h * 40 - 1}" fill="none" stroke="#dedede"/></svg>`;
   return `<img src="data:image/svg+xml,${encodeURIComponent(svg)}" alt="">`;
 }
-// 기획안 전체 와이어프레임 (4) — mark = 강조할 구좌 (구좌마다 그 구좌만 강조 = 기획 구좌 와이어프레임 (3)의 자리)
-function wire(mark = -1, only = -1) {
-  const body = s => {
-    if (s.layout === 'hero') return `<span class="blk2 hero">${esc(s.name)}</span>`;
-    if (s.layout === 'feat') return '<span class="row g2 feat"><span class="blk2 crd"></span><span class="blk2 crd"></span><span class="blk2 crd"></span></span>';
-    if (s.layout === 'grid2') return `${s.tabs ? '<span class="pl"><span></span><span></span><span></span></span>' : ''}<span class="row g2"><span class="blk2 crd"></span><span class="blk2 crd"></span></span>`;
-    if (s.layout === 'review') return '<span class="blk2 ln"></span><span class="blk2 ln"></span>';
-    if (s.layout === 'benefit') return '<span class="blk2 ln y"></span><span class="blk2 ln y"></span>';
-    return '<span class="blk2 ln"></span>';
+const EL_NAME = { img: '이미지', label: '라벨', pill: '알약', appeal: '소구문구', tag: '[태그]', name: '상품명', list: '정가', first: '1단 가격', pct: '할인율', pname: '가격 이름', sale: '판매가', rating: '별점', review: '후기 한 줄', copy: '카드 문구', btn: '버튼' };
+const nn = (s, i) => s.num ? String(nums()[i]).padStart(2, '0') : '';
+
+// 전체 와이어프레임 (왼쪽, 늘 보임): 구좌마다 이름표 + 모양. 누르면 그 구좌로
+function overview(cur = -1) {
+  const shape = s => {
+    if (s.layout === 'hero') return '<span class="ov-hero"></span>';
+    if (s.layout === 'feat') return '<span class="ov-grid g2"><span class="w2"></span><span></span><span></span><span></span><span></span></span>';
+    if (s.layout === 'grid2') return `${s.tabs ? '<span class="ov-tabs"><i></i><i></i><i></i></span>' : ''}<span class="ov-grid g2"><span></span><span></span></span>`;
+    if (s.layout === 'deal-banner') return '<span class="ov-grid g4"><span></span><span></span><span></span><span></span></span>';
+    if (s.layout === 'review') return '<span class="ov-lines"><i></i><i></i></span>';
+    if (s.ev) return '<span class="ov-box"></span>';
+    if (s.layout === 'benefit') return '<span class="ov-lines y"><i></i><i></i><i></i></span>';
+    return '<span class="ov-lines"><i></i><i></i></span>';
   };
-  return `<div class="wf" aria-hidden="true">${SECS.map((s, i) => only >= 0 && i !== only ? '' : `<div class="s ${i === mark ? 'on' : ''}"><span class="nm">${esc(s.name)}</span>${body(s)}${s.cta ? '<span class="bt"></span>' : ''}</div>`).join('')}</div>`;
+  return `<div class="ov">${SECS.map((s, i) => `<button class="ov-s ${i === cur ? 'on' : ''}" data-jump="${i}"><span class="ov-n">${nn(s, i) || '·'} ${esc(s.name)}</span>${shape(s)}${s.cta ? '<span class="ov-bt"></span>' : ''}</button>`).join('')}</div>`;
+}
+
+// 구좌 와이어프레임 (크게): 실제 문구(제목·설명·추가 문구·버튼) + 요소 자리 이름표. 카드 칸에는 카드 모양(요소 순서)만
+function secWire(s, i) {
+  const head = s.layout === 'hero' ? '' : `${s.num ? `<span class="sw-num">${nn(s, i)}</span>` : ''}<span class="sw-title">${esc(s.name)}</span>${s.role ? `<span class="sw-desc">${esc(s.role)}</span>` : ''}${(s.lines || []).map(l => `<span class="sw-desc">${esc(l)}</span>`).join('')}`;
+  const cardFrame = (big = false) => `<span class="sw-card ${big ? 'big' : ''}"><span class="sw-img">이미지${s.on.includes('label') ? '<b>라벨</b>' : ''}</span>${s.on.filter(k => !['img', 'label', 'tag', 'pct', 'pname'].includes(k)).map(k => k === 'name' && s.on.includes('tag') ? '[태그] 상품명' : k === 'sale' ? [s.on.includes('pct') && '할인율', s.on.includes('pname') && '가격 이름', '판매가'].filter(Boolean).join(' · ') : EL_NAME[k]).map(t => `<span class="sw-el">${t}</span>`).join('')}</span>`;
+  let body = '';
+  if (s.layout === 'hero') body = `<span class="sw-hero"><span class="sw-tag">메인 비주얼 이미지</span><span class="sw-title">${esc(s.name)}</span>${s.role ? `<span class="sw-desc">${esc(s.role)}</span>` : ''}</span>`;
+  else if (s.on) {
+    const n = cardsOf(s).length, tabs = s.tabs ? `<span class="sw-tabs">${s.tabs.map(([t], j) => `<span class="${j ? '' : 'on'}">${esc(t)}</span>`).join('')}</span>` : '';
+    const per = s.tabs ? s.tabs[0][1].length : n;
+    body = `${tabs}<span class="sw-grid ${s.layout === 'feat' ? 'feat' : 'g2'}">${Array.from({ length: per }, (_, j) => cardFrame(s.layout === 'feat' && j === 0)).join('')}</span>`;
+  } else if (s.layout === 'deal-banner') body = '<span class="sw-dates"><span class="on">3/2</span><span>3/3</span><span>3/4</span><span>…</span></span><span class="sw-grid g2"><span class="sw-card"><span class="sw-img">이미지</span><span class="sw-el">상품명</span><span class="sw-el">할인율 · 판매가</span></span><span class="sw-card"><span class="sw-img">이미지</span><span class="sw-el">상품명</span><span class="sw-el">할인율 · 판매가</span></span></span><span class="sw-note">날짜마다 바뀌어요 · 상품은 하루특가 편성표</span>';
+  else if (s.rv) body = `<span class="sw-rv">${s.rv.map(([id, title]) => { const v = REVIEWS[id]; return `<span class="sw-rvc"><span class="sw-img sm">상품 이미지</span><span><b>${esc(title)}</b><span class="sw-q">${esc(v.text.length > 44 ? v.text.slice(0, 44) + '…' : v.text)}</span><span class="sw-el">★ 별점 · 상품명</span></span></span>`; }).join('')}</span>`;
+  else if (s.ev) body = `<span class="sw-ev"><span class="sw-el">참여 방법: ${esc(s.ev.how)}</span><span class="sw-el">보상: ${esc(s.ev.reward)}</span><span class="sw-el">기간: ${esc(s.ev.when)}</span></span>`;
+  else if (s.layout === 'benefit') body = '<span class="sw-lines y"><span>혜택 1</span><span>혜택 2</span><span>혜택 3</span></span>';
+  else body = '<span class="sw-lines"><span>안내 글</span><span>안내 글</span></span>';
+  return `<div class="sw" aria-hidden="true">${head}${body}${s.cta ? `<span class="sw-btn">${esc(s.cta[0])}</span>` : ''}</div>`;
 }
 const refCards = list => `<div class="refrow">${list.map(r => `<div class="refc"><span class="fr">${demoImg(r.r[0], r.r[1])}</span><b>${esc(r.name)}</b><span class="cap">${esc(r.page || r.src)}</span>${r.note ? `<span>${esc(r.note)}</span>` : ''}${r.pts ? `<span class="pts">${r.pts.join(' · ')}</span>` : ''}</div>`).join('')}</div>`;
-function cardLine(cd) {
-  if (!cd.seq) return `<li><span class="undef">미정</span>${cd.tab ? ` <span class="cap">${esc(cd.tab)} 탭</span>` : ''} 상품을 고르는 중이에요</li>`;
-  const p = PRODUCTS[cd.seq], pr = priceOf(cd.seq), pill = pillText(cd);
-  return `<li>${cd.tab ? `<span class="tag">${esc(cd.tab)}</span>` : ''}${cd.label ? `<span class="tag">${esc(cd.label)}</span>` : ''}<b>${cd.tag ? `[${esc(cd.tag)}] ` : ''}${esc(p.name)}</b>
-    <span class="pp">${pr.pct ? `${pr.pct}% ` : ''}${esc(pr.pname)} ${won(pr.fin)}</span>${pill ? `<span class="cap">${esc(pill)}</span>` : ''}</li>`;
-}
 function renderDoc() {
-  const n = nums();
   const cover = `<header class="dh"><div class="overline">AMOREAD · 디자이너 기획안 · 2026-11-06</div><h2>${esc(PLAN.title)}</h2>
-      <div class="facts"><span class="tag cls">${PLAN.cls}</span><span class="tag">${PLAN.period}</span><span class="tag">${PLAN.page}</span><span class="tag">구좌 ${SECS.length}개</span></div></header>
-    <section class="cover"><dl><dt>명분</dt><dd>${esc(PLAN.myeongbun)}</dd><dt>컨셉</dt><dd>${esc(PLAN.concept)}</dd><dt>메인 카피</dt><dd><span class="copy">${esc(PLAN.copy)}</span></dd>
-        <dt>누구에게</dt><dd>${esc(PLAN.who)}</dd><dt>키워드</dt><dd>${PLAN.keywords.map(esc).join(' · ')}</dd>
-        <dt>추가 혜택</dt><dd>${EXTRAS.map(e => `${esc(e.name)}: 할인가에서 ${Math.round(e.pct * 100)}% 더 (${e.seqs.map(q => esc(PRODUCTS[q].name)).join(', ')})`).join('<br>')}</dd>
-        <dt>기획안 전체 느낌</dt><dd>${refCards(BRIEF_MOODS)}</dd></dl>
-      <div><h4>기획안 전체 와이어프레임</h4>${wire()}</div></section>`;
+      <div class="facts"><span class="tag cls">${PLAN.cls}</span><span class="tag">${PLAN.period}</span><span class="tag">${PLAN.page}</span><span class="tag">구좌 ${SECS.length}개</span></div>
+      <dl class="brief"><dt>컨셉</dt><dd>${esc(PLAN.concept)}</dd><dt>메인 카피</dt><dd><b>${esc(PLAN.copy)}</b></dd><dt>누구에게</dt><dd>${esc(PLAN.who)}</dd>
+        <dt>추가 혜택</dt><dd>${EXTRAS.map(e => `${esc(e.name)} (할인가에서 ${Math.round(e.pct * 100)}% 더)`).join(', ')}</dd></dl>
+      <div class="blk"><h4>기획안 전체 느낌</h4>${refCards(BRIEF_MOODS)}</div></header>`;
   const sec = (s, i) => {
-    const cards = cardsOf(s), kv = [];
-    if (s.layout !== 'hero') kv.push(['구좌 종류', LNAME[s.layout]]);
-    if (s.scope) kv.push(['담는 것', s.scope]);
-    kv.push(['버튼', s.cta ? `${s.cta[0]} → ${s.cta[1] || '어디로 미정'}` : '없음']);
-    return `<section class="dsec" aria-label="${i + 1}번 구좌"><div>${wire(i, i)}</div><div>
-      ${s.num ? `<div class="num">${String(n[i]).padStart(2, '0')}</div>` : ''}<h3>${esc(s.name)}</h3><p class="role">${esc(s.role)}${(s.lines || []).map(l => `<br>${esc(l)}`).join('')}</p>
-      <div class="kv">${kv.map(([k, v]) => `<span>${k}</span><span>${esc(v)}</span>`).join('')}</div>
-      ${cards.length ? `<div class="blk"><h4>상품 ${cards.filter(x => x.seq).length}/${cards.length} <span class="cap">카드 글은 카드 문구표에 칸별로 있어요</span></h4><ul class="plist">${cards.map(cardLine).join('')}</ul></div>` : ''}
-      ${s.layout === 'deal-banner' ? '<div class="blk"><h4>날짜별 상품</h4><p class="cap">상품·할인의 하루특가 편성 기준으로 날짜마다 바뀌어요 (편성표를 함께 보내요)</p></div>' : ''}
-      ${s.rv ? `<div class="blk"><h4>후기 <span class="cap">원문 그대로 · 작성자 숨김</span></h4>${s.rv.map(([id, title]) => { const v = REVIEWS[id]; return `<div class="rvq"><b>${esc(title)}</b>${esc(v.text)}<br><span class="cap">${'★'.repeat(v.rating)} · ${esc(PRODUCTS[v.seq].name)}</span></div>`; }).join('')}</div>` : ''}
-      ${s.ev ? `<div class="blk"><h4>운영 조건</h4><div class="kv"><span>참여 방법</span><span>${esc(s.ev.how)}</span><span>보상</span><span>${esc(s.ev.reward)}</span><span>당첨</span><span>${esc(s.ev.pick)}</span><span>기간</span><span>${esc(s.ev.when)}</span><span>로그인</span><span>${s.ev.login ? '필요' : '필요 없음'}</span><span>유의사항</span><span>${s.ev.notice ? esc(s.ev.notice) : '<span class="undef">미정</span>'}</span></div></div>` : ''}
-      ${s.refs.length ? `<div class="blk"><h4>참고 레퍼런스 (원본 구좌)</h4>${refCards(s.refs)}</div>` : ''}
-      ${s.moods.length ? `<div class="blk"><h4>느낌 레퍼런스</h4>${refCards(s.moods)}</div>` : ''}
-      <div class="blk"><h4>디자인 요청 <span class="cap">여기서 고쳐도 구좌 편집과 같은 값이에요</span></h4><textarea class="req" data-req="${i}" rows="2" placeholder="따로 부탁할 것이 없어요">${esc(s.notes)}</textarea></div>
-      </div></section>`;
+    const t = cardTables().findIndex(x => x.s === s);
+    const notes = [
+      s.cta ? `<div class="nt"><span class="k">버튼</span><span>${esc(s.cta[0])} → ${esc(s.cta[1] || '어디로 미정')}</span></div>` : '',
+      s.on ? `<div class="nt"><span class="k">카드</span><span>${cardsOf(s).length}칸${s.tabs ? ` · 탭 ${s.tabs.length}개 (${s.tabs.map(([x]) => esc(x)).join(', ')})` : ''} · 글은 <button class="lnk" data-view="cards">카드 문구표 ${t + 1}번</button>${cardsOf(s).some(x => !x.seq) ? ' · <span class="undef">상품 미정 있음</span>' : ''}</span></div>` : '',
+      s.ev ? `<div class="nt"><span class="k">운영 조건</span><span>${esc(s.ev.pick)} · ${s.ev.login ? '로그인 필요' : '로그인 없이'} · 유의사항 ${s.ev.notice ? '있음' : '<span class="undef">미정</span>'}</span></div>` : '',
+      s.rv ? '<div class="nt"><span class="k">후기</span><span>원문 그대로 · 작성자 숨김</span></div>' : '',
+      s.refs.length ? `<div class="blk"><h4>참고 (원본 구좌)</h4>${refCards(s.refs)}</div>` : '',
+      s.moods.length ? `<div class="blk"><h4>느낌</h4>${refCards(s.moods)}</div>` : '',
+      `<div class="blk"><h4>디자인 요청</h4><textarea class="req" data-req="${i}" rows="2" placeholder="따로 부탁할 것이 없어요">${esc(s.notes)}</textarea></div>`,
+    ].join('');
+    return `<section class="dsec" id="dsec-${i}" aria-label="${i + 1}번 구좌"><div class="dsec-h"><span class="dn">${i + 1}</span><h3>${s.num ? `<span class="cap">${nn(s, i)}</span> ` : ''}${esc(s.name)}</h3><span class="tag">${esc(LNAME[s.layout])}</span></div>
+      <div class="dsec-b">${secWire(s, i)}<div class="notes">${notes}</div></div></section>`;
   };
-  document.getElementById('doc').innerHTML = cover + SECS.map(sec).join('');
+  document.getElementById('doc').innerHTML = `${cover}<div class="dbody"><aside class="dside"><h4>전체 와이어프레임</h4>${overview()}<p class="cap">누르면 그 구좌로 가요</p></aside><div class="dmain">${SECS.map(sec).join('')}</div></div>`;
 }
 
 // ================= 카드 문구표 =================
@@ -347,6 +418,7 @@ function render() { renderChecks(); view === 'doc' ? renderDoc() : renderCards()
 document.addEventListener('click', e => {
   const t = e.target;
   const vb = t.closest('[data-view]'); if (vb) { view = vb.dataset.view; render(); return; }
+  const jp = t.closest('[data-jump]'); if (jp) { document.getElementById(`dsec-${jp.dataset.jump}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
   const g = t.closest('[data-go]'); if (g) { toast(`예시예요: 구좌 편집에서 ${+g.dataset.go + 1}번 구좌 '${SECS[+g.dataset.go].name}'을 열어요`); return; }
   const cp = t.closest('[data-copy]'); if (cp) { const tsv = cardTables()[+cp.dataset.copy].tsv;
     (navigator.clipboard?.writeText(tsv) || Promise.reject()).then(() => toast('표를 복사했어요. 엑셀이나 피그마에 붙여 넣을 수 있어요'), () => toast('이 브라우저에서는 복사가 막혀 있어요. 엑셀로 내려받아 주세요')); return; }
