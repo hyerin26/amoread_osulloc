@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="planner-token" content="__PLANNER_TOKEN__">
+<title>프로모션 기획 도우미</title>
+<link rel="icon" href="/static/mascot.svg">
+<link rel="stylesheet" href="/static/tokens.css">
+<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/ds.css">
+<link rel="stylesheet" href="/static/am.css">
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><img src="/static/mascot.svg" alt="">AMOREAD<small>오설록닷컴 기획</small></div>
+    <nav class="tabs" id="tabs" aria-label="화면">
+      <button class="tab on" data-view="calendar">캘린더</button>
+      <button class="tab" data-view="am">기획안</button>
+      <span class="tsep" aria-hidden="true"></span>
+      <span class="tab-label" aria-hidden="true">참고 자료</span>
+      <button class="tab ref" data-view="products">상품</button>
+      <button class="tab ref" data-view="review">지난 성과</button>
+      <button class="tab ref" data-view="signals">트렌드</button>
+      <button class="tab ref" data-view="ideas">운영 지표</button>
+    </nav>
+    <button class="am-chip empty" id="amChip" aria-label="작업 중 기획안 바꾸기"><span class="cap">작업 중 기획안</span><span>없음</span></button>
+    <div class="datastate" id="dataState"><span class="spin"></span> 불러오는 중</div>
+    <button class="tab gear" data-view="settings" id="gearBtn" title="데이터·설정" aria-label="데이터·설정"></button>
+  </div>
+</header>
+
+<main>
+  <!-- 운영 지표 (참고 자료): 기존 '이번 주'의 SAP 실적과 전체 기획 D-day. 운영 콘솔과 겹치는지 확인 후 정리 (인터뷰 F3, G1) -->
+  <section class="view" id="view-ideas">
+    <div class="masthead">
+      <div class="grow">
+        <h1>운영 지표</h1>
+        <p>몰 실적과 잡힌 행사의 제작 일정이에요. 기획안별 제작 일정은 각 기획안 옆 패널에서 볼 수 있어요.</p>
+        <span class="hidden" id="homeTitle"></span><span class="hidden" id="homeSub"></span>
+      </div>
+    </div>
+    <section class="sapsales" aria-labelledby="sapH">
+      <div class="sec-head"><h2 id="sapH">오설록닷컴 실적</h2><span class="cap" id="sapSum"></span></div>
+      <div class="kpis" id="sapKpis"><div class="empty"><span class="spin"></span></div></div>
+    </section>
+    <section class="dday" aria-labelledby="ddH">
+      <div class="sec-head"><h2 id="ddH">기획 D-day</h2><span class="cap" id="ddSum"></span><span class="grow"></span>
+        <label class="ck"><input type="checkbox" id="ddNear" checked> 가까운 것만</label></div>
+      <div id="ddBody"><div class="empty"><span class="spin"></span></div></div>
+      <details class="card mt8" id="ddRuleBox"><summary><b>계산 규칙</b> <span class="cap">업무일·공휴일·단계별 기준</span></summary><div id="ddRules" class="mt8"></div></details>
+    </section>
+    <div class="todayline" id="todayLine"></div>
+  </section>
+
+  <!-- 시장 신호: 검색 트렌드 · 고객 리뷰 -->
+  <section class="view" id="view-signals">
+    <div class="masthead">
+      <div class="grow">
+        <h1>트렌드</h1>
+        <p>정해 둔 상품 키워드 없이 넓은 질의로 요즘 뜨는 말을 찾고(네이버 뉴스·블로그), 검색량으로 확인한 뒤 오설록과 엮어요. 모두 규칙 계산 · 비용 없음.</p>
+      </div>
+      <div class="row wrap"><span class="cap" id="scoutState"></span><button class="btn sm primary" id="scoutRun">바깥 소식 모으기</button></div>
+    </div>
+    <div id="scoutBody"><div class="empty"><span class="spin"></span></div></div>
+    <details class="card mt12" id="scoutQBox"><summary><b>넓은 질의</b> <span class="cap">상품명이 아니라 '요즘 유행 디저트' 같은 상위 개념이에요. 고칠 수 있어요</span></summary><div id="scoutQ" class="mt8"></div></details>
+    <div class="sec-head mt16"><h2>감시 중인 키워드 그룹 · 검색량</h2><span class="grow"></span><span class="cap" id="sigState"></span><button class="btn sm" id="sigRefresh">검색 트렌드 새로 받기</button></div>
+    <div id="sigTrend"><div class="empty"><span class="spin"></span></div></div>
+    <div id="sigReview" class="mt12"></div>
+    <details class="card mt12" id="sigGroupsBox"><summary><b>검색 키워드 그룹</b> <span class="cap">검색어 묶음과 연결할 오설록 상품(상품명 포함어·카테고리)을 고칠 수 있어요</span></summary><div id="sigGroups" class="mt8"></div></details>
+  </section>
+
+  <!-- 캘린더 (첫 화면): 명분, 잡힌 행사, 내 기획안 + 옆 패널(이어서 하기, 기획 시작, 할 일) + 이번 주 아이디어 -->
+  <section class="view on" id="view-calendar">
+    <div class="cal-layout">
+      <div class="cal-main">
+        <div class="masthead">
+          <div class="grow">
+            <h1>캘린더</h1>
+            <p>명절, 기념일, 절기, 날씨 같은 날짜 명분과 PROMO_WORK 행사, 내 기획안을 함께 봅니다. 명분 카드에서 바로 기획을 시작할 수 있어요.</p>
+          </div>
+          <div class="row wrap">
+            <button class="btn sm" id="calPrev">4주 전</button><button class="btn sm" id="calToday">이번 주</button><button class="btn sm" id="calNext">4주 뒤</button>
+          </div>
+        </div>
+        <fieldset class="am-layers" aria-label="캘린더에 보일 정보">
+          <legend class="cap">보기</legend>
+          <label class="ck"><input type="checkbox" data-layer="am" checked> 내 기획안</label>
+          <label class="ck"><input type="checkbox" data-layer="season" checked> 명분</label>
+          <label class="ck"><input type="checkbox" data-layer="promo" checked> 잡힌 행사</label>
+        </fieldset>
+        <div class="kpis" id="calKpis"></div>
+        <div class="cal" id="calGrid"><div class="empty"><span class="spin"></span></div></div>
+        <div class="cal-legend mt8" id="calLegend"></div>
+        <div class="am-undated hidden" id="amUndated" aria-label="날짜 미정 기획안"></div>
+      </div>
+      <aside class="cal-side" aria-label="이어서 하기와 할 일">
+        <section class="card"><h2>이어서 하기</h2><div id="amResumeList"><div class="empty"><span class="spin"></span></div></div></section>
+        <section class="card starters"><h2 id="startH">기획 시작</h2><div id="starterList"></div></section>
+        <section class="card todo" aria-labelledby="todoH"><h2 id="todoH">할 일</h2><ul id="todoList"><li><span class="spin"></span></li></ul></section>
+      </aside>
+    </div>
+    <div class="sec-head mt16"><h2>다가오는 명분</h2><span class="cap">60일 안의 명분, 씨앗, 지난 성과</span><span class="grow"></span><div class="grp" id="mbKind"></div></div>
+    <div class="mbcards" id="mbCards"></div>
+    <div class="ideahead mt16">
+      <h2>이번 주 아이디어</h2>
+      <span class="cap" id="ideaPeriod"></span>
+      <span class="grow"></span>
+      <label class="ck">주 시작 <input type="date" id="ideaStart"></label>
+      <button class="btn sm" id="ideaMore">다른 아이디어</button>
+    </div>
+    <div class="ideas" id="ideaCards"><div class="empty"><span class="spin"></span></div></div>
+    <p class="cap mt12" id="ideaNote"></p>
+    <details class="card mt12" id="seasonBox"><summary><b>명분 사전</b> <span class="cap">날짜·종류·준비 기간·씨앗·지난 행사 키워드를 고칠 수 있어요</span></summary><div id="seasonBody" class="mt8"></div></details>
+  </section>
+
+  <!-- 상품 탐색 -->
+  <section class="view" id="view-products">
+    <div class="kpis" id="prodKpis"></div>
+    <div class="filters">
+      <input type="search" id="fQuery" placeholder="상품명 또는 SEQ" class="w200">
+      <div class="grp wrap" id="fPreset"></div>
+    </div>
+    <div class="filters">
+      <div class="grp" id="fCat"></div>
+      <span class="sep"></span>
+      <select id="fBand"><option value="">가격대 전체</option></select>
+      <select id="fType"><option value="">단일·조합</option><option>단일상품</option><option>조합상품</option></select>
+      <label class="ck"><input type="checkbox" id="fFree"> 예정 행사 없는 것만</label>
+      <label class="ck"><input type="checkbox" id="fAll"> 판매 없는 상품도 보기</label>
+      <span class="grow"></span>
+      <span class="cap" id="prodCount"></span>
+    </div>
+    <div class="tbl-wrap tall"><table class="t compact" id="prodTable"></table></div>
+  </section>
+
+  <!-- 조합 추천 -->
+  <section class="view" id="view-mix">
+    <div class="masthead">
+      <div class="grow">
+        <h1>조합 추천 <button class="btn sm" id="mixBack">← 작업대로</button></h1>
+        <p>원가가 높아 혼자서는 할인하기 어려운 인기 상품에, 원가 낮은 상품을 얹어 할인 여력을 만드는 짝을 추천합니다.</p>
+      </div>
+      <div class="row wrap">
+        <span class="sm">목표 할인</span>
+        <select id="bundleRate"><option value="0.2">20%</option><option value="0.25" selected>25%</option><option value="0.3">30%</option><option value="0.35">35%</option></select>
+        <select id="bundleCat"><option value="">모든 카테고리</option></select>
+      </div>
+    </div>
+    <div id="bundleList"><div class="empty"><span class="spin"></span></div></div>
+    <details class="card mt12" id="manualBox">
+      <summary><b>직접 조합 계산하기</b> <span class="cap">상품을 골라 정가·원가·최대 할인을 바로 계산</span></summary>
+      <div class="mt10">
+        <div class="picker"><input type="search" id="mixSearch" placeholder="상품 추가: 이름이나 SEQ 입력"><div class="dd hidden" id="mixDD"></div></div>
+        <table class="mini mt10" id="mixItems"></table>
+        <div class="sim" id="mixSim"></div>
+        <div class="row wrap">
+          <button class="btn primary" id="mixToPlan">기획안에 신규 조합으로 담기</button>
+          <button class="btn" id="mixClear">비우기</button>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- AMOREAD 통합 기획안: 목록과 허브 -->
+  <section class="view" id="view-am">
+    <div id="amList"></div>
+    <div id="amHub" class="hidden"></div>
+  </section>
+
+  <!-- 기획안 -->
+  <!-- 작업대: 화면 탭은 없앰. 내용은 기획안 ② 상품·할인 단계 안으로 옮겨져 쓰인다 (am/hub.js paintPromo) -->
+  <section class="view" id="view-plan">
+    <div class="card">
+      <div class="plan-head">
+        <div>
+          <input class="title" id="planTitle" type="text" placeholder="기획안 제목 (예: 11월 블프 말차 묶음존)">
+          <div class="cap" id="planMeta"></div>
+        </div>
+        <div class="row wrap">
+          <button class="btn ghost" id="planNew">새 기획안</button>
+          <button class="btn" id="planReplan" title="가져와요: 상품, 할인율, 상시·하루특가 구분, 날짜 간격, Zone. 가져오지 않아요: 명분, 컨셉, 소구문구, 페이지 구성">지난 행사 상품·할인 가져오기</button>
+          <select id="planList" aria-label="저장된 기획안 불러오기"><option value="">불러오기</option></select>
+          <button class="btn" id="planSave">저장</button>
+          <button class="btn ghost" id="planConfirm" title="지금 예측을 고정 저장합니다. 행사가 끝나면 지난 성과 탭에서 계획 대비 실적을 봅니다">확정</button>
+          <button class="btn" id="planShare">공유 요약</button>
+          <button class="btn primary" id="planExport">엑셀 내보내기</button>
+        </div>
+      </div>
+      <details id="planBriefBox"><summary class="cap" id="planBriefSum">기획 메모 (명분·컨셉·고객·목표)</summary>
+      <div class="brief" id="planBrief">
+        <label><span>명분</span><input type="text" data-b="myeongbun" placeholder="왜 지금? 예) 입동, 첫 추위"></label>
+        <label><span>컨셉</span><input type="text" data-b="concept" placeholder="한 줄 컨셉 예) 첫 추위의 블렌디드 티 바"></label>
+        <label><span>고객 상황</span><input type="text" data-b="customer" placeholder="누가 어떤 상황? 예) 퇴근길 따뜻한 걸 찾는 직장인"></label>
+        <label><span>목표</span><input type="text" data-b="target" placeholder="예) 2주 행사 매출 5,000만"></label>
+      </div></details>
+    </div>
+    <div class="overview hidden" id="planOverview"></div>
+    <div class="kpis mt12 hidden" id="planKpis"></div>
+    <div class="issuebar hidden" id="planIssues"></div>
+    <div class="card">
+      <div class="sec-head"><h2>행사 행</h2>
+        <button class="btn sm" id="planAdd">+ 행 추가</button>
+        <button class="btn sm" id="planBundle">묶음 추천</button>
+        <button class="btn sm" id="planAskClaude">Claude에게 수정 요청</button>
+        <select id="planSort" aria-label="정렬"><option value="type">유형·날짜별 묶기</option><option value="date">날짜순</option><option value="zone">Zone별 묶기</option><option value="input">입력순</option></select>
+        <span class="grow"></span><span class="cap">값을 바꾸면 바로 다시 검증해요. 판정 배지를 누르면 확인할 점과 고치기 버튼이 나와요. 원가율 참고선 <b id="planTarget"></b></span></div>
+      <div class="tbl-wrap"><table class="t plan compact" id="planTable"></table></div>
+      <div id="planDays" class="mt10"></div>
+    </div>
+    <details class="card hidden" id="planRationaleCard"><summary><b>기획 메모</b> <span class="cap">Claude·예시 기획안의 근거</span></summary><div class="rationale mt8" id="planRationale"></div></details>
+    <details class="card" id="planExistingBox"><summary><b>같은 기간 이미 잡힌 행사</b> <span class="cap" id="planExistingSum">PROMO_WORK 기준</span></summary><div id="planExisting" class="mt8"></div></details>
+  </section>
+
+  <!-- 지난 행사: 회차 성과 + 할인 패턴 -->
+  <section class="view" id="view-review">
+    <div class="masthead">
+      <div class="grow">
+        <h1>지난 성과</h1>
+        <p>할인이 매출에 얼마나 먹혔는지 보고 다음 할인을 정해요. 레버 보드는 우리 실적으로 잰 요일·할인 깊이·쉰 기간·품목 수·상시 길이·계절이에요.</p>
+      </div>
+      <div class="grp" id="revMode"><button class="chip on" data-mode="levers">레버 보드</button><button class="chip" data-mode="waves">행사 회차 성과</button><button class="chip" data-mode="plans">계획 대비 실적</button><button class="chip" data-mode="patterns">할인 패턴</button></div>
+    </div>
+    <div id="revLevers"></div>
+    <div id="revPlans" class="hidden"></div>
+    <div id="revWaves" class="hidden">
+      <div id="revLastYear"></div>
+      <div class="filters">
+        <input type="search" id="revQuery" placeholder="행사명 (예: 블프, 설)" class="w200">
+        <div class="grp" id="revType"><button class="chip on" data-type="">전체</button><button class="chip" data-type="상시">상시</button><button class="chip" data-type="하루특가">하루특가</button></div>
+        <label class="ck"><input type="checkbox" id="revDone" checked> 끝난 행사만</label>
+        <span class="grow"></span><span class="cap" id="revCount"></span>
+      </div>
+      <div class="tbl-wrap tall"><table class="t compact" id="revTable"></table></div>
+      <p class="cap mt8">행사 매출·수량 = 세팅 할인율 ±2%p로 팔린 판매(종료 다음 날까지, 출고일 기준). 쿠폰 등으로 할인율이 달라진 판매는 빠져 실제보다 작을 수 있어요. 반응도 = 행사 기간 일평균 수량 ÷ 시작 35~8일 전 일평균(상시는 하루특가와 섞여 참고만).</p>
+    </div>
+    <div id="patternsBody" class="hidden"></div>
+  </section>
+
+  <!-- 데이터·설정 -->
+  <section class="view" id="view-settings">
+    <div class="card"><h2>데이터 상태</h2><div id="setStatus"></div>
+      <div class="row wrap mt10">
+        <button class="btn primary" id="btnRebuild">데이터 갱신</button>
+        <button class="btn" id="btnRebuildFull">실적 CSV까지 전체 다시 집계</button>
+        <span class="cap">실적 CSV·할인정보 xlsm·온라인 가이드를 새로 읽어 원가와 행사 성과를 다시 계산합니다 (원본 파일은 읽기만)</span>
+      </div>
+      <div class="log hidden mt10" id="rebuildLog"></div>
+    </div>
+    <div class="card"><h2>원가 파일 (온라인 가이드) 업데이트</h2>
+      <p class="sm mute">새 '★오설록 온라인 가이드' 엑셀을 올리면 그 파일의 'NN월 상품장' 이동평균가로 원가를 계산합니다. 가장 최근 파일이 쓰입니다. 올린 뒤 [데이터 갱신]을 누르세요.</p>
+      <div class="row wrap"><input type="file" id="guideFile" accept=".xlsx"><button class="btn" id="btnUpload">올리기</button><span class="sm" id="uploadMsg"></span></div>
+      <table class="mini mt10" id="guideList"></table>
+    </div>
+    <div class="card"><h2>보자기 본품 지정</h2>
+      <p class="sm mute">보자기 상품은 이름으로 본품을 찾아 '본품 원가 + 보자기 4,000원(한정 9,000원)'으로 계산합니다. 이름으로 못 찾는 경우만 여기서 지정하세요.</p>
+      <table class="mini" id="wrapTable"></table>
+      <div class="row mt8"><button class="btn sm" id="wrapAdd">+ 행 추가</button><button class="btn sm primary" id="wrapSave">저장</button><span class="cap">저장 후 [데이터 갱신]을 눌러야 반영됩니다</span></div>
+    </div>
+    <div class="card"><h2>기획 기준</h2><div id="setRules" class="sm"></div></div>
+  </section>
+</main>
+<span class="hidden" id="planCount" aria-hidden="true"></span>
+
+<!-- 상품 상세 시트 (표 위로 겹쳐 열림) -->
+<div class="scrim hidden" id="scrim"></div>
+<aside class="sheet hidden" id="sheet"></aside>
+<!-- 팝오버 · 모달 -->
+<div class="pop hidden" id="pop"></div>
+<div class="modal-wrap hidden" id="modal"><div class="modal" id="modalBody"></div></div>
+
+<button class="mascot-btn" id="mascotBtn" title="찻잎이에게 물어보기"><img src="/static/mascot.svg" alt="찻잎이"><span class="nbadge hidden" id="mascotBadge"></span><span class="bubble hidden" id="mascotBubble"></span></button>
+<aside class="drawer hidden" id="drawer">
+  <div class="drawer-head"><img src="/static/mascot.svg" alt=""><div class="grow"><b>찻잎이</b><div class="cap" id="drawerSub">기획 도우미</div></div><button class="btn ghost" id="drawerClose">닫기 ✕</button></div>
+  <div class="modes">
+    <button class="chip on" data-mode="quick">빠른 답 (데이터 조회)</button>
+    <button class="chip" data-mode="claude">Claude 기획</button>
+  </div>
+  <div class="msgs-box" id="msgs"></div>
+  <div class="composer">
+    <div class="quick" id="quickAsk"></div>
+    <label class="ck hidden" id="useCurrentWrap"><input type="checkbox" id="useCurrent"> 지금 기획안을 바탕으로 수정</label>
+    <textarea id="askInput" placeholder="예) 2만원대 하루특가 후보, 말차 클래식 기프트와 묶을 짝"></textarea>
+    <div class="row"><span class="notice grow" id="askNotice">개인정보·고객정보는 입력하지 마세요.</span><button class="btn primary" id="askSend">보내기</button></div>
+  </div>
+</aside>
+
+<script type="module" src="/static/js/app.js"></script>
+</body>
+</html>

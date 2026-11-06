@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>컴포넌트 비교</title>
+<style>
+/* 예시 화면 (로컬 확인용). 왼쪽 = 지금 AMOREAD(app.css + ds.css), 오른쪽 = 디자이너 index (2).html 최종값 */
+:root { --ink:#141414; --ink2:#484848; --mute:#666; --subtle:#707070; --line:#dedede; --line-sub:#ebebeb; --line-strong:#adadad;
+  --sunken:#f3f3f3; --bg:#fafafa; --accent:#007a46; --accent-soft:#eef5ef; --warn-soft:#fff8e0; --price:#b52e10; --surface:#fff; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; color: var(--ink); background: var(--bg); font-size: 14px; line-height: 1.55; }
+main { max-width: 1180px; margin: 0 auto; padding: 32px 16px 80px; }
+h1 { font-size: 28px; line-height: 36px; margin: 0 0 6px; }
+.lead { color: var(--mute); margin: 0 0 24px; }
+.row { display: grid; grid-template-columns: 160px 1fr 1fr; gap: 16px; padding: 20px 0; border-top: 1px solid var(--line); align-items: start; }
+.row > .k b { display: block; font-size: 15px; }
+.row > .k span { color: var(--mute); font-size: 12px; }
+.col-h { font-size: 12px; color: var(--mute); margin-bottom: 8px; }
+.stage { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; background: var(--bg); border: 1px dashed var(--line); border-radius: 12px; padding: 16px; min-height: 80px; }
+.stage.white { background: #fff; }
+.diff { font-size: 12px; color: var(--ink2); margin-top: 8px; }
+.diff em { font-style: normal; color: var(--accent); font-weight: 600; }
+.head { display: grid; grid-template-columns: 160px 1fr 1fr; gap: 16px; position: sticky; top: 0; background: var(--bg); padding: 8px 0; z-index: 2; font-weight: 600; }
+@media (max-width: 760px) { .row, .head { grid-template-columns: 1fr; } .head .k { display: none; } }
+
+/* ===== 지금 (cur) ===== */
+.cur .btn { display:inline-flex; align-items:center; gap:6px; height:36px; padding:0 16px; border-radius:8px; border:1px solid transparent; background:var(--sunken); font-weight:600; font-size:14px; color:var(--ink); font-family:inherit; }
+.cur .btn.hover { border-color: var(--line-strong); }
+.cur .btn.primary { background: var(--accent); color:#fff; }
+.cur .btn.sm { height:32px; padding:0 12px; font-size:13px; }
+.cur .btn:disabled { opacity:.45; }
+.cur .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:20px; width:100%; }
+.cur .card h2 { font-size:16px; margin:0 0 12px; }
+.cur .info { background: var(--sunken); color: var(--ink2); border-radius: 12px; padding: 12px 16px; font-size: 13px; width:100%; }
+.cur .warnbox { background: var(--warn-soft); color: #484848; border-radius: 8px; padding: 8px 12px; font-size: 13px; width:100%; }
+.cur .tag { display:inline-block; border-radius:4px; padding:0 6px; font-size:12px; font-weight:500; line-height:19px; background: var(--accent-soft); color: var(--accent); }
+.cur .tag.n { background: var(--sunken); color: var(--mute); }
+.cur .chip { height:32px; display:inline-flex; align-items:center; padding:0 12px; border:1px solid var(--line); border-radius:8px; background:#fff; font-size:12px; font-weight:500; }
+.cur .chip.on { background: var(--accent-soft); border-color: rgba(0,122,70,.32); color: var(--accent); font-weight:600; }
+.cur .f { display:grid; gap:6px; width:100%; font-size:13px; color:var(--ink2); font-weight:500; }
+.cur .f input { height:44px; border:1px solid var(--line-strong); border-radius:8px; padding:0 10px; font:inherit; font-size:14px; font-weight:400; }
+.cur .empty { padding:32px; text-align:center; color:var(--mute); width:100%; }
+.cur .toast { background: var(--ink); color:#fff; padding:10px 18px; border-radius:8px; font-size:13px; }
+.cur .modal { background:#fff; border-radius:12px; box-shadow: 0 30px 70px -30px rgba(20,20,20,.18); padding:22px 26px; width:100%; }
+.cur .modal h2 { font-size:20px; margin:0 0 4px; }
+
+/* ===== 디자이너 (dsg) ===== */
+.dsg .btn { display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:11px 16px; border-radius:8px; border:1px solid transparent; background:#f3f3f3; font-weight:600; font-size:14px; line-height:20px; color:var(--ink); font-family:inherit; }
+.dsg .btn.hover { background:#ebebeb; }
+.dsg .btn.primary { background: var(--accent); color:#fff; }
+.dsg .btn.primary.hover { filter: brightness(.94); }
+.dsg .btn.sm { min-height:36px; padding:7px 12px; font-size:13px; }
+.dsg .btn:disabled { background:#f3f3f3; color:#707070; }
+.dsg .card { background:#fff; border:1px solid var(--line-sub); border-radius:12px; padding:24px; width:100%; }
+.dsg .card h2 { font-size:20px; line-height:28px; font-weight:600; margin:0 0 24px; }
+.dsg .info { background: var(--accent-soft); color: var(--accent); border-radius: 12px; padding: 16px; font-size: 13px; line-height:20px; width:100%; }
+.dsg .warnbox { background: var(--warn-soft); color: #484848; border-radius: 12px; padding: 16px; font-size: 13px; line-height:20px; width:100%; }
+.dsg .tag { display:inline-flex; align-items:center; padding:4px 8px; border-radius:8px; font-size:12px; line-height:18px; font-weight:500; background: var(--accent-soft); color: var(--accent); }
+.dsg .tag.n { background:#f3f3f3; color: var(--mute); }
+.dsg .chip { min-height:34px; display:inline-flex; align-items:center; padding:7px 12px; border:1px solid var(--line-sub); border-radius:8px; background:#fff; font-size:12px; line-height:18px; font-weight:500; color: var(--mute); }
+.dsg .chip.on { background: var(--accent-soft); border-color: var(--line-sub); color: var(--accent); }
+.dsg .f { display:grid; gap:8px; width:100%; font-size:13px; line-height:20px; color:var(--ink); font-weight:500; }
+.dsg .f input { min-height:44px; border:1px solid var(--line); border-radius:12px; padding:10px 12px; font:inherit; font-size:14px; line-height:22px; font-weight:400; }
+.dsg .empty { padding:28px; text-align:center; color:var(--mute); font-size:12px; border:1px dashed var(--line); border-radius:12px; width:100%; }
+.dsg .toast { background:#141414; color:#fff; padding:14px 18px; border-radius:12px; font-size:13px; box-shadow: 0 16px 48px -12px rgba(33,33,33,.15); }
+.dsg .modal { background:#fff; border-radius:12px; border:1px solid var(--line); padding:32px; width:100%; }
+.dsg .modal h2 { font-size:19px; margin:0 0 8px; }
+.dsg .modal p { color: var(--mute); margin:0 0 20px; }
+</style></head>
+<body><main>
+<h1>컴포넌트 비교: 지금 AMOREAD ↔ 디자이너 최종값</h1>
+<p class="lead">디자이너 화면(index (2).html)의 CSS는 같은 컴포넌트를 여러 번 덮어씁니다. 오른쪽은 마지막에 적용되는 값입니다. 색은 이미 같고, 차이는 주로 크기·여백·바탕색입니다. '마우스 올림'은 상태를 고정해 보여 주는 칸입니다.</p>
+
+<div class="head"><div class="k"></div><div>지금</div><div>디자이너</div></div>
+
+<div class="row"><div class="k"><b>버튼</b><span>기본 · 마우스 올림 · 주 버튼 · 작은 버튼 · 쓸 수 없음</span></div>
+  <div class="cur"><div class="stage"><button class="btn">저장하기</button><button class="btn hover">마우스 올림</button><button class="btn primary">구좌 편집으로</button><button class="btn sm">작게</button><button class="btn" disabled>쓸 수 없음</button></div>
+    <div class="diff">높이 36 / 작은 32. 올리면 회색 테두리. 쓸 수 없으면 반투명</div></div>
+  <div class="dsg"><div class="stage"><button class="btn">저장하기</button><button class="btn hover">마우스 올림</button><button class="btn primary">구좌 편집으로</button><button class="btn sm">작게</button><button class="btn" disabled>쓸 수 없음</button></div>
+    <div class="diff">높이 <em>44 / 작은 36</em>. 올리면 <em>바탕만 한 단계 진하게</em>(테두리 없음). 쓸 수 없으면 <em>회색 바탕 + 흐린 글자</em>(반투명 아님)</div></div></div>
+
+<div class="row"><div class="k"><b>카드</b><span>테두리 · 여백 · 카드 제목</span></div>
+  <div class="cur"><div class="stage"><div class="card"><h2>상품·가격</h2>카드 본문입니다. 여백 20px.</div></div>
+    <div class="diff">테두리 #DEDEDE, 여백 20, 제목 16px</div></div>
+  <div class="dsg"><div class="stage"><div class="card"><h2>상품·가격</h2>카드 본문입니다. 여백 24px.</div></div>
+    <div class="diff">테두리 <em>#EBEBEB(더 옅음)</em>, 여백 <em>24</em>, 제목 <em>20px · 아래 24</em></div></div></div>
+
+<div class="row"><div class="k"><b>안내 띠</b><span>안내 · 경고</span></div>
+  <div class="cur"><div class="stage white"><div class="info"><b>기획안의 할인만 바꿔요.</b> 실제 판매 가격은 바뀌지 않아요.</div><div class="warnbox">저장하지 않은 변경이 있어요</div></div>
+    <div class="diff">안내는 회색 바탕. 경고는 노랑, 라운드 8</div></div>
+  <div class="dsg"><div class="stage white"><div class="info"><b>기획안의 할인만 바꿔요.</b> 실제 판매 가격은 바뀌지 않아요.</div><div class="warnbox">저장하지 않은 변경이 있어요</div></div>
+    <div class="diff">안내는 <em>연녹 바탕 + 녹색 글자</em>. 경고는 노랑, <em>라운드 12 · 여백 16</em></div></div></div>
+
+<div class="row"><div class="k"><b>태그</b><span>상태·분류 표시</span></div>
+  <div class="cur"><div class="stage white"><span class="tag">신규 조합</span><span class="tag n">예시 데이터</span></div>
+    <div class="diff">라운드 4, 위아래 여백 없음</div></div>
+  <div class="dsg"><div class="stage white"><span class="tag">신규 조합</span><span class="tag n">예시 데이터</span></div>
+    <div class="diff">라운드 <em>8</em>, 여백 <em>4px 8px</em>(조금 더 큼)</div></div></div>
+
+<div class="row"><div class="k"><b>필터 칩</b><span>목적·페이지 유형 등</span></div>
+  <div class="cur"><div class="stage white"><span class="chip on">선물 수요</span><span class="chip">전환·매출</span><span class="chip">신규 유입</span></div>
+    <div class="diff">높이 32. 고른 칩은 연녹 + 녹색 선 + 굵게</div></div>
+  <div class="dsg"><div class="stage white"><span class="chip on">선물 수요</span><span class="chip">전환·매출</span><span class="chip">신규 유입</span></div>
+    <div class="diff">높이 <em>34</em>. 고른 칩은 연녹 + 녹색 글자, <em>선은 회색 그대로 · 굵기 그대로</em></div></div></div>
+
+<div class="row"><div class="k"><b>입력칸</b><span>브리프 등</span></div>
+  <div class="cur"><div class="stage white"><label class="f">프로모션명<input value="입동 블렌디드 티 바"></label></div>
+    <div class="diff">라운드 8, 테두리 #ADADAD(진함)</div></div>
+  <div class="dsg"><div class="stage white"><label class="f">프로모션명<input value="입동 블렌디드 티 바"></label></div>
+    <div class="diff">라운드 <em>12</em>, 테두리 <em>#DEDEDE(옅음)</em>, 이름과 칸 사이 8</div></div></div>
+
+<div class="row"><div class="k"><b>빈 상태</b><span>아직 내용이 없을 때</span></div>
+  <div class="cur"><div class="stage white"><div class="empty">아직 기록된 컨셉이 없어요.</div></div>
+    <div class="diff">글자만</div></div>
+  <div class="dsg"><div class="stage white"><div class="empty">아직 기록된 컨셉이 없어요.</div></div>
+    <div class="diff"><em>점선 테두리 상자</em>, 12px</div></div></div>
+
+<div class="row"><div class="k"><b>알림</b><span>저장했어요 같은 짧은 알림</span></div>
+  <div class="cur"><div class="stage"><span class="toast">저장했어요</span></div>
+    <div class="diff">화면 아래 가운데, 라운드 8</div></div>
+  <div class="dsg"><div class="stage"><span class="toast">저장했어요</span></div>
+    <div class="diff">라운드 <em>12</em>, 여백 큼, 그림자. 디자이너는 오른쪽 아래지만 <em>그 자리에 찻잎이 버튼이 있어 가운데 유지 제안</em></div></div></div>
+
+<div class="row"><div class="k"><b>확인창</b><span>떠날 때 확인 등</span></div>
+  <div class="cur"><div class="stage"><div class="modal"><h2>저장하지 않은 변경이 있어요</h2>이동하기 전에 저장할까요?</div></div>
+    <div class="diff">그림자로 띄움, 여백 22·26</div></div>
+  <div class="dsg"><div class="stage"><div class="modal"><h2>저장하지 않은 변경이 있어요</h2><p>이동하기 전에 저장할까요?</p></div></div>
+    <div class="diff"><em>그림자 대신 테두리</em>, 여백 <em>32</em>, 설명은 흐린 글자</div></div></div>
+</main></body></html>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- 찻잎이: 기획 도우미 캐릭터 (찻잔 위 찻잎) -->
+  <path d="M32 6 C46 10 52 22 46 34 C42 42 34 44 32 44 C30 44 22 42 18 34 C12 22 18 10 32 6 Z" fill="#5f9b6e"/>
+  <path d="M32 9 C32 22 32 32 32 43" stroke="#3f7a50" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <path d="M32 20 L40 15 M32 28 L42 23 M32 20 L24 15 M32 28 L22 23" stroke="#3f7a50" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  <ellipse cx="26.5" cy="27" rx="2.2" ry="2.8" fill="#1d2420"/>
+  <ellipse cx="37.5" cy="27" rx="2.2" ry="2.8" fill="#1d2420"/>
+  <circle cx="27.2" cy="26" r="0.8" fill="#ffffff"/>
+  <circle cx="38.2" cy="26" r="0.8" fill="#ffffff"/>
+  <ellipse cx="23" cy="32" rx="2.4" ry="1.4" fill="#f2a7a0" opacity="0.8"/>
+  <ellipse cx="41" cy="32" rx="2.4" ry="1.4" fill="#f2a7a0" opacity="0.8"/>
+  <path d="M29 33 Q32 36 35 33" stroke="#1d2420" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  <path d="M12 42 H52 L48 56 C47 59 45 60 42 60 H22 C19 60 17 59 16 56 Z" fill="#f4efe4" stroke="#c9b99a" stroke-width="1.5"/>
+  <path d="M52 45 C59 45 59 54 51 53" stroke="#c9b99a" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path d="M15 47 H49" stroke="#9fc4a6" stroke-width="2.4"/>
+</svg>

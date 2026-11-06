@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>구성 Zone 예시</title>
+<style>
+/* 예시 화면 (로컬 확인용, plans/17). 실제 앱 아님. 지난 행사 Zone 구성은 로컬 PROMO_WORK 이력에서 옮겨 적은 값 */
+:root { --ink:#141414; --ink2:#484848; --mute:#666; --line:#dedede; --line-sub:#ebebeb; --line-strong:#adadad; --sunken:#f3f3f3; --bg:#fafafa;
+  --accent:#007a46; --accent-soft:#eef5ef; --move:#00c070; --warn-soft:#fff8e0; --price:#b52e10; --plan:#165b91; --plan-soft:#eaf2f9; --sel-line:rgba(0,122,70,.32); }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; color: var(--ink); background: var(--bg); font-size: 14px; line-height: 1.55; }
+button { font: inherit; color: inherit; }
+.top { position: sticky; top: 0; z-index: 20; background: #fff; border-bottom: 1px solid var(--line); height: 56px; display: flex; align-items: center; gap: 20px; padding: 0 24px; }
+.top b { font-size: 16px; }
+.top span { color: var(--mute); font-size: 13px; }
+.top span.on { color: var(--ink); font-weight: 600; }
+.appbar { position: sticky; top: 56px; z-index: 15; background: #fff; border-bottom: 1px solid var(--line); height: 64px; display: flex; align-items: center; gap: 16px; padding: 0 24px; }
+.ident { font-weight: 600; max-width: 260px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.seg { display: inline-flex; gap: 4px; padding: 4px; background: var(--sunken); border-radius: 8px; }
+.seg span { padding: 6px 12px; border-radius: 6px; font-size: 13px; color: var(--mute); }
+.seg span.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.grow { flex: 1; }
+.btn { display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 16px; border-radius: 8px; border: 0; background: var(--sunken); font-weight: 600; cursor: pointer; }
+.btn:hover { background: var(--line-sub); }
+.btn.primary { background: var(--accent); color: #fff; }
+.btn.sm { height: 36px; padding: 0 12px; font-size: 13px; }
+.btn.ghost { background: transparent; }
+main { max-width: 1320px; margin: 0 auto; padding: 24px 24px 80px; }
+.demo-switch { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; padding: 12px 16px; border: 1px dashed var(--line-strong); border-radius: 12px; background: #fff; align-items: center; }
+.demo-switch b { font-size: 13px; margin-right: 4px; }
+.demo-switch button { border: 1px solid var(--line-sub); background: #fff; border-radius: 8px; height: 34px; padding: 0 12px; font-size: 12px; cursor: pointer; }
+.demo-switch button.on { background: var(--accent-soft); color: var(--accent); border-color: var(--sel-line); font-weight: 600; }
+.stephead { display: flex; align-items: flex-end; gap: 16px; margin-bottom: 20px; }
+.overline { font-size: 12px; color: var(--mute); font-weight: 500; }
+h2.t { font-size: 28px; line-height: 36px; margin: 2px 0 6px; }
+.stephead p { margin: 0; color: var(--mute); }
+.ctx { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.tag { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 8px; font-size: 12px; line-height: 18px; font-weight: 500; background: var(--sunken); color: var(--mute); }
+.tag.plan { background: var(--plan-soft); color: var(--plan); }
+.tag.green { background: var(--accent-soft); color: var(--accent); }
+.tag.warn { background: var(--warn-soft); color: var(--ink2); }
+.tag.demo { background: #fff; border: 1px dashed var(--line-strong); }
+.card { background: #fff; border: 1px solid var(--line-sub); border-radius: 12px; padding: 24px; }
+.card > h3 { font-size: 20px; line-height: 28px; margin: 0 0 4px; font-weight: 600; }
+.cap { font-size: 12px; color: var(--mute); }
+.info { background: var(--accent-soft); color: var(--accent); border-radius: 12px; padding: 16px; font-size: 13px; line-height: 20px; }
+.warnbox { background: var(--warn-soft); color: var(--ink2); border-radius: 12px; padding: 12px 16px; font-size: 13px; line-height: 20px; }
+.hidden { display: none !important; }
+.note { font-size: 12px; color: var(--plan); background: var(--plan-soft); border-radius: 8px; padding: 6px 10px; margin-top: 8px; }
+.note::before { content: "설명 · "; font-weight: 600; }
+
+/* ① 구성 고르기 */
+.pick { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+.filters { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 16px; }
+.chip { display: inline-flex; align-items: center; height: 34px; padding: 0 12px; border: 1px solid var(--line-sub); border-radius: 8px; background: #fff; font-size: 12px; font-weight: 500; color: var(--mute); cursor: pointer; }
+.chip.on { background: var(--accent-soft); border-color: var(--sel-line); color: var(--accent); font-weight: 600; }
+.tpl { border: 1px solid var(--line-sub); border-radius: 12px; padding: 16px 18px; display: grid; gap: 10px; }
+.tpl + .tpl { margin-top: 12px; }
+.tpl:hover { border-color: var(--line-strong); }
+.tpl-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tpl-h b { font-size: 16px; }
+.tpl-why { font-size: 12px; color: var(--mute); }
+.zrow { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 8px; align-items: start; }
+.zrow > span { font-size: 12px; color: var(--mute); padding-top: 4px; }
+.zs { display: flex; flex-wrap: wrap; gap: 6px; }
+.z { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 8px; background: var(--sunken); font-size: 12px; line-height: 18px; }
+.z i { font-style: normal; color: var(--mute); font-variant-numeric: tabular-nums; }
+.z.q { background: var(--warn-soft); }
+.strip { display: flex; gap: 3px; align-items: flex-end; height: 34px; }
+.strip span { width: 14px; background: var(--line); border-radius: 3px; }
+.side { display: grid; gap: 12px; }
+
+/* ② 구성 편집 */
+.edit { display: grid; grid-template-columns: 260px minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
+.list { padding: 16px; }
+.list ol { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
+.list li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 6px; align-items: center; padding: 8px 10px; border: 1px solid transparent; border-radius: 8px; cursor: pointer; }
+.list li:hover { background: var(--bg); }
+.list li.on { border-color: var(--accent); }
+.list li .n { color: var(--mute); font-size: 12px; font-variant-numeric: tabular-nums; }
+.list li .nm { font-size: 13px; font-weight: 500; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.list li .sub { grid-column: 2; display: flex; gap: 4px; align-items: center; }
+.kind { font-size: 11px; padding: 1px 6px; border-radius: 6px; background: var(--sunken); color: var(--mute); }
+.kind.k-price { background: #eef3fb; color: #2b5797; }
+.kind.k-taste { background: #fbf1f4; color: #8e3a59; }
+.kind.k-pack { background: #f6f1e9; color: #7a5a2b; }
+.kind.k-none { background: var(--warn-soft); color: var(--ink2); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--err, #ff5a36); display: inline-block; }
+.canvas { padding: 20px; background: #f6f6f6; border-radius: 12px; border: 1px solid var(--line-sub); }
+.phone { width: 330px; margin: 0 auto; background: #fff; border-radius: 16px; border: 1px solid var(--line); overflow: hidden; }
+.w-sec { padding: 14px; border-bottom: 1px solid var(--line-sub); position: relative; cursor: pointer; }
+.w-sec.on { box-shadow: inset 0 0 0 2px var(--accent); }
+.w-sec h4 { margin: 0 0 8px; font-size: 14px; }
+.w-sec .lbl { position: absolute; top: 8px; right: 10px; font-size: 10px; color: var(--mute); }
+.w-hero { height: 150px; background: repeating-linear-gradient(45deg, #f4f4f4, #f4f4f4 10px, #ececec 10px, #ececec 20px); display: grid; place-items: center; color: var(--mute); font-size: 12px; }
+.w-grid { display: grid; gap: 8px; }
+.w-grid.g2 { grid-template-columns: 1fr 1fr; }
+.w-grid.g3 { grid-template-columns: 1fr 1fr 1fr; }
+.w-card { border: 1px dashed var(--line-strong); border-radius: 8px; height: 74px; display: grid; place-items: center; font-size: 10px; color: var(--mute); text-align: center; padding: 4px; }
+.w-card.f { border-style: solid; border-color: var(--line); background: #fbfbfb; color: var(--ink2); }
+.w-card.f b { display: block; color: var(--price); font-size: 11px; }
+.w-deal { background: var(--ink); color: #fff; border-radius: 8px; padding: 10px; font-size: 12px; }
+.detail .row { display: grid; gap: 6px; margin-bottom: 16px; }
+.detail label, .detail .lb { font-size: 13px; font-weight: 500; color: var(--ink2); }
+.detail input { height: 44px; border: 1px solid var(--line); border-radius: 8px; padding: 0 12px; font: inherit; width: 100%; }
+.detail .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.detail .chip { height: 32px; }
+.linked { border: 1px solid var(--line-sub); border-radius: 8px; padding: 10px 12px; display: grid; gap: 6px; font-size: 13px; }
+.linked div { display: flex; justify-content: space-between; gap: 8px; }
+.linked .p { color: var(--price); font-weight: 600; font-variant-numeric: tabular-nums; }
+details.adv summary { cursor: pointer; font-size: 13px; color: var(--ink2); }
+
+/* ③ 03 표 */
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 13px; }
+th { background: var(--bg); color: var(--mute); font-size: 12px; font-weight: 500; text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 10px; border-bottom: 1px solid var(--line-sub); }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.sale { color: var(--price); font-weight: 600; }
+.zc { display: inline-flex; align-items: center; gap: 6px; }
+.auto { font-size: 11px; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 1px 6px; }
+tr.flash td { background: #f2fbf6; }
+.todo { display: grid; gap: 8px; }
+.todo div { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: var(--warn-soft); font-size: 13px; }
+.todo div.okk { background: var(--sunken); color: var(--ink2); }
+.todo .go { margin-left: auto; white-space: nowrap; color: var(--accent); font-weight: 600; font-size: 12px; }
+/* 탭(필터) 구좌 */
+.zs.grp { padding: 6px; border: 1px dashed var(--line-strong); border-radius: 10px; align-items: center; }
+.howto { margin-left: auto; }
+.mini-seg { display: inline-flex; gap: 2px; padding: 2px; background: var(--sunken); border-radius: 8px; }
+.mini-seg span { padding: 3px 8px; border-radius: 6px; font-size: 11px; color: var(--mute); cursor: pointer; }
+.mini-seg span.on { background: #fff; color: var(--accent); font-weight: 600; box-shadow: 0 0 0 1px var(--sel-line); }
+.pills { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 10px; }
+.pill { flex: none; border: 1px solid var(--line-sub); background: #fff; border-radius: 8px; padding: 5px 10px; font-size: 11px; color: var(--mute); cursor: pointer; }
+.pill.on { background: var(--accent-soft); color: var(--accent); border-color: var(--sel-line); font-weight: 600; }
+.tabrows { display: grid; gap: 6px; }
+.tabrow { display: grid; grid-template-columns: 16px minmax(0, 1fr) 92px 52px; gap: 6px; align-items: center; padding: 6px 8px; border: 1px solid var(--line-sub); border-radius: 8px; font-size: 13px; cursor: pointer; }
+.tabrow.on { border-color: var(--accent); }
+.tabrow .g { color: var(--mute); font-size: 12px; }
+.tabrow .c { font-size: 12px; color: var(--mute); text-align: right; font-variant-numeric: tabular-nums; }
+.tabrow input { height: 30px; font-size: 12px; padding: 0 8px; }
+.list li .tabs { grid-column: 2; display: flex; gap: 3px; flex-wrap: wrap; }
+.list li .tabs span { font-size: 10px; color: var(--mute); border: 1px solid var(--line-sub); border-radius: 5px; padding: 0 4px; }
+@media (max-width: 1100px) { .edit { grid-template-columns: 220px minmax(0, 1fr); } .edit .detail { grid-column: 1 / -1; } .pick { grid-template-columns: 1fr; } }
+</style></head>
+<body>
+<header class="top"><b>AMOREAD</b><span>캘린더</span><span>상품</span><span class="on">기획안</span><span>지난 성과</span><span>트렌드</span></header>
+<div class="appbar"><span class="ident">입동 블렌디드 티 바</span>
+  <nav class="seg"><span>01 브리프</span><span class="on">02 구성</span><span>03 상품·혜택</span><span>04 구좌 편집</span><span>05 미리보기·내보내기</span></nav>
+  <span class="grow"></span><button class="btn primary">상품·혜택으로 →</button></div>
+
+<main>
+  <div class="demo-switch"><b>예시 장면</b>
+    <button data-scene="1" class="on">① 구좌가 없을 때: 지난 진열 구성 고르기</button>
+    <button data-scene="2">② 구성을 가져온 뒤: 구좌 상세</button>
+    <button data-scene="3">③ 04에서 상품 넣기 → 03 Zone 자동</button>
+    <span class="cap">파란 '설명' 띠는 예시 설명이에요. 실제 화면에는 없어요.</span></div>
+
+  <div class="stephead"><div class="grow"><div class="overline">02 · 구성</div><h2 class="t">구좌 구성</h2>
+    <p>페이지를 어떤 구좌로 나눌지 정해요. 지난 행사의 진열 구성에서 시작할 수 있어요.</p>
+    <div class="ctx"><span class="tag plan">11/18~11/30 · D-12</span><span class="tag">기획 중</span><span class="tag">이벤트 페이지</span><span class="tag">명분: 입동</span></div></div></div>
+
+  <!-- ① -->
+  <section id="s1" class="pick">
+    <div class="card">
+      <h3>지난 진열 구성에서 시작하기</h3>
+      <div class="cap">지난 행사의 Zone 순서와 칸 수만 가져와요. 상품은 가져오지 않고, 03·04에서 골라요.</div>
+      <div class="filters"><span class="chip on">비슷한 행사</span><span class="chip">선물 시즌</span><span class="chip">기획전</span><span class="chip">전체 24개</span>
+        <span class="tag demo">DEMO · 같은 달·같은 명분 단어로만 골라요</span></div>
+
+      <div class="tpl">
+        <div class="tpl-h"><b>설</b><span class="cap">2026-02-03~ · 79행 · 구좌 9개</span><span class="grow"></span><span class="tpl-why">비슷한 이유: 선물 시즌 · 이벤트 페이지</span><button class="btn sm primary" data-use>이 구성으로 시작</button></div>
+        <div class="zrow"><span>가격대</span><div class="zs grp"><span class="z">2만원대 <i>4</i></span><span class="z">3-4만원대 <i>4</i></span><span class="z">5만원 이상 <i>4</i></span>
+          <span class="howto"><span class="mini-seg"><span class="on">탭 구좌 1개로</span><span>구좌 3개로</span></span></span></div></div>
+        <div class="zrow"><span>취향·테마</span><div class="zs grp"><span class="z">다양한 <i>6</i></span><span class="z">달콤한 <i>6</i></span><span class="z">은은한 <i>6</i></span><span class="z">무카페인 <i>6</i></span>
+          <span class="howto"><span class="mini-seg"><span class="on">탭 구좌 1개로</span><span>구좌 4개로</span></span></span></div></div>
+        <div class="zrow"><span>포장·구성</span><div class="zs"><span class="z">보자기 <i>6</i></span></div></div>
+        <div class="zrow"><span>기타</span><div class="zs"><span class="z">말쫀쿠 <i>5</i></span></div></div>
+      </div>
+      <div class="note">Zone 이름 옆 숫자는 그 칸에 놓였던 상품 수예요. 유형(가격대, 취향·테마…)은 표기를 보고 자동으로 묶은 초안이에요.</div>
+      <div class="note">같은 유형의 Zone이 같은 칸 수로 이어지면(2만원대 4 · 3-4만원대 4 · 5만원 이상 4) 한 구좌 안의 필터 탭이었을 가능성이 높아요. 그래서 '탭 구좌 1개로'를 먼저 골라 두고, 따로 구좌로 가져올 수도 있게 해요. PROMO_WORK에는 탭이었는지가 남지 않아, 이건 추정이에요.</div>
+
+      <div class="tpl">
+        <div class="tpl-h"><b>감사의달</b><span class="cap">2026-04-30~ · 49행 · 구좌 5개</span><span class="grow"></span><span class="tpl-why">비슷한 이유: 선물 시즌</span><button class="btn sm" data-use>이 구성으로 시작</button></div>
+        <div class="zrow"><span>가격대</span><div class="zs"><span class="z">1-2만원대 <i>4</i></span><span class="z">2-3만원대 <i>4</i></span><span class="z">4-5만원대 <i>4</i></span><span class="z">6만원이상 <i>4</i></span></div></div>
+        <div class="zrow"><span>포장·구성</span><div class="zs"><span class="z">보자기 <i>9</i></span></div></div>
+      </div>
+
+      <div class="tpl">
+        <div class="tpl-h"><b>26추석 메인</b><span class="cap">2026-09-17~ · 110행 · 구좌 6개</span><span class="grow"></span><span class="tpl-why">비슷한 이유: 선물 시즌 · 최근</span><button class="btn sm" data-use>이 구성으로 시작</button></div>
+        <div class="zrow"><span>포장·구성</span><div class="zs"><span class="z">핑크 보자기 <i>2</i></span><span class="z">브라운 보자기 <i>6</i></span><span class="z">화이트 보자기 <i>6</i></span></div></div>
+        <div class="zrow"><span>유형 모름</span><div class="zs"><span class="z q">선물 가이드 01 <i>20</i></span><span class="z q">선물 가이드 02 <i>12</i></span><span class="z q">선물 가이드 03 <i>48</i></span></div></div>
+      </div>
+      <div class="note">'선물 가이드 01'처럼 번호뿐인 Zone은 이름만으로 뜻을 알 수 없어 노랑으로 표시해요. 가져온 뒤 유형을 골라 달라고 해요.</div>
+    </div>
+
+    <aside class="side">
+      <div class="card"><h3>빈 구좌로 시작</h3><p class="cap">구좌를 하나씩 직접 만들어요.</p><button class="btn sm">빈 구좌 추가</button></div>
+      <div class="card"><h3>이 구성으로 시작하면</h3>
+        <ul class="cap">
+          <li>Zone 하나가 구좌 하나가 돼요. 구좌명 = Zone 이름</li>
+          <li>'탭 구좌 1개로'를 고른 묶음은 구좌 하나가 되고, Zone 하나하나가 그 안의 필터 탭이 돼요</li>
+          <li>칸 수로 레이아웃을 골라요: 3칸 → 3열, 4·6칸 → 2열, 5칸 → 3열</li>
+          <li>맨 위에 메인 비주얼 구좌를 하나 더 둬요</li>
+          <li>하루특가가 있는 기획안이면 하루특가 띠 구좌를 붙일지 물어요</li>
+          <li>지난 상품은 넣지 않아요. 원하면 '후보 상품'에만 담을 수 있어요</li>
+        </ul>
+        <label class="cap"><input type="checkbox"> 지난 상품을 03 후보 상품에 담기</label></div>
+    </aside>
+  </section>
+
+  <!-- ② -->
+  <section id="s2" class="edit hidden">
+    <div class="card list"><b>구좌 6개</b> <span class="cap">끌어서 순서 바꾸기</span>
+      <ol id="secList"></ol>
+      <button class="btn sm ghost">+ 구좌 추가</button>
+    </div>
+    <div class="canvas"><div class="phone" id="phone"></div>
+      <div class="note">미리보기는 04 구좌 편집과 같은 와이어프레임이에요. 빈 점선 카드는 상품을 아직 고르지 않은 칸이에요.</div></div>
+    <div class="card detail" id="detail"></div>
+  </section>
+
+  <!-- ③ -->
+  <section id="s3" class="hidden">
+    <div class="card">
+      <h3>04 구좌 편집에서 '가격대별 선물 추천' 구좌의 '2만원대' 탭에 상품을 넣으면</h3>
+      <div class="cap">03 상품·혜택 표의 그 상품 행 Zone 칸이 탭의 Zone 이름(탭이 없는 구좌면 구좌의 PROMO_WORK 이름)으로 바로 채워져요. 엑셀로 내보낼 때도 이 값이 카테고리명이 돼요.</div>
+      <div class="note">담당자는 03에서 Zone을 따로 적지 않아도 돼요. 03에서 직접 바꾸면 그 값이 우선이고, 04와 다르면 확인을 띄워요.</div>
+      <table class="mt">
+        <thead><tr><th>판정</th><th>유형</th><th>Zone</th><th>SEQ</th><th>상품</th><th class="num">할인율</th><th class="num">할인가</th><th class="num">원가율</th><th class="num">예상 매출(만원)</th></tr></thead>
+        <tbody>
+          <tr class="flash"><td><span class="tag green">확인 완료</span></td><td>상시</td><td><span class="zc">2만원대 <span class="auto">04에서 채움</span></span></td><td class="cap">1102xxx</td><td><b>제주 영귤 블렌디드 세트</b></td><td class="num">20%</td><td class="num sale">19,200</td><td class="num">31%</td><td class="num">120~180</td></tr>
+          <tr class="flash"><td><span class="tag green">확인 완료</span></td><td>상시</td><td><span class="zc">2만원대 <span class="auto">04에서 채움</span></span></td><td class="cap">1102xxx</td><td><b>웨딩 그레이 티 세트</b></td><td class="num">15%</td><td class="num sale">21,250</td><td class="num">34%</td><td class="num">80~130</td></tr>
+          <tr><td><span class="tag warn">확인 필요</span></td><td>상시</td><td>은은한</td><td class="cap">1103xxx</td><td><b>삼다 꿀배 티</b></td><td class="num">25%</td><td class="num sale">15,000</td><td class="num">38%</td><td class="num">60~90</td></tr>
+          <tr><td><span class="tag">-</span></td><td>하루특가</td><td class="cap">(하루특가 띠)</td><td class="cap">1101xxx</td><td><b>세작 20입</b></td><td class="num">40%</td><td class="num sale">13,800</td><td class="num">44%</td><td class="num">40~70</td></tr>
+        </tbody></table>
+      <div class="cap mt">상품명·가격은 예시예요.</div>
+    </div>
+    <div class="card mt">
+      <h3>다음에 할 일에 더해지는 확인</h3>
+      <div class="todo">
+        <div>'은은한' 상품 1개가 페이지 어느 구좌에도 없어요. 구좌를 만들거나 Zone을 바꿔 주세요<span class="go">02 구성으로</span></div>
+        <div>'3-4만원대'와 '3-4만원대 선물' 두 구좌가 같은 Zone 이름을 써요. 엑셀에서 한 칸으로 합쳐져요<span class="go">구좌 보기</span></div>
+        <div>'선물 가이드 01' 구좌의 진열 유형을 골라 주세요. 다음 기획 때 비슷한 구성을 찾는 데 쓰여요<span class="go">구좌 보기</span></div>
+        <div>'가격대별 선물 추천'의 '5만원 이상' 탭에 상품이 없어요. 고객이 누르면 빈 화면이 보여요<span class="go">04 구좌 편집으로</span></div>
+        <div class="okk">미노출 상품 2개는 페이지에 보이지 않아요 (안내만)</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const KINDS = [['price','가격대'],['taste','취향·테마'],['tea','차 종류'],['curation','큐레이션'],['pack','포장·구성'],['benefit','혜택 방식'],['day','요일'],['etc','기타']];
+const KN = Object.fromEntries(KINDS);
+// tabs가 있으면 '탭(필터) 구좌': 탭 하나 = Zone 하나(PROMO_WORK 카테고리명 하나). 상품 칸은 탭마다 따로
+const secs = [
+  { n:'메인 비주얼', kind:null, lay:'hero', cards:0, note:'새로 더한 구좌 (지난 구성에 없음)' },
+  { n:'가격대별 선물 추천', kind:'price', lay:'g2', tab:0, tabs:[{ n:'2만원대', cards:4, filled:2 }, { n:'3-4만원대', cards:4 }, { n:'5만원 이상', cards:4 }] },
+  { n:'취향별 선물 추천', kind:'taste', lay:'g2', tab:0, tabs:[{ n:'다양한', cards:6 }, { n:'달콤한', cards:6 }, { n:'은은한', cards:6 }, { n:'무카페인', cards:6 }] },
+  { n:'보자기', kind:'pack', lay:'g2', cards:6 },
+  { n:'말쫀쿠', kind:'etc', lay:'g3', cards:5 },
+  { n:'하루특가', kind:null, lay:'deal', cards:0, note:'하루특가 띠는 Zone이 없어요' },
+];
+const FILLED = [['제주 영귤 블렌디드 세트', '19,200'], ['웨딩 그레이 티 세트', '21,250']];
+const slots = s => s.tabs ? s.tabs.reduce((a, t) => a + t.cards, 0) : s.cards;
+const fills = s => s.tabs ? s.tabs.reduce((a, t) => a + (t.filled || 0), 0) : (s.filled || 0);
+const curTab = s => s.tabs ? s.tabs[s.tab] : s;
+let cur = 1;
+const kcls = k => k === 'price' ? 'k-price' : k === 'taste' ? 'k-taste' : k === 'pack' ? 'k-pack' : '';
+const layName = { hero:'메인 비주얼', g2:'2열 상품', g3:'3열 상품', deal:'하루특가 띠' };
+function paintList() {
+  document.getElementById('secList').innerHTML = secs.map((s, i) => `<li data-i="${i}" class="${i === cur ? 'on' : ''}"><span class="n">${i + 1}</span><span class="nm">${s.n}</span>
+    <span class="sub">${s.kind ? `<span class="kind ${kcls(s.kind)}">${KN[s.kind]}</span>` : `<span class="kind">${s.lay === 'deal' ? '하루특가' : 'Zone 없음'}</span>`}<span class="cap">${s.tabs ? `탭 ${s.tabs.length}개` : layName[s.lay]}${slots(s) ? ` · ${fills(s)}/${slots(s)}` : ''}</span></span>
+    ${s.tabs ? `<span class="tabs">${s.tabs.map(t => `<span>${t.n}</span>`).join('')}</span>` : ''}</li>`).join('');
+}
+function paintPhone() {
+  document.getElementById('phone').innerHTML = secs.map((s, i) => {
+    let body = '';
+    if (s.lay === 'hero') body = '<div class="w-hero">메인 비주얼 · 대표 카피</div>';
+    else if (s.lay === 'deal') body = '<div class="w-deal">오늘의 하루특가 · 매일 1개</div>';
+    else {
+      const t = curTab(s);
+      const pills = s.tabs ? `<div class="pills">${s.tabs.map((x, j) => `<button class="pill ${j === s.tab ? 'on' : ''}" data-i="${i}" data-tab="${j}">${x.n}</button>`).join('')}</div>` : '';
+      body = pills + `<div class="w-grid ${s.lay}">${Array.from({ length: t.cards }, (_, j) => j < (t.filled || 0) ? `<div class="w-card f">${FILLED[j][0]}<b>${FILLED[j][1]}</b></div>` : '<div class="w-card">상품 고르기</div>').join('')}</div>`;
+    }
+    return `<div class="w-sec ${i === cur ? 'on' : ''}" data-i="${i}"><span class="lbl">${i + 1}</span>${s.lay !== 'hero' ? `<h4>${s.n}</h4>` : ''}${body}</div>`;
+  }).join('');
+}
+function paintDetail() {
+  const s = secs[cur], el = document.getElementById('detail');
+  if (!s.kind && s.lay !== 'g2' && s.lay !== 'g3') {
+    el.innerHTML = `<h3>${s.n}</h3><p class="cap">${s.note}</p><div class="info">이 구좌는 상품 진열 칸이 아니라서 Zone을 정하지 않아요.</div>`; return;
+  }
+  const t = curTab(s);
+  const zoneBlock = s.tabs
+    ? `<div class="row"><span class="lb">필터 탭 <span class="cap">탭 하나가 PROMO_WORK Zone 하나예요. 끌어서 순서 바꾸기</span></span>
+        <div class="tabrows">${s.tabs.map((x, j) => `<div class="tabrow ${j === s.tab ? 'on' : ''}" data-tab="${j}"><span class="g">⋮⋮</span><input value="${x.n}" aria-label="탭 이름"><span class="cap">Zone: ${x.n}</span><span class="c">${x.filled || 0}/${x.cards}</span></div>`).join('')}</div>
+        <div><button class="btn sm ghost">+ 탭 추가</button> <button class="btn sm ghost">탭을 따로 구좌로 나누기</button></div></div>`
+    : `<details class="adv"><summary>PROMO_WORK 이름: <b>${s.n}</b> (구좌명과 같음)</summary>
+      <div class="row"><input value="${s.n}"><span class="cap">엑셀 내보내기 때 카테고리명으로 나가요. 비우면 구좌명을 써요.</span></div></details>
+      <div class="cap">같은 유형의 옆 구좌와 <button class="btn sm ghost">탭으로 묶기</button></div><br>`;
+  el.innerHTML = `<h3>${s.n}</h3><div class="cap">${s.tabs ? `탭 ${s.tabs.length}개 · ` : ''}${layName[s.lay]} · 상품 ${slots(s)}칸 · 지난 '설'에서 가져옴</div><br>
+    <div class="row"><label>구좌명</label><input value="${s.n}"></div>
+    <div class="row"><span class="lb">구좌 형식</span><span class="mini-seg"><span class="${s.tabs ? '' : 'on'}">상품 묶음 하나</span><span class="${s.tabs ? 'on' : ''}">필터 탭으로 나누기</span></span></div>
+    <div class="row"><span class="lb">진열 유형 <span class="cap">${s.tabs ? '탭을 무엇으로 나눴는지' : '다음 기획 때 비슷한 구성을 찾는 데 쓰여요'}</span></span>
+      <div class="chips">${KINDS.map(([k, v]) => `<span class="chip ${s.kind === k ? 'on' : ''}" data-k="${k}">${v}</span>`).join('')}</div></div>
+    ${zoneBlock}
+    <div class="row"><span class="lb">상품${s.tabs ? ` · '${t.n}' 탭` : ''}</span>
+      <div class="linked">${(t.filled || 0) ? FILLED.slice(0, t.filled).map(f => `<div><span>${f[0]}</span><span class="p">${f[1]}</span></div>`).join('') : ''}
+        <div class="cap">${t.filled || 0}/${t.cards}칸 채움 · 03에서 Zone이 '${t.n}'인 행이 여기 놓여요</div></div>
+      <div><button class="btn sm">04 구좌 편집에서 고르기</button> <button class="btn sm ghost">03에서 '${t.n}' 행 ${t.filled || 0}개 보기</button></div></div>
+    <div class="row"><label>이 구좌를 넣은 이유</label><input placeholder="예) 예산이 정해진 선물 고객이 먼저 고르게"></div>`;
+  el.querySelectorAll('[data-k]').forEach(c => c.onclick = () => { s.kind = c.dataset.k; paint(); });
+  el.querySelectorAll('.tabrow').forEach(r => r.onclick = e => { if (e.target.tagName !== 'INPUT') { s.tab = +r.dataset.tab; paint(); } });
+}
+function paint() { paintList(); paintPhone(); paintDetail(); }
+function scene(n) {
+  ['s1', 's2', 's3'].forEach((id, i) => document.getElementById(id).classList.toggle('hidden', i + 1 !== n));
+  document.querySelectorAll('[data-scene]').forEach(b => b.classList.toggle('on', +b.dataset.scene === n));
+  if (n === 2) paint();
+}
+document.querySelectorAll('[data-scene]').forEach(b => b.onclick = () => scene(+b.dataset.scene));
+document.querySelectorAll('[data-use]').forEach(b => b.onclick = () => scene(2));
+document.getElementById('s2').addEventListener('click', e => {
+  const p = e.target.closest('[data-tab][data-i]');   // 미리보기의 알약 필터: 누르면 그 탭 상품으로 바뀜
+  if (p) { cur = +p.dataset.i; secs[cur].tab = +p.dataset.tab; paint(); return; }
+  const t = e.target.closest('li[data-i], .w-sec[data-i]'); if (t) { cur = +t.dataset.i; paint(); }
+});
+document.querySelectorAll('.mini-seg').forEach(g => g.addEventListener('click', e => { const s = e.target.closest('span:not(.mini-seg)'); if (s && s.parentElement === g && !g.closest('#detail')) { g.querySelectorAll('span').forEach(x => x.classList.toggle('on', x === s)); } }));
+</script>
+<style>.mt { margin-top: 16px; } ul.cap { padding-left: 18px; margin: 8px 0 12px; } ul.cap li + li { margin-top: 4px; }</style>
+</body></html>

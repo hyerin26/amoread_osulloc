@@ -1,0 +1,107 @@
+/* AMOREAD Green UI v2.5.1: 공통 컴포넌트 규칙 (app.css 다음에 불러온다)
+   기존 화면에도 같은 규칙을 쓴다 (plans/09). 되돌리기: workspace/_backup_P0_20261106
+   원칙
+   1. 강조는 꼭 필요한 곳만: 굵기는 600까지(페이지 제목만 700), 색 강조는 주 행동·선택·상태에만
+   2. 중립색 중심, 브랜드색 #007A46은 주 버튼·선택·포커스에만
+   3. 라운드는 컨트롤 8px, 카드 12px. 알약 모양 없음
+   4. 보조 버튼은 회색 면, 선 없음. 주 버튼은 브랜드 채움
+   5. 필터 칩 선택은 연녹 면 + 얇은 선 + 굵기. 목록·구좌 선택은 면 없이 선만 (--sel-fill)
+   6. 키보드 포커스는 2px 브랜드 외곽선 + 2px 간격 (접근성. 디자이너 기준보다 우선) */
+
+body { line-height: var(--lh-body); }
+b, strong { font-weight: var(--fw-strong); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* ---------- 상단 막대: 흰 면 + 아래 선, 현재 탭은 브랜드 밑줄 ---------- */
+.top { border-bottom: 1px solid var(--line); }
+.top-in { height: 56px; }
+.brand { font-weight: var(--fw-title); font-size: var(--fs-title); }
+.tab { color: var(--shell-mute); font-weight: var(--fw-medium); }
+.tab:hover { color: var(--ink); }
+.tab.on { color: var(--ink); font-weight: var(--fw-strong); }
+.tab.on::after { background: var(--accent); }
+.tab .tag.plan { background: var(--accent-soft); color: var(--accent); }
+.tsep { background: var(--line); }
+.datastate .over { color: var(--warn); }
+
+/* ---------- 제목 위계 ---------- */
+.masthead h1 { font-size: var(--fs-masthead); line-height: var(--lh-masthead); font-weight: var(--fw-title); letter-spacing: -0.02em; }
+.masthead p { color: var(--mute); line-height: var(--lh-body); }
+.card { border-radius: var(--r); padding: var(--s-card); border-color: var(--line-sub); }
+.card h2, .sec-head h2, .todo h2, .starters h2 { font-weight: var(--fw-strong); letter-spacing: -0.01em; line-height: var(--lh-h2); }
+/* 디자이너 section-title: 본문 카드 제목 20px. 옆 패널·서랍·창 안의 좁은 카드는 16px 유지 */
+.card > h2 { font-size: var(--fs-h1); line-height: var(--lh-h1); margin-bottom: var(--s4); }
+:is(.am-aside, .am-side, .cal-side, .side, .sheet, .modal, .am-pop) .card > h2, .card:is(.am-outline, .am-ed-list, .am-ed-panel, .lvcard) > h2 { font-size: var(--fs-h2); line-height: var(--lh-h2); margin-bottom: var(--s3); }
+.card h3 { font-weight: var(--fw-strong); }
+.ideahead h2 { font-weight: var(--fw-strong); }
+.plan-head input.title { font-weight: var(--fw-strong); }
+
+/* ---------- 버튼: primary(채움) secondary(선) tertiary(ghost) ---------- */
+/* 디자이너 크기: 기본 44, 작은 36. 올리면 바탕만 한 단계 진하게(테두리 없음). 쓸 수 없으면 반투명 대신 회색 바탕 + 흐린 글자 */
+.btn { height: var(--control-lg); border-radius: var(--r2); padding: 0 16px; font-size: var(--fs-body); line-height: var(--lh-label); font-weight: var(--fw-strong);
+  background: var(--sunken); border-color: transparent; color: var(--ink); }
+.btn:hover { border-color: transparent; color: var(--ink); background: var(--line-sub); }
+.btn.primary:hover { color: var(--accent-ink); background: var(--accent); filter: brightness(.94); }
+.btn.ghost { background: transparent; }
+.btn.ghost:hover { background: var(--hover); border-color: transparent; color: var(--ink); }
+.btn.sm { height: var(--control-md); padding: 0 12px; font-size: var(--fs-sm); }
+.btn:disabled, .btn[disabled] { opacity: 1; background: var(--sunken); color: var(--mute); border-color: transparent; filter: none; }
+.btn.ghost:disabled, .btn.ghost[disabled] { background: transparent; opacity: .5; }
+/* 밀도 높은 곳(표 안 행 버튼)은 예전 크기 유지 */
+table .btn, table .btn.sm { height: 28px; padding: 0 8px; font-size: var(--fs-cap); }
+.btn.danger { color: var(--err); }
+.btn.danger:hover { background: var(--err-soft); border-color: transparent; color: var(--err); }
+
+/* ---------- 칩(필터·선택): 선택은 연녹 면 + 얇은 브랜드 선 + 굵기 (D-055 필터 칩) ---------- */
+.chip { height: 34px; border-radius: var(--r2); border-color: var(--line-sub); font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); }
+.chip:hover { border-color: var(--line-strong); color: var(--ink); }
+.chip.on { background: var(--accent-soft); border-color: var(--sel-line); color: var(--accent); font-weight: var(--fw-strong); }
+
+/* ---------- 아이콘: 24 그리드 라인, 획 1.75 ---------- */
+svg.ic { stroke-width: 1.75; }
+
+/* ---------- 묶음 탭 (세그먼트): 회색 묶음 안에서 선택은 연녹 면 + 녹색 글자 (v2.5.1 단계 탭·편집 패널 탭) ---------- */
+.seg { display: inline-flex; gap: 4px; padding: 4px; background: var(--sunken); border-radius: var(--r2); max-width: 100%; overflow-x: auto; }
+.seg > button { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--control-sm);
+  padding: 6px 12px; border-radius: 6px; color: var(--mute); font-size: var(--fs-sm); line-height: var(--lh-label); font-weight: var(--fw-medium); white-space: nowrap; }
+.seg > button:hover { color: var(--ink); }
+.seg > button.on, .seg > button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-strong); }
+.seg > button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* ---------- 작은 머리글, 안내 띠, 화면 낭독기 전용 ---------- */
+.overline { font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); color: var(--mute); margin-bottom: 4px; }
+/* 디자이너 notice: 연녹 바탕 + 녹색 글자. 경고(am.css .am-warn)는 노랑 바탕 + 중립 글자 */
+.info-box { background: var(--accent-soft); color: var(--accent); border-radius: var(--r); padding: 16px; font-size: var(--fs-sm); line-height: var(--lh-label); }
+
+/* ---------- 빈 상태, 알림, 확인창 (디자이너 empty·toast·modal) ---------- */
+/* 단독 .empty만 (am-cell·am-chip의 .empty 상태 클래스는 제외) */
+[class="empty"] { border: 1px dashed var(--line); border-radius: var(--r); padding: 28px; font-size: var(--fs-cap); }
+.toast { border-radius: var(--r); padding: 14px 18px; box-shadow: 0 16px 48px -12px rgba(33, 33, 33, .15); }   /* 위치는 가운데 유지: 오른쪽 아래는 찻잎이 버튼 자리 */
+.modal { box-shadow: none; border: 1px solid var(--line); padding: 32px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ---------- 입력 ---------- */
+input[type=text], input[type=number], input[type=date], input[type=search], select { height: var(--control-md); border-radius: var(--r2); }
+/* 입력 테두리는 stroke-default(#DEDEDE). 라운드는 디자이너 규칙대로 컨트롤 8px (monochrome.css: 컨트롤 8 / 면 12) */
+input[type=text], input[type=number], input[type=date], input[type=search], select, textarea { border-color: var(--line); }
+input:hover, select:hover, textarea:hover { border-color: var(--line-strong); }
+textarea { border-radius: var(--r2); line-height: var(--lh-body); }
+.am-f input[type=text], .am-f input[type=number], .am-f input[type=date], .am-f input[type=search], .am-f select { height: var(--control-lg); }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+[aria-invalid="true"] { border-color: var(--err-line); }
+table.plan input, table.plan select { height: 28px; }
+
+/* ---------- 표: 머리는 굵기 대신 색으로 구분 ---------- */
+/* v2.5.1 catalog-table: 머리 = 캔버스 바탕·12px·보통 굵기·흐린 글자, 본문 13px, 가로줄만, 올리면 캔버스 바탕 */
+table.t th, .mini th { font-weight: var(--fw-medium); color: var(--mute); background: var(--bg); font-size: var(--fs-cap); }
+table.t td { font-size: var(--fs-sm); }
+table.t tbody tr:hover td { background: var(--bg); }
+table.t td.num { font-variant-numeric: tabular-nums; }
+#planTable td[data-c="sale"] { color: var(--price); font-weight: var(--fw-strong); }   /* 행사 판매가 (v2.5.1 sale-price) */
+table.t td.name .n, table.t.compact td.name .n { font-weight: var(--fw-medium); }
+
+/* ---------- 숫자 카드·배지: 과한 굵기 줄이기 ---------- */
+.kpi .v, .overview .nums .v { font-weight: var(--fw-strong); }
+.tag { font-weight: var(--fw-medium); border-radius: var(--r2); padding: 3px 8px; line-height: 18px; }
+.tag.green { background: var(--accent-soft); color: var(--accent); }   /* 디자이너 tag.green: 가능·완료 같은 긍정 표시 */
+button.status { font-weight: var(--fw-medium); }
