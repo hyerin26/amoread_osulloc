@@ -31,6 +31,19 @@ def _load():
         return None
 
 
+def summary(now=None):
+    """창구별 오늘·이번 달 사용량과 자체 한도 (화면 표시용). 기록을 못 읽으면 broken=True"""
+    now = now or datetime.now(KST)
+    day, month = now.strftime("%Y-%m-%d"), now.strftime("%Y-%m")
+    u = _load()
+    out = {}
+    for k, (name, day_cap, month_cap) in config.API_LIMITS.items():
+        b = (u or {}).get(k) or {}
+        out[k] = {"name": name, "day": b.get("day_n", 0) if b.get("day") == day else 0, "day_cap": day_cap,
+                  "month": b.get("month_n", 0) if b.get("month") == month else 0, "month_cap": month_cap, "broken": u is None}
+    return out
+
+
 def take(bucket, err=LimitReached, now=None):
     """요청 1건을 쓰기 전에 부른다. 한도 안이면 1을 더하고, 넘으면 err를 낸다."""
     name, day_cap, month_cap = config.API_LIMITS[bucket]

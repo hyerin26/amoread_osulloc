@@ -1,0 +1,31 @@
+/* AMOREAD 새 버전 공통 틀 (plans/20 §4-11): 윗줄(어디서나) + 기획안 막대(기획안 안에서만). 값은 tokens.css(v2.5.1) */
+.v2top { position: sticky; top: 0; z-index: 12; height: 64px; display: flex; align-items: center; gap: var(--s5); padding: 0 var(--s5); background: var(--shell); border-bottom: 1px solid var(--line); }
+.v2logo { display: flex; align-items: center; gap: 10px; font-weight: var(--fw-title); font-size: var(--fs-h1); color: var(--ink); text-decoration: none; }
+.v2logo i { width: 30px; height: 30px; border-radius: var(--r2); background: var(--ink); color: var(--surface); display: grid; place-items: center; font-style: normal; }
+.v2nav { display: flex; gap: var(--s4); align-self: stretch; }
+.v2nav a { position: relative; display: flex; align-items: center; color: var(--mute); text-decoration: none; font-weight: var(--fw-medium); }
+.v2nav a:hover { color: var(--ink); }
+.v2nav a[aria-current="page"] { color: var(--ink); font-weight: var(--fw-strong); }
+.v2nav a[aria-current="page"]::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--accent); }
+.v2grow { flex: 1; }
+.v2date { font-size: var(--fs-cap); color: var(--mute); }
+.v2old { font-size: var(--fs-cap); color: var(--mute); text-decoration: underline; text-underline-offset: 3px; }
+.v2old:hover { color: var(--ink); }
+.v2gear { width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--r2); color: var(--mute); text-decoration: none; }
+.v2gear:hover { background: var(--hover); color: var(--ink); }
+.v2gear[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
+.v2top a:focus-visible, .v2plan a:focus-visible, .v2plan button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r2); }
+
+.v2plan { position: sticky; top: 64px; z-index: 11; display: flex; align-items: center; gap: var(--s3) var(--s4); flex-wrap: wrap; padding: 10px var(--s5); background: var(--shell); border-bottom: 1px solid var(--line); }
+.v2ident { font-weight: var(--fw-strong); max-width: 280px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.v2steps { display: flex; gap: 4px; padding: 4px; background: var(--sunken); border-radius: var(--r2); flex-wrap: wrap; }
+.v2steps a { padding: 6px 12px; border-radius: 6px; font-size: var(--fs-sm); color: var(--mute); font-weight: var(--fw-medium); text-decoration: none; }
+.v2steps a:hover { color: var(--ink); }
+.v2steps a[aria-current="step"] { background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-strong); }
+.v2space { display: inline-flex; align-items: center; height: 36px; padding: 0 12px; border-radius: var(--r2); border: 1px solid var(--line-strong); font-size: var(--fs-sm); font-weight: var(--fw-strong); color: var(--ink); text-decoration: none; }
+.v2space:hover { background: var(--hover); }
+.v2space[aria-current="page"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.v2btn { display: inline-flex; align-items: center; height: var(--control-md); padding: 0 12px; border: 0; border-radius: var(--r2); background: var(--sunken); color: var(--ink); font: inherit; font-size: var(--fs-sm); font-weight: var(--fw-strong); text-decoration: none; cursor: pointer; white-space: nowrap; }
+.v2btn:hover { background: var(--line-sub); }
+.v2btn.primary { background: var(--accent); color: var(--accent-ink); }
+@media (max-width: 720px) { .v2top { gap: var(--s3); padding: 0 var(--s3); } .v2date { display: none; } .v2plan { position: static; } }

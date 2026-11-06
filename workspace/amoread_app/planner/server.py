@@ -26,7 +26,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from . import claude_agent, config, engine, ideas, keywords, plans, refresh, replan, review, reviews, sapsales, schedule, scout, timeline, trends
+from . import claude_agent, config, engine, ideas, keywords, plans, refresh, replan, review, reviews, sapsales, schedule, scout, timeline, trends, usage
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 TOKEN = secrets.token_urlsafe(32)
@@ -80,6 +80,20 @@ async def on_invalid(request: Request, exc: RequestValidationError):
 @app.get("/", response_class=HTMLResponse)
 def index():
     html = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+    return HTMLResponse(html.replace("__PLANNER_TOKEN__", TOKEN))
+
+
+# 새 버전 (plans/20 재설계 화면). 예전 화면(/)은 그대로 두고 /v2/ 아래에 따로. 정해진 이름만 열어 준다
+V2_PAGES = {"home", "brief", "compose", "editor", "preview", "deals", "library", "settings"}
+
+
+@app.get("/v2", response_class=HTMLResponse)
+@app.get("/v2/", response_class=HTMLResponse)
+@app.get("/v2/{page}", response_class=HTMLResponse)
+def v2_page(page: str = "home"):
+    if page not in V2_PAGES:
+        raise HTTPException(404, "없는 화면입니다.")
+    html = (STATIC_DIR / "v2" / f"{page}.html").read_text(encoding="utf-8")
     return HTMLResponse(html.replace("__PLANNER_TOKEN__", TOKEN))
 
 
@@ -348,6 +362,12 @@ def keywords_expand(req: KeywordReq):
         return keywords.expand(req.q, req.refresh)
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
+
+
+# 외부 연결 상태·자체 한도 사용량 (설정·데이터 화면). 키 값은 절대 내보내지 않고 '있음/없음'만
+@app.get("/api/connections")
+def connections():
+    return {"usage": usage.summary(), "keys": {"naver": trends.has_keys(), "searchad": keywords.has_ad_keys()}}
 
 
 class ScoutMark(BaseModel):

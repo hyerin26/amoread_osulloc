@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="planner-token" content="__PLANNER_TOKEN__">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>레퍼런스 · AMOREAD 새 버전</title>
+<!-- 디자인 기준: AMOREAD Green UI v2.5.1. 색·글자·간격은 앱의 tokens.css를 그대로 읽는다 -->
+<link rel="stylesheet" href="/static/tokens.css">
+<link rel="stylesheet" href="/static/v2/shell.css">
+<link rel="stylesheet" href="/static/v2/library.css">
+</head>
+<body>
+<header class="v2top">
+  <a class="v2logo" href="/v2/home"><i aria-hidden="true">a</i>AMOREAD</a>
+  <nav class="v2nav" aria-label="메뉴"><a href="/v2/home">홈</a><a href="/v2/library" aria-current="page">레퍼런스</a></nav>
+  <span class="v2grow"></span><span class="v2date" id="v2date">새 버전 · 시험 중</span>
+  <a class="v2old" href="/">예전 화면</a>
+  <a class="v2gear" href="/v2/settings" aria-label="설정·데이터">⚙</a>
+</header>
+<main class="page">
+  <p class="demo"><b>예시 화면이에요.</b> 이미지와 페이지는 모두 가상의 자리예요(이름 일부만 자사몰 보관 페이지에서 빌림). 외부 레퍼런스 수집·핀터레스트 연결은 엔지니어 검증 뒤에 붙어요.</p>
+  <div class="head"><div class="grow"><div class="overline">AMOREAD · 레퍼런스</div><h1>레퍼런스 라이브러리</h1>
+    <p>지난 자사몰 페이지와 외부 사례를 모아 둔 곳이에요. 추천 없이도 둘러볼 수 있고, 필터를 안 고르면 전체가 보여요.</p></div>
+    <button class="btn" id="addBtn">＋ 레퍼런스 추가</button></div>
+
+  <section class="card findbar" aria-label="찾기">
+    <label class="search lg block" id="qS"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input type="search" id="q" placeholder="명분·키워드·페이지 이름으로 찾기 (예: 봄, 피크닉, 보자기)" aria-label="레퍼런스 찾기" aria-describedby="resN" autocomplete="off"><button class="clear" type="button" data-sclear aria-label="검색어 지우기"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button></label>
+    <div class="tabsrow"><div class="seg" role="tablist" aria-label="레퍼런스 종류" id="tabs"></div><span class="grow"></span>
+      <label class="ck"><input type="checkbox" id="savedOnly"> ★ 저장한 것만</label></div>
+    <div class="filters" id="filters" aria-label="필터 (안 고르면 전체)"></div>
+  </section>
+  <div class="result"><span class="search-meta" id="resN" aria-live="polite"></span><span class="grow"></span><button class="btn xs ghost" id="clearAll" hidden>필터·검색 지우기</button></div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden role="dialog" aria-labelledby="drH"></aside>
+<dialog id="dlg" aria-labelledby="dlgH"><div class="dlg-h"><div class="grow"><div class="overline" id="dlgO"></div><h2 id="dlgH"></h2><p class="cap" id="dlgS"></p></div>
+  <form method="dialog"><button class="btn sm">닫기</button></form></div><div class="dlg-b" id="dlgB"></div><div class="dlg-f" id="dlgF"></div></dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="/static/v2/shell.js"></script>
+<script src="/static/v2/library.js"></script>
+</body>
+</html>

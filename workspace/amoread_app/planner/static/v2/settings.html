@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="planner-token" content="__PLANNER_TOKEN__">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>설정·데이터 · AMOREAD 새 버전</title>
+<!-- 디자인 기준: AMOREAD Green UI v2.5.1. 색·글자·간격은 앱의 tokens.css를 그대로 읽는다 -->
+<link rel="stylesheet" href="/static/tokens.css">
+<link rel="stylesheet" href="/static/v2/shell.css">
+<link rel="stylesheet" href="/static/v2/settings.css">
+</head>
+<body>
+<header class="v2top">
+  <a class="v2logo" href="/v2/home"><i aria-hidden="true">a</i>AMOREAD</a>
+  <nav class="v2nav" aria-label="메뉴"><a href="/v2/home">홈</a><a href="/v2/library">레퍼런스</a></nav>
+  <span class="v2grow"></span><span class="v2date" id="v2date">새 버전 · 시험 중</span>
+  <a class="v2old" href="/">예전 화면</a>
+  <a class="v2gear" href="/v2/settings" aria-label="설정·데이터" aria-current="page">⚙</a>
+</header>
+<main class="page">
+  <p class="demo"><b>새 버전 시험 중이에요.</b> 외부 연결의 <b>네이버 카드 3개(검색·검색어 트렌드·검색광고)는 실제 상태·사용량</b>이고, [연결 확인]은 실제로 한 번 불러요. 데이터 상태·사전과 목록은 아직 예시예요 (저장해도 파일이 바뀌지 않아요). 키는 화면에 나오지 않고, 화면에서 넣지도 않아요.</p>
+  <div class="head"><div class="overline">AMOREAD · 설정·데이터</div><h1>설정·데이터</h1>
+    <p>기획에 쓰는 데이터가 최신인지 보고, 외부 연결과 사전·목록을 관리해요. 기획 기준은 보기만 해요.</p></div>
+  <div class="lay">
+    <nav class="toc" aria-label="설정 목차" id="toc"></nav>
+    <div class="main">
+      <section class="card" id="data" aria-labelledby="dataH"></section>
+      <section class="card" id="conn" aria-labelledby="connH"></section>
+      <section class="card" id="lists" aria-labelledby="listsH"></section>
+      <section class="card" id="rules" aria-labelledby="rulesH"></section>
+    </div>
+  </div>
+</main>
+<dialog id="dlg" aria-labelledby="dlgH"><div class="dlg"><h2 id="dlgH">전체 다시 집계할까요?</h2>
+  <p class="cap">판매실적 CSV를 처음부터 다시 읽어요. 몇 분 걸리고, 그동안 다른 화면의 숫자가 잠깐 비어 보일 수 있어요. 평소엔 [데이터 갱신]으로 충분해요.</p>
+  <div class="row"><button class="btn sm" data-dlgno>취소</button><button class="btn sm primary" data-dlgyes>다시 집계</button></div></div></dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="/static/v2/shell.js"></script>
+<script src="/static/v2/api.js"></script>
+<script src="/static/v2/settings.js"></script>
+</body>
+</html>

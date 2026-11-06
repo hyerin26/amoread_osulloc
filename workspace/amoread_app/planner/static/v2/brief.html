@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="planner-token" content="__PLANNER_TOKEN__">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>브리프 · AMOREAD 새 버전</title>
+<!-- 디자인 기준: AMOREAD Green UI v2.5.1. 색·글자·간격은 앱의 tokens.css를 그대로 읽는다 -->
+<link rel="stylesheet" href="/static/tokens.css">
+<link rel="stylesheet" href="/static/v2/shell.css">
+<link rel="stylesheet" href="/static/v2/brief.css">
+</head>
+<body>
+<header class="v2top">
+  <a class="v2logo" href="/v2/home"><i aria-hidden="true">a</i>AMOREAD</a>
+  <nav class="v2nav" aria-label="메뉴"><a href="/v2/home">홈</a><a href="/v2/library">레퍼런스</a></nav>
+  <span class="v2grow"></span><span class="v2date" id="v2date">새 버전 · 시험 중</span>
+  <a class="v2old" href="/">예전 화면</a>
+  <a class="v2gear" href="/v2/settings" aria-label="설정·데이터">⚙</a>
+</header>
+<div class="v2plan" aria-label="기획안 막대">
+  <span class="v2ident" title="봄 · 피크닉에서 누리는 차 한 잔의 여유">봄 · 피크닉에서 누리는 차 한 잔의 여유</span>
+  <nav class="v2steps" aria-label="단계"><a href="/v2/brief" aria-current="step">01 브리프</a><a href="/v2/compose">02 구좌 구성</a><a href="/v2/editor">03 구좌 편집</a><a href="/v2/preview">04 미리보기·내보내기</a></nav>
+  <a class="v2space" href="/v2/deals">상품·할인</a>
+  <span class="v2grow"></span><a class="v2btn primary" href="/v2/compose">다음 →</a><a class="v2btn" href="/v2/home">목록으로</a>
+</div>
+
+<main class="page">
+  <p class="demo"><b>새 버전 시험 중이에요.</b> 키워드를 누르면 오른쪽 근거의 <b>검색·글은 네이버 실제 데이터</b>예요 (키워드만 보내요). 마인드맵 가지, 우리 데이터, 메인 카피 제안은 아직 예시예요.</p>
+
+  <div class="masthead">
+    <div class="grow">
+      <div class="overline">기획안 · 브리프</div>
+      <label><span class="cap" hidden>기획안 이름</span><input class="title-in" id="title" maxlength="80" aria-label="기획안 이름"></label>
+      <div class="facts">
+        <button class="fact cls" data-edit="분류">시즌</button>
+        <button class="fact" data-edit="명분"><span class="k">명분</span><span id="rootName">봄</span></button>
+        <button class="fact" data-edit="기간"><span class="k">기간</span>3/2(월) ~ 3/15(일)</button>
+        <button class="fact" data-edit="페이지"><span class="k">페이지</span>이벤트</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <section class="card" aria-labelledby="mapH">
+      <div class="sec-head">
+        <h2 id="mapH">키워드 펼치기</h2>
+        <span class="tag demo-t">예시 데이터</span>
+        <span class="grow"></span>
+        <button class="btn sm" id="resetBtn">처음 모양으로</button>
+      </div>
+      <div class="filters" role="group" aria-label="종류 (고르지 않으면 전체)">
+        <span class="cap">종류</span>
+        <span id="chFilters"></span>
+        <button class="btn sm" id="chClear" hidden>전체 보기</button>
+        <span class="cap conn"><span id="connTxt">연결 상태 확인 중…</span> <button class="btn xs ghost" id="connBtn">설정에서 보기</button></span>
+      </div>
+      <nav class="path" id="path" aria-label="지나온 길"></nav>
+      <svg class="map" id="map" viewBox="0 0 1100 640" role="group" aria-label="키워드 마인드맵"></svg>
+      <p class="cap maphint">키워드를 누르면 오른쪽에 근거가 나와요. 두 번 누르거나 [더 펼치기]를 누르면 그 키워드에서 다시 뻗어요. 한 번에 한 갈래만 펼쳐 보여요. 키보드: Tab으로 이동, Enter 근거 보기, Space 고르기, → 펼치기</p>
+    </section>
+
+    <aside class="card side" id="side" aria-live="polite"></aside>
+  </div>
+
+  <section class="card sum" aria-labelledby="sumH">
+    <div class="sec-head"><h2 id="sumH">정리</h2><span class="cap">위에서 고른 키워드로 컨셉과 메인 카피를 정해요</span></div>
+    <div class="rows">
+      <span class="rl" id="pickedL">고른 키워드</span>
+      <div class="pickbar" id="picked" aria-labelledby="pickedL"></div>
+      <label class="rl" for="concept">컨셉 한 줄</label>
+      <input type="text" id="concept" maxlength="120" placeholder="예) 피크닉에서 누리는 차 한 잔의 여유">
+      <label class="rl" for="who">누구에게, 어떤 때 <em>(선택)</em></label>
+      <input type="text" id="who" maxlength="120" placeholder="예) 주말 한강 피크닉을 준비하는 20~30대">
+      <label class="rl" for="copy">메인 카피 <em>(나중에 써도 돼요)</em></label>
+      <div>
+        <input type="text" id="copy" maxlength="60" placeholder="페이지 첫 화면의 한 줄">
+        <div class="sugbar"><span class="cap">제안</span><span class="tag demo-t">예시 · 규칙으로 만든 문장</span><span class="cap" id="sugBasis"></span></div>
+        <div class="sugs" id="sugs" role="group" aria-label="메인 카피 제안"></div>
+        <div class="sugbar"><button class="btn sm" id="moreSug">다른 제안 보기</button><button class="btn sm" id="aiSug">✦ AI로 더 받기</button>
+          <span class="cap">누르면 메인 카피 칸에 들어가요. 가격·쿠폰·효능 표현은 넣지 않아요.</span></div>
+      </div>
+      <span class="rl" id="moodL">느낌 레퍼런스 <em>(선택)</em></span>
+      <div aria-labelledby="moodL">
+        <div class="sugbar"><span class="tag demo-t">예시</span><span class="cap" id="moodBasis"></span></div>
+        <div class="moods" id="moods"></div>
+        <div id="moodPicked"></div>
+        <div class="sugbar"><label class="btn sm">파일 첨부<input type="file" id="moodFile" accept="image/*,.pdf" hidden></label><button class="btn sm" id="moodLinkBtn" aria-expanded="false">링크 붙이기</button><button class="btn sm ghost" id="moodLib">라이브러리에서 더 보기</button>
+          <span class="cap">고른 이미지는 기획안 전체의 느낌으로 디자이너 전달에 들어가요.</span></div>
+        <div class="sugbar" id="moodLinkRow" hidden><input type="text" id="moodUrl" placeholder="https://… (핀터레스트·외부 페이지 등)" aria-label="참고한 링크"><button class="btn sm primary" id="moodUrlAdd">붙이기</button></div>
+        <p class="cap">라이브러리에 없어도 그때 참고한 파일이나 링크를 붙일 수 있어요. 파일은 이 PC에서 미리보기만 하고, 링크는 주소만 저장해요 (열어 보지 않아요).</p>
+      </div>
+    </div>
+    <div class="foot"><span class="cap" id="footNote"></span><button class="btn primary" id="nextBtn">구좌 구성 추천 받기 →</button></div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="/static/v2/shell.js"></script>
+<script src="/static/v2/api.js"></script>
+<script src="/static/v2/brief.js"></script>
+</body>
+</html>

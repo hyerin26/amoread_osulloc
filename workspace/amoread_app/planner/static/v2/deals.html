@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="planner-token" content="__PLANNER_TOKEN__">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>상품·할인 · AMOREAD 새 버전</title>
+<!-- 디자인 기준: AMOREAD Green UI v2.5.1. 색·글자·간격은 앱의 tokens.css를 그대로 읽는다 -->
+<link rel="stylesheet" href="/static/tokens.css">
+<link rel="stylesheet" href="/static/v2/shell.css">
+<link rel="stylesheet" href="/static/v2/deals.css">
+</head>
+<body>
+<header class="v2top">
+  <a class="v2logo" href="/v2/home"><i aria-hidden="true">a</i>AMOREAD</a>
+  <nav class="v2nav" aria-label="메뉴"><a href="/v2/home">홈</a><a href="/v2/library">레퍼런스</a></nav>
+  <span class="v2grow"></span><span class="v2date" id="v2date">새 버전 · 시험 중</span>
+  <a class="v2old" href="/">예전 화면</a>
+  <a class="v2gear" href="/v2/settings" aria-label="설정·데이터">⚙</a>
+</header>
+<div class="v2plan" aria-label="기획안 막대">
+  <span class="v2ident" title="봄 · 피크닉에서 누리는 차 한 잔의 여유">봄 · 피크닉에서 누리는 차 한 잔의 여유</span>
+  <nav class="v2steps" aria-label="단계"><a href="/v2/brief">01 브리프</a><a href="/v2/compose">02 구좌 구성</a><a href="/v2/editor">03 구좌 편집</a><a href="/v2/preview">04 미리보기·내보내기</a></nav>
+  <a class="v2space" href="/v2/deals" aria-current="page">상품·할인</a>
+  <span class="v2grow"></span><button class="v2btn" type="button" data-v2back>← 원래 단계로</button><a class="v2btn" href="/v2/home">목록으로</a>
+</div>
+<main class="page">
+  <p class="demo"><b>예시 화면이에요.</b> 구좌 편집 목업과 같은 예시 기획안이에요. 상품, 가격, 원가, 반응, 예상 매출은 모두 가상의 값이에요. 판정 기준(할인 후 원가율 45%)만 지금 툴과 같아요.</p>
+  <div class="head"><div class="grow"><div class="overline">기획안 · 상품·할인</div><h1>봄 · 피크닉에서 누리는 차 한 잔의 여유</h1>
+    <p>어떤 상품을 얼마에, 언제 팔지 정해요. 구좌 편집에서 고친 할인과 같은 값이에요. 원가율 숫자는 이 공간에서만 보여요.</p></div>
+    <div class="acts"><button class="btn sm" data-toast="예시예요: 구좌 편집과 같은 상품 엑셀 양식(맨 앞 '구좌·탭' 열 + PROMO_WORK 13열)을 내려받아요">상품 엑셀 양식 받기</button>
+      <button class="btn sm" data-toast="예시예요: 올린 엑셀에서 바뀌는 것을 먼저 보여 주고 반영해요 (구좌 편집과 같은 창)">엑셀 올리기</button>
+      <button class="btn sm" data-levers>지난 행사 할인 기준</button></div></div>
+  <div class="sum" id="sum"></div>
+  <div class="tabbar"><div class="seg" role="tablist" aria-label="상품·할인" id="tabs"></div></div>
+  <div id="body"></div>
+</main>
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden role="dialog" aria-labelledby="drH"></aside>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="/static/v2/shell.js"></script>
+<script src="/static/v2/deals.js"></script>
+</body>
+</html>
