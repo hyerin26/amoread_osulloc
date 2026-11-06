@@ -98,6 +98,31 @@ input[type=search]:focus { outline: 2px solid var(--accent); outline-offset: 0; 
 .stepview { min-height: 160px; display: grid; place-items: center; color: var(--mute); text-align: center; }
 .toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: var(--ink); color: var(--surface); border-radius: var(--r); padding: 14px 18px; font-size: var(--fs-sm); opacity: 0; pointer-events: none; transition: opacity .2s var(--ease); z-index: 30; }
 .toast.on { opacity: 1; }
+/* ---------- 검색창 컴포넌트 (AMOREAD Green UI v2.5.1 값으로, 목업 27이 기준) ----------
+   상태: 기본 / 마우스 올림(테두리 진하게) / 누름·입력 중(브랜드 2px 링) / 입력됨(지우기 ✕) / 비활성(회색 면)
+   크기: 기본 36px(--control-md) · 큰 44px(.lg, --control-lg). 모서리 8px. 아이콘 16px, 획 1.75 */
+.search { position: relative; display: inline-flex; align-items: center; gap: 6px; height: var(--control-md); min-width: 240px; padding: 0 4px 0 10px;
+  border: 1px solid var(--line); border-radius: var(--r2); background: var(--surface); color: var(--mute); cursor: text;
+  transition: border-color .15s var(--ease), box-shadow .15s var(--ease); }
+.search.lg { height: var(--control-lg); padding-left: 12px; gap: 8px; }
+.search.block { display: flex; width: 100%; min-width: 0; }
+.search:hover, .search.is-hover { border-color: var(--line-strong); }
+.search:focus-within, .search.is-focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); color: var(--ink2); }
+.search .ic { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.search input[type=search] { all: unset; flex: 1; min-width: 0; height: 100%; font-size: var(--fs-sm); line-height: var(--lh-label); color: var(--ink); }
+.search.lg input[type=search] { font-size: var(--fs-body); }
+.search input[type=search]::placeholder { color: var(--mute); opacity: 1; }
+.search input[type=search]::-webkit-search-cancel-button { display: none; }
+.search input[type=search]:focus, .search input[type=search]:focus-visible { outline: none; }
+.search .clear { all: unset; box-sizing: border-box; display: none; width: 28px; height: 28px; place-items: center; border-radius: 6px; color: var(--mute); cursor: pointer; flex: none; }
+.search .clear .ic { width: 14px; height: 14px; }
+.search.has-value .clear { display: grid; }
+.search .clear:hover { background: var(--hover); color: var(--ink); }
+.search .clear:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.search.is-disabled, .search:has(input:disabled) { background: var(--sunken); border-color: var(--line-sub); color: var(--line-strong); cursor: not-allowed; box-shadow: none; }
+.search:has(input:disabled) input[type=search] { color: var(--mute); cursor: not-allowed; }
+.search-meta { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); }
+.search-meta.none { color: var(--ink2); }
 </style>
 </head>
 <body>
@@ -150,9 +175,9 @@ function planList() {
       <span><button class="btn xs" data-open="${p.id}">${p.state === '지난 기획안' ? '다시 쓰기' : '열기'}</button></span></li>`;
   const now = PLANS.filter(p => p.state !== '지난 기획안' && hit(p)), past = PLANS.filter(p => p.state === '지난 기획안' && hit(p));
   return `<div class="bar"><div class="seg" role="group" aria-label="상태">${STATES.map(s => `<button data-filt="${s}" aria-pressed="${filt === s}">${s}</button>`).join('')}</div><span class="grow"></span>
-      <input type="search" id="q" value="${esc(q)}" placeholder="이름·명분·기간으로 찾기" aria-label="기획안 찾기"></div>
+      <label class="search ${q ? 'has-value' : ''}" id="qS"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input type="search" id="q" value="${esc(q)}" placeholder="이름·명분·기간으로 찾기" aria-label="기획안 찾기" autocomplete="off"><button class="clear" type="button" data-sclear aria-label="검색어 지우기"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button></label></div>
     <ul class="plist"><li class="prow h"><span>기획안</span><span>기간</span><span>상태</span><span>다음 마감 / 진행</span><span></span></li>
-      ${now.map(row).join('') || '<li class="cap">조건에 맞는 기획안이 없어요</li>'}
+      ${now.map(row).join('') || (past.length ? '' : `<li class="search-meta none">${q ? `'${esc(q)}'와 맞는 기획안이 없어요. 다른 말로 찾거나 ✕로 지워 주세요.` : '이 상태의 기획안이 없어요.'}</li>`)}
       ${past.length ? `<li class="grp-h">지난 기획안 <span class="cap">다시 쓰면 상품·할인·구성을 올해 날짜로 가져와요</span></li>${past.map(row).join('')}` : ''}</ul>`;
 }
 
@@ -212,8 +237,10 @@ document.addEventListener('click', e => {
   if (d('space')) { inSpace = !inSpace; render(); return; }
   if (d('back')) { inSpace = false; render(); return; }
   if (d('close')) { open = null; inSpace = false; render(); return; }
+  if (d('sclear')) { q = ''; render(); $('#q')?.focus(); return; }
   if (d('toast')) { toast(v('toast')); }
 });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && e.target.id === 'q' && e.target.value) { e.preventDefault(); q = ''; render(); $('#q')?.focus(); } });
 document.addEventListener('input', e => { if (e.target.id === 'q') { q = e.target.value; const pos = e.target.selectionStart; render(); const i = $('#q'); i?.focus(); i?.setSelectionRange(pos, pos); } });
 let toastT;
 function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600); }

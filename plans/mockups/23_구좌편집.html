@@ -261,6 +261,31 @@ table.t tr.chg td { background: var(--accent-soft); }
 .toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: var(--ink); color: var(--surface); border-radius: var(--r); padding: 14px 18px; font-size: var(--fs-sm);
   box-shadow: 0 16px 48px -12px rgba(33, 33, 33, .15); opacity: 0; pointer-events: none; transition: opacity .2s var(--ease); z-index: 30; max-width: calc(100vw - 32px); }
 .toast.on { opacity: 1; }
+/* ---------- 검색창 컴포넌트 (AMOREAD Green UI v2.5.1 값으로, 목업 27이 기준) ----------
+   상태: 기본 / 마우스 올림(테두리 진하게) / 누름·입력 중(브랜드 2px 링) / 입력됨(지우기 ✕) / 비활성(회색 면)
+   크기: 기본 36px(--control-md) · 큰 44px(.lg, --control-lg). 모서리 8px. 아이콘 16px, 획 1.75 */
+.search { position: relative; display: inline-flex; align-items: center; gap: 6px; height: var(--control-md); min-width: 240px; padding: 0 4px 0 10px;
+  border: 1px solid var(--line); border-radius: var(--r2); background: var(--surface); color: var(--mute); cursor: text;
+  transition: border-color .15s var(--ease), box-shadow .15s var(--ease); }
+.search.lg { height: var(--control-lg); padding-left: 12px; gap: 8px; }
+.search.block { display: flex; width: 100%; min-width: 0; }
+.search:hover, .search.is-hover { border-color: var(--line-strong); }
+.search:focus-within, .search.is-focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); color: var(--ink2); }
+.search .ic { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.search input[type=search] { all: unset; flex: 1; min-width: 0; height: 100%; font-size: var(--fs-sm); line-height: var(--lh-label); color: var(--ink); }
+.search.lg input[type=search] { font-size: var(--fs-body); }
+.search input[type=search]::placeholder { color: var(--mute); opacity: 1; }
+.search input[type=search]::-webkit-search-cancel-button { display: none; }
+.search input[type=search]:focus, .search input[type=search]:focus-visible { outline: none; }
+.search .clear { all: unset; box-sizing: border-box; display: none; width: 28px; height: 28px; place-items: center; border-radius: 6px; color: var(--mute); cursor: pointer; flex: none; }
+.search .clear .ic { width: 14px; height: 14px; }
+.search.has-value .clear { display: grid; }
+.search .clear:hover { background: var(--hover); color: var(--ink); }
+.search .clear:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.search.is-disabled, .search:has(input:disabled) { background: var(--sunken); border-color: var(--line-sub); color: var(--line-strong); cursor: not-allowed; box-shadow: none; }
+.search:has(input:disabled) input[type=search] { color: var(--mute); cursor: not-allowed; }
+.search-meta { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); }
+.search-meta.none { color: var(--ink2); }
 </style>
 </head>
 <body>
@@ -695,7 +720,7 @@ function pickList() {
   const meta = p => { const it = itemOf(p.seq); return `${p.seq} · ${won(p.price)}${it ? ` · 할인 ${Math.round(it.rate * 100)}%${it.source === 'excel' ? ' · 엑셀로 받음' : ''}` : ''}`; };
   if (pickTab === 'plan') return items.length ? `<p class="hint">상품·할인에 직접 넣었거나 엑셀로 받은 상품이에요. 고르면 그 할인율 그대로 들어가요.</p><ul class="plist">${items.map(i => row(P[i.seq], meta(P[i.seq]))).join('')}</ul>` : '<p class="hint">아직 이 기획안에 상품이 없어요.</p>';
   if (pickTab === 'search') { const hits = PRODUCTS.filter(p => !q || p.name.includes(q) || p.seq.toLowerCase().includes(q.toLowerCase()));
-    return `<label class="f"><span class="sr-only">상품 검색</span><input type="search" id="pq" value="${esc(q)}" placeholder="상품명이나 SEQ" autocomplete="off"></label><ul class="plist" id="phits">${hits.map(p => row(p, meta(p))).join('') || '<li class="hint">맞는 상품이 없어요</li>'}</ul>`; }
+    return `<label class="search block ${q ? 'has-value' : ''}" id="pqS"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input type="search" id="pq" value="${esc(q)}" placeholder="상품명이나 SEQ로 찾기" aria-label="상품 찾기" autocomplete="off"><button class="clear" type="button" data-sclear aria-label="검색어 지우기"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button></label><ul class="plist" id="phits">${hits.map(p => row(p, meta(p))).join('') || `<li class="search-meta none">'${esc(q)}'와 맞는 상품이 없어요. 다른 이름이나 SEQ로 찾아 주세요.</li>`}</ul>`; }
   const grp = (t, sub, list) => `<div><h3>${t}</h3><p class="hint">${sub}</p><ul class="plist">${list.map(([p, m]) => row(p, m)).join('') || '<li class="hint">없어요</li>'}</ul></div>`;
   return `${grp('작년 비슷한 기획에서 쓴 상품', '봄맞이 티 컬렉션 (2026.03)', PRODUCTS.filter(p => p.ly).slice(0, 4).map(p => [p, meta(p)]))}
     ${grp('오래 행사에 안 쓴 상품', '마지막 행사가 오래된 순서', [...PRODUCTS].sort((a, b) => b.days - a.days).slice(0, 4).map(p => [p, `${meta(p)} · 마지막 행사 ${p.days}일 전`]))}
@@ -810,7 +835,7 @@ function setLayout(s, ly) {
 }
 document.addEventListener('input', e => {
   const t = e.target, s = S();
-  if (t.id === 'pq') { q = t.value; const tmp = document.createElement('div'); tmp.innerHTML = pickList(); $('#phits').outerHTML = tmp.querySelector('#phits').outerHTML; return; }
+  if (t.id === 'pq') { t.closest('.search')?.classList.toggle('has-value', !!t.value); q = t.value; const tmp = document.createElement('div'); tmp.innerHTML = pickList(); $('#phits').outerHTML = tmp.querySelector('#phits').outerHTML; return; }
   if (!s) return;
   if (t.dataset.sf) { s[t.dataset.sf] = t.value; renderPhone(); renderList(); if (t.dataset.sf === 'name') $('#panel h2').textContent = s.name; return; }
   if (t.dataset.cf) { const c = allCards(s).find(x => x.id === openMore); if (c) { c[t.dataset.cf] = t.value; renderPhone(); } return; }
@@ -834,7 +859,10 @@ document.addEventListener('change', e => {
     if (!isImg && f.type !== 'application/pdf') { toast('이미지나 PDF 파일만 붙일 수 있어요'); return; }
     addMood(s, { name: f.name.length > 24 ? f.name.slice(0, 24) + '…' : f.name, src: '직접 첨부 · 파일', kind: isImg ? '' : 'PDF', img: isImg ? URL.createObjectURL(f) : '', r: [3, 4] }); return; }
 });
+// 검색창: ✕나 Esc로 지우기 (컴포넌트 27). Esc는 글자가 있으면 지우기 먼저, 없으면 서랍 닫기
+document.addEventListener('click', e => { if (e.target.closest('#pqS [data-sclear]')) { q = ''; openPick(pickFor); $('#pq')?.focus(); } });
 document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && e.target.id === 'pq' && e.target.value) { e.preventDefault(); q = ''; openPick(pickFor); $('#pq')?.focus(); return; }
   if (e.key === 'Escape' && !$('#drawer').hidden) closePick();
   const b = e.target.closest?.('#secList [data-sec]');
   if (b && e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) { e.preventDefault(); const id = b.dataset.sec; if (moveSec(id, e.key === 'ArrowUp' ? -1 : 1)) { render(); refocus(`#secList [data-sec="${id}"]`); } }
