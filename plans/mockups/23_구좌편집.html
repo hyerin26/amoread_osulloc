@@ -569,7 +569,7 @@ function copyTab(s) {
     <label class="f"><span>설명 <em>(선택) 제목 아래 한두 줄</em></span><textarea data-sf="role" maxlength="200" rows="2" placeholder="예) 첫 인사를 건네며 입맛을 돋궈줄 차">${esc(s.role)}</textarea></label>
     ${s.lines.map((l, j) => `<div class="f"><span class="l">추가 문구 ${j + 1}</span><div class="lnrow"><input type="text" data-line="${j}" maxlength="120" value="${esc(l.text)}" aria-label="추가 문구 ${j + 1}">
       <span class="tools"><button class="ib" data-linemv="${j}:-1" ${j ? '' : 'disabled'} aria-label="위로">↑</button><button class="ib" data-linemv="${j}:1" ${j < s.lines.length - 1 ? '' : 'disabled'} aria-label="아래로">↓</button><button class="ib" data-linedel="${j}" aria-label="추가 문구 ${j + 1} 삭제">✕</button></span></div></div>`).join('')}
-    <div><button class="btn xs" data-lineadd>+ 문구 한 줄 추가</button></div>
+    <div class="chips-row"><button class="btn xs" data-lineadd>+ 문구 한 줄 추가</button><button class="btn xs" data-toast="예시예요: 제목·설명·추가 문구를 AI가 다듬은 안을 옆에 보여 주고, 고르면 바뀌어요. 보내는 것: 이 구좌 문구와 담긴 상품 이름뿐">✦ AI로 문구 다듬기</button></div>
     <div class="f"><span class="l">버튼</span><label class="ck"><input type="checkbox" data-ctaon ${s.ctaOn ? 'checked' : ''}> 이 구좌에 버튼 넣기</label>
       ${s.ctaOn ? `<div class="two"><label class="f"><span class="hint">버튼 문구</span><input type="text" data-sf="cta" maxlength="30" value="${esc(s.cta)}" placeholder="${k === 'product' ? '예) 티백 더보기' : k === 'event' ? '예) 참여하기' : '예) 혜택 받기'}"></label>
         <label class="f"><span class="hint">어디로 <em>(선택)</em></span><input type="text" data-sf="ctaTo" maxlength="60" value="${esc(s.ctaTo)}" placeholder="예) 티백 카테고리, 쿠폰 받기"></label></div>` : '<span class="hint">버튼 없이 둬요. 언제든 다시 켤 수 있어요.</span>'}</div>

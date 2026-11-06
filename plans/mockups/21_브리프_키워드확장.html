@@ -180,10 +180,11 @@ input[type=text]:focus { outline: 2px solid var(--accent); outline-offset: 0; bo
         <span class="grow"></span>
         <button class="btn sm" id="resetBtn">처음 모양으로</button>
       </div>
-      <div class="filters" role="group" aria-label="채널 (고르지 않으면 전체)">
-        <span class="cap">채널</span>
+      <div class="filters" role="group" aria-label="종류 (고르지 않으면 전체)">
+        <span class="cap">종류</span>
         <span id="chFilters"></span>
         <button class="btn sm" id="chClear" hidden>전체 보기</button>
+        <span class="cap conn">연결: 네이버 키 받는 중 · 유튜브 연결 전 · 구글 트렌드 신청 전 <button class="btn xs ghost" id="connBtn">설정에서 연결</button></span>
       </div>
       <nav class="path" id="path" aria-label="지나온 길"></nav>
       <svg class="map" id="map" viewBox="0 0 1100 640" role="group" aria-label="키워드 마인드맵"></svg>
@@ -207,7 +208,7 @@ input[type=text]:focus { outline: 2px solid var(--accent); outline-offset: 0; bo
         <input type="text" id="copy" maxlength="60" placeholder="페이지 첫 화면의 한 줄">
         <div class="sugbar"><span class="cap">제안</span><span class="tag demo-t">예시 · 규칙으로 만든 문장</span><span class="cap" id="sugBasis"></span></div>
         <div class="sugs" id="sugs" role="group" aria-label="메인 카피 제안"></div>
-        <div class="sugbar"><button class="btn sm" id="moreSug">다른 제안 보기</button>
+        <div class="sugbar"><button class="btn sm" id="moreSug">다른 제안 보기</button><button class="btn sm" id="aiSug">✦ AI로 더 받기</button>
           <span class="cap">누르면 메인 카피 칸에 들어가요. 가격·쿠폰·효능 표현은 넣지 않아요.</span></div>
       </div>
       <span class="rl" id="moodL">느낌 레퍼런스 <em>(선택)</em></span>
@@ -228,9 +229,12 @@ input[type=text]:focus { outline: 2px solid var(--accent); outline-offset: 0; bo
 
 <script>
 // ---------------- 예시 데이터 (가상) ----------------
-const CH = { search: '검색어', news: '뉴스', sns: 'SNS·블로그', trend: '트렌드 매체', ours: '우리 데이터' };
+// 종류로 묶음 (plans/22 §5: 회사 이름이 아니라 무엇을 알려 주나로)
+const CH = { search: '검색', text: '글', video: '영상', ours: '우리 데이터' };
 // 채널 설명: 연결 후보 (plans/20 3장). 지금은 모두 예시
-const CH_SRC = { search: '네이버 검색광고 키워드 도구·데이터랩, 구글 트렌드', news: '빅카인즈, 네이버 뉴스', sns: '블로그·SNS 글', trend: '캐릿 등 트렌드 매체', ours: '명분 사전 씨앗, 지난 컨셉, 리뷰 언급' };
+const CH_SRC = { search: '네이버 검색광고·데이터랩, 구글 트렌드', text: '네이버 뉴스·블로그·카페, 붙여 넣은 트렌드 기사', video: '유튜브', ours: '명분 사전 씨앗, 지난 컨셉, 리뷰 언급' };
+const KIND = { search: 'search', news: 'text', sns: 'text', trend: 'text', ours: 'ours' };   // 예전 채널 → 종류
+const POST_SRC = { news: '뉴스', sns: '블로그', trend: '트렌드 기사' };
 // k: 키워드, ch: 채널, flow: 검색 흐름(말로만, 숫자 없음), posts: 관련 글 제목(가상), ours: 우리 데이터(가상), kids: 다음 가지
 const T = {
   '봄': { ch: [], kids: ['벚꽃', '피크닉', '새학기', '춘곤증', '미세먼지', '봄나물', '화이트데이', '산책', '봄비', '꽃가루'] },
@@ -260,7 +264,10 @@ let path = [ROOT];       // 지나온 길 (한 갈래만 펼침). path[i+1]은 p
 let center = 0;          // path에서 가운데에 놓인 위치 (3단계를 넘으면 가운데를 옮긴다)
 let focus = ROOT;        // 옆 패널에 보이는 키워드
 let picked = [];         // 고른 키워드
-let chOn = new Set();    // 채널 필터 (비어 있으면 전체)
+for (const d of Object.values(T)) if (d.ch) d.ch = [...new Set(d.ch.map(c => KIND[c] || c))];
+T['피크닉'].videos = ['한강 피크닉 브이로그 · 봄 도시락 싸기', '피크닉 음료 3가지 만들기']; T['피크닉'].ch.push('video');
+T['벚꽃'].videos = ['벚꽃 명소 산책 + 카페 투어']; T['벚꽃'].ch.push('video');
+let chOn = new Set();    // 종류 필터 (비어 있으면 전체)
 const MAX_DEPTH = 3;
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -335,8 +342,9 @@ function renderSide() {
   const deep = path.indexOf(k) >= 0 ? path.indexOf(k) - center : parentOf(k) - center + 1;
   el.innerHTML = `<div class="overline">키워드 <span class="tag demo-t">예시</span></div><h2>${esc(k)}</h2>
     <h3>어디서 왔나요</h3><div class="tags">${d.ch.map(c => `<span class="tag" title="${esc(CH_SRC[c])}">${CH[c]}</span>`).join('') || '<span class="cap">-</span>'}</div>
-    <h3>검색 흐름</h3><p class="cap">${esc(d.flow)} · 숫자는 연결 후 보여줘요</p>
-    <h3>관련 글</h3>${d.posts.length ? `<ul>${d.posts.map(([c, t]) => `<li>${esc(t)}<span class="cap">${CH[c]} · 예시 제목</span></li>`).join('')}</ul>` : '<p class="cap">아직 없어요</p>'}
+    <h3>검색</h3><p class="cap">${esc(d.flow)} · 월 검색수·1년 흐름은 연결 후 여기서만 숫자로 보여줘요</p>
+    <h3>글</h3>${d.posts.length ? `<ul>${d.posts.map(([c, t]) => `<li>${esc(t)}<span class="cap">${POST_SRC[c] || ''} · 예시 제목</span></li>`).join('')}</ul>` : '<p class="cap">아직 없어요</p>'}
+    ${d.videos ? `<h3>영상</h3><ul>${d.videos.map(t => `<li>${esc(t)}<span class="cap">유튜브 · 예시 제목</span></li>`).join('')}</ul>` : ''}
     <h3>우리 데이터</h3>${d.ours.length ? `<ul>${d.ours.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : '<p class="cap">연결된 내용이 없어요</p>'}
     <div class="acts">
       <button class="btn primary" data-pick="${esc(k)}">${picked.includes(k) ? '고른 키워드에서 빼기' : '이 키워드 고르기'}</button>
@@ -420,6 +428,9 @@ document.addEventListener('click', e => {
   const ed = t.closest('[data-edit]'); if (ed) { toast(`예시예요: ${ed.dataset.edit}을 여기서 바로 고칠 수 있어요`); return; }
 });
 $('#chClear').addEventListener('click', () => { chOn.clear(); render(); });
+// AI는 필요한 자리에 버튼으로만 (찻잎이 대화창 없음). 보내는 것: 고른 키워드·컨셉·명분뿐
+$('#aiSug').addEventListener('click', () => toast('예시예요: 고른 키워드·컨셉으로 AI가 메인 카피 3개를 더 제안해요. 매출·원가·고객 정보는 보내지 않아요'));
+$('#connBtn').addEventListener('click', () => toast('예시예요: ⚙ 설정·데이터의 외부 연결로 가요'));
 $('#resetBtn').addEventListener('click', () => { path = [ROOT]; center = 0; focus = ROOT; render(); });
 $('#title').addEventListener('input', () => { titleTouched = true; });
 $('#concept').addEventListener('input', () => { autoTitle(); renderSugs(); });
