@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>홈 일정표 목업</title>
+<!-- 디자인 기준: AMOREAD Green UI v2.5.1. 색·글자·간격은 앱의 tokens.css를 그대로 읽는다 (값을 새로 만들지 않음) -->
+<link rel="stylesheet" href="../../workspace/amoread_app/planner/static/tokens.css">
+<style>
+/* tokens.css의 글꼴 주소(/static/...)는 파일로 열 때 닿지 않아서 같은 파일을 상대 경로로 다시 연결 */
+@font-face { font-family: 'Pretendard Variable'; font-weight: 45 920; font-display: swap;
+  src: url('../../workspace/amoread_app/planner/static/fonts/PretendardVariable.woff2') format('woff2-variations'); }
+
+/* 프로모션 분류 5종 색 — v2.5.1에 없는 업무 의미색이라 [제안]. 브랜드 녹색은 주 행동·선택에만 쓰므로 피함. 디자이너 확인 필요 */
+:root {
+  --cls-season: #e2f0ee;  --cls-season-ink: #1f5f57;
+  --cls-brand: #ececf6;   --cls-brand-ink: #3d3f8f;
+  --cls-launch: #fdf0e1;  --cls-launch-ink: #8a4b0f;
+  --cls-collab: #f6e8f1;  --cls-collab-ink: #7d2f63;
+  --cls-clear: #eeeeee;   --cls-clear-ink: #484848;
+  --day: 15px;            /* 일정표 하루 폭 */
+  --lane-label: 120px;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--font); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); background: var(--bg); }
+button { font: inherit; }
+h1, h2, h3, p { margin: 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* 상단 막대 (디자이너 홈: 흰 면 + 아래 선, 로고 + 작업 공간 이름) */
+.top { height: 72px; display: flex; align-items: center; gap: var(--s4); padding: 0 var(--s5); background: var(--shell); border-bottom: 1px solid var(--line); }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: var(--fw-title); font-size: var(--fs-h1); letter-spacing: -0.01em; }
+.logo i { width: 32px; height: 32px; border-radius: var(--r2); background: var(--ink); color: var(--surface); display: grid; place-items: center; font-style: normal; font-size: var(--fs-h1); }
+.top .ws { color: var(--mute); font-size: var(--fs-sm); }
+.top .grow { flex: 1; }
+.top .note { color: var(--mute); font-size: var(--fs-cap); }
+
+.page { max-width: 1280px; margin: 0 auto; padding: var(--s6) var(--s5) 64px; }
+.demo { background: var(--warn-soft); color: var(--warn); border-radius: var(--r); padding: 12px 16px; font-size: var(--fs-sm); line-height: var(--lh-label); margin-bottom: var(--s5); }
+.demo b { font-weight: var(--fw-strong); }
+
+/* 페이지 머리 (overline → 28/36/700 제목 → 설명, 오른쪽 주 버튼) */
+.masthead { display: flex; align-items: flex-end; gap: var(--s4); margin-bottom: var(--s5); flex-wrap: wrap; }
+.masthead .grow { flex: 1; min-width: 280px; }
+.overline { font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); color: var(--mute); margin-bottom: 4px; }
+.masthead h1 { font-size: var(--fs-masthead); line-height: var(--lh-masthead); font-weight: var(--fw-title); letter-spacing: -0.02em; }
+.masthead p { margin-top: 6px; color: var(--mute); }
+
+/* 버튼·칩 (ds.css 규칙과 같은 값) */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: var(--control-lg); padding: 0 16px; border: 0; border-radius: var(--r2);
+  background: var(--sunken); color: var(--ink); font-weight: var(--fw-strong); line-height: var(--lh-label); cursor: pointer; white-space: nowrap; }
+.btn:hover { background: var(--line-sub); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(.94); }
+.btn.ghost { background: transparent; }
+.btn.ghost:hover { background: var(--hover); }
+.btn.sm { height: var(--control-md); padding: 0 12px; font-size: var(--fs-sm); }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 1px solid var(--line-sub); border-radius: var(--r2); background: var(--surface);
+  color: var(--ink2); font-size: var(--fs-sm); font-weight: var(--fw-medium); cursor: pointer; }
+.chip:hover { border-color: var(--line-strong); color: var(--ink); }
+.chip[aria-checked="true"] { background: var(--accent-soft); border-color: var(--sel-line); color: var(--accent); font-weight: var(--fw-strong); }
+.tag { display: inline-flex; align-items: center; border-radius: var(--r2); padding: 2px 8px; font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); white-space: nowrap; }
+.cap { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--s5); align-items: start; }
+@media (max-width: 1000px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--surface); border: 1px solid var(--line-sub); border-radius: var(--r); padding: var(--s-card); }
+.card > h2 { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var(--fw-strong); letter-spacing: -0.01em; }
+.sec-head { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin-bottom: var(--s4); }
+.sec-head .grow { flex: 1; }
+
+/* ---------- 일정표 ---------- */
+.tl-scroll { overflow-x: auto; margin: 0 calc(-1 * var(--s-card)); padding: 0 var(--s-card); }
+.tl { display: grid; grid-template-columns: var(--lane-label) repeat(var(--days), var(--day)); position: relative; min-width: max-content; }
+.tl .lab { grid-column: 1; padding: 8px 12px 8px 0; font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); font-weight: var(--fw-medium); border-top: 1px solid var(--line-sub); }
+.tl .lab b { display: block; color: var(--ink); font-weight: var(--fw-strong); font-size: var(--fs-sm); }
+.tl .lane-bg { border-top: 1px solid var(--line-sub); }
+.tl .wk { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); padding: 0 0 6px 4px; border-left: 1px solid var(--line-sub); white-space: nowrap; }
+.tl .wk.now { color: var(--ink); font-weight: var(--fw-strong); }
+.tl .pick { height: 22px; border-left: 1px solid transparent; cursor: crosshair; }
+.tl .pick:hover { background: var(--hover); }
+.tl .pick.sel { background: var(--accent-soft); }
+.tl .pick.mon { border-left-color: var(--line-sub); }
+.tl .pick.past { cursor: default; background: repeating-linear-gradient(135deg, transparent 0 4px, var(--sunken) 4px 5px); }
+.today { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1.5px solid var(--ink); pointer-events: none; z-index: 3; }
+.today span { position: absolute; top: -2px; left: 4px; font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-strong); background: var(--surface); padding: 0 4px; border-radius: 4px; }
+
+.bar { all: unset; box-sizing: border-box; position: relative; z-index: 1; margin: 4px 1px; height: 32px; padding: 0 8px; border-radius: var(--r2); display: flex; align-items: center; gap: 6px;
+  font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.bar .nm { overflow: hidden; text-overflow: ellipsis; }
+.bar:hover { filter: brightness(.97); box-shadow: 0 0 0 1px var(--line-strong) inset; }
+.bar[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent) inset; }
+.bar:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.c-season { background: var(--cls-season); color: var(--cls-season-ink); }
+.c-brand { background: var(--cls-brand); color: var(--cls-brand-ink); }
+.c-launch { background: var(--cls-launch); color: var(--cls-launch-ink); }
+.c-collab { background: var(--cls-collab); color: var(--cls-collab-ink); }
+.c-clear { background: var(--cls-clear); color: var(--cls-clear-ink); }
+/* 내 기획안: 아직 몰에 없으므로 채우지 않고 선 + 파랑 글자 (기존 업무색 --plan) */
+.bar.plan { background: var(--surface); color: var(--plan); border: 1.5px dashed var(--plan); }
+.bar.plan .dl { margin-left: auto; padding-left: 8px; color: var(--ink2); }
+.bar.gap { background: var(--warn-soft); color: var(--warn); border: 1px dashed var(--line-strong); justify-content: center; font-weight: var(--fw-strong); }
+.mb { all: unset; position: relative; z-index: 2; height: 52px; margin: 2px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
+.mb .dia { width: 10px; height: 10px; transform: rotate(45deg); background: var(--ink); border-radius: 2px; }
+.mb.alt .t { margin-top: 19px; }
+.mb .t { margin-top: 3px; font-size: 11px; line-height: 14px; color: var(--ink2); white-space: nowrap; }
+.mb:hover .dia, .mb[aria-pressed="true"] .dia { background: var(--accent); }
+.mb[aria-pressed="true"] .t { color: var(--accent); font-weight: var(--fw-strong); }
+.lead { height: 2px; align-self: center; background: var(--line-strong); margin-top: -12px; pointer-events: none; }
+.lead.on { background: var(--accent); }
+
+.legend { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4); margin-top: var(--s4); align-items: center; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-cap); color: var(--mute); }
+.legend i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+.legend i.plan { border: 1.5px dashed var(--plan); background: var(--surface); }
+.legend i.gap { border: 1px dashed var(--line-strong); background: var(--warn-soft); }
+.legend i.dia { width: 9px; height: 9px; transform: rotate(45deg); background: var(--ink); border-radius: 2px; }
+
+.undated { margin-top: var(--s4); padding-top: var(--s4); border-top: 1px solid var(--line-sub); display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; }
+
+/* ---------- 옆 패널 ---------- */
+.side { position: sticky; top: var(--s5); }
+.side h2 { font-size: var(--fs-h2); line-height: var(--lh-h2); font-weight: var(--fw-strong); }
+.side h3 { font-size: var(--fs-sm); line-height: var(--lh-label); font-weight: var(--fw-strong); margin: var(--s4) 0 var(--s2); }
+.side ul { list-style: none; margin: 0; padding: 0; }
+.side li + li { margin-top: var(--s2); }
+.item { all: unset; box-sizing: border-box; width: 100%; display: block; padding: 10px 12px; border-radius: var(--r2); border: 1px solid var(--line-sub); cursor: pointer; }
+.item:hover { border-color: var(--line-strong); }
+.item .t { display: flex; gap: var(--s2); align-items: center; font-weight: var(--fw-medium); }
+.item .t .grow { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dd { font-size: var(--fs-cap); font-weight: var(--fw-strong); color: var(--err); white-space: nowrap; }
+.dd.calm { color: var(--mute); font-weight: var(--fw-medium); }
+.facts { display: grid; grid-template-columns: 72px 1fr; gap: 6px var(--s3); font-size: var(--fs-sm); margin-top: var(--s3); }
+.facts dt { color: var(--mute); }
+.facts dd { margin: 0; }
+.side .acts { margin-top: var(--s4); display: flex; gap: var(--s2); flex-wrap: wrap; }
+.side .acts .btn { flex: 1; }
+.back { all: unset; cursor: pointer; font-size: var(--fs-cap); color: var(--mute); margin-bottom: var(--s2); display: inline-block; }
+.back:hover { color: var(--ink); }
+.note-gap { margin-top: var(--s3); }
+
+/* ---------- 시작 창 ---------- */
+dialog { border: 1px solid var(--line); border-radius: var(--r); padding: 32px; width: min(560px, calc(100vw - 32px)); color: var(--ink); background: var(--surface); }
+dialog::backdrop { background: var(--scrim); }
+dialog h2 { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var(--fw-strong); margin-bottom: var(--s5); }
+.f { display: block; margin-top: var(--s5); }
+.f > .l { display: block; font-size: var(--fs-body); line-height: var(--lh-label); font-weight: var(--fw-strong); margin-bottom: var(--s2); }
+.f > .h { display: block; font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); margin-top: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
+input[type=text], input[type=date] { height: var(--control-lg); border: 1px solid var(--line); border-radius: var(--r2); padding: 0 12px; font: inherit; color: var(--ink); background: var(--surface); }
+input[type=text] { width: 100%; }
+input:hover { border-color: var(--line-strong); }
+input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+input:disabled { background: var(--sunken); color: var(--mute); }
+.dates { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; }
+.ck { display: inline-flex; gap: 6px; align-items: center; font-size: var(--fs-sm); margin-top: var(--s2); cursor: pointer; }
+.mlist { display: grid; gap: var(--s2); max-height: 216px; overflow: auto; }
+.mopt { all: unset; box-sizing: border-box; display: flex; gap: var(--s3); align-items: center; padding: 10px 12px; border: 1px solid var(--line-sub); border-radius: var(--r2); cursor: pointer; }
+.mopt:hover { border-color: var(--line-strong); }
+.mopt[aria-checked="true"] { border-color: var(--sel-line); background: var(--accent-soft); }
+.mopt[aria-checked="true"] b { color: var(--accent); }
+.mopt .grow { flex: 1; }
+.foot { display: flex; justify-content: flex-end; gap: var(--s2); margin-top: 32px; }
+.toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: var(--ink); color: var(--surface); border-radius: var(--r); padding: 14px 18px; font-size: var(--fs-sm);
+  box-shadow: 0 16px 48px -12px rgba(33, 33, 33, .15); opacity: 0; pointer-events: none; transition: opacity .2s var(--ease); }
+.toast.on { opacity: 1; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo"><i aria-hidden="true">a</i>AMOREAD</div>
+  <span class="ws">홈</span>
+  <span class="grow"></span>
+  <span class="note">메뉴 구성은 아직 정하지 않았어요</span>
+</header>
+
+<main class="page">
+  <p class="demo"><b>예시 화면이에요.</b> 이벤트, 기획안, 명분, 마감은 모두 가상의 값이에요. 실제 이벤트 목록과 매출은 넣지 않았어요. 오늘은 2026-11-06(금)으로 두었어요.</p>
+
+  <div class="masthead">
+    <div class="grow">
+      <div class="overline">AMOREAD · 홈</div>
+      <h1>프로모션 일정</h1>
+      <p>몰에 걸린 페이지와 준비 중인 기획안을 한눈에 보고, 비는 기간을 명분으로 채워요.</p>
+    </div>
+    <button class="btn primary" id="newBtn">＋ 새 기획안</button>
+  </div>
+
+  <div class="layout">
+    <section class="card" aria-labelledby="tlH">
+      <div class="sec-head">
+        <h2 id="tlH">일정표</h2>
+        <span class="cap" id="rangeCap"></span>
+        <span class="grow"></span>
+        <button class="btn sm ghost" id="prevBtn">← 4주 전</button>
+        <button class="btn sm ghost" id="todayBtn">오늘</button>
+        <button class="btn sm ghost" id="nextBtn">4주 뒤 →</button>
+      </div>
+      <div class="tl-scroll"><div class="tl" id="tl" role="grid" aria-label="프로모션 일정표"></div></div>
+      <div class="legend" aria-label="범례">
+        <span><i class="c-season"></i>시즌</span><span><i class="c-brand"></i>브랜드기획전</span><span><i class="c-launch"></i>런칭</span>
+        <span><i class="c-collab"></i>콜라보</span><span><i class="c-clear"></i>클리어런스</span>
+        <span><i class="plan"></i>내 기획안 (준비 중)</span><span><i class="gap"></i>빈 구간</span><span><i class="dia"></i>명분 (누르면 준비 시작부터 선)</span>
+      </div>
+      <div class="undated" id="undated"></div>
+    </section>
+
+    <aside class="card side" id="side" aria-live="polite"></aside>
+  </div>
+</main>
+
+<dialog id="startDlg" aria-labelledby="dlgH">
+  <form method="dialog" id="startForm">
+    <h2 id="dlgH">새 기획안</h2>
+    <div class="f" role="radiogroup" aria-labelledby="clsL">
+      <span class="l" id="clsL">어떤 프로모션인가요?</span>
+      <div class="chips" id="clsChips"></div>
+    </div>
+    <div class="f" id="seedBox"></div>
+    <div class="f">
+      <span class="l">기간</span>
+      <div class="dates"><input type="date" id="dStart" aria-label="시작일"> <span>~</span> <input type="date" id="dEnd" aria-label="종료일"></div>
+      <label class="ck"><input type="checkbox" id="noDate"> 날짜는 나중에 정할게요</label>
+      <span class="h" id="dateHelp"></span>
+    </div>
+    <div class="foot">
+      <button class="btn" value="cancel" formnovalidate>취소</button>
+      <button class="btn primary" id="goBtn" value="go">시작하기 →</button>
+    </div>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+// ---------------- 예시 데이터 (가상) ----------------
+const TODAY = '2026-11-06';
+const CLS = {
+  season: { name: '시즌', seed: null },
+  brand: { name: '브랜드기획전', seed: ['주인공 상품·라인', '예) 말차 라인'] },
+  launch: { name: '런칭', seed: ['런칭할 신상품', '예) 제주 영귤 블렌딩티'] },
+  collab: { name: '콜라보', seed: ['협업 상대', '예) ○○ 캐릭터'] },
+  clear: { name: '클리어런스', seed: ['소진할 상품·라인', '예) 티백 대용량 세트'] },
+};
+const CONCURRENT = ['launch', 'collab'];   // 다른 페이지와 겹쳐 걸려도 되는 분류 → 둘째 줄
+// 몰에 걸린 페이지 (이벤트 목록, 대상 O)
+const EVENTS = [
+  { id: 'e1', name: '가을 티타임 기획전', cls: 'season', s: '2026-10-19', e: '2026-11-08' },
+  { id: 'e2', name: '말차 라인 기획전', cls: 'brand', s: '2026-11-09', e: '2026-11-22' },
+  { id: 'e3', name: '영귤 블렌딩 출시', cls: 'launch', s: '2026-11-16', e: '2026-11-29' },
+];
+// 내 기획안 (준비 중). next = 제작 일정에서 가장 가까운 마감
+const PLANS = [
+  { id: 'p1', name: '블프 말차 묶음전', cls: 'season', s: '2026-11-23', e: '2026-12-06', step: '02 구성', next: ['디자인 착수', '2026-11-12'] },
+  { id: 'p2', name: '연말 선물 기획전', cls: 'season', s: '2026-12-21', e: '2027-01-03', step: '01 브리프', next: ['기획 착수', '2026-11-30'] },
+  { id: 'p3', name: '티백 대용량 정리', cls: 'clear', s: null, e: null, step: '01 브리프', next: null },
+];
+// 명분 사전 (날짜, 종류, 준비 시작 = 며칠 전)
+const SEASONS = [
+  { id: 'm1', name: '입동', d: '2026-11-07', kind: '절기', lead: 21, ly: ['가을 티타임 기획전 (10/20~11/9)'], past: '지난 같은 명분 행사 2회' },
+  { id: 'm2', name: '빼빼로데이', d: '2026-11-11', kind: '기념일', lead: 21, ly: ['스틱 티 선물전 (11/4~11/11)'], past: '지난 같은 명분 행사 2회' },
+  { id: 'm3', name: '수능', d: '2026-11-19', kind: '학사', lead: 28, ly: [], past: '지난 같은 명분 행사 없음' },
+  { id: 'm4', name: '블랙프라이데이', d: '2026-11-27', kind: '기념일', lead: 35, ly: ['블프 최대 40% (11/25~12/1)'], past: '지난 같은 명분 행사 2회' },
+  { id: 'm5', name: '대설', d: '2026-12-07', kind: '절기', lead: 21, ly: [], past: '지난 같은 명분 행사 없음' },
+  { id: 'm6', name: '동지', d: '2026-12-22', kind: '세시', lead: 28, ly: ['동지 팥 블렌딩 (12/15~12/22)'], past: '지난 같은 명분 행사 1회' },
+  { id: 'm7', name: '크리스마스', d: '2026-12-25', kind: '기념일', lead: 42, ly: ['해피 홀리데이 선물 (12/1~12/25)'], past: '지난 같은 명분 행사 2회' },
+];
+
+// ---------------- 날짜 도우미 ----------------
+const D = s => new Date(s + 'T00:00:00');
+const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const add = (s, n) => { const d = D(s); d.setDate(d.getDate() + n); return iso(d); };
+const diff = (a, b) => Math.round((D(b) - D(a)) / 864e5);
+const WD = '일월화수목금토';
+const md = s => { const d = D(s); return `${d.getMonth() + 1}/${d.getDate()}(${WD[d.getDay()]})`; };
+const mondayOf = s => { const d = D(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return iso(d); };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const $ = s => document.querySelector(s);
+
+const WEEKS = 10;
+let start = add(mondayOf(TODAY), -7);   // 지난주 월요일부터 10주
+let selected = null;                    // { type, id }
+
+// 빈 구간: 앞으로의 날 중 걸린 페이지도, 날짜 있는 기획안도 없는 날의 연속 구간 (겹쳐 거는 분류는 빼고 본다)
+function gaps(from, to) {
+  const cover = [...EVENTS, ...PLANS].filter(x => x.s && !CONCURRENT.includes(x.cls));
+  const out = []; let cur = null;
+  for (let d = from; d <= to; d = add(d, 1)) {
+    const covered = cover.some(x => x.s <= d && d <= x.e);
+    if (!covered && d >= TODAY) { if (!cur) cur = { s: d, e: d }; else cur.e = d; }
+    else if (cur) { out.push(cur); cur = null; }
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+
+// 기간 기본값 (plans/20 4-1): 시작 = 앞 페이지(같은 줄) 종료 다음 날, 길이 14일
+function defaultPeriod(cls) {
+  if (CONCURRENT.includes(cls)) { const s = add(TODAY, 14); return { s, e: add(s, 13), why: '런칭·콜라보는 다른 페이지와 겹쳐도 돼요. 2주 뒤부터 2주로 넣어 두었어요.' }; }
+  const g = gaps(TODAY, add(TODAY, 120))[0];
+  if (!g) return { s: null, e: null, why: '' };
+  return { s: g.s, e: add(g.s, 13), why: `앞 페이지가 끝난 다음 날(${md(g.s)})부터 2주로 제안했어요.` };
+}
+
+// ---------------- 일정표 그리기 ----------------
+function place(el, s, e, row) {
+  const days = WEEKS * 7, end = add(start, days - 1);
+  if (e < start || s > end) return false;
+  const a = Math.max(0, diff(start, s)), b = Math.min(days - 1, diff(start, e));
+  el.style.gridColumn = `${a + 2} / ${b + 3}`; el.style.gridRow = row;
+  return true;
+}
+function bar(cls, html, label, data) {
+  const b = document.createElement('button');
+  b.className = `bar ${cls}`; b.innerHTML = html; b.setAttribute('aria-label', label); b.title = label;
+  Object.assign(b.dataset, data);
+  if (selected && selected.type === data.type && selected.id === data.id) b.setAttribute('aria-pressed', 'true');
+  return b;
+}
+
+function render() {
+  const tl = $('#tl'), days = WEEKS * 7, end = add(start, days - 1);
+  tl.style.setProperty('--days', days);
+  tl.innerHTML = '';
+  $('#rangeCap').textContent = `${md(start)} ~ ${md(end)} · 월요일 시작`;
+  const ROW = { wk: 1, pick: 2, ev: 3, ev2: 4, plan: 5, gap: 6, m: 7 };
+  const lab = (row, t, s) => { const d = document.createElement('div'); d.className = 'lab'; d.style.gridRow = row; d.innerHTML = `<b>${t}</b>${s ? esc(s) : ''}`; tl.append(d); };
+  const bg = row => { const d = document.createElement('div'); d.className = 'lane-bg'; d.style.gridRow = row; d.style.gridColumn = `2 / ${days + 2}`; tl.append(d); };
+
+  // 주 머리
+  for (let w = 0; w < WEEKS; w++) {
+    const s = add(start, w * 7), d = document.createElement('div');
+    d.className = 'wk' + (s <= TODAY && TODAY <= add(s, 6) ? ' now' : '');
+    d.style.gridRow = ROW.wk; d.style.gridColumn = `${w * 7 + 2} / span 7`; d.textContent = md(s).replace(/\(.\)/, '') + ' 주';
+    tl.append(d);
+  }
+  // 날짜 고르기 줄 (끌어서 기간 선택)
+  lab(ROW.pick, '기간 고르기', '끌어서 새 기획안');
+  for (let i = 0; i < days; i++) {
+    const d = add(start, i), c = document.createElement('div');
+    c.className = 'pick' + (D(d).getDay() === 1 ? ' mon' : '') + (d < TODAY ? ' past' : '');
+    c.dataset.d = d; c.style.gridRow = ROW.pick; c.style.gridColumn = i + 2; c.title = md(d);
+    tl.append(c);
+  }
+  // 몰에 걸린 페이지
+  lab(ROW.ev, '몰에 걸린 페이지', '이벤트 목록'); bg(ROW.ev);
+  lab(ROW.ev2, '함께 걸린 페이지', '런칭·콜라보'); bg(ROW.ev2);
+  EVENTS.forEach(x => {
+    const b = bar(`c-${x.cls}`, `<span class="nm">${esc(x.name)}</span>`, `${x.name}, ${CLS[x.cls].name}, ${md(x.s)}~${md(x.e)}`, { type: 'ev', id: x.id });
+    if (place(b, x.s, x.e, CONCURRENT.includes(x.cls) ? ROW.ev2 : ROW.ev)) tl.append(b);
+  });
+  // 내 기획안
+  lab(ROW.plan, '내 기획안', '준비 중'); bg(ROW.plan);
+  PLANS.filter(p => p.s).forEach(p => {
+    const dl = p.next ? `<span class="dl">${esc(p.next[0])} ${md(p.next[1])}</span>` : '';
+    const b = bar('plan', `<span class="nm">${esc(p.name)}</span>${dl}`, `${p.name}, 준비 중, ${md(p.s)}~${md(p.e)}${p.next ? `, 다음 마감 ${p.next[0]} ${md(p.next[1])}` : ''}`, { type: 'plan', id: p.id });
+    if (place(b, p.s, p.e, CONCURRENT.includes(p.cls) ? ROW.ev2 : ROW.plan)) tl.append(b);
+  });
+  // 빈 구간
+  lab(ROW.gap, '빈 구간', '걸린 페이지 없음'); bg(ROW.gap);
+  gaps(start, end).forEach((g, i) => {
+    const n = diff(g.s, g.e) + 1;
+    const b = bar('gap', n >= 5 ? `${n}일 비어요 · 기획 시작` : `${n}일`, `빈 구간 ${md(g.s)}~${md(g.e)}, ${n}일. 눌러서 이 기간으로 새 기획안`, { type: 'gap', id: `${g.s}|${g.e}` });
+    if (place(b, g.s, g.e, ROW.gap)) tl.append(b);
+  });
+  // 명분 (준비 시작부터 선)
+  lab(ROW.m, '명분', '명분 사전'); bg(ROW.m);
+  SEASONS.forEach((m, i) => {
+    const on = selected && selected.type === 'm' && selected.id === m.id;
+    if (on) { const ln = document.createElement('div'); ln.className = 'lead on'; if (place(ln, add(m.d, -m.lead), add(m.d, -1), ROW.m)) tl.append(ln); }   // 준비 기간 선은 고른 명분만 (겹치면 읽을 수 없음)
+    const b = document.createElement('button'); b.className = 'mb' + (i % 2 ? ' alt' : ''); b.dataset.type = 'm'; b.dataset.id = m.id;
+    b.innerHTML = `<span class="dia" aria-hidden="true"></span><span class="t">${esc(m.name)}</span>`;
+    b.setAttribute('aria-label', `명분 ${m.name}, ${md(m.d)}, 준비 시작 ${md(add(m.d, -m.lead))}`);
+    if (on) b.setAttribute('aria-pressed', 'true');
+    if (place(b, m.d, m.d, ROW.m)) { b.style.gridColumn = `${diff(start, m.d) + 2} / span 1`; b.style.justifySelf = 'center'; tl.append(b); }
+  });
+  // 오늘 선
+  if (TODAY >= start && TODAY <= end) {
+    const t = document.createElement('div'); t.className = 'today';
+    t.style.left = `calc(var(--lane-label) + ${diff(start, TODAY)} * var(--day) + var(--day) / 2)`;
+    t.innerHTML = '<span>오늘</span>'; tl.append(t);
+  }
+  // 날짜 미정 기획안
+  const und = PLANS.filter(p => !p.s);
+  $('#undated').innerHTML = und.length ? `<span class="cap">날짜 미정 기획안</span>${und.map(p => `<button class="chip" data-type="plan" data-id="${p.id}">${esc(p.name)} · ${esc(CLS[p.cls].name)}</button>`).join('')}` : '';
+  renderSide();
+}
+
+// ---------------- 옆 패널 ----------------
+function renderSide() {
+  const el = $('#side');
+  const back = '<button class="back" data-back>← 오늘 챙길 것</button>';
+  if (selected?.type === 'm') {
+    const m = SEASONS.find(x => x.id === selected.id), prep = add(m.d, -m.lead), left = diff(TODAY, prep);
+    el.innerHTML = `${back}<div class="overline">명분 · ${esc(m.kind)}</div><h2>${esc(m.name)}</h2>
+      <dl class="facts"><dt>명분일</dt><dd>${md(m.d)} · D-${diff(TODAY, m.d)}</dd>
+        <dt>준비 시작</dt><dd>${md(prep)} ${left > 0 ? `<span class="dd calm">${left}일 남음</span>` : '<span class="dd">지났어요</span>'}</dd></dl>
+      <h3>작년 같은 명분 때 걸린 페이지</h3>
+      ${m.ly.length ? `<ul>${m.ly.map(t => `<li class="cap">${esc(t)}</li>`).join('')}</ul>` : '<p class="cap">작년에는 이 명분으로 걸린 페이지가 없어요.</p>'}
+      <h3>지난 같은 명분 행사</h3><p class="cap">${esc(m.past)} · 품목, 할인율은 상품·할인에서 볼 수 있어요</p>
+      <div class="acts"><button class="btn primary" data-start-m="${m.id}">이 명분으로 시작</button></div>`;
+    return;
+  }
+  if (selected?.type === 'plan') {
+    const p = PLANS.find(x => x.id === selected.id);
+    el.innerHTML = `${back}<div class="overline">내 기획안 · ${esc(CLS[p.cls].name)}</div><h2>${esc(p.name)}</h2>
+      <dl class="facts"><dt>기간</dt><dd>${p.s ? `${md(p.s)} ~ ${md(p.e)}` : '날짜 미정'}</dd><dt>지금 단계</dt><dd>${esc(p.step)}</dd>
+        <dt>다음 마감</dt><dd>${p.next ? `${esc(p.next[0])} ${md(p.next[1])} <span class="dd">D-${diff(TODAY, p.next[1])}</span>` : '기간을 정하면 계산해요'}</dd></dl>
+      <div class="acts"><button class="btn primary" data-open="${p.id}">이어서 하기 →</button></div>`;
+    return;
+  }
+  if (selected?.type === 'ev') {
+    const x = EVENTS.find(e => e.id === selected.id);
+    el.innerHTML = `${back}<div class="overline">몰에 걸린 페이지 · ${esc(CLS[x.cls].name)}</div><h2>${esc(x.name)}</h2>
+      <dl class="facts"><dt>기간</dt><dd>${md(x.s)} ~ ${md(x.e)} (${diff(x.s, x.e) + 1}일)</dd><dt>상태</dt><dd>${x.e < TODAY ? '끝남' : x.s <= TODAY ? '진행 중' : '예정'}</dd></dl>
+      <p class="cap note-gap">이벤트 목록에서 가져온 페이지예요. 이 서비스에서 고치지 않아요.</p>
+      <div class="acts"><button class="btn" data-after="${x.id}">끝난 다음 날부터 새 기획안</button></div>`;
+    return;
+  }
+  // 기본: 오늘 챙길 것
+  const dl = PLANS.filter(p => p.next).sort((a, b) => a.next[1] < b.next[1] ? -1 : 1);
+  const g = gaps(TODAY, add(TODAY, 120))[0];
+  el.innerHTML = `<div class="overline">${md(TODAY)}</div><h2>오늘 챙길 것</h2>
+    <h3>가까운 마감</h3><ul>${dl.map(p => { const n = diff(TODAY, p.next[1]); return `<li><button class="item" data-type="plan" data-id="${p.id}">
+      <span class="t"><span class="grow">${esc(p.name)}</span><span class="dd ${n > 7 ? 'calm' : ''}">D-${n}</span></span>
+      <span class="cap">${esc(p.next[0])} ${md(p.next[1])} · ${esc(p.step)}</span></button></li>`; }).join('')}</ul>
+    ${g ? `<h3>다음 빈 구간</h3><button class="item" data-type="gap" data-id="${g.s}|${g.e}"><span class="t"><span class="grow">${md(g.s)} ~ ${md(g.e)}</span><span class="dd calm">${diff(g.s, g.e) + 1}일</span></span>
+      <span class="cap">걸린 페이지가 없어요. 눌러서 이 기간으로 시작</span></button>` : ''}
+    <h3>날짜 미정</h3><p class="cap">${PLANS.filter(p => !p.s).length}개 · 일정표 아래에 있어요</p>`;
+}
+
+// ---------------- 시작 창 ----------------
+let dlg = { cls: null, m: null };
+// cls 없이 열면(새 기획안·빈 구간·기간 고르기) 분류를 먼저 고르게 한다. 명분에서 열 때만 시즌이 골라져 있다
+function openStart({ cls = null, s, e, m = null, why } = {}) {
+  dlg = { cls, m };
+  const p = s ? { s, e, why: why || '고른 기간을 넣었어요.' } : defaultPeriod(cls);
+  $('#dStart').value = p.s || ''; $('#dEnd').value = p.e || '';
+  $('#noDate').checked = !p.s; syncDate();
+  $('#dateHelp').textContent = p.why;
+  paintDlg();
+  $('#startDlg').showModal();
+}
+function paintDlg() {
+  $('#clsChips').innerHTML = Object.entries(CLS).map(([k, v]) => `<button type="button" class="chip" role="radio" aria-checked="${dlg.cls === k}" data-cls="${k}">${v.name}</button>`).join('');
+  const box = $('#seedBox');
+  if (!dlg.cls) { box.innerHTML = '<span class="h">분류를 고르면 시즌은 명분을, 나머지는 출발점을 정해요.</span>'; return; }
+  if (dlg.cls === 'season') {
+    const s = $('#dStart').value, near = SEASONS.filter(m => m.d >= TODAY)
+      .sort((a, b) => s ? Math.abs(diff(s, a.d)) - Math.abs(diff(s, b.d)) : (a.d < b.d ? -1 : 1));
+    box.innerHTML = `<span class="l" id="mL">명분</span><div class="mlist" role="radiogroup" aria-labelledby="mL">${near.map(m => `<button type="button" class="mopt" role="radio" aria-checked="${dlg.m === m.id}" data-m="${m.id}">
+      <span class="grow"><b>${esc(m.name)}</b> <span class="cap">${esc(m.kind)}</span></span><span class="cap">${md(m.d)} · 준비 ${md(add(m.d, -m.lead))}</span></button>`).join('')}</div>
+      <span class="h">${s ? '기간에 가까운 명분부터 보여줘요.' : '다가오는 순서예요.'} 고른 명분이 다음 화면의 중심 키워드가 돼요.</span>`;
+  } else {
+    const [l, ph] = CLS[dlg.cls].seed;
+    box.innerHTML = `<label><span class="l">${l}</span><input type="text" id="seed" placeholder="${esc(ph)}" maxlength="40"></label>
+      <span class="h">이 말이 다음 화면(키워드 확장)의 중심 키워드가 돼요.</span>`;
+  }
+}
+function syncDate() { const off = $('#noDate').checked; $('#dStart').disabled = off; $('#dEnd').disabled = off; }
+
+// ---------------- 이벤트 ----------------
+let toastT;
+function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600); }
+function onPick(target) {
+  const t = target.closest('[data-type]'); if (!t) return false;
+  if (t.dataset.type === 'gap') { const [s, e] = t.dataset.id.split('|'); openStart({ s, e: diff(s, e) > 13 ? add(s, 13) : e, why: `빈 구간(${md(s)}~${md(e)})에서 시작해요. 2주를 넘으면 2주까지만 넣었어요.` }); return true; }
+  selected = selected && selected.type === t.dataset.type && selected.id === t.dataset.id ? null : { type: t.dataset.type, id: t.dataset.id };
+  render(); return true;
+}
+document.addEventListener('click', e => {
+  if (e.target.closest('#startDlg')) return;
+  if (e.target.closest('[data-back]')) { selected = null; render(); return; }
+  const sm = e.target.closest('[data-start-m]');
+  if (sm) { const m = SEASONS.find(x => x.id === sm.dataset.startM); openStart({ cls: 'season', m: m.id, s: add(m.d, -13), e: m.d, why: `명분일(${md(m.d)})까지 2주로 넣었어요.` }); return; }
+  const op = e.target.closest('[data-open]');
+  if (op) { toast('예시예요: 이 기획안의 지금 단계로 이동해요'); return; }
+  const af = e.target.closest('[data-after]');
+  if (af) { const x = EVENTS.find(v => v.id === af.dataset.after); const s = add(x.e, 1); openStart({ s, e: add(s, 13), why: `${x.name}이 끝난 다음 날부터 2주예요.` }); return; }
+  onPick(e.target);
+});
+$('#newBtn').addEventListener('click', () => openStart());
+$('#prevBtn').addEventListener('click', () => { start = add(start, -28); render(); });
+$('#nextBtn').addEventListener('click', () => { start = add(start, 28); render(); });
+$('#todayBtn').addEventListener('click', () => { start = add(mondayOf(TODAY), -7); render(); });
+
+// 기간 고르기 줄: 끌어서 범위 선택 → 시작 창
+let drag = null;
+const pickAt = e => document.elementFromPoint(e.clientX, e.clientY)?.closest('.pick:not(.past)');
+function paintDrag() { document.querySelectorAll('.pick').forEach(c => c.classList.toggle('sel', !!drag && c.dataset.d >= drag.a && c.dataset.d <= drag.b)); }
+$('#tl').addEventListener('pointerdown', e => { const c = e.target.closest('.pick:not(.past)'); if (!c) return; e.preventDefault(); drag = { o: c.dataset.d, a: c.dataset.d, b: c.dataset.d }; paintDrag(); });
+document.addEventListener('pointermove', e => { if (!drag) return; const c = pickAt(e); if (!c) return; const d = c.dataset.d; drag.a = d < drag.o ? d : drag.o; drag.b = d < drag.o ? drag.o : d; paintDrag(); });
+document.addEventListener('pointerup', () => {
+  if (!drag) return; const { a, b } = drag; drag = null;
+  const single = a === b; paintDrag();
+  openStart({ s: a, e: single ? add(a, 13) : b, why: single ? `${md(a)}부터 2주로 넣었어요. 끌면 원하는 기간을 고를 수 있어요.` : '고른 기간을 넣었어요.' });
+});
+
+// 시작 창 안
+$('#clsChips').addEventListener('click', e => {
+  const c = e.target.closest('[data-cls]'); if (!c) return;
+  const was = dlg.cls; dlg.cls = c.dataset.cls; if (dlg.cls !== 'season') dlg.m = null;
+  if (CONCURRENT.includes(dlg.cls) !== CONCURRENT.includes(was)) $('#dateHelp').textContent = CONCURRENT.includes(dlg.cls) ? '런칭·콜라보는 다른 페이지와 겹쳐도 돼요.' : '';
+  paintDlg();
+});
+$('#seedBox').addEventListener('click', e => { const o = e.target.closest('[data-m]'); if (o) { dlg.m = o.dataset.m; paintDlg(); } });
+$('#noDate').addEventListener('change', syncDate);
+$('#dStart').addEventListener('change', () => { if ($('#dStart').value) { $('#dEnd').value = add($('#dStart').value, 13); $('#dateHelp').textContent = '시작일에서 2주로 맞췄어요.'; } if (dlg.cls === 'season') paintDlg(); });
+$('#startForm').addEventListener('submit', e => {
+  if (e.submitter?.value !== 'go') return;
+  const noDate = $('#noDate').checked, s = $('#dStart').value, en = $('#dEnd').value;
+  if (!dlg.cls) { e.preventDefault(); toast('어떤 프로모션인지 골라 주세요'); return; }
+  const seed = dlg.cls === 'season' ? SEASONS.find(m => m.id === dlg.m)?.name : $('#seed')?.value.trim();
+  if (!seed) { e.preventDefault(); toast(dlg.cls === 'season' ? '명분을 하나 골라 주세요' : `${CLS[dlg.cls].seed[0]}을 적어 주세요`); return; }
+  if (!noDate && (!s || !en || en < s)) { e.preventDefault(); toast('기간을 확인해 주세요. 나중에 정해도 돼요'); return; }
+  toast(`예시예요: '${seed}'을 중심 키워드로 키워드 확장 화면으로 넘어가요`);
+});
+
+render();
+</script>
+</body>
+</html>
