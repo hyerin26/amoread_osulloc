@@ -78,8 +78,7 @@ h1, h2, h3, p { margin: 0; }
 .cand h3 { font-size: var(--fs-h2); line-height: var(--lh-h2); font-weight: var(--fw-strong); }
 .cand .why { font-size: var(--fs-sm); color: var(--ink2); }
 .cand .body { display: grid; gap: var(--s3); }
-.cand.n2 .body { grid-template-columns: 240px minmax(0, 1fr); align-items: start; }   /* 칸이 넓으면 그림 옆에 맞는 이유·한눈에 */
-@media (max-width: 1100px) { .cand.n2 .body { grid-template-columns: minmax(0, 1fr); } }
+.cand .body { grid-template-columns: 150px minmax(0, 1fr); align-items: start; }   /* 세로형 틀 옆에 맞는 이유·한눈에 (2개·3개 모두 같은 틀 크기) */
 .cand ol { margin: 0; padding: 0 0 0 18px; font-size: var(--fs-sm); display: grid; gap: 4px; }
 .cand ol li::marker { color: var(--mute); }
 .cand ol .ly { color: var(--mute); font-size: var(--fs-cap); }
@@ -166,14 +165,16 @@ dialog::backdrop { background: var(--scrim); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .demo .seg[hidden] { display: none; }
 /* 카드 그림 자리 (세 모양 모두 같은 높이) */
-.vis { all: unset; box-sizing: border-box; display: block; width: 100%; height: 132px; border-radius: var(--r2); border: 1px solid var(--line-sub); overflow: hidden; position: relative; }
+/* 틀은 모든 카드에서 같은 세로형 크기(3:4). 이미지는 원본 비율 그대로 틀 안에 맞춤 (늘리거나 자르지 않음) */
+.vis { all: unset; box-sizing: border-box; display: grid; place-items: center; width: 150px; height: 200px; padding: 6px; border-radius: var(--r2); border: 1px solid var(--line-sub); overflow: hidden; position: relative; background: var(--bg); }
+.vis img, .sth img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; }
 button.vis { cursor: pointer; }
 button.vis:hover { border-color: var(--line-strong); }
 button.vis:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .ph { display: block; width: 100%; height: 100%; background: repeating-linear-gradient(135deg, var(--sunken) 0 8px, var(--surface) 8px 16px); }
 .vis .lb { position: absolute; left: 8px; bottom: 8px; font-size: 11px; line-height: 16px; padding: 1px 6px; border-radius: 4px; background: var(--surface); color: var(--mute); }
-.vis.mosaic { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 2px; background: var(--line-sub); }
-.vis.mosaic .cell { position: relative; overflow: hidden; background: var(--surface); }
+.vis.mosaic { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 4px; padding: 4px; place-items: stretch; }
+.vis.mosaic .cell { position: relative; overflow: hidden; display: grid; place-items: center; padding: 2px; min-width: 0; min-height: 0; background: var(--bg); }
 .vis.mosaic .cell b, .sth b { position: absolute; left: 6px; top: 4px; font-size: var(--fs-cap); color: var(--ink2); background: var(--surface); border-radius: 4px; padding: 0 4px; }
 .vis.mosaic .more { display: grid; place-items: center; font-size: var(--fs-sm); font-weight: var(--fw-strong); color: var(--ink2); background: var(--sunken); }
 .vis.none { display: grid; place-content: center; gap: 4px; text-align: center; background: var(--bg); border-style: dashed; padding: 0 16px; }
@@ -190,7 +191,8 @@ dialog.wide { width: min(820px, calc(100vw - 32px)); }
 .srct { border-collapse: collapse; width: 100%; font-size: var(--fs-sm); }
 .srct th { text-align: left; font-size: var(--fs-cap); font-weight: var(--fw-medium); color: var(--mute); background: var(--bg); padding: 8px; border-bottom: 1px solid var(--line); }
 .srct td { padding: 8px; border-bottom: 1px solid var(--line-sub); vertical-align: middle; }
-.sth { position: relative; display: inline-block; width: 64px; height: 40px; border-radius: 4px; overflow: hidden; border: 1px solid var(--line-sub); vertical-align: middle; margin-right: 6px; }
+.sth { position: relative; display: inline-grid; place-items: center; width: 48px; height: 64px; padding: 2px; border-radius: 4px; overflow: hidden; border: 1px solid var(--line-sub); background: var(--bg); vertical-align: middle; margin-right: 6px; }
+.sth b { left: 2px; top: 2px; }
 .oseg.used { border: 2px solid var(--accent); background: var(--accent-soft); }
 .toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: var(--ink); color: var(--surface); border-radius: var(--r); padding: 14px 18px; font-size: var(--fs-sm);
   box-shadow: 0 16px 48px -12px rgba(33, 33, 33, .15); opacity: 0; pointer-events: none; transition: opacity .2s var(--ease); z-index: 9; }
@@ -274,11 +276,14 @@ const LAYOUTS = { hero: '단일 비주얼', 'text-cta': '텍스트와 버튼', g
 const COPY = '피크닉 가방에 차 한 병';
 // 원본 프로모션 전체 페이지 (1): 자사몰 지난 행사와 외부 페이지. secs = 그 페이지의 원본 구좌 레퍼런스 (2) 이름
 const PAGES = {
-  spring: { name: '봄맞이 티 컬렉션', from: '자사몰', period: '2026.03.02~03.15', secs: ['메인 비주얼', '벚꽃 한정', '가격대별 선물 추천', '취향별 추천', '혜택 안내'] },
-  extA: { name: '○○ 봄 캠페인', from: '외부', period: '', secs: ['메인 비주얼', '봄 피크닉 룩북', '신상품', '이벤트 안내'] },
-  nadri: { name: '봄 나들이 티', from: '자사몰', period: '2026.04.13~04.26', secs: ['메인 비주얼', '들고 가기 좋은 차', '함께 사면 좋은', '혜택 안내'] },
-  extB: { name: '△△ 피크닉 기획전', from: '외부', period: '', secs: ['메인 비주얼', '피크닉 세트', '가격대별 추천', '리뷰 모음'] },
+  // r = 첫 화면 캡처 비율(가로:세로, 예시). 프로모션 이미지는 대부분 세로가 길다
+  spring: { name: '봄맞이 티 컬렉션', from: '자사몰', period: '2026.03.02~03.15', r: [9, 16], secs: ['메인 비주얼', '벚꽃 한정', '가격대별 선물 추천', '취향별 추천', '혜택 안내'] },
+  extA: { name: '○○ 봄 캠페인', from: '외부', period: '', r: [4, 5], secs: ['메인 비주얼', '봄 피크닉 룩북', '신상품', '이벤트 안내'] },
+  nadri: { name: '봄 나들이 티', from: '자사몰', period: '2026.04.13~04.26', r: [9, 16], secs: ['메인 비주얼', '들고 가기 좋은 차', '함께 사면 좋은', '혜택 안내'] },
+  extB: { name: '△△ 피크닉 기획전', from: '외부', period: '', r: [3, 4], secs: ['메인 비주얼', '피크닉 세트', '가격대별 추천', '리뷰 모음'] },
 };
+// 원본 구좌 레퍼런스 이미지 비율 (예시): 구좌마다 다르다. 가로가 긴 것도 섞어 둠
+const SEC_R = { '메인 비주얼': [4, 5], '피크닉 세트': [1, 1], '들고 가기 좋은 차': [3, 4], '가격대별 선물 추천': [16, 9] };
 // type: rule = 규칙만(원본 없음) / single = 한 페이지에서 가져옴 / mix = 여러 곳의 원본 구좌를 조합 (AI·로직, 연결 예정)
 // secs: [구좌 이름, 레이아웃, 넣은 이유, 덧붙임]. 덧붙임 = { kind, tabs } 탭 구좌 묶음(plans/17) · { src: [페이지, 그 페이지의 원본 구좌] } 출처
 // match: 이번 브리프와 겹치는 것 [이름, 겹침 여부]
@@ -342,14 +347,20 @@ function cardLine(c, [nm, ly, , g]) {
   return `<span class="ln"><span>${esc(nm)} <span class="ly">${shape}</span></span>${src}</span>`;
 }
 // 카드 그림 자리: 한 페이지 = 원본 첫 화면 / 조합 = 쓰인 원본 구좌 모음 / 규칙 = 글
+// 예시 이미지: 원본마다 비율이 다르다는 걸 보이려고 비율만 다른 빗금 그림 (실제 캡처 연결 전)
+// 틀은 늘 같은 크기, 이미지는 원본 비율 그대로 틀 안에 맞춘다 (늘리거나 자르지 않음, 남는 곳은 바탕색)
+function demoImg(w, h, alt) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w * 40}" height="${h * 40}"><defs><pattern id="p" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="16" fill="#f3f3f3"/></pattern></defs><rect width="100%" height="100%" fill="#ffffff"/><rect width="100%" height="100%" fill="url(#p)"/><rect x="0.5" y="0.5" width="${w * 40 - 1}" height="${h * 40 - 1}" fill="none" stroke="#dedede"/></svg>`;
+  return `<img src="data:image/svg+xml,${encodeURIComponent(svg)}" alt="${esc(alt)}">`;
+}
 function visual(c) {
   if (c.type === 'single') {
     const p = PAGES[c.page];
-    return `<button class="vis thumb" data-orig="${c.page}" aria-label="${esc(p.name)} 원본 페이지 보기"><span class="ph"></span><span class="lb">원본 첫 화면 · 예시</span></button>`;
+    return `<button class="vis thumb" data-orig="${c.page}" aria-label="${esc(p.name)} 원본 페이지 보기">${demoImg(p.r[0], p.r[1], '')}<span class="lb">원본 첫 화면 · 예시 ${p.r[0]}:${p.r[1]}</span></button>`;
   }
   if (c.type === 'mix') {
     const s = srcList(c), show = s.slice(0, s.length > 4 ? 3 : 4), more = s.length - show.length;
-    return `<button class="vis mosaic" data-src="${c.id}" aria-label="출처 ${s.length}개 보기">${show.map((x, i) => `<span class="cell"><span class="ph"></span><b>${NUM[i]}</b></span>`).join('')}${more ? `<span class="cell more">+${more}</span>` : ''}</button>`;
+    return `<button class="vis mosaic" data-src="${c.id}" aria-label="출처 ${s.length}개 보기">${show.map((x, i) => { const r = SEC_R[x[1]] || [3, 4]; return `<span class="cell">${demoImg(r[0], r[1], '')}<b>${NUM[i]}</b></span>`; }).join('')}${more ? `<span class="cell more">+${more}</span>` : ''}</button>`;
   }
   return `<div class="vis none"><span>원본 없음</span><span class="cap">${esc(c.basis)} 규칙으로 만든 구성이에요</span></div>`;
 }
@@ -518,7 +529,8 @@ function openSources(id) {
   $('#srcBody').innerHTML = `<table class="srct"><thead><tr><th>우리 구좌</th><th>가져온 원본 구좌 레퍼런스</th><th>출처: 원본 프로모션 전체 페이지</th><th></th></tr></thead><tbody>${c.secs.map(([nm, , , g], i) => {
     if (!g?.src) return `<tr><td>${i + 1}. ${esc(nm)}</td><td class="cap">레퍼런스 없이 규칙으로 넣었어요</td><td></td><td></td></tr>`;
     const k = list.indexOf(g.src), p = PAGES[g.src[0]];
-    return `<tr><td>${i + 1}. ${esc(nm)}</td><td><span class="sth"><span class="ph"></span><b>${NUM[k]}</b></span> ${esc(g.src[1])}</td>
+    const r = SEC_R[g.src[1]] || [3, 4];
+    return `<tr><td>${i + 1}. ${esc(nm)}</td><td><span class="sth">${demoImg(r[0], r[1], '')}<b>${NUM[k]}</b></span> ${esc(g.src[1])}</td>
       <td><span class="tag ${p.from === '자사몰' ? 'real' : ''}">${p.from}</span> ${esc(p.name)}</td>
       <td><button class="btn sm" data-orig="${g.src[0]}" data-mark="${esc(g.src[1])}">전체 페이지 보기</button></td></tr>`;
   }).join('')}</tbody></table>`;
