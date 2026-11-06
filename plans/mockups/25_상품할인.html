@@ -62,7 +62,10 @@ input[type=text], input[type=number], input[type=search], select { height: var(-
 input:hover, select:hover { border-color: var(--line-strong); }
 input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
 .ck { display: inline-flex; gap: 6px; align-items: center; font-size: var(--fs-sm); cursor: pointer; }
-.card { background: var(--surface); border: 1px solid var(--line-sub); border-radius: var(--r); padding: var(--s4); min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line-sub); border-radius: var(--r); padding: var(--s4); min-width: 0; display: grid; gap: var(--s3); align-content: start; }   /* 카드 안 덩어리끼리 늘 간격 (제목·문단 여백을 0으로 둬서 붙어 보이던 것) */
+.card > .filters { margin-bottom: 0; }
+#body { display: grid; gap: var(--s3); }   /* 탭 본문의 덩어리끼리 (묶음 탭: 조건 줄 · 기준 안내 · 추천 · 직접 만들기) */
+#body > .filters { margin-bottom: 0; }
 .card h2 { font-size: var(--fs-h2); line-height: var(--lh-h2); font-weight: var(--fw-strong); }
 
 /* 요약 한 줄 */
@@ -127,34 +130,40 @@ table.t td .draft { color: var(--accent); font-size: 10px; font-weight: var(--fw
 .dday .dh small.warn { color: var(--warn); font-weight: var(--fw-strong); }
 .slots { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 6px; }
 @media (max-width: 900px) { .slots { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.sl { border: 1px solid var(--line-sub); border-radius: var(--r2); padding: 8px; display: grid; gap: 2px; font-size: var(--fs-cap); min-height: 74px; }
-.sl b { font-size: var(--fs-sm); font-weight: var(--fw-medium); }
+.sl { border: 1px solid var(--line-sub); border-radius: var(--r2); padding: 8px 10px; display: grid; gap: 4px; align-content: start; font-size: var(--fs-cap); line-height: var(--lh-cap); min-height: 92px; min-width: 0; }
+.sl b { font-size: var(--fs-sm); line-height: var(--lh-label); font-weight: var(--fw-medium); word-break: keep-all; overflow-wrap: anywhere; }
+.sl .foot { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 2px; }
 .sl .pp { color: var(--price); font-weight: var(--fw-strong); }
-.sl.empty { border-style: dashed; align-content: center; justify-items: start; }
-.cands { display: grid; gap: 6px; margin-top: var(--s2); }
-.cand { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--s2); align-items: center; padding: 8px 10px; border: 1px solid var(--line-sub); border-radius: var(--r2); background: var(--bg); font-size: var(--fs-sm); }
+.sl.empty { border-style: dashed; align-content: center; justify-items: start; gap: 6px; }
+.dday > div { display: grid; gap: var(--s2); min-width: 0; }
+.cands { display: grid; gap: 6px; }
+.cand { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px var(--s3); align-items: center; padding: 8px 10px; border: 1px solid var(--line-sub); border-radius: var(--r2); background: var(--bg); font-size: var(--fs-sm); }
 .cand .meta { grid-column: 1; font-size: var(--fs-cap); color: var(--mute); }
 .cand .btn { grid-row: 1 / span 2; grid-column: 2; }
 .lever { background: var(--accent-soft); color: var(--accent); border-radius: var(--r2); padding: 10px 12px; font-size: var(--fs-cap); line-height: var(--lh-cap); }
 
 /* 추가 혜택 */
 .ex { display: grid; gap: var(--s3); }
-.exrow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s3); }
+.exrow { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr) minmax(0, .6fr) minmax(0, 1fr); gap: var(--s3) var(--s4); align-items: end; }
 @media (max-width: 900px) { .exrow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 .exrow .f select, .exrow .f input { width: 100%; }
+.exrow .f > span { display: flex; flex-direction: column; gap: 2px; }   /* 이름과 설명이 좁은 칸에서 겹치지 않게 두 줄로 */
+.exrow .f > span em { font-size: var(--fs-cap); line-height: var(--lh-cap); }
+.ex > .card .chips-row { gap: 6px 8px; }
 
 /* 후보 상품 */
 .pool { display: grid; gap: var(--s2); }
-.pitem { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px var(--s3); align-items: center; padding: 10px 12px; border: 1px solid var(--line-sub); border-radius: var(--r2); background: var(--surface); }
+.pitem { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 10px 12px; border: 1px solid var(--line-sub); border-radius: var(--r2); background: var(--surface); }
 .pitem .meta { font-size: var(--fs-cap); color: var(--mute); }
-.pitem .acts { grid-row: 1 / span 2; grid-column: 2; display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.pitem .acts { display: flex; gap: 6px; flex-wrap: wrap; }   /* 버튼 5개를 이름 옆에 두면 이름이 눌려서, 아래 줄로 */
 .bcard { display: grid; gap: var(--s3); }
-.blist { display: grid; gap: var(--s3); margin-bottom: var(--s4); }
+.blist { display: grid; gap: var(--s3); }
 .bh { display: flex; justify-content: space-between; gap: var(--s3); flex-wrap: wrap; align-items: baseline; }
 .bh b { display: block; font-size: var(--fs-h2); }
 .bparts { display: grid; gap: 6px; }
-.bp { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--s3); align-items: center; padding: 8px 10px; border: 1px solid var(--line-sub); border-radius: var(--r2); font-size: var(--fs-sm); }
-@media (max-width: 900px) { .bp { grid-template-columns: minmax(0, 1fr); } }
+.bp { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--s3); align-items: center; padding: 10px 12px; border: 1px solid var(--line-sub); border-radius: var(--r2); font-size: var(--fs-sm); }
+@media (max-width: 1180px) { .bp { grid-template-columns: minmax(0, 1fr) auto; } .bp .acts { grid-column: 1 / -1; } }
+@media (max-width: 700px) { .bp { grid-template-columns: minmax(0, 1fr); } .bp .num { text-align: left; } }
 .bp .pn b { font-weight: var(--fw-medium); } .bp .pn .cap { display: block; }
 .bp .num { text-align: right; font-variant-numeric: tabular-nums; font-size: var(--fs-cap); }
 .bp .acts { display: flex; gap: 4px; flex-wrap: wrap; }
@@ -379,7 +388,7 @@ function dealsTab() {
     const list = deals[d] || [], n = list.length, over = n > slotsPerDay;
     return `<div class="dday"><div class="dh">${md(d)} (${'일월화수목금토'[new Date(d).getDay()]})<small class="${over ? 'warn' : ''}">${n}/${slotsPerDay}자리${over ? ' · 많아요' : ''}</small></div>
       <div><div class="slots" data-n="${Math.max(slotsPerDay, n)}">${list.map(([q, r], k) => { const p = P[q], pr = priceOf(q, r, null), j = judge(q, pr); return `<div class="sl"><b>${esc(p.name)}</b><span class="pp">${Math.round(r * 100)}% ${won(pr.fin)}</span>
-          <span class="cap">원가율 ${Math.round(craOf(q, pr.fin) * 100)}% · 쉰 기간 ${p.days}일</span><span><span class="judge ${j.lv}">${j.t}</span> <button class="btn xs ghost" data-dealrm="${d}|${k}" aria-label="${esc(p.name)} 빼기">빼기</button></span></div>`; }).join('')}
+          <span class="cap">원가율 ${Math.round(craOf(q, pr.fin) * 100)}% · 쉰 기간 ${p.days}일</span><span class="foot"><span class="judge ${j.lv}">${j.t}</span><button class="btn xs ghost" data-dealrm="${d}|${k}" aria-label="${esc(p.name)} 빼기">빼기</button></span></div>`; }).join('')}
         ${Array.from({ length: Math.max(0, slotsPerDay - n) }, () => `<div class="sl empty"><span class="cap">빈 자리</span><button class="btn xs" data-fill="${d}">채우기</button></div>`).join('')}</div>
         ${fillDay === d ? candList(d) : ''}</div></div>`;
   }).join('');
