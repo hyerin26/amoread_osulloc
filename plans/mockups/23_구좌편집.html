@@ -72,7 +72,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 /* ---------- 3열 ---------- */
 .ed { display: grid; grid-template-columns: 220px minmax(320px, 1fr) 420px; gap: var(--s4); align-items: start; }
 @media (max-width: 1200px) { .ed { grid-template-columns: 200px minmax(0, 1fr); } .panel { grid-column: 1 / -1; } }
-.card { background: var(--surface); border: 1px solid var(--line-sub); border-radius: var(--r); padding: var(--s4); }
+.card { background: var(--surface); border: 1px solid var(--line-sub); border-radius: var(--r); padding: var(--s4); display: grid; gap: var(--s3); align-content: start; min-width: 0; }   /* 간격 규칙: 카드 안 덩어리 사이 간격은 카드의 gap으로 (25와 같음) */
+.list ol { margin-top: 0 !important; }
 .card h2 { font-size: var(--fs-h2); line-height: var(--lh-h2); font-weight: var(--fw-strong); }
 .list ol { list-style: none; margin: var(--s3) 0 0; padding: 0; display: grid; gap: 4px; }
 .list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px; border-radius: var(--r2); }

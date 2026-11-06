@@ -58,7 +58,9 @@ h1, h2, h3, p { margin: 0; }
 .tag { display: inline-flex; align-items: center; border-radius: var(--r2); padding: 2px 8px; font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); background: var(--sunken); color: var(--ink2); white-space: nowrap; }
 .tag.demo-t { background: var(--warn-soft); color: var(--warn); }
 .tag.real { background: var(--accent-soft); color: var(--accent); }
-.card { background: var(--surface); border: 1px solid var(--line-sub); border-radius: var(--r); padding: var(--s-card); }
+.card { background: var(--surface); border: 1px solid var(--line-sub); border-radius: var(--r); padding: var(--s-card); display: grid; gap: var(--s3); align-content: start; min-width: 0; }   /* 간격 규칙: 카드 안 덩어리 사이 간격은 카드의 gap으로 (25와 같음) */
+.card > .sec-head { margin-bottom: 0; }
+.card > .edit { margin-top: var(--s2); }   /* 추천 구성안과 고른 구성 사이는 조금 더 띄움 */
 .sec-head { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin-bottom: var(--s4); }
 .sec-head h2 { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var(--fw-strong); letter-spacing: -0.01em; }
 .sec-head .grow { flex: 1; }

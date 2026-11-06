@@ -62,7 +62,9 @@ h1, h2, h3, p { margin: 0; }
 
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--s5); align-items: start; }
 @media (max-width: 1040px) { .layout { grid-template-columns: minmax(0, 1fr); } }
-.card { background: var(--surface); border: 1px solid var(--line-sub); border-radius: var(--r); padding: var(--s-card); }
+.card { background: var(--surface); border: 1px solid var(--line-sub); border-radius: var(--r); padding: var(--s-card); display: grid; gap: var(--s3); align-content: start; min-width: 0; }   /* 간격 규칙: 카드 안 덩어리 사이 간격은 카드의 gap으로 (25와 같음) */
+.card > .sec-head, .card > .filters, .card > .path, .card > .maphint { margin-top: 0; margin-bottom: 0; }
+.card.side { display: block; }   /* 옆 패널은 제목 위 여백으로 간격을 맞춰 둠 */
 .sec-head { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin-bottom: var(--s3); }
 .sec-head h2 { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var(--fw-strong); letter-spacing: -0.01em; }
 .sec-head .grow { flex: 1; }
