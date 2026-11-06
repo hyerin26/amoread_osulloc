@@ -184,7 +184,7 @@ input[type=text]:focus { outline: 2px solid var(--accent); outline-offset: 0; bo
         <span class="cap">종류</span>
         <span id="chFilters"></span>
         <button class="btn sm" id="chClear" hidden>전체 보기</button>
-        <span class="cap conn">연결: 네이버 키 받는 중 · 유튜브 연결 전 · 구글 트렌드 신청 전 <button class="btn xs ghost" id="connBtn">설정에서 연결</button></span>
+        <span class="cap conn">연결: 네이버 연결됨 · 검색광고 키 없음 · 유튜브 연결 전 · 구글 트렌드 신청 전 <button class="btn xs ghost" id="connBtn">설정에서 보기</button></span>
       </div>
       <nav class="path" id="path" aria-label="지나온 길"></nav>
       <svg class="map" id="map" viewBox="0 0 1100 640" role="group" aria-label="키워드 마인드맵"></svg>
@@ -430,7 +430,7 @@ document.addEventListener('click', e => {
 $('#chClear').addEventListener('click', () => { chOn.clear(); render(); });
 // AI는 필요한 자리에 버튼으로만 (찻잎이 대화창 없음). 보내는 것: 고른 키워드·컨셉·명분뿐
 $('#aiSug').addEventListener('click', () => toast('예시예요: 고른 키워드·컨셉으로 AI가 메인 카피 3개를 더 제안해요. 매출·원가·고객 정보는 보내지 않아요'));
-$('#connBtn').addEventListener('click', () => toast('예시예요: ⚙ 설정·데이터의 외부 연결로 가요'));
+$('#connBtn').addEventListener('click', () => { location.href = '29_설정_데이터.html#conn'; });
 $('#resetBtn').addEventListener('click', () => { path = [ROOT]; center = 0; focus = ROOT; render(); });
 $('#title').addEventListener('input', () => { titleTouched = true; });
 $('#concept').addEventListener('input', () => { autoTitle(); renderSugs(); });
