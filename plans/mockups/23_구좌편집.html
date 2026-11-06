@@ -128,6 +128,11 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .w-event .go { justify-self: start; padding: 4px 10px; border-radius: 6px; background: var(--ink); color: var(--surface); }
 .w-rv { border: 1px solid var(--line); border-radius: 8px; padding: 8px; display: grid; gap: 2px; font-size: 11px; line-height: 15px; color: var(--ink2); background: var(--bg); }
 .w-rv b { color: var(--ink); font-size: var(--fs-cap); }
+.w-rv .rvp, .w-rvgrp > .rvp { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; }
+.rvp .pimg { width: 36px; height: 36px; border-radius: 4px; background: var(--sunken); flex: none; }
+.rvp .nm { display: block; color: var(--ink); font-weight: var(--fw-medium); font-size: 11px; }
+.rvp .pr { display: flex; gap: 3px; font-size: 11px; } .rvp .pct { color: var(--price); font-weight: var(--fw-strong); } .rvp .sp { font-weight: var(--fw-strong); color: var(--ink); }
+.w-rvgrp { display: grid; gap: 4px; padding: 6px; border-radius: 8px; border: 1px dashed var(--line-sub); }
 .w-rv .st { color: var(--accent); }
 .w-rvwrap { display: grid; gap: 6px; }
 
@@ -373,7 +378,9 @@ let secs = [
     card: cardShape('가격 표시'), tabs: [{ id: 't1', name: '1만원대', cards: [slot('P107'), slot()] }, { id: 't2', name: '2만원대', cards: [slot(), slot()] }, { id: 't3', name: '3만원 이상', cards: [slot('P110', { label: 'PRESTIGE', tag: '한정 보자기' }), slot()] }] },
   { id: 's4', name: '오늘의 하루특가', layout: 'deal-banner', headline: '', subhead: '', role: '', scope: '', num: false, more: '', cta: '', refs: [], att: [], notes: '', moods: [] },
   { id: 's5', name: '먼저 마셔 본 후기', layout: 'review', headline: '', subhead: '재구매가 많은 상품의 실제 후기', role: '', scope: '', num: true, more: '', cta: '', refs: ['r6'], att: [], notes: '', moods: [],
-    rv: { shape: 'per', groups: [{ seq: 'P106', picks: [{ id: 'v1', title: '작고 간편해서 매일 손이 가요', titleSrc: '직접' }] }, { seq: 'P104', picks: [] }], author: 'hide' } },
+    // order = 화면에 보이는 후기 순서 (상품이 달라도 섞어서 바꿀 수 있음). show = 후기 카드에 함께 보일 상품 정보
+    rv: { shape: 'mix', groups: [{ seq: 'P106', picks: [{ id: 'v1', title: '작고 간편해서 매일 손이 가요', titleSrc: '직접' }] }, { seq: 'P104', picks: [{ id: 'v3', title: '선물로 드렸더니 좋아하셨어요', titleSrc: '직접' }] }],
+      order: ['v1', 'v3'], show: { img: 1, name: 1, price: 0 }, author: 'hide' } },
   { id: 's6', name: '피크닉 사진 인증', layout: 'ev-ugc', headline: '', subhead: '우리의 봄 피크닉을 보여 주세요', role: '', scope: '', num: true, more: '', cta: '참여하기', refs: ['r5'], att: [], notes: '', moods: [],
     ev: { how: '피크닉 사진과 함께 댓글 남기기', reward: '포인트', rewardText: '추첨 50명 1,000P', pick: '추첨', count: '50', when: '3/2(월) ~ 3/15(일)', login: true, notice: '' } },
   { id: 's7', name: '봄맞이 혜택', layout: 'benefit', headline: '', subhead: '', role: '', scope: '', num: false, more: '', cta: '혜택 받기', refs: ['r7'], att: [], notes: '', moods: [] },
@@ -429,7 +436,7 @@ const maxRate = seq => { const p = P[seq], ex = extraOf(seq); const k = ex ? (1 
 function secState(s) {
   const k = kindOf(s.layout);
   if (k === 'product') { const all = allCards(s), done = all.filter(c => c.seq).length; return [`상품 ${done}/${all.length}`, done === all.length && all.length > 0]; }
-  if (k === 'review') { const n = s.rv.groups.reduce((a, g) => a + g.picks.length, 0); return [`후기 ${n}개`, n > 0]; }
+  if (k === 'review') { const n = s.rv.order.length; return [`후기 ${n}개`, n > 0]; }
   if (k === 'event') { const e = s.ev; const ok = e.how && e.reward && e.when; return [ok ? '운영 조건 있음' : '운영 조건 채우기', !!ok]; }
   if (k === 'deal') return ['하루특가 편성에서', true];
   return [s.headline || s.subhead ? '문구 있음' : '문구 없음', !!(s.headline || s.subhead)];
@@ -461,9 +468,15 @@ function wBody(s) {
     return `${pills}<div class="w-grid ${s.layout === 'grid3' ? 'g3' : s.layout === 'feat' ? 'feat' : 'g2'}">${cardsOf(s).map(c => wCard(c, s)).join('')}</div>`;
   }
   if (k === 'review') {
-    const g = s.rv.groups.filter(x => x.picks.length);
-    return g.length ? `<div class="w-rvwrap">${g.map(x => x.picks.map(pk => { const v = REVIEWS.find(r => r.id === pk.id); return `<div class="w-rv">${pk.title ? `<b>${esc(pk.title)}</b>` : ''}<span>${esc(v.text.length > 48 ? v.text.slice(0, 48) + '…' : v.text)}</span><span class="st">${'★'.repeat(v.rating)}${s.rv.author === 'mask' ? ' / 가린 아이디' : ''}</span>${s.rv.shape === 'per' ? `<span class="cap">${esc(P[v.seq].name)}</span>` : ''}</div>`; }).join('')).join('')}</div>`
-      : '<div class="w-event">후기를 아직 고르지 않았어요</div>';
+    const rv = s.rv, picks = rv.order.map(id => ({ v: REVIEWS.find(r => r.id === id), pk: rv.groups.flatMap(g => g.picks).find(x => x.id === id) })).filter(x => x.v && x.pk);
+    if (!picks.length) return '<div class="w-event">후기를 아직 고르지 않았어요</div>';
+    const prod = seq => { const p = P[seq], pr = priceOf(seq); return `<span class="rvp">${rv.show.img ? '<span class="pimg"></span>' : ''}<span>${rv.show.name ? `<span class="nm">${esc(p.name)}</span>` : ''}${rv.show.price ? `<span class="pr">${pr.pct > 0 ? `<span class="pct">${pr.pct}%</span>` : ''}<span class="sp">${won(pr.fin)}</span></span>` : ''}</span></span>`; };
+    const card = ({ v, pk }, withProd) => `<div class="w-rv">${withProd ? prod(v.seq) : ''}${pk.title ? `<b>${esc(pk.title)}</b>` : ''}<span>${esc(v.text.length > 48 ? v.text.slice(0, 48) + '…' : v.text)}</span><span class="st">${'★'.repeat(v.rating)}</span></div>`;
+    const showProd = rv.show.img || rv.show.name || rv.show.price;
+    if (rv.shape === 'mix') return `<div class="w-rvwrap">${picks.map(x => card(x, showProd)).join('')}</div>`;
+    // 상품별 묶음: 순서에서 처음 나온 상품 차례로, 상품 정보는 묶음 머리에 한 번
+    const seqs = [...new Set(picks.map(x => x.v.seq))];
+    return `<div class="w-rvwrap">${seqs.map(seq => `<div class="w-rvgrp">${showProd ? prod(seq) : ''}${picks.filter(x => x.v.seq === seq).map(x => card(x, false)).join('')}</div>`).join('')}</div>`;
   }
   if (k === 'event') { const e = s.ev; return `<div class="w-event"><span>${esc(e.how || '참여 방법')}</span><span>보상: ${esc(e.rewardText || e.reward || '미정')} · ${esc(e.when || '기간 미정')}</span>${s.cta ? `<span class="go">${esc(s.cta)}</span>` : ''}</div>`; }
   if (s.layout === 'notice') return '<div class="w-lines"><span></span><span></span><span></span></div>';
@@ -575,6 +588,12 @@ function reviewTab(s) {
   };
   return `<div class="f"><span class="l">모양</span><div class="chips-row">${[['per', '상품별 후기 묶음'], ['mix', '후기 모음 (여러 상품)']].map(([v, n]) => `<button class="chip" data-rvshape="${v}" aria-pressed="${rv.shape === v}">${n}</button>`).join('')}</div>
       <span class="hint">상품 카드 안에 후기 한 줄을 넣으려면 상품 구좌의 카드 모양에서 '고객 후기 한 줄'을 켜요.</span></div>
+    <div class="f"><span class="l">후기와 함께 보여줄 것 <em>자동 · 상품·할인 값 그대로</em></span><div class="chips-row">${[['img', '상품 이미지'], ['name', '상품명'], ['price', '가격']].map(([k, n]) => `<button class="chip" data-rvshow="${k}" aria-pressed="${!!rv.show[k]}">${n}</button>`).join('')}</div></div>
+    <div class="f"><span class="l">보여줄 순서 <em>${rv.order.length}개 · ↑↓로 바꿔요${rv.shape === 'per' ? ' · 상품별 묶음은 먼저 나온 상품 차례로 묶여요' : ''}</em></span>
+      ${rv.order.length ? `<ul class="els">${rv.order.map((id, j) => { const v = REVIEWS.find(r => r.id === id), pk = rv.groups.flatMap(g => g.picks).find(x => x.id === id); return `<li class="el"><span class="cap">${j + 1}</span>
+        <span><span class="nm">${esc(pk?.title || v.text.slice(0, 18) + '…')}</span> <span class="src">${esc(P[v.seq].name)}</span></span>
+        <span class="tools"><button class="ib" data-rvmv="${j}:-1" ${j ? '' : 'disabled'} aria-label="위로">↑</button><button class="ib" data-rvmv="${j}:1" ${j < rv.order.length - 1 ? '' : 'disabled'} aria-label="아래로">↓</button></span></li>`; }).join('')}</ul>` : '<p class="hint">아래에서 후기를 고르면 여기 차례대로 쌓여요.</p>'}</div>
+    <span class="sub">상품별 후기 고르기</span>
     ${rv.groups.map(group).join('')}
     <div><button class="btn xs" data-rvadd>+ 상품 추가</button></div>
     <div class="f"><span class="l">작성자 표시</span><div class="chips-row"><button class="chip" data-rvauthor="hide" aria-pressed="${rv.author === 'hide'}">숨김</button><button class="chip" disabled title="지금은 작성자 정보를 읽지 않아요 · 확인 필요">가린 아이디 (확인 필요)</button></div></div>
@@ -711,7 +730,9 @@ document.addEventListener('click', e => {
   if (d('evr')) { s.ev.reward = v('evr'); render(); return; }
   if (d('rvshape')) { s.rv.shape = v('rvshape'); render(); return; }
   if (d('rvauthor')) { s.rv.author = v('rvauthor'); render(); return; }
-  if (d('rvpick')) { const [gi, id] = v('rvpick').split('|'), g = s.rv.groups[+gi], i = g.picks.findIndex(x => x.id === id); if (i >= 0) g.picks.splice(i, 1); else g.picks.push({ id, title: '', titleSrc: '직접' }); render(); return; }
+  if (d('rvpick')) { const [gi, id] = v('rvpick').split('|'), g = s.rv.groups[+gi], i = g.picks.findIndex(x => x.id === id); if (i >= 0) { g.picks.splice(i, 1); s.rv.order = s.rv.order.filter(x => x !== id); } else { g.picks.push({ id, title: '', titleSrc: '직접' }); s.rv.order.push(id); } render(); return; }
+  if (d('rvshow')) { const k = v('rvshow'); s.rv.show[k] = s.rv.show[k] ? 0 : 1; render(); refocus(`[data-rvshow="${k}"]`); return; }
+  if (d('rvmv')) { const [j, dd] = v('rvmv').split(':').map(Number), o = s.rv.order; [o[j], o[j + dd]] = [o[j + dd], o[j]]; render(); refocus(`[data-rvmv="${j + dd}:${dd}"]`); return; }
   if (d('rvadd')) { const used = s.rv.groups.map(g => g.seq), next = [...new Set(REVIEWS.map(r => r.seq))].find(x => !used.includes(x)); if (next) { s.rv.groups.push({ seq: next, picks: [] }); render(); } else toast('예시 후기가 있는 상품을 모두 넣었어요'); return; }
   if (d('refview')) { const r = REFS[v('refview')]; dlg('원본 구좌 레퍼런스 · 미리보기', r.name, `${r.from} · ${r.page} — 미리보기만 해요. 이 구좌는 바뀌지 않아요.`, `<div class="thumb big">${demoImg(r.r[0], r.r[1])}</div><p class="hint">원본 비율 ${r.r[0]}:${r.r[1]} (예시). 캡처를 연결하면 실제 이미지가 보여요.</p>`, '<button class="btn sm" data-toast="예시예요: 원본 프로모션 전체 페이지를 열어요">전체 페이지 보기</button>'); return; }
   if (d('refatt')) { const k = v('refatt'), i = s.att.findIndex(a => a.ref === k); if (i >= 0) s.att.splice(i, 1); else s.att.push({ ref: k, note: '' }); render(); toast(i >= 0 ? '참고에서 뺐어요' : '참고로 붙였어요. 디자인 요청 탭에서 참고할 점을 적을 수 있어요'); return; }
@@ -727,7 +748,7 @@ function setLayout(s, ly) {
   s.layout = ly; const k = kindOf(ly);
   if (k === 'product') { s.card ||= cardShape('가격 표시'); if (!s.tabs) s.cards ||= [slot(), slot()]; }
   if (k === 'event') s.ev ||= { how: '', reward: '', rewardText: '', pick: '선착순', count: '', when: '', login: true, notice: '' };
-  if (k === 'review') s.rv ||= { shape: 'per', groups: [{ seq: 'P106', picks: [] }], author: 'hide' };
+  if (k === 'review') s.rv ||= { shape: 'mix', groups: [{ seq: 'P106', picks: [] }], order: [], show: { img: 1, name: 1, price: 0 }, author: 'hide' };
 }
 document.addEventListener('input', e => {
   const t = e.target, s = S();
