@@ -18,7 +18,7 @@
   --cls-launch: #fdf0e1;  --cls-launch-ink: #8a4b0f;
   --cls-collab: #f6e8f1;  --cls-collab-ink: #7d2f63;
   --cls-clear: #eeeeee;   --cls-clear-ink: #484848;
-  --day: 15px;            /* 일정표 하루 폭 */
+  --day: 15px;            /* 타임라인 하루 폭 */
   --lane-label: 120px;
 }
 
@@ -26,7 +26,6 @@
 body { margin: 0; font-family: var(--font); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); background: var(--bg); }
 button { font: inherit; }
 h1, h2, h3, p { margin: 0; }
-.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 
 /* 상단 막대 (디자이너 홈: 흰 면 + 아래 선, 로고 + 작업 공간 이름) */
@@ -48,7 +47,7 @@ h1, h2, h3, p { margin: 0; }
 .masthead h1 { font-size: var(--fs-masthead); line-height: var(--lh-masthead); font-weight: var(--fw-title); letter-spacing: -0.02em; }
 .masthead p { margin-top: 6px; color: var(--mute); }
 
-/* 버튼·칩 (ds.css 규칙과 같은 값) */
+/* 버튼·칩·묶음 탭 (ds.css 규칙과 같은 값) */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: var(--control-lg); padding: 0 16px; border: 0; border-radius: var(--r2);
   background: var(--sunken); color: var(--ink); font-weight: var(--fw-strong); line-height: var(--lh-label); cursor: pointer; white-space: nowrap; }
 .btn:hover { background: var(--line-sub); }
@@ -61,7 +60,12 @@ h1, h2, h3, p { margin: 0; }
   color: var(--ink2); font-size: var(--fs-sm); font-weight: var(--fw-medium); cursor: pointer; }
 .chip:hover { border-color: var(--line-strong); color: var(--ink); }
 .chip[aria-checked="true"] { background: var(--accent-soft); border-color: var(--sel-line); color: var(--accent); font-weight: var(--fw-strong); }
-.tag { display: inline-flex; align-items: center; border-radius: var(--r2); padding: 2px 8px; font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); white-space: nowrap; }
+.seg { display: inline-flex; gap: 4px; padding: 4px; background: var(--sunken); border-radius: var(--r2); }
+.seg > button { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; min-height: var(--control-sm); padding: 6px 12px; border-radius: 6px;
+  color: var(--mute); font-size: var(--fs-sm); line-height: var(--lh-label); font-weight: var(--fw-medium); white-space: nowrap; }
+.seg > button:hover { color: var(--ink); }
+.seg > button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-strong); }
+.seg > button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .cap { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); }
 
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--s5); align-items: start; }
@@ -69,26 +73,13 @@ h1, h2, h3, p { margin: 0; }
 .card { background: var(--surface); border: 1px solid var(--line-sub); border-radius: var(--r); padding: var(--s-card); }
 .card > h2 { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var(--fw-strong); letter-spacing: -0.01em; }
 .sec-head { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin-bottom: var(--s4); }
+.sec-head h2 { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var(--fw-strong); letter-spacing: -0.01em; }
 .sec-head .grow { flex: 1; }
+.hidden { display: none !important; }
 
-/* ---------- 일정표 ---------- */
-.tl-scroll { overflow-x: auto; margin: 0 calc(-1 * var(--s-card)); padding: 0 var(--s-card); }
-.tl { display: grid; grid-template-columns: var(--lane-label) repeat(var(--days), var(--day)); position: relative; min-width: max-content; }
-.tl .lab { grid-column: 1; padding: 8px 12px 8px 0; font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); font-weight: var(--fw-medium); border-top: 1px solid var(--line-sub); }
-.tl .lab b { display: block; color: var(--ink); font-weight: var(--fw-strong); font-size: var(--fs-sm); }
-.tl .lane-bg { border-top: 1px solid var(--line-sub); }
-.tl .wk { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); padding: 0 0 6px 4px; border-left: 1px solid var(--line-sub); white-space: nowrap; }
-.tl .wk.now { color: var(--ink); font-weight: var(--fw-strong); }
-.tl .pick { height: 22px; border-left: 1px solid transparent; cursor: crosshair; }
-.tl .pick:hover { background: var(--hover); }
-.tl .pick.sel { background: var(--accent-soft); }
-.tl .pick.mon { border-left-color: var(--line-sub); }
-.tl .pick.past { cursor: default; background: repeating-linear-gradient(135deg, transparent 0 4px, var(--sunken) 4px 5px); }
-.today { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1.5px solid var(--ink); pointer-events: none; z-index: 3; }
-.today span { position: absolute; top: -2px; left: 4px; font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-strong); background: var(--surface); padding: 0 4px; border-radius: 4px; }
-
-.bar { all: unset; box-sizing: border-box; position: relative; z-index: 1; margin: 4px 1px; height: 32px; padding: 0 8px; border-radius: var(--r2); display: flex; align-items: center; gap: 6px;
-  font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+/* ---------- 막대 (두 보기 공통) ---------- */
+.bar { all: unset; box-sizing: border-box; position: relative; z-index: 1; margin: 3px 1px; height: 28px; padding: 0 8px; border-radius: var(--r2); display: flex; align-items: center; gap: 6px;
+  font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); white-space: nowrap; overflow: hidden; cursor: pointer; min-width: 0; }
 .bar .nm { overflow: hidden; text-overflow: ellipsis; }
 .bar:hover { filter: brightness(.97); box-shadow: 0 0 0 1px var(--line-strong) inset; }
 .bar[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent) inset; }
@@ -102,14 +93,54 @@ h1, h2, h3, p { margin: 0; }
 .bar.plan { background: var(--surface); color: var(--plan); border: 1.5px dashed var(--plan); }
 .bar.plan .dl { margin-left: auto; padding-left: 8px; color: var(--ink2); }
 .bar.gap { background: var(--warn-soft); color: var(--warn); border: 1px dashed var(--line-strong); justify-content: center; font-weight: var(--fw-strong); }
+.bar.cont-l { border-top-left-radius: 0; border-bottom-left-radius: 0; margin-left: 0; }    /* 앞 주에서 이어짐 */
+.bar.cont-r { border-top-right-radius: 0; border-bottom-right-radius: 0; margin-right: 0; }  /* 다음 주로 이어짐 */
+
+/* ---------- 타임라인 ---------- */
+.tl-scroll { overflow-x: auto; margin: 0 calc(-1 * var(--s-card)); padding: 0 var(--s-card); }
+.tl { display: grid; grid-template-columns: var(--lane-label) repeat(var(--days), var(--day)); position: relative; min-width: max-content; }
+.tl .lab { grid-column: 1; padding: 8px 12px 8px 0; font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); font-weight: var(--fw-medium); border-top: 1px solid var(--line-sub); }
+.tl .lab b { display: block; color: var(--ink); font-weight: var(--fw-strong); font-size: var(--fs-sm); }
+.tl .lane-bg { border-top: 1px solid var(--line-sub); }
+.tl .wk { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); padding: 0 0 6px 4px; border-left: 1px solid var(--line-sub); white-space: nowrap; }
+.tl .wk.now { color: var(--ink); font-weight: var(--fw-strong); }
+.tl .pick { height: 22px; border-left: 1px solid transparent; cursor: crosshair; }
+.tl .pick:hover { background: var(--hover); }
+.tl .pick.mon { border-left-color: var(--line-sub); }
+.pick.past { cursor: default; background: repeating-linear-gradient(135deg, transparent 0 4px, var(--sunken) 4px 5px); }
+.pick.sel { background: var(--accent-soft) !important; }
+.today { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1.5px solid var(--ink); pointer-events: none; z-index: 3; }
+.today span { position: absolute; top: -2px; left: 4px; font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-strong); background: var(--surface); padding: 0 4px; border-radius: 4px; }
 .mb { all: unset; position: relative; z-index: 2; height: 52px; margin: 2px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
 .mb .dia { width: 10px; height: 10px; transform: rotate(45deg); background: var(--ink); border-radius: 2px; }
 .mb.alt .t { margin-top: 19px; }
 .mb .t { margin-top: 3px; font-size: 11px; line-height: 14px; color: var(--ink2); white-space: nowrap; }
 .mb:hover .dia, .mb[aria-pressed="true"] .dia { background: var(--accent); }
 .mb[aria-pressed="true"] .t { color: var(--accent); font-weight: var(--fw-strong); }
-.lead { height: 2px; align-self: center; background: var(--line-strong); margin-top: -12px; pointer-events: none; }
-.lead.on { background: var(--accent); }
+.lead { height: 2px; align-self: center; background: var(--accent); margin-top: -12px; pointer-events: none; }
+
+/* ---------- 캘린더 ---------- */
+.cal-head { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-bottom: 1px solid var(--line-sub); }
+.cal-head span { padding: 0 8px 8px; font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); font-weight: var(--fw-medium); }
+.cw { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-auto-rows: auto; position: relative; border-bottom: 1px solid var(--line-sub); min-height: 112px; align-content: start; }
+.cw .cell { grid-row: 1 / span 12; border-left: 1px solid var(--line-sub); pointer-events: none; }
+.cw .cell:first-child { border-left: 0; }
+.cw .cell.gapday { background: var(--warn-soft); }
+.cw .cell.out { background: var(--bg); }
+.cd { grid-row: 1; position: relative; z-index: 1; min-height: 52px; padding: 6px 8px 4px; cursor: crosshair; display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
+.cd:hover { background: var(--hover); }
+.cd .n { font-size: var(--fs-sm); line-height: var(--lh-label); font-weight: var(--fw-medium); color: var(--ink2); }
+.cd.out .n { color: var(--line-strong); }
+.cd.today .n { color: var(--accent-ink); background: var(--ink); border-radius: 6px; padding: 0 6px; font-weight: var(--fw-strong); }
+.cd.prep { box-shadow: inset 0 -2px 0 var(--accent); }   /* 고른 명분의 준비 기간 */
+.mchip { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 11px; line-height: 16px; color: var(--ink2); border-radius: 4px; padding: 0 4px; margin-left: -4px; max-width: 100%; }
+.mchip i { width: 7px; height: 7px; transform: rotate(45deg); background: var(--ink); border-radius: 1px; flex: none; }
+.mchip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mchip:hover, .mchip[aria-pressed="true"] { color: var(--accent); background: var(--accent-soft); }
+.mchip[aria-pressed="true"] { font-weight: var(--fw-strong); }
+.mchip[aria-pressed="true"] i, .mchip:hover i { background: var(--accent); }
+.cw .bar { margin: 1px 3px; height: 24px; }
+.cw .spacer { grid-column: 1 / -1; height: 6px; }
 
 .legend { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4); margin-top: var(--s4); align-items: center; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-cap); color: var(--mute); }
@@ -117,7 +148,6 @@ h1, h2, h3, p { margin: 0; }
 .legend i.plan { border: 1.5px dashed var(--plan); background: var(--surface); }
 .legend i.gap { border: 1px dashed var(--line-strong); background: var(--warn-soft); }
 .legend i.dia { width: 9px; height: 9px; transform: rotate(45deg); background: var(--ink); border-radius: 2px; }
-
 .undated { margin-top: var(--s4); padding-top: var(--s4); border-top: 1px solid var(--line-sub); display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; }
 
 /* ---------- 옆 패널 ---------- */
@@ -146,8 +176,8 @@ dialog { border: 1px solid var(--line); border-radius: var(--r); padding: 32px; 
 dialog::backdrop { background: var(--scrim); }
 dialog h2 { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var(--fw-strong); margin-bottom: var(--s5); }
 .f { display: block; margin-top: var(--s5); }
-.f > .l { display: block; font-size: var(--fs-body); line-height: var(--lh-label); font-weight: var(--fw-strong); margin-bottom: var(--s2); }
-.f > .h { display: block; font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); margin-top: 6px; }
+.f > .l, .f label > .l { display: block; font-size: var(--fs-body); line-height: var(--lh-label); font-weight: var(--fw-strong); margin-bottom: var(--s2); }
+.f .h { display: block; font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); margin-top: 6px; }
 .chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
 input[type=text], input[type=date] { height: var(--control-lg); border: 1px solid var(--line); border-radius: var(--r2); padding: 0 12px; font: inherit; color: var(--ink); background: var(--surface); }
 input[type=text] { width: 100%; }
@@ -192,17 +222,22 @@ input:disabled { background: var(--sunken); color: var(--mute); }
     <section class="card" aria-labelledby="tlH">
       <div class="sec-head">
         <h2 id="tlH">일정표</h2>
+        <div class="seg" role="tablist" aria-label="보기 방식">
+          <button role="tab" data-view="tl" aria-selected="true">타임라인</button>
+          <button role="tab" data-view="cal" aria-selected="false">캘린더</button>
+        </div>
         <span class="cap" id="rangeCap"></span>
         <span class="grow"></span>
-        <button class="btn sm ghost" id="prevBtn">← 4주 전</button>
+        <button class="btn sm ghost" id="prevBtn"></button>
         <button class="btn sm ghost" id="todayBtn">오늘</button>
-        <button class="btn sm ghost" id="nextBtn">4주 뒤 →</button>
+        <button class="btn sm ghost" id="nextBtn"></button>
       </div>
-      <div class="tl-scroll"><div class="tl" id="tl" role="grid" aria-label="프로모션 일정표"></div></div>
+      <div class="tl-scroll" id="tlWrap"><div class="tl" id="tl" aria-label="프로모션 일정 타임라인"></div></div>
+      <div id="calWrap" class="hidden" aria-label="프로모션 일정 캘린더"></div>
       <div class="legend" aria-label="범례">
         <span><i class="c-season"></i>시즌</span><span><i class="c-brand"></i>브랜드기획전</span><span><i class="c-launch"></i>런칭</span>
         <span><i class="c-collab"></i>콜라보</span><span><i class="c-clear"></i>클리어런스</span>
-        <span><i class="plan"></i>내 기획안 (준비 중)</span><span><i class="gap"></i>빈 구간</span><span><i class="dia"></i>명분 (누르면 준비 시작부터 선)</span>
+        <span><i class="plan"></i>내 기획안 (준비 중)</span><span><i class="gap"></i>빈 구간</span><span><i class="dia"></i>명분 (누르면 준비 기간 표시)</span>
       </div>
       <div class="undated" id="undated"></div>
     </section>
@@ -224,10 +259,11 @@ input:disabled { background: var(--sunken); color: var(--mute); }
       <div class="dates"><input type="date" id="dStart" aria-label="시작일"> <span>~</span> <input type="date" id="dEnd" aria-label="종료일"></div>
       <label class="ck"><input type="checkbox" id="noDate"> 날짜는 나중에 정할게요</label>
       <span class="h" id="dateHelp"></span>
+      <span class="h">다른 페이지와 기간이 겹쳐도 돼요.</span>
     </div>
     <div class="foot">
       <button class="btn" value="cancel" formnovalidate>취소</button>
-      <button class="btn primary" id="goBtn" value="go">시작하기 →</button>
+      <button class="btn primary" value="go">시작하기 →</button>
     </div>
   </form>
 </dialog>
@@ -243,16 +279,17 @@ const CLS = {
   collab: { name: '콜라보', seed: ['협업 상대', '예) ○○ 캐릭터'] },
   clear: { name: '클리어런스', seed: ['소진할 상품·라인', '예) 티백 대용량 세트'] },
 };
-const CONCURRENT = ['launch', 'collab'];   // 다른 페이지와 겹쳐 걸려도 되는 분류 → 둘째 줄
-// 몰에 걸린 페이지 (이벤트 목록, 대상 O)
+// 몰에 걸린 페이지 (이벤트 목록, 대상 O). 어떤 분류든 기간이 겹칠 수 있다 → 줄을 자동으로 늘린다
 const EVENTS = [
   { id: 'e1', name: '가을 티타임 기획전', cls: 'season', s: '2026-10-19', e: '2026-11-08' },
+  { id: 'e4', name: '찻잔 세트 재고 정리', cls: 'clear', s: '2026-11-02', e: '2026-11-05' },
   { id: 'e2', name: '말차 라인 기획전', cls: 'brand', s: '2026-11-09', e: '2026-11-22' },
   { id: 'e3', name: '영귤 블렌딩 출시', cls: 'launch', s: '2026-11-16', e: '2026-11-29' },
 ];
 // 내 기획안 (준비 중). next = 제작 일정에서 가장 가까운 마감
 const PLANS = [
   { id: 'p1', name: '블프 말차 묶음전', cls: 'season', s: '2026-11-23', e: '2026-12-06', step: '02 구성', next: ['디자인 착수', '2026-11-12'] },
+  { id: 'p4', name: '홈카페 말차 기획전', cls: 'brand', s: '2026-12-01', e: '2026-12-14', step: '01 브리프', next: ['틀 기획 완료', '2026-11-17'] },
   { id: 'p2', name: '연말 선물 기획전', cls: 'season', s: '2026-12-21', e: '2027-01-03', step: '01 브리프', next: ['기획 착수', '2026-11-30'] },
   { id: 'p3', name: '티백 대용량 정리', cls: 'clear', s: null, e: null, step: '01 브리프', next: null },
 ];
@@ -267,7 +304,7 @@ const SEASONS = [
   { id: 'm7', name: '크리스마스', d: '2026-12-25', kind: '기념일', lead: 42, ly: ['해피 홀리데이 선물 (12/1~12/25)'], past: '지난 같은 명분 행사 2회' },
 ];
 
-// ---------------- 날짜 도우미 ----------------
+// ---------------- 도우미 ----------------
 const D = s => new Date(s + 'T00:00:00');
 const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const add = (s, n) => { const d = D(s); d.setDate(d.getDate() + n); return iso(d); };
@@ -277,14 +314,11 @@ const md = s => { const d = D(s); return `${d.getMonth() + 1}/${d.getDate()}(${W
 const mondayOf = s => { const d = D(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return iso(d); };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
 
-const WEEKS = 10;
-let start = add(mondayOf(TODAY), -7);   // 지난주 월요일부터 10주
-let selected = null;                    // { type, id }
-
-// 빈 구간: 앞으로의 날 중 걸린 페이지도, 날짜 있는 기획안도 없는 날의 연속 구간 (겹쳐 거는 분류는 빼고 본다)
+// 빈 구간: 앞으로의 날 중 걸린 페이지도, 날짜 있는 기획안도 없는 날의 연속 구간
 function gaps(from, to) {
-  const cover = [...EVENTS, ...PLANS].filter(x => x.s && !CONCURRENT.includes(x.cls));
+  const cover = [...EVENTS, ...PLANS].filter(x => x.s);
   const out = []; let cur = null;
   for (let d = from; d <= to; d = add(d, 1)) {
     const covered = cover.some(x => x.s <= d && d <= x.e);
@@ -294,94 +328,142 @@ function gaps(from, to) {
   if (cur) out.push(cur);
   return out;
 }
-
-// 기간 기본값 (plans/20 4-1): 시작 = 앞 페이지(같은 줄) 종료 다음 날, 길이 14일
-function defaultPeriod(cls) {
-  if (CONCURRENT.includes(cls)) { const s = add(TODAY, 14); return { s, e: add(s, 13), why: '런칭·콜라보는 다른 페이지와 겹쳐도 돼요. 2주 뒤부터 2주로 넣어 두었어요.' }; }
-  const g = gaps(TODAY, add(TODAY, 120))[0];
-  if (!g) return { s: null, e: null, why: '' };
-  return { s: g.s, e: add(g.s, 13), why: `앞 페이지가 끝난 다음 날(${md(g.s)})부터 2주로 제안했어요.` };
+// 기간 기본값 (plans/20 4-1): 시작 = 앞 페이지 종료 다음 날(= 첫 빈 날), 길이 14일
+function defaultPeriod() {
+  const g = gaps(TODAY, add(TODAY, 180))[0];
+  return g ? { s: g.s, e: add(g.s, 13), why: `앞 페이지가 끝난 다음 날(${md(g.s)})부터 2주로 제안했어요.` } : { s: null, e: null, why: '' };
+}
+// 겹치는 막대를 줄로 나누기: 시작일 순으로 놓고, 앞 줄에 자리가 있으면 그 줄에
+function pack(items, from, to) {
+  const ends = [];
+  return items.filter(x => x.s && x.e >= from && x.s <= to).sort((a, b) => a.s < b.s ? -1 : a.s > b.s ? 1 : 0).map(x => {
+    let r = ends.findIndex(e => e < x.s); if (r < 0) { r = ends.length; ends.push(x.e); } else ends[r] = x.e;
+    return { x, r };
+  });
 }
 
-// ---------------- 일정표 그리기 ----------------
-function place(el, s, e, row) {
-  const days = WEEKS * 7, end = add(start, days - 1);
-  if (e < start || s > end) return false;
-  const a = Math.max(0, diff(start, s)), b = Math.min(days - 1, diff(start, e));
-  el.style.gridColumn = `${a + 2} / ${b + 3}`; el.style.gridRow = row;
-  return true;
-}
+// ---------------- 상태 ----------------
+const WEEKS = 10;
+let start = add(mondayOf(TODAY), -7);   // 타임라인: 지난주 월요일부터 10주
+let month = TODAY.slice(0, 7) + '-01';   // 캘린더: 이번 달
+let view = 'tl';
+try { view = localStorage.getItem('amoread.homeView') === 'cal' ? 'cal' : 'tl'; } catch { /* 저장소 없음 */ }
+let selected = null;   // { type: 'ev'|'plan'|'m', id }
+const isSel = (type, id) => !!selected && selected.type === type && selected.id === id;
+const selSeason = () => selected?.type === 'm' ? SEASONS.find(m => m.id === selected.id) : null;
+
 function bar(cls, html, label, data) {
   const b = document.createElement('button');
   b.className = `bar ${cls}`; b.innerHTML = html; b.setAttribute('aria-label', label); b.title = label;
   Object.assign(b.dataset, data);
-  if (selected && selected.type === data.type && selected.id === data.id) b.setAttribute('aria-pressed', 'true');
+  if (isSel(data.type, data.id)) b.setAttribute('aria-pressed', 'true');
   return b;
 }
+const evBar = x => bar(`c-${x.cls}`, `<span class="nm">${esc(x.name)}</span>`, `${x.name}, ${CLS[x.cls].name}, ${md(x.s)}~${md(x.e)}`, { type: 'ev', id: x.id });
+const planBar = (p, dl = true) => bar('plan', `<span class="nm">${esc(p.name)}</span>${dl && p.next ? `<span class="dl">${esc(p.next[0])} ${md(p.next[1])}</span>` : ''}`,
+  `${p.name}, 준비 중, ${md(p.s)}~${md(p.e)}${p.next ? `, 다음 마감 ${p.next[0]} ${md(p.next[1])}` : ''}`, { type: 'plan', id: p.id });
+const gapBar = (g, long) => { const n = diff(g.s, g.e) + 1; return bar('gap', long && n >= 5 ? `${n}일 비어요 · 기획 시작` : `${n}일 비어요`, `빈 구간 ${md(g.s)}~${md(g.e)}, ${n}일. 눌러서 이 기간으로 새 기획안`, { type: 'gap', id: `${g.s}|${g.e}` }); };
 
-function render() {
+// ---------------- 타임라인 ----------------
+function renderTimeline() {
   const tl = $('#tl'), days = WEEKS * 7, end = add(start, days - 1);
   tl.style.setProperty('--days', days);
   tl.innerHTML = '';
-  $('#rangeCap').textContent = `${md(start)} ~ ${md(end)} · 월요일 시작`;
-  const ROW = { wk: 1, pick: 2, ev: 3, ev2: 4, plan: 5, gap: 6, m: 7 };
-  const lab = (row, t, s) => { const d = document.createElement('div'); d.className = 'lab'; d.style.gridRow = row; d.innerHTML = `<b>${t}</b>${s ? esc(s) : ''}`; tl.append(d); };
-  const bg = row => { const d = document.createElement('div'); d.className = 'lane-bg'; d.style.gridRow = row; d.style.gridColumn = `2 / ${days + 2}`; tl.append(d); };
+  $('#rangeCap').textContent = `${md(start)} ~ ${md(end)}`;
+  const put = (el, s, e, row) => {
+    if (e < start || s > end) return false;
+    el.style.gridColumn = `${Math.max(0, diff(start, s)) + 2} / ${Math.min(days - 1, diff(start, e)) + 3}`; el.style.gridRow = row; tl.append(el); return true;
+  };
+  const evs = pack(EVENTS, start, end), pls = pack(PLANS, start, end);
+  const evN = Math.max(1, ...evs.map(v => v.r + 1)), plN = Math.max(1, ...pls.map(v => v.r + 1));
+  const R = { wk: 1, pick: 2, ev: 3 }; R.plan = R.ev + evN; R.gap = R.plan + plN; R.m = R.gap + 1;
+  const lab = (row, n, t, s) => { const d = document.createElement('div'); d.className = 'lab'; d.style.gridRow = `${row} / span ${n}`; d.innerHTML = `<b>${t}</b>${esc(s)}`; tl.append(d); };
+  const bg = (row, n) => { const d = document.createElement('div'); d.className = 'lane-bg'; d.style.gridRow = `${row} / span ${n}`; d.style.gridColumn = `2 / ${days + 2}`; tl.append(d); };
 
-  // 주 머리
   for (let w = 0; w < WEEKS; w++) {
     const s = add(start, w * 7), d = document.createElement('div');
     d.className = 'wk' + (s <= TODAY && TODAY <= add(s, 6) ? ' now' : '');
-    d.style.gridRow = ROW.wk; d.style.gridColumn = `${w * 7 + 2} / span 7`; d.textContent = md(s).replace(/\(.\)/, '') + ' 주';
+    d.style.gridRow = R.wk; d.style.gridColumn = `${w * 7 + 2} / span 7`; d.textContent = `${md(s).replace(/\(.\)/, '')} 주`;
     tl.append(d);
   }
-  // 날짜 고르기 줄 (끌어서 기간 선택)
-  lab(ROW.pick, '기간 고르기', '끌어서 새 기획안');
+  lab(R.pick, 1, '기간 고르기', '끌어서 새 기획안');
   for (let i = 0; i < days; i++) {
     const d = add(start, i), c = document.createElement('div');
     c.className = 'pick' + (D(d).getDay() === 1 ? ' mon' : '') + (d < TODAY ? ' past' : '');
-    c.dataset.d = d; c.style.gridRow = ROW.pick; c.style.gridColumn = i + 2; c.title = md(d);
+    if (d >= TODAY) c.dataset.pick = d; c.style.gridRow = R.pick; c.style.gridColumn = i + 2; c.title = md(d);
     tl.append(c);
   }
-  // 몰에 걸린 페이지
-  lab(ROW.ev, '몰에 걸린 페이지', '이벤트 목록'); bg(ROW.ev);
-  lab(ROW.ev2, '함께 걸린 페이지', '런칭·콜라보'); bg(ROW.ev2);
-  EVENTS.forEach(x => {
-    const b = bar(`c-${x.cls}`, `<span class="nm">${esc(x.name)}</span>`, `${x.name}, ${CLS[x.cls].name}, ${md(x.s)}~${md(x.e)}`, { type: 'ev', id: x.id });
-    if (place(b, x.s, x.e, CONCURRENT.includes(x.cls) ? ROW.ev2 : ROW.ev)) tl.append(b);
-  });
-  // 내 기획안
-  lab(ROW.plan, '내 기획안', '준비 중'); bg(ROW.plan);
-  PLANS.filter(p => p.s).forEach(p => {
-    const dl = p.next ? `<span class="dl">${esc(p.next[0])} ${md(p.next[1])}</span>` : '';
-    const b = bar('plan', `<span class="nm">${esc(p.name)}</span>${dl}`, `${p.name}, 준비 중, ${md(p.s)}~${md(p.e)}${p.next ? `, 다음 마감 ${p.next[0]} ${md(p.next[1])}` : ''}`, { type: 'plan', id: p.id });
-    if (place(b, p.s, p.e, CONCURRENT.includes(p.cls) ? ROW.ev2 : ROW.plan)) tl.append(b);
-  });
-  // 빈 구간
-  lab(ROW.gap, '빈 구간', '걸린 페이지 없음'); bg(ROW.gap);
-  gaps(start, end).forEach((g, i) => {
-    const n = diff(g.s, g.e) + 1;
-    const b = bar('gap', n >= 5 ? `${n}일 비어요 · 기획 시작` : `${n}일`, `빈 구간 ${md(g.s)}~${md(g.e)}, ${n}일. 눌러서 이 기간으로 새 기획안`, { type: 'gap', id: `${g.s}|${g.e}` });
-    if (place(b, g.s, g.e, ROW.gap)) tl.append(b);
-  });
-  // 명분 (준비 시작부터 선)
-  lab(ROW.m, '명분', '명분 사전'); bg(ROW.m);
+  lab(R.ev, evN, '몰에 걸린 페이지', '이벤트 목록'); bg(R.ev, evN);
+  evs.forEach(({ x, r }) => put(evBar(x), x.s, x.e, R.ev + r));
+  lab(R.plan, plN, '내 기획안', '준비 중'); bg(R.plan, plN);
+  pls.forEach(({ x, r }) => put(planBar(x), x.s, x.e, R.plan + r));
+  lab(R.gap, 1, '빈 구간', '걸린 페이지 없음'); bg(R.gap, 1);
+  gaps(start, end).forEach(g => put(gapBar(g, true), g.s, g.e, R.gap));
+  lab(R.m, 1, '명분', '명분 사전'); bg(R.m, 1);
+  const sm = selSeason();
+  if (sm) { const ln = document.createElement('div'); ln.className = 'lead'; put(ln, add(sm.d, -sm.lead), add(sm.d, -1), R.m); }   // 준비 기간 선은 고른 명분만 (겹치면 읽을 수 없음)
   SEASONS.forEach((m, i) => {
-    const on = selected && selected.type === 'm' && selected.id === m.id;
-    if (on) { const ln = document.createElement('div'); ln.className = 'lead on'; if (place(ln, add(m.d, -m.lead), add(m.d, -1), ROW.m)) tl.append(ln); }   // 준비 기간 선은 고른 명분만 (겹치면 읽을 수 없음)
+    if (m.d < start || m.d > end) return;
     const b = document.createElement('button'); b.className = 'mb' + (i % 2 ? ' alt' : ''); b.dataset.type = 'm'; b.dataset.id = m.id;
     b.innerHTML = `<span class="dia" aria-hidden="true"></span><span class="t">${esc(m.name)}</span>`;
     b.setAttribute('aria-label', `명분 ${m.name}, ${md(m.d)}, 준비 시작 ${md(add(m.d, -m.lead))}`);
-    if (on) b.setAttribute('aria-pressed', 'true');
-    if (place(b, m.d, m.d, ROW.m)) { b.style.gridColumn = `${diff(start, m.d) + 2} / span 1`; b.style.justifySelf = 'center'; tl.append(b); }
+    if (isSel('m', m.id)) b.setAttribute('aria-pressed', 'true');
+    b.style.gridRow = R.m; b.style.gridColumn = `${diff(start, m.d) + 2} / span 1`; b.style.justifySelf = 'center'; tl.append(b);
   });
-  // 오늘 선
   if (TODAY >= start && TODAY <= end) {
     const t = document.createElement('div'); t.className = 'today';
     t.style.left = `calc(var(--lane-label) + ${diff(start, TODAY)} * var(--day) + var(--day) / 2)`;
     t.innerHTML = '<span>오늘</span>'; tl.append(t);
   }
-  // 날짜 미정 기획안
+}
+
+// ---------------- 캘린더 (월, 월요일 시작) ----------------
+function renderCalendar() {
+  const box = $('#calWrap'), m0 = month, last = add(add(m0.slice(0, 7) + '-01', 32).slice(0, 7) + '-01', -1);
+  const first = mondayOf(m0), weeks = Math.ceil((diff(first, last) + 1) / 7);
+  const d0 = D(m0); $('#rangeCap').textContent = `${d0.getFullYear()}년 ${d0.getMonth() + 1}월`;
+  const allGaps = gaps(first, add(first, weeks * 7 - 1)), sm = selSeason();
+  const inGap = d => allGaps.some(g => g.s <= d && d <= g.e);
+  box.innerHTML = `<div class="cal-head">${'월화수목금토일'.split('').map(w => `<span>${w}</span>`).join('')}</div>`;
+  for (let w = 0; w < weeks; w++) {
+    const ws = add(first, w * 7), we = add(ws, 6), row = document.createElement('div');
+    row.className = 'cw';
+    // 바탕 칸 (빈 구간 색, 다른 달 색)과 날짜 칸 (끌어서 기간 고르기, 명분)
+    for (let i = 0; i < 7; i++) {
+      const d = add(ws, i), out = d.slice(0, 7) !== m0.slice(0, 7);
+      const bgc = document.createElement('div'); bgc.className = 'cell' + (out ? ' out' : '') + (inGap(d) ? ' gapday' : ''); bgc.style.gridColumn = i + 1; row.append(bgc);
+      const c = document.createElement('div');
+      c.className = 'cd' + (out ? ' out' : '') + (d === TODAY ? ' today' : '') + (sm && add(sm.d, -sm.lead) <= d && d < sm.d ? ' prep' : '');
+      if (d >= TODAY) c.dataset.pick = d; else c.classList.add('pick', 'past');
+      c.style.gridColumn = i + 1; c.title = md(d);
+      c.innerHTML = `<span class="n">${D(d).getDate()}</span>` + SEASONS.filter(m => m.d === d).map(m =>
+        `<button class="mchip" data-type="m" data-id="${m.id}" ${isSel('m', m.id) ? 'aria-pressed="true"' : ''} aria-label="명분 ${esc(m.name)}, ${md(m.d)}"><i aria-hidden="true"></i><span>${esc(m.name)}</span></button>`).join('');
+      row.append(c);
+    }
+    // 막대: 걸린 페이지 → 내 기획안 → 빈 구간 순서로 줄을 쌓는다 (주 안에서 겹치면 아래 줄로)
+    let base = 2;
+    const lay = (packed, make) => {
+      packed.forEach(({ x, r }) => {
+        const a = Math.max(0, diff(ws, x.s)), b = Math.min(6, diff(ws, x.e)), el = make(x);
+        if (x.s < ws) el.classList.add('cont-l'); if (x.e > we) el.classList.add('cont-r');
+        el.style.gridColumn = `${a + 1} / ${b + 2}`; el.style.gridRow = base + r; row.append(el);
+      });
+      base += packed.length ? Math.max(...packed.map(v => v.r + 1)) : 0;
+    };
+    lay(pack(EVENTS, ws, we), evBar);
+    lay(pack(PLANS, ws, we), p => planBar(p, false));
+    lay(pack(allGaps.map(g => ({ ...g })), ws, we), g => gapBar(g, false));
+    const sp = document.createElement('div'); sp.className = 'spacer'; sp.style.gridRow = base; row.append(sp);
+    box.append(row);
+  }
+}
+
+function render() {
+  $$('.seg [data-view]').forEach(b => b.setAttribute('aria-selected', b.dataset.view === view));
+  $('#tlWrap').classList.toggle('hidden', view !== 'tl'); $('#calWrap').classList.toggle('hidden', view !== 'cal');
+  $('#prevBtn').textContent = view === 'tl' ? '← 4주 전' : '← 이전 달';
+  $('#nextBtn').textContent = view === 'tl' ? '4주 뒤 →' : '다음 달 →';
+  if (view === 'tl') renderTimeline(); else renderCalendar();
   const und = PLANS.filter(p => !p.s);
   $('#undated').innerHTML = und.length ? `<span class="cap">날짜 미정 기획안</span>${und.map(p => `<button class="chip" data-type="plan" data-id="${p.id}">${esc(p.name)} · ${esc(CLS[p.cls].name)}</button>`).join('')}` : '';
   renderSide();
@@ -392,7 +474,7 @@ function renderSide() {
   const el = $('#side');
   const back = '<button class="back" data-back>← 오늘 챙길 것</button>';
   if (selected?.type === 'm') {
-    const m = SEASONS.find(x => x.id === selected.id), prep = add(m.d, -m.lead), left = diff(TODAY, prep);
+    const m = selSeason(), prep = add(m.d, -m.lead), left = diff(TODAY, prep);
     el.innerHTML = `${back}<div class="overline">명분 · ${esc(m.kind)}</div><h2>${esc(m.name)}</h2>
       <dl class="facts"><dt>명분일</dt><dd>${md(m.d)} · D-${diff(TODAY, m.d)}</dd>
         <dt>준비 시작</dt><dd>${md(prep)} ${left > 0 ? `<span class="dd calm">${left}일 남음</span>` : '<span class="dd">지났어요</span>'}</dd></dl>
@@ -418,9 +500,8 @@ function renderSide() {
       <div class="acts"><button class="btn" data-after="${x.id}">끝난 다음 날부터 새 기획안</button></div>`;
     return;
   }
-  // 기본: 오늘 챙길 것
   const dl = PLANS.filter(p => p.next).sort((a, b) => a.next[1] < b.next[1] ? -1 : 1);
-  const g = gaps(TODAY, add(TODAY, 120))[0];
+  const g = gaps(TODAY, add(TODAY, 180))[0];
   el.innerHTML = `<div class="overline">${md(TODAY)}</div><h2>오늘 챙길 것</h2>
     <h3>가까운 마감</h3><ul>${dl.map(p => { const n = diff(TODAY, p.next[1]); return `<li><button class="item" data-type="plan" data-id="${p.id}">
       <span class="t"><span class="grow">${esc(p.name)}</span><span class="dd ${n > 7 ? 'calm' : ''}">D-${n}</span></span>
@@ -431,11 +512,11 @@ function renderSide() {
 }
 
 // ---------------- 시작 창 ----------------
-let dlg = { cls: null, m: null };
 // cls 없이 열면(새 기획안·빈 구간·기간 고르기) 분류를 먼저 고르게 한다. 명분에서 열 때만 시즌이 골라져 있다
+let dlg = { cls: null, m: null };
 function openStart({ cls = null, s, e, m = null, why } = {}) {
   dlg = { cls, m };
-  const p = s ? { s, e, why: why || '고른 기간을 넣었어요.' } : defaultPeriod(cls);
+  const p = s ? { s, e, why: why || '고른 기간을 넣었어요.' } : defaultPeriod();
   $('#dStart').value = p.s || ''; $('#dEnd').value = p.e || '';
   $('#noDate').checked = !p.s; syncDate();
   $('#dateHelp').textContent = p.why;
@@ -463,54 +544,58 @@ function syncDate() { const off = $('#noDate').checked; $('#dStart').disabled = 
 // ---------------- 이벤트 ----------------
 let toastT;
 function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600); }
-function onPick(target) {
-  const t = target.closest('[data-type]'); if (!t) return false;
-  if (t.dataset.type === 'gap') { const [s, e] = t.dataset.id.split('|'); openStart({ s, e: diff(s, e) > 13 ? add(s, 13) : e, why: `빈 구간(${md(s)}~${md(e)})에서 시작해요. 2주를 넘으면 2주까지만 넣었어요.` }); return true; }
-  selected = selected && selected.type === t.dataset.type && selected.id === t.dataset.id ? null : { type: t.dataset.type, id: t.dataset.id };
-  render(); return true;
-}
 document.addEventListener('click', e => {
   if (e.target.closest('#startDlg')) return;
+  const v = e.target.closest('.seg [data-view]');
+  if (v) { view = v.dataset.view; try { localStorage.setItem('amoread.homeView', view); } catch { /* 저장소 없음 */ } render(); return; }
   if (e.target.closest('[data-back]')) { selected = null; render(); return; }
   const sm = e.target.closest('[data-start-m]');
   if (sm) { const m = SEASONS.find(x => x.id === sm.dataset.startM); openStart({ cls: 'season', m: m.id, s: add(m.d, -13), e: m.d, why: `명분일(${md(m.d)})까지 2주로 넣었어요.` }); return; }
-  const op = e.target.closest('[data-open]');
-  if (op) { toast('예시예요: 이 기획안의 지금 단계로 이동해요'); return; }
+  if (e.target.closest('[data-open]')) { toast('예시예요: 이 기획안의 지금 단계로 이동해요'); return; }
   const af = e.target.closest('[data-after]');
-  if (af) { const x = EVENTS.find(v => v.id === af.dataset.after); const s = add(x.e, 1); openStart({ s, e: add(s, 13), why: `${x.name}이 끝난 다음 날부터 2주예요.` }); return; }
-  onPick(e.target);
+  if (af) { const x = EVENTS.find(ev => ev.id === af.dataset.after), s = add(x.e, 1); openStart({ s, e: add(s, 13), why: `${x.name}이 끝난 다음 날부터 2주예요.` }); return; }
+  const t = e.target.closest('[data-type]'); if (!t) return;
+  if (t.dataset.type === 'gap') { const [s, en] = t.dataset.id.split('|'); openStart({ s, e: diff(s, en) > 13 ? add(s, 13) : en, why: `빈 구간(${md(s)}~${md(en)})에서 시작해요. 2주를 넘으면 2주까지만 넣었어요.` }); return; }
+  selected = isSel(t.dataset.type, t.dataset.id) ? null : { type: t.dataset.type, id: t.dataset.id };
+  render();
 });
 $('#newBtn').addEventListener('click', () => openStart());
-$('#prevBtn').addEventListener('click', () => { start = add(start, -28); render(); });
-$('#nextBtn').addEventListener('click', () => { start = add(start, 28); render(); });
-$('#todayBtn').addEventListener('click', () => { start = add(mondayOf(TODAY), -7); render(); });
+const shiftMonth = n => { const d = D(month); d.setMonth(d.getMonth() + n); month = iso(d); };
+$('#prevBtn').addEventListener('click', () => { if (view === 'tl') start = add(start, -28); else shiftMonth(-1); render(); });
+$('#nextBtn').addEventListener('click', () => { if (view === 'tl') start = add(start, 28); else shiftMonth(1); render(); });
+$('#todayBtn').addEventListener('click', () => { start = add(mondayOf(TODAY), -7); month = TODAY.slice(0, 7) + '-01'; render(); });
 
-// 기간 고르기 줄: 끌어서 범위 선택 → 시작 창
+// 기간 고르기: 타임라인의 '기간 고르기' 줄, 캘린더의 날짜 칸을 끌어서 범위 선택 → 시작 창
 let drag = null;
-const pickAt = e => document.elementFromPoint(e.clientX, e.clientY)?.closest('.pick:not(.past)');
-function paintDrag() { document.querySelectorAll('.pick').forEach(c => c.classList.toggle('sel', !!drag && c.dataset.d >= drag.a && c.dataset.d <= drag.b)); }
-$('#tl').addEventListener('pointerdown', e => { const c = e.target.closest('.pick:not(.past)'); if (!c) return; e.preventDefault(); drag = { o: c.dataset.d, a: c.dataset.d, b: c.dataset.d }; paintDrag(); });
-document.addEventListener('pointermove', e => { if (!drag) return; const c = pickAt(e); if (!c) return; const d = c.dataset.d; drag.a = d < drag.o ? d : drag.o; drag.b = d < drag.o ? drag.o : d; paintDrag(); });
+const pickAt = e => document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-pick]');
+function paintDrag() { $$('[data-pick]').forEach(c => c.classList.toggle('sel', !!drag && c.dataset.pick >= drag.a && c.dataset.pick <= drag.b)); }
+document.addEventListener('pointerdown', e => {
+  if (e.target.closest('button, dialog')) return;
+  const c = e.target.closest('[data-pick]'); if (!c) return;
+  e.preventDefault(); drag = { o: c.dataset.pick, a: c.dataset.pick, b: c.dataset.pick }; paintDrag();
+});
+document.addEventListener('pointermove', e => {
+  if (!drag) return; const c = pickAt(e); if (!c) return;
+  const d = c.dataset.pick; drag.a = d < drag.o ? d : drag.o; drag.b = d < drag.o ? drag.o : d; paintDrag();
+});
 document.addEventListener('pointerup', () => {
-  if (!drag) return; const { a, b } = drag; drag = null;
-  const single = a === b; paintDrag();
+  if (!drag) return; const { a, b } = drag; drag = null; paintDrag();
+  const single = a === b;
   openStart({ s: a, e: single ? add(a, 13) : b, why: single ? `${md(a)}부터 2주로 넣었어요. 끌면 원하는 기간을 고를 수 있어요.` : '고른 기간을 넣었어요.' });
 });
 
 // 시작 창 안
 $('#clsChips').addEventListener('click', e => {
   const c = e.target.closest('[data-cls]'); if (!c) return;
-  const was = dlg.cls; dlg.cls = c.dataset.cls; if (dlg.cls !== 'season') dlg.m = null;
-  if (CONCURRENT.includes(dlg.cls) !== CONCURRENT.includes(was)) $('#dateHelp').textContent = CONCURRENT.includes(dlg.cls) ? '런칭·콜라보는 다른 페이지와 겹쳐도 돼요.' : '';
-  paintDlg();
+  dlg.cls = c.dataset.cls; if (dlg.cls !== 'season') dlg.m = null; paintDlg();
 });
 $('#seedBox').addEventListener('click', e => { const o = e.target.closest('[data-m]'); if (o) { dlg.m = o.dataset.m; paintDlg(); } });
 $('#noDate').addEventListener('change', syncDate);
 $('#dStart').addEventListener('change', () => { if ($('#dStart').value) { $('#dEnd').value = add($('#dStart').value, 13); $('#dateHelp').textContent = '시작일에서 2주로 맞췄어요.'; } if (dlg.cls === 'season') paintDlg(); });
 $('#startForm').addEventListener('submit', e => {
   if (e.submitter?.value !== 'go') return;
-  const noDate = $('#noDate').checked, s = $('#dStart').value, en = $('#dEnd').value;
   if (!dlg.cls) { e.preventDefault(); toast('어떤 프로모션인지 골라 주세요'); return; }
+  const noDate = $('#noDate').checked, s = $('#dStart').value, en = $('#dEnd').value;
   const seed = dlg.cls === 'season' ? SEASONS.find(m => m.id === dlg.m)?.name : $('#seed')?.value.trim();
   if (!seed) { e.preventDefault(); toast(dlg.cls === 'season' ? '명분을 하나 골라 주세요' : `${CLS[dlg.cls].seed[0]}을 적어 주세요`); return; }
   if (!noDate && (!s || !en || en < s)) { e.preventDefault(); toast('기간을 확인해 주세요. 나중에 정해도 돼요'); return; }
