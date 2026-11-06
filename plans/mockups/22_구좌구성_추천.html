@@ -78,7 +78,8 @@ h1, h2, h3, p { margin: 0; }
 .cand h3 { font-size: var(--fs-h2); line-height: var(--lh-h2); font-weight: var(--fw-strong); }
 .cand .why { font-size: var(--fs-sm); color: var(--ink2); }
 .cand .body { display: grid; gap: var(--s3); }
-.cand.n2 .body { grid-template-columns: 148px minmax(0, 1fr); align-items: start; }   /* 칸이 넓으면 와이어프레임 옆에 구좌 목록 */
+.cand.n2 .body { grid-template-columns: 240px minmax(0, 1fr); align-items: start; }   /* 칸이 넓으면 그림 옆에 맞는 이유·한눈에 */
+@media (max-width: 1100px) { .cand.n2 .body { grid-template-columns: minmax(0, 1fr); } }
 .cand ol { margin: 0; padding: 0 0 0 18px; font-size: var(--fs-sm); display: grid; gap: 4px; }
 .cand ol li::marker { color: var(--mute); }
 .cand ol .ly { color: var(--mute); font-size: var(--fs-cap); }
@@ -162,6 +163,35 @@ dialog::backdrop { background: var(--scrim); }
 .oseg .t .grow { flex: 1; }
 .oseg .ph { margin-top: 8px; border-radius: 4px; background: repeating-linear-gradient(135deg, var(--sunken) 0 8px, var(--surface) 8px 16px); }
 .note-gap { margin-top: var(--s3); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.demo .seg[hidden] { display: none; }
+/* 카드 그림 자리 (세 모양 모두 같은 높이) */
+.vis { all: unset; box-sizing: border-box; display: block; width: 100%; height: 132px; border-radius: var(--r2); border: 1px solid var(--line-sub); overflow: hidden; position: relative; }
+button.vis { cursor: pointer; }
+button.vis:hover { border-color: var(--line-strong); }
+button.vis:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ph { display: block; width: 100%; height: 100%; background: repeating-linear-gradient(135deg, var(--sunken) 0 8px, var(--surface) 8px 16px); }
+.vis .lb { position: absolute; left: 8px; bottom: 8px; font-size: 11px; line-height: 16px; padding: 1px 6px; border-radius: 4px; background: var(--surface); color: var(--mute); }
+.vis.mosaic { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 2px; background: var(--line-sub); }
+.vis.mosaic .cell { position: relative; overflow: hidden; background: var(--surface); }
+.vis.mosaic .cell b, .sth b { position: absolute; left: 6px; top: 4px; font-size: var(--fs-cap); color: var(--ink2); background: var(--surface); border-radius: 4px; padding: 0 4px; }
+.vis.mosaic .more { display: grid; place-items: center; font-size: var(--fs-sm); font-weight: var(--fw-strong); color: var(--ink2); background: var(--sunken); }
+.vis.none { display: grid; place-content: center; gap: 4px; text-align: center; background: var(--bg); border-style: dashed; padding: 0 16px; }
+.vis.none > span:first-child { font-size: var(--fs-sm); font-weight: var(--fw-strong); color: var(--ink2); }
+.facts2 { display: grid; gap: 6px; }
+.match { display: flex; flex-wrap: wrap; gap: 4px; }
+.mt { font-size: var(--fs-cap); line-height: var(--lh-cap); padding: 2px 8px; border-radius: var(--r2); background: var(--sunken); color: var(--line-strong); text-decoration: line-through; }
+.mt.on { background: var(--accent-soft); color: var(--accent); text-decoration: none; font-weight: var(--fw-medium); }
+.glance { font-size: var(--fs-cap); color: var(--ink2); font-variant-numeric: tabular-nums; }
+.cand ol .ln { display: inline-flex; flex-wrap: wrap; gap: 2px 8px; justify-content: space-between; width: 100%; }
+.cand ol .src { color: var(--mute); font-size: var(--fs-cap); }
+.cand ol .src b { color: var(--ink2); font-weight: var(--fw-strong); }
+dialog.wide { width: min(820px, calc(100vw - 32px)); }
+.srct { border-collapse: collapse; width: 100%; font-size: var(--fs-sm); }
+.srct th { text-align: left; font-size: var(--fs-cap); font-weight: var(--fw-medium); color: var(--mute); background: var(--bg); padding: 8px; border-bottom: 1px solid var(--line); }
+.srct td { padding: 8px; border-bottom: 1px solid var(--line-sub); vertical-align: middle; }
+.sth { position: relative; display: inline-block; width: 64px; height: 40px; border-radius: 4px; overflow: hidden; border: 1px solid var(--line-sub); vertical-align: middle; margin-right: 6px; }
+.oseg.used { border: 2px solid var(--accent); background: var(--accent-soft); }
 .toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: var(--ink); color: var(--surface); border-radius: var(--r); padding: 14px 18px; font-size: var(--fs-sm);
   box-shadow: 0 16px 48px -12px rgba(33, 33, 33, .15); opacity: 0; pointer-events: none; transition: opacity .2s var(--ease); z-index: 9; }
 .toast.on { opacity: 1; }
@@ -180,6 +210,7 @@ dialog::backdrop { background: var(--scrim); }
     <p class="grow"><b>예시 화면이에요.</b> 구성안, 지난 행사, 원본 페이지는 모두 가상의 값이에요. 원본 페이지 캡처는 아직 연결하지 않았어요.</p>
     <span class="cap">목업 보기용: 추천 구성안 개수</span>
     <div class="seg" role="group" aria-label="추천 구성안 개수 (목업 보기용)"><button data-n="2" aria-pressed="false">2개</button><button data-n="3" aria-pressed="true">3개</button></div>
+    <div class="seg" id="pairSeg" role="group" aria-label="2개일 때 보여줄 안 (목업 보기용)" hidden><button data-pair="AB">A+B</button><button data-pair="AC">A+C</button><button data-pair="BC">B+C</button></div>
   </div>
 
   <div class="masthead">
@@ -229,27 +260,53 @@ dialog::backdrop { background: var(--scrim); }
   <div class="dlg-b"><div class="orig" id="origBody"></div>
     <p class="cap note-gap" id="origNote"></p></div>
 </dialog>
+<dialog id="srcDlg" class="wide" aria-labelledby="srcH">
+  <div class="dlg-h"><div class="grow"><div class="overline">출처 보기 <span class="tag demo-t">예시</span></div><h2 id="srcH"></h2>
+    <p class="cap">구좌마다 어느 페이지의 어떤 구좌를 가져왔는지 보여줘요. 전체 페이지 보기를 누르면 그 페이지에서 어디에 있던 구좌인지 표시돼요.</p></div>
+    <form method="dialog"><button class="btn sm">닫기</button></form></div>
+  <div class="dlg-b" id="srcBody"></div>
+</dialog>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
 // ---------------- 예시 데이터 (가상) ----------------
 const LAYOUTS = { hero: '단일 비주얼', 'text-cta': '텍스트와 버튼', grid2: '2열 상품', grid3: '3열 상품', split: '좌우 분할', benefit: '혜택 안내', 'deal-banner': '날짜별 특가' };
 const COPY = '피크닉 가방에 차 한 병';
-// kind: rule = 분류 규칙, past = 지난 비슷한 행사(원본 프로모션 전체 페이지가 있음), ai = 연결 후
+// 원본 프로모션 전체 페이지 (1): 자사몰 지난 행사와 외부 페이지. secs = 그 페이지의 원본 구좌 레퍼런스 (2) 이름
+const PAGES = {
+  spring: { name: '봄맞이 티 컬렉션', from: '자사몰', period: '2026.03.02~03.15', secs: ['메인 비주얼', '벚꽃 한정', '가격대별 선물 추천', '취향별 추천', '혜택 안내'] },
+  extA: { name: '○○ 봄 캠페인', from: '외부', period: '', secs: ['메인 비주얼', '봄 피크닉 룩북', '신상품', '이벤트 안내'] },
+  nadri: { name: '봄 나들이 티', from: '자사몰', period: '2026.04.13~04.26', secs: ['메인 비주얼', '들고 가기 좋은 차', '함께 사면 좋은', '혜택 안내'] },
+  extB: { name: '△△ 피크닉 기획전', from: '외부', period: '', secs: ['메인 비주얼', '피크닉 세트', '가격대별 추천', '리뷰 모음'] },
+};
+// type: rule = 규칙만(원본 없음) / single = 한 페이지에서 가져옴 / mix = 여러 곳의 원본 구좌를 조합 (AI·로직, 연결 예정)
+// secs: [구좌 이름, 레이아웃, 넣은 이유, 덧붙임]. 덧붙임 = { kind, tabs } 탭 구좌 묶음(plans/17) · { src: [페이지, 그 페이지의 원본 구좌] } 출처
+// match: 이번 브리프와 겹치는 것 [이름, 겹침 여부]
 const CANDS = [
-  { id: 'A', kind: 'rule', title: '시즌 기본형', why: '시즌 프로모션의 기본 틀에 고른 키워드를 넣었어요', basis: '분류: 시즌',
+  { id: 'A', type: 'rule', title: '시즌 기본형', why: '시즌 프로모션의 기본 틀에 고른 키워드를 넣었어요', basis: '분류: 시즌',
+    match: [['같은 분류: 시즌', true], ["키워드: 피크닉", true], ['같은 명분', false]],
     secs: [['메인 비주얼', 'hero', '명분과 메인 카피를 첫 화면에 크게'], ['피크닉 추천 차', 'grid2', "고른 키워드 '피크닉'에 맞는 상품"], ['하루특가', 'deal-banner', '날짜마다 바뀌는 특가로 다시 찾게'], ['혜택 안내', 'benefit', '쿠폰·사은품 같은 혜택을 한곳에']] },
-  { id: 'B', kind: 'past', title: '작년 봄 기획전처럼', why: '작년 같은 시기, 같은 명분의 시즌 프로모션 구성이에요', basis: '지난 행사: 봄맞이 티 컬렉션 (2026.03.02~03.15)',
-    // 4번째 값 = 지난 행사 Zone에서 묶은 것: kind(진열 유형, 이름 규칙으로 추정), tabs(Zone 하나 = 탭 하나). 같은 유형·같은 칸 수라 '탭 하나로'가 기본 (plans/17)
+  { id: 'B', type: 'single', page: 'spring', title: '작년 봄 기획전처럼', why: '작년 같은 시기, 같은 명분의 시즌 프로모션 구성이에요',
+    match: [['같은 명분: 봄', true], ['비슷한 시기', true], ['같은 분류: 시즌', true], ['키워드: 피크닉', false]],
     secs: [['메인 비주얼', 'hero', '명분과 메인 카피를 첫 화면에 크게'], ['벚꽃 한정', 'grid3', '시즌 한정 상품을 먼저'],
       ['가격대별 선물 추천', 'grid2', '예산이 정해진 선물 고객이 먼저 고르게', { kind: '가격대', tabs: ['1만원대', '2만원대', '3만원 이상'] }],
       ['취향별 추천', 'grid2', '맛 취향으로 고르기 쉽게', { kind: '취향·테마', tabs: ['달콤한', '은은한', '무카페인'] }], ['혜택 안내', 'benefit', '혜택을 한곳에']] },
-  { id: 'C', kind: 'past', title: '작년 나들이 기획전처럼', why: "고른 키워드 '피크닉'과 비슷한 지난 행사 구성이에요", basis: '지난 행사: 봄 나들이 티 (2026.04.13~04.26)',
-    secs: [['메인 비주얼', 'hero', '명분과 메인 카피를 첫 화면에 크게'], ['나들이 이야기', 'split', '장면을 먼저 보여 주고 상품으로'], ['들고 가기 좋은 차', 'grid2', '휴대하기 좋은 상품'], ['함께 사면 좋은', 'grid3', '객단가를 높이는 묶음'], ['혜택 안내', 'benefit', '혜택을 한곳에']] },
+  { id: 'C', type: 'mix', title: '레퍼런스 조합 추천', why: "브리프 키워드 '피크닉'에 맞는 섹션을 여러 페이지에서 골라 이었어요",
+    match: [['키워드: 피크닉', true], ['같은 분류: 시즌', true], ['비슷한 시기', true], ['같은 명분', false]],
+    secs: [['메인 비주얼', 'hero', '명분과 메인 카피를 첫 화면에 크게', { src: ['extA', '메인 비주얼'] }],
+      ['피크닉 추천 차', 'grid2', '피크닉 장면에 어울리는 상품', { src: ['extB', '피크닉 세트'] }],
+      ['들고 가기 좋은 차', 'grid3', '휴대하기 좋은 상품', { src: ['nadri', '들고 가기 좋은 차'] }],
+      ['가격대별 선물 추천', 'grid2', '예산으로 고르기 쉽게', { kind: '가격대', tabs: ['1만원대', '2만원대', '3만원 이상'], src: ['spring', '가격대별 선물 추천'] }],
+      ['하루특가', 'deal-banner', '날짜마다 바뀌는 특가로 다시 찾게'], ['혜택 안내', 'benefit', '혜택을 한곳에']] },
 ];
+// 출처 번호: 조합 안에서 원본 구좌가 나오는 순서대로 ① ② ③ …
+const NUM = '①②③④⑤⑥⑦⑧';
+const srcList = c => c.secs.filter(s => s[3]?.src).map(s => s[3].src);
+const pagesOf = c => [...new Set(srcList(c).map(([p]) => p))];
 
 // ---------------- 상태 ----------------
 let n = 3;          // 목업 보기용: 2개 / 3개
+let pair = 'AB';    // 목업 보기용: 2개일 때 어떤 두 안 (실제로는 추천이 고름, 고정하지 않음)
 let chosen = null;  // 고른 구성안 id ('blank'은 빈 페이지)
 let rows = [];      // 고른 구성: { id, name, layout, why, kind?, tabs?(탭 구좌일 때), gk?(묶음 열쇠), gname?(묶음 이름, 따로 둘 때) }
 let sel = null;     // 고른 구좌 (미리보기에 테두리)
@@ -274,8 +331,40 @@ function wire(secs, big = false) {
   const pills = s => s.tabs ? `<span class="pills">${s.tabs.map((t, i) => `<span class="${i ? '' : 'on'}">${big ? esc(t) : ''}</span>`).join('')}</span>` : '';
   return `<div class="wf ${big ? 'big' : ''}" aria-hidden="true">${secs.map(s => `<div class="s ${s.layout} ${big && s.id === sel ? 'on' : ''}"><span class="nm">${esc(s.name)}</span>${pills(s)}${inner(s.layout, s.name)}</div>`).join('')}</div>`;
 }
-const toRows = c => c.secs.map(([name, layout, why, g]) => ({ id: uid(), name, layout, why, ...(g ? { kind: g.kind, tabs: [...g.tabs], gk: uid() } : {}) }));
-const cardLine = ([nm, ly, , g]) => g ? `${esc(nm)} <span class="ly">탭 ${g.tabs.length} · ${LAYOUTS[ly]}</span>` : `${esc(nm)} <span class="ly">${LAYOUTS[ly]}</span>`;
+const toRows = c => c.secs.map(([name, layout, why, g]) => ({ id: uid(), name, layout, why, ...(g?.tabs ? { kind: g.kind, tabs: [...g.tabs], gk: uid() } : {}) }));
+function cardLine(c, [nm, ly, , g]) {
+  const shape = g?.tabs ? `탭 ${g.tabs.length} · ${LAYOUTS[ly]}` : LAYOUTS[ly];
+  let src = '';
+  if (c.type === 'mix') {
+    if (g?.src) { const i = srcList(c).findIndex(x => x === g.src), p = PAGES[g.src[0]]; src = `<span class="src"><b>${NUM[i]}</b> ${esc(p.from)} · ${esc(p.name)}</span>`; }
+    else src = '<span class="src">규칙</span>';
+  }
+  return `<span class="ln"><span>${esc(nm)} <span class="ly">${shape}</span></span>${src}</span>`;
+}
+// 카드 그림 자리: 한 페이지 = 원본 첫 화면 / 조합 = 쓰인 원본 구좌 모음 / 규칙 = 글
+function visual(c) {
+  if (c.type === 'single') {
+    const p = PAGES[c.page];
+    return `<button class="vis thumb" data-orig="${c.page}" aria-label="${esc(p.name)} 원본 페이지 보기"><span class="ph"></span><span class="lb">원본 첫 화면 · 예시</span></button>`;
+  }
+  if (c.type === 'mix') {
+    const s = srcList(c), show = s.slice(0, s.length > 4 ? 3 : 4), more = s.length - show.length;
+    return `<button class="vis mosaic" data-src="${c.id}" aria-label="출처 ${s.length}개 보기">${show.map((x, i) => `<span class="cell"><span class="ph"></span><b>${NUM[i]}</b></span>`).join('')}${more ? `<span class="cell more">+${more}</span>` : ''}</button>`;
+  }
+  return `<div class="vis none"><span>원본 없음</span><span class="cap">${esc(c.basis)} 규칙으로 만든 구성이에요</span></div>`;
+}
+function headTag(c) {
+  if (c.type === 'single') { const p = PAGES[c.page]; return `<span class="tag ${p.from === '자사몰' ? 'real' : ''}">${p.from === '자사몰' ? '지난 행사' : '외부'}</span>`; }
+  if (c.type === 'mix') return `<span class="tag">${pagesOf(c).length}곳에서 조합</span>`;
+  return '<span class="tag">규칙</span>';
+}
+const glance = c => {
+  const tabs = c.secs.filter(s => s[3]?.tabs).length, deal = c.secs.some(s => s[1] === 'deal-banner');
+  return `구좌 ${c.secs.length} · 탭 구좌 ${tabs} · 하루특가 ${deal ? '있음' : '없음'}`;
+};
+const basisOf = c => c.type === 'single' ? `${PAGES[c.page].from} · ${PAGES[c.page].name}${PAGES[c.page].period ? ` (${PAGES[c.page].period})` : ''}`
+  : c.type === 'mix' ? `자사몰·외부 레퍼런스 ${pagesOf(c).length}곳 · 연결 후 AI·로직` : c.basis;
+const shown = () => n === 3 ? CANDS : CANDS.filter(c => pair.includes(c.id));
 
 // 탭 구좌 ↔ 따로 구좌: 탭 하나로 = 탭 하나가 PROMO_WORK Zone 하나 / 따로 = 탭마다 구좌 하나 (같은 묶음 열쇠 gk로 다시 묶을 수 있음)
 function splitGroup(id) {
@@ -290,18 +379,19 @@ function mergeGroup(gk) {
 }
 
 function renderCands() {
-  const list = CANDS.slice(0, n), box = $('#cands');
+  const list = shown(), box = $('#cands');
   box.className = `cands n${list.length}`;
-  $('#candCap').textContent = `브리프(분류·키워드·메인 카피)와 지난 행사로 ${list.length}개를 만들었어요`;
+  $('#candCap').textContent = `브리프(분류·키워드·메인 카피)와 레퍼런스로 ${list.length}개를 만들었어요`;
   box.innerHTML = list.map(c => {
-    const secs = c.secs.map(([name, layout, , g]) => ({ name, layout, tabs: g?.tabs }));
     return `<article class="cand n${list.length}" ${chosen === c.id ? 'aria-current="true"' : ''} aria-labelledby="c${c.id}">
-      <div class="head"><span class="letter">${c.id}</span><div class="grow"><h3 id="c${c.id}">${esc(c.title)}</h3><p class="cap">${esc(c.basis)}</p></div>
-        ${c.kind === 'past' ? '<span class="tag real" title="연결되면 PROMO_WORK 지난 행사 데이터">지난 행사</span>' : '<span class="tag">규칙</span>'}</div>
+      <div class="head"><span class="letter">${c.id}</span><div class="grow"><h3 id="c${c.id}">${esc(c.title)}</h3><p class="cap">${esc(basisOf(c))}</p></div>${headTag(c)}</div>
       <p class="why">${esc(c.why)}</p>
-      <div class="body">${wire(secs)}<ol>${c.secs.map(s => `<li>${cardLine(s)}</li>`).join('')}</ol></div>
+      <div class="body">${visual(c)}<div class="facts2">
+        <div class="match" aria-label="이번 브리프와 겹치는 것">${c.match.map(([t, on]) => `<span class="mt ${on ? 'on' : ''}">${on ? '' : '<span class="sr-only">겹치지 않음: </span>'}${esc(t)}</span>`).join('')}</div>
+        <p class="glance">${glance(c)}</p></div></div>
+      <ol>${c.secs.map(s => `<li>${cardLine(c, s)}</li>`).join('')}</ol>
       <div class="acts">
-        ${c.kind === 'past' ? `<button class="btn sm" data-orig="${c.id}">원본 페이지 보기</button>` : ''}
+        ${c.type === 'single' ? `<button class="btn sm" data-orig="${c.page}">원본 페이지 보기</button>` : c.type === 'mix' ? `<button class="btn sm" data-src="${c.id}">출처 보기</button>` : ''}
         <button class="btn sm ${chosen === c.id ? '' : 'primary'}" data-choose="${c.id}">${chosen === c.id ? '고른 구성안' : '이 구성 고르기'}</button>
       </div></article>`;
   }).join('');
@@ -339,7 +429,12 @@ function groupLine(r, i) {
   return `<div class="grp"><span class="tag">${esc(r.kind)}</span>${seg}
     <span class="cap">${r.tabs ? `탭 ${r.tabs.length}개: ${r.tabs.map(esc).join(' · ')} · 탭 하나가 PROMO_WORK 칸 하나` : `'${esc(r.gname)}' 묶음을 구좌 ${parts}개로 나눴어요`} · 지난 행사에서 추정</span></div>`;
 }
-function render() { renderCands(); renderEdit(); $$('.demo .seg [data-n]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.n === n)); }
+function render() {
+  renderCands(); renderEdit();
+  $$('.demo .seg [data-n]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.n === n));
+  $$('.demo [data-pair]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pair === pair));
+  $('#pairSeg').hidden = n !== 2;
+}
 
 // ---------------- 동작 ----------------
 let dirty = false;   // 고른 구성을 고쳤는지 (다른 안을 고를 때 덮어쓰기 확인)
@@ -357,9 +452,15 @@ function move(id, d) {
 document.addEventListener('click', e => {
   const t = e.target;
   const nb = t.closest('.demo .seg [data-n]');
-  if (nb) { n = +nb.dataset.n; if (chosen && !CANDS.slice(0, n).some(c => c.id === chosen)) { chosen = null; rows = []; } render(); return; }
+  const pb = t.closest('.demo [data-pair]');
+  if (nb || pb) {
+    if (nb) n = +nb.dataset.n; if (pb) pair = pb.dataset.pair;
+    if (chosen && chosen !== 'blank' && !shown().some(c => c.id === chosen)) { chosen = null; rows = []; }
+    render(); return;
+  }
   const ch = t.closest('[data-choose]'); if (ch) { choose(ch.dataset.choose); return; }
-  const og = t.closest('[data-orig]'); if (og) { openOrig(og.dataset.orig); return; }
+  const og = t.closest('[data-orig]'); if (og) { openOrig(og.dataset.orig, og.dataset.mark); return; }
+  const sr = t.closest('[data-src]'); if (sr) { openSources(sr.dataset.src); return; }
   const gb = t.closest('[data-group]');
   if (gb) {
     if (gb.getAttribute('aria-pressed') === 'true') return;
@@ -397,15 +498,31 @@ $('#editBody').addEventListener('drop', e => {
 $('#nextBtn').addEventListener('click', () => toast(`예시예요: ${rows.length}개 구좌로 구좌 편집 화면으로 넘어가요`));
 
 // 원본 프로모션 전체 페이지 (1): 그 안의 구좌 하나하나가 원본 구좌 레퍼런스 (2)
-function openOrig(id) {
-  const c = CANDS.find(x => x.id === id);
-  $('#origH').textContent = c.basis.replace('지난 행사: ', '');
-  $('#origSub').textContent = '실제로 몰에 걸렸던 페이지 한 장 전체예요';
-  $('#origBody').innerHTML = c.secs.map(([nm, ly], i) => `<div class="oseg"><div class="t"><span class="grow">${i + 1}. ${esc(nm)}</span><span class="tag">원본 구좌 레퍼런스</span></div>
-    <div class="ph" aria-hidden="true" data-h="${ly === 'hero' ? 120 : ly === 'benefit' ? 40 : 72}"></div></div>`).join('');
-  $$('#origBody .ph').forEach(p => { p.style.height = `${p.dataset.h}px`; });
+// mark = 이번 구성안이 가져온 원본 구좌 (출처 보기에서 열었을 때 표시)
+function openOrig(pageKey, mark) {
+  const p = PAGES[pageKey]; if ($('#srcDlg').open) $('#srcDlg').close();
+  $('#origH').textContent = p.name;
+  $('#origSub').textContent = `${p.from}${p.period ? ` · ${p.period}` : ''} · 실제로 걸렸던 페이지 한 장 전체예요`;
+  $('#origBody').innerHTML = p.secs.map((nm, i) => `<div class="oseg ${nm === mark ? 'used' : ''}"><div class="t"><span class="grow">${i + 1}. ${esc(nm)}</span>
+      ${nm === mark ? '<span class="tag real">이번 구성에 가져온 구좌</span>' : ''}<span class="tag">원본 구좌 레퍼런스</span></div>
+    <div class="ph" aria-hidden="true" data-h="${i === 0 ? 120 : 64}"></div></div>`).join('');
+  $$('#origBody .ph').forEach(x => { x.style.height = `${x.dataset.h}px`; });
   $('#origNote').textContent = '캡처를 연결하기 전이라 빗금 자리로 보여요. 각 칸(원본 구좌 레퍼런스)은 다음 화면 구좌 편집에서 참고로 붙이거나 레이아웃을 가져올 수 있어요.';
   $('#origDlg').showModal();
+  if (mark) $('#origBody .used')?.scrollIntoView({ block: 'center' });
+}
+// 출처 보기 (조합 안): 우리 구좌 ← 가져온 원본 구좌 레퍼런스 (2) ← 원본 프로모션 전체 페이지 (1)
+function openSources(id) {
+  const c = CANDS.find(x => x.id === id), list = srcList(c);
+  $('#srcH').textContent = `${c.id} ${c.title}`;
+  $('#srcBody').innerHTML = `<table class="srct"><thead><tr><th>우리 구좌</th><th>가져온 원본 구좌 레퍼런스</th><th>출처: 원본 프로모션 전체 페이지</th><th></th></tr></thead><tbody>${c.secs.map(([nm, , , g], i) => {
+    if (!g?.src) return `<tr><td>${i + 1}. ${esc(nm)}</td><td class="cap">레퍼런스 없이 규칙으로 넣었어요</td><td></td><td></td></tr>`;
+    const k = list.indexOf(g.src), p = PAGES[g.src[0]];
+    return `<tr><td>${i + 1}. ${esc(nm)}</td><td><span class="sth"><span class="ph"></span><b>${NUM[k]}</b></span> ${esc(g.src[1])}</td>
+      <td><span class="tag ${p.from === '자사몰' ? 'real' : ''}">${p.from}</span> ${esc(p.name)}</td>
+      <td><button class="btn sm" data-orig="${g.src[0]}" data-mark="${esc(g.src[1])}">전체 페이지 보기</button></td></tr>`;
+  }).join('')}</tbody></table>`;
+  $('#srcDlg').showModal();
 }
 
 let toastT;
