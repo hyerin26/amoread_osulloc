@@ -64,7 +64,7 @@ h1, h2, h3, p { margin: 0; }
 .seg > button { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; min-height: var(--control-sm); padding: 6px 12px; border-radius: 6px;
   color: var(--mute); font-size: var(--fs-sm); line-height: var(--lh-label); font-weight: var(--fw-medium); white-space: nowrap; }
 .seg > button:hover { color: var(--ink); }
-.seg > button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-strong); }
+.seg > button[aria-pressed="true"], .seg > button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-strong); }
 .seg > button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .cap { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); }
 
@@ -195,6 +195,25 @@ input:disabled { background: var(--sunken); color: var(--mute); }
 .mopt[aria-checked="true"] b { color: var(--accent); }
 .mopt .grow { flex: 1; }
 .foot { display: flex; justify-content: flex-end; gap: var(--s2); margin-top: 32px; }
+.nav { display: flex; gap: var(--s4); align-self: stretch; }
+.nav a { position: relative; display: flex; align-items: center; color: var(--mute); text-decoration: none; font-weight: var(--fw-medium); }
+.nav a:hover { color: var(--ink); }
+.nav a[aria-current="page"] { color: var(--ink); font-weight: var(--fw-strong); }
+.nav a[aria-current="page"]::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--accent); }
+.gear { all: unset; cursor: pointer; width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--r2); color: var(--mute); }
+.gear:hover { background: var(--hover); color: var(--ink); }
+.gear:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.plans { margin-top: var(--s5); }
+.plans input[type=search] { min-width: 220px; }
+.plist { list-style: none; margin: 0; padding: 0; }
+.tag { display: inline-flex; align-items: center; border-radius: var(--r2); padding: 2px 8px; font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); background: var(--sunken); color: var(--ink2); white-space: nowrap; }
+.prow { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr) minmax(0, .9fr) minmax(0, 1.4fr) auto; gap: var(--s3); align-items: center; padding: 12px 8px; border-bottom: 1px solid var(--line-sub); }
+.prow.h { color: var(--mute); font-size: var(--fs-cap); padding-top: 0; }
+.prow .nm { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; min-width: 0; }
+.prow .tag.cls { font-size: var(--fs-cap); }
+.linkbtn { all: unset; cursor: pointer; font-weight: var(--fw-strong); } .linkbtn:hover { text-decoration: underline; } .linkbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.grp-h { font-size: var(--fs-sm); font-weight: var(--fw-strong); padding: var(--s4) 8px 4px; list-style: none; }
+@media (max-width: 900px) { .prow { grid-template-columns: minmax(0, 1fr) auto; } .prow > :nth-child(2), .prow > :nth-child(3), .prow > :nth-child(4) { display: none; } }
 .toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: var(--ink); color: var(--surface); border-radius: var(--r); padding: 14px 18px; font-size: var(--fs-sm);
   box-shadow: 0 16px 48px -12px rgba(33, 33, 33, .15); opacity: 0; pointer-events: none; transition: opacity .2s var(--ease); }
 .toast.on { opacity: 1; }
@@ -203,9 +222,10 @@ input:disabled { background: var(--sunken); color: var(--mute); }
 <body>
 <header class="top">
   <div class="logo"><i aria-hidden="true">a</i>AMOREAD</div>
-  <span class="ws">홈</span>
+  <nav class="nav" aria-label="메뉴"><a href="20_홈_일정표.html" aria-current="page">홈</a><a href="#" data-soon="레퍼런스 라이브러리 (3번에서 만들 화면)">레퍼런스</a></nav>
   <span class="grow"></span>
-  <span class="note">메뉴 구성은 아직 정하지 않았어요</span>
+  <span class="note">데이터 11/6 갱신</span>
+  <button class="gear" aria-label="설정·데이터" data-soon="설정·데이터 (원가 파일, 데이터 갱신, 이벤트 목록)">⚙</button>
 </header>
 
 <main class="page">
@@ -246,6 +266,13 @@ input:disabled { background: var(--sunken); color: var(--mute); }
 
     <aside class="card side" id="side" aria-live="polite"></aside>
   </div>
+
+  <section class="card plans" aria-labelledby="plH">
+    <div class="sec-head"><h2 id="plH">기획안</h2><span class="cap" id="plN"></span><span class="grow"></span>
+      <div class="seg" role="group" aria-label="상태로 거르기" id="plF"></div>
+      <input type="search" id="plq" placeholder="이름·명분·기간으로 찾기" aria-label="기획안 찾기"></div>
+    <div id="plList"></div>
+  </section>
 </main>
 
 <dialog id="startDlg" aria-labelledby="dlgH">
@@ -289,6 +316,14 @@ const EVENTS = [
   { id: 'e3', name: '영귤 블렌딩 출시', cls: 'launch', s: '2026-11-16', e: '2026-11-29' },
 ];
 // 내 기획안 (준비 중). next = 제작 일정에서 가장 가까운 마감
+const PLAN_STATE = { p1: '준비 중', p4: '준비 중', p2: '준비 중', p3: '날짜 미정' };
+// 지난 기획안 (목록에만): 다시 쓰기 = 상품·할인·구성을 올해 날짜로 가져와 새 기획안
+const PAST = [
+  { id: 'q0', name: '가을 티타임 기획전', cls: 'season', s: '2026-10-19', e: '2026-11-08', state: '진행 중' },
+  { id: 'q1', name: '설 선물 얼리버드', cls: 'season', s: '2026-01-06', e: '2026-01-21', state: '지난 기획안' },
+  { id: 'q2', name: '감사선물전 얼리버드', cls: 'season', s: '2026-04-08', e: '2026-04-29', state: '지난 기획안' },
+  { id: 'q3', name: '헬로키티 콜라보', cls: 'collab', s: '2025-07-10', e: '2025-07-31', state: '지난 기획안' },
+];
 const PLANS = [
   { id: 'p1', name: '블프 말차 묶음전', cls: 'season', s: '2026-11-23', e: '2026-12-06', step: '02 구성', next: ['디자인 착수', '2026-11-12'] },
   { id: 'p4', name: '홈카페 말차 기획전', cls: 'brand', s: '2026-12-01', e: '2026-12-14', step: '01 브리프', next: ['틀 기획 완료', '2026-11-17'] },
@@ -469,7 +504,31 @@ function render() {
   const und = PLANS.filter(p => !p.s);
   $('#undated').innerHTML = und.length ? `<span class="cap">날짜 미정 기획안</span>${und.map(p => `<button class="chip" data-type="plan" data-id="${p.id}">${esc(p.name)} · ${esc(CLS[p.cls].name)}</button>`).join('')}` : '';
   renderSide();
+  renderPlans();
 }
+// 기획안 섹션: 준비 중·진행 중·날짜 미정 위, 지난 기획안 아래 묶음
+let plF = '전체', plq = '';
+function renderPlans() {
+  const all = [...PLANS.map(p => ({ ...p, state: PLAN_STATE[p.id] })), ...PAST];
+  const ok = p => (plF === '전체' || p.state === plF) && (!plq || [p.name, p.s || '날짜 미정'].join(' ').includes(plq));
+  const STEPN = { '01 브리프': 1, '02 구성': 2 };
+  const row = p => `<li class="prow"><span class="nm"><button class="linkbtn" data-openplan="${p.id}">${esc(p.name)}</button><span class="tag cls c-${p.cls}">${esc(CLS[p.cls].name)}</span></span>
+      <span>${p.s ? `${md(p.s)} ~ ${md(p.e)}` : '<span class="cap">날짜 미정</span>'}</span><span><span class="tag">${p.state}</span></span>
+      <span>${p.next ? `${esc(p.next[0])} ${md(p.next[1])} <span class="dd ${diff(TODAY, p.next[1]) > 7 ? 'calm' : ''}">D-${diff(TODAY, p.next[1])}</span>` : p.step ? `<span class="cap">${esc(p.step)}</span>` : '<span class="cap">-</span>'}</span>
+      <span><button class="btn xs" data-openplan="${p.id}">${p.state === '지난 기획안' ? '다시 쓰기' : '열기'}</button></span></li>`;
+  const now = all.filter(p => p.state !== '지난 기획안' && ok(p)), past = all.filter(p => p.state === '지난 기획안' && ok(p));
+  $('#plN').textContent = `준비 중 ${all.filter(p => p.state === '준비 중').length} · 날짜 미정 ${all.filter(p => p.state === '날짜 미정').length} · 지난 ${PAST.filter(p => p.state === '지난 기획안').length}`;
+  $('#plF').innerHTML = ['전체', '준비 중', '진행 중', '날짜 미정', '지난 기획안'].map(f => `<button data-pf="${f}" aria-pressed="${plF === f}">${f}</button>`).join('');
+  $('#plList').innerHTML = `<ul class="plist"><li class="prow h"><span>기획안</span><span>기간</span><span>상태</span><span>다음 마감</span><span></span></li>
+    ${now.map(row).join('') || '<li class="cap">조건에 맞는 기획안이 없어요</li>'}
+    ${past.length ? `<li class="grp-h">지난 기획안 <span class="cap">다시 쓰면 상품·할인·구성을 올해 날짜로 가져와요</span></li>${past.map(row).join('')}` : ''}</ul>`;
+}
+document.addEventListener('click', e => {
+  const f = e.target.closest('[data-pf]'); if (f) { plF = f.dataset.pf; renderPlans(); return; }
+  const o = e.target.closest('[data-openplan]'); if (o) { const id = o.dataset.openplan; toast(PAST.some(p => p.id === id && p.state === '지난 기획안') ? '예시예요: 지난 기획안을 올해 날짜로 가져와 새 기획안을 만들어요' : '예시예요: 이 기획안의 지금 단계로 이동해요'); return; }
+  const so = e.target.closest('[data-soon]'); if (so) { e.preventDefault(); toast(`예시예요: ${so.dataset.soon}`); }
+});
+document.addEventListener('input', e => { if (e.target.id === 'plq') { plq = e.target.value.trim(); renderPlans(); } });
 
 // ---------------- 옆 패널 ----------------
 function renderSide() {
