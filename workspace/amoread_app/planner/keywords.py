@@ -21,7 +21,7 @@ import urllib.parse
 import urllib.request
 from datetime import timedelta
 
-from . import config, scout, trends
+from . import config, scout, trends, usage
 
 AD_HOST = "https://api.searchad.naver.com"
 AD_PATH = "/keywordstool"
@@ -80,6 +80,7 @@ def _related(seed):
     req = urllib.request.Request(url, headers={"X-Timestamp": ts, "X-API-KEY": config.NAVER_AD_API_KEY,
                                                "X-Customer": str(config.NAVER_AD_CUSTOMER_ID),
                                                "X-Signature": _sign(ts, "GET", AD_PATH)})
+    usage.take("naver_searchad", KeywordError)   # 자체 한도 (config.API_LIMITS)
     try:
         with urllib.request.urlopen(req, timeout=15) as res:
             return parse_related(json.loads(res.read().decode("utf-8")), seed)

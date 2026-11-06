@@ -25,7 +25,7 @@ import urllib.request
 from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta
 
-from . import config, engine, trends
+from . import config, engine, trends, usage
 from .engine import DATA, _f
 from .schedule import efficacy_flags
 
@@ -140,6 +140,7 @@ def _clean(s):
 def _search(kind, query, display=100):
     url = SEARCH_URL.format(kind=kind) + "?" + urllib.parse.urlencode({"query": query, "display": display, "sort": "date"})
     req = urllib.request.Request(url, headers=config.naver_headers())
+    usage.take("naver_search", ScoutError)   # 자체 한도 (config.API_LIMITS)
     try:
         with urllib.request.urlopen(req, timeout=15) as res:
             return json.loads(res.read().decode("utf-8")).get("items") or []

@@ -22,7 +22,7 @@ import urllib.error
 import urllib.request
 from datetime import date, datetime, timedelta
 
-from . import config, engine
+from . import config, engine, usage
 from .engine import DATA, _f
 
 API_URL = config.NAVER_API_BASE + "/search-trend/v1/search"   # NAVER API HUB 검색어 트렌드 (요청·응답 모양은 예전 데이터랩과 같음)
@@ -97,6 +97,7 @@ def _last_sunday(today=None):
 def _post(body):
     req = urllib.request.Request(API_URL, data=json.dumps(body).encode("utf-8"), method="POST", headers={
         **config.naver_headers(), "Content-Type": "application/json"})
+    usage.take("naver_trend", TrendError)   # 자체 한도 (config.API_LIMITS)
     try:
         with urllib.request.urlopen(req, timeout=20) as res:
             return json.loads(res.read().decode("utf-8"))

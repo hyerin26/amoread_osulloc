@@ -46,7 +46,18 @@ NAVER_API_BASE = "https://naverapihub.apigw.ntruss.com"
 
 def naver_headers():
     return {"X-NCP-APIGW-API-KEY-ID": NAVER_CLIENT_ID, "X-NCP-APIGW-API-KEY": NAVER_CLIENT_SECRET}
+
+
 TREND_REFRESH_MIN_GAP_MIN = 10   # 새로 받기 최소 간격 (데이터랩 일 1,000회 제한 보호)
+# 외부 API 자체 한도 (이름, 하루, 한 달) — usage.py가 요청마다 세고 넘으면 부르지 않음.
+# NAVER API HUB 콘솔(2026-11-07): 검색(블로그·뉴스·카페 합산) 하루 20,000 / 월 600,000, 검색어트렌드 월 40,000, 쇼핑인사이트 월 40,000
+# → 콘솔 한도의 절반에서 멈춘다. 일부러 .env로 못 올리게 둠 (올리려면 콘솔 한도·요금부터 확인하고 여기서 고칠 것)
+API_LIMITS = {
+    "naver_search": ("네이버 검색(블로그·뉴스·카페)", 10_000, 300_000),
+    "naver_trend": ("네이버 검색어 트렌드", 1_000, 20_000),         # 콘솔엔 하루 한도 없음 → 예전 데이터랩 하루 1,000회
+    "naver_searchad": ("네이버 검색광고 키워드 도구", 1_000, 30_000),  # 검색광고 API는 무료지만 호출 간격 제한이 있어 넉넉히 낮게
+}
+USAGE_FILE = DATA_DIR / "api_usage.json"
 # 브리프 키워드 확장 — 네이버 검색광고 키워드 도구 (광고시스템 › 도구 › API 사용 관리에서 발급, .env에만)
 NAVER_AD_API_KEY = os.getenv("NAVER_AD_API_KEY") or ""          # 액세스 라이선스
 NAVER_AD_SECRET = os.getenv("NAVER_AD_SECRET") or ""            # 비밀키
