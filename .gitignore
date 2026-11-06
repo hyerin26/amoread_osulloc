@@ -9,3 +9,5 @@ workspace/amoread_app/data/
 handoff/**/data/
 # 설치된 외부 스킬(skills-lock.json으로 복원 가능)
 .agents/
+# 목업 공유본 (plans/mockups/공유용_묶기.py로 다시 만들 수 있음, 글꼴이 들어 있어 큼)
+handoff/목업_공유_*/
