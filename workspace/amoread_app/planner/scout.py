@@ -137,8 +137,8 @@ def _clean(s):
     return html.unescape(re.sub(r"<[^>]+>", "", str(s or ""))).strip()
 
 
-def _search(kind, query, display=100):
-    url = SEARCH_URL.format(kind=kind) + "?" + urllib.parse.urlencode({"query": query, "display": display, "sort": "date"})
+def _search(kind, query, display=100, sort="date"):   # date = 최신순(스카우트), sim = 정확도순(브리프 근거)
+    url = SEARCH_URL.format(kind=kind) + "?" + urllib.parse.urlencode({"query": query, "display": display, "sort": sort})
     req = urllib.request.Request(url, headers=config.naver_headers())
     usage.take("naver_search", ScoutError)   # 자체 한도 (config.API_LIMITS)
     try:

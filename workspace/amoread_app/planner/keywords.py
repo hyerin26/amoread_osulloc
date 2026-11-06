@@ -100,7 +100,7 @@ def _safe_link(u):
 def _articles(seed):
     out = []
     for kind, label in (("news", "뉴스"), ("blog", "블로그")):
-        for it in scout._search(kind, seed, display=10):
+        for it in scout._search(kind, seed, display=10, sort="sim"):   # 근거 패널은 관련 높은 글부터
             out.append({"kind": label, "title": scout._clean(it.get("title"))[:120],
                         "summary": scout._clean(it.get("description"))[:200],
                         "link": _safe_link(it.get("originallink") or it.get("link")),
@@ -164,7 +164,7 @@ def expand(q, refresh=False):
         "searchad": ad,
         "datalab": {"name": "네이버 데이터랩 검색어 트렌드", "basis": "주별 검색 지수 52주 (씨앗 + 검색수 상위 연관 4개, 서로 상대값)",
                     **_source(lambda _: _trend(top), trends.has_keys(), seed)},
-        "naver_search": {"name": "네이버 검색 (뉴스·블로그)", "basis": "최신 글 10건씩",
+        "naver_search": {"name": "네이버 검색 (뉴스·블로그)", "basis": "관련 높은 글 10건씩",
                          **_source(_articles, trends.has_keys(), seed)},
     }}
     st = [s["status"] for s in data["sources"].values()]
