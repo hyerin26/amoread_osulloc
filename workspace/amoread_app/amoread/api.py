@@ -6,8 +6,9 @@ AMOREAD 통합 기획 API (/api/am/*).
 입력은 pydantic으로 길이·형식을 제한하고, 오류 응답은 일반 문구만 돌려준다.
 원천(PROMO_WORK 등)에는 쓰지 않는다. 쓰는 곳: planner/data/projects/*.json, settings/명분사전.csv(사용자가 명시적으로 추가할 때만).
 """
+import json
 from datetime import date, datetime
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
@@ -130,6 +131,15 @@ class Section(BaseModel):
     # 가격 노출 방식 (R18 축 2): '' 미정(기본) | emphasis 할인율 강조 | price 가격 표시 | name 이미지·상품명만 | section 섹션 대표 가격
     price_display: Literal["", "emphasis", "price", "name", "section"] = ""
     section_price: int | None = Field(default=None, ge=0, le=10_000_000)   # 섹션 대표 가격 (예: 균일가 8,800원)
+    # 새 버전 구좌 편집 값 (추가 문구·번호·버튼 켜기·카드 모양·후기·이벤트 조건·느낌 레퍼런스 등). 화면 표시용 값이라 모양은 화면이 정하고,
+    # 여기서는 크기만 막는다. 예전 화면은 보내지 않으므로 store.save가 같은 sectionId의 저장된 값을 이어 붙인다
+    v2: dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def _v2_size(self):
+        if self.v2 is not None and len(json.dumps(self.v2, ensure_ascii=False)) > 20000:
+            raise ValueError("구좌 편집 값이 너무 커요")
+        return self
 
 
 class Page(BaseModel):
@@ -173,6 +183,7 @@ class V2Meta(BaseModel):
     seed: str = Field(default="", max_length=20)       # 홈 [시작]에서 고른 출발점 (명분이 아닌 분류의 씨앗)
     keywords: list[Annotated[str, Field(max_length=20)]] = Field(default_factory=list, max_length=30)   # 브리프에서 고른 키워드
     stage: Literal["brief", "compose", "editor", "preview", "deals"] = "brief"   # 마지막으로 연 단계 (홈 목록 '지금 단계')
+    compose: Literal["", "A", "B", "C", "blank"] = ""   # 구좌 구성에서 고른 추천안 (구성은 page.sections)
 
 
 class ProjectReq(BaseModel):

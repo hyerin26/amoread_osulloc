@@ -233,7 +233,7 @@ $('#editBody').addEventListener('drop', e => {
   const from = rows.findIndex(x => x.id === dragId), item = rows.splice(from, 1)[0];
   rows.splice(rows.findIndex(x => x.id === r.dataset.id), 0, item); dirty = true; sel = dragId; dragId = null; renderEdit();
 });
-$('#nextBtn').addEventListener('click', () => toast(`예시예요: ${rows.length}개 구좌로 구좌 편집 화면으로 넘어가요`));
+$('#nextBtn').addEventListener('click', () => { if (!PLAN.id) { toast(`예시예요: ${rows.length}개 구좌로 구좌 편집 화면으로 넘어가요`); return; } location.assign(`/v2/editor?id=${PLAN.id}`); });
 
 // 원본 프로모션 전체 페이지 (1): 그 안의 구좌 하나하나가 원본 구좌 레퍼런스 (2)
 // mark = 이번 구성안이 가져온 원본 구좌 (출처 보기에서 열었을 때 표시)
@@ -267,3 +267,39 @@ function openSources(id) {
 let toastT;
 function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600); }
 render();
+// ================= 기획안 잇기 (새 버전) =================
+// 고른 구성 = 기획안의 page.sections. 구좌 편집에서 채운 내용(제목·문구·카드 모양 등)은 같은 구좌(id)면 그대로 남아요
+let lastJ = null;
+function toSections(prev) {
+  const old = Object.fromEntries(((prev && prev.sections) || []).map(x => [x.sectionId, x]));
+  return rows.map((r, i) => {
+    const o = old[r.id] || {};
+    const tabs = r.tabs ? r.tabs.map((label, j) => ({ ...(o.tabs?.[j] || {}), tabId: o.tabs?.[j]?.tabId || `${r.id}t${j + 1}`, label: String(label).slice(0, 40), zone_tag: o.tabs?.[j]?.zone_tag || '' })) : [];
+    return { ...o, sectionId: r.id, order: i, name: String(r.name).slice(0, 40), layoutId: r.layout, role: String(r.why || '').slice(0, 200),
+      zone_kind: String(r.kind || '').slice(0, 20), tabs, v2: { ...(o.v2 || {}), gk: r.gk || '', gname: r.gname || '' } };
+  });
+}
+function saveCompose() {
+  if (!PLAN.doc || !chosen) return;   // 고른 안이 없으면 저장하지 않음 (보기 전환으로 잠깐 비어도 지우지 않게)
+  const j = JSON.stringify([chosen, rows]);
+  if (j === lastJ) return;
+  lastJ = j;
+  PLAN.save(d => { d.page = { ...(d.page || {}), sections: toSections(d.page) }; d.v2.compose = chosen; });
+}
+const renderEditBase = renderEdit;
+renderEdit = function () { renderEditBase(); saveCompose(); };
+document.addEventListener('input', () => setTimeout(saveCompose));
+PLAN.ready.then(doc => {
+  if (!doc) return;
+  const secs = (doc.page?.sections || []).slice().sort((a, b) => a.order - b.order);
+  if (!secs.length) return;
+  chosen = doc.v2.compose || 'blank';
+  if (chosen !== 'blank' && !shown().some(c => c.id === chosen)) n = 3;
+  rows = secs.map(x => ({ id: x.sectionId, name: x.name || x.headline || '구좌', layout: x.layoutId || 'hero', why: x.role || '',
+    ...(x.tabs?.length ? { kind: x.zone_kind || '탭', tabs: x.tabs.map(t => t.label), gk: x.v2?.gk || uid() } : x.v2?.gk ? { kind: x.zone_kind, gk: x.v2.gk, gname: x.v2.gname } : {}) }));
+  uidN = Math.max(uidN, ...rows.map(r => +String(r.id).replace(/\D/g, '') || 0), ...rows.map(r => +String(r.gk || '').replace(/\D/g, '') || 0));
+  lastJ = JSON.stringify([chosen, rows]);
+  dirty = true;   // 저장된 구성을 다른 안으로 바꿀 때는 한 번 묻기
+  render();
+  toast('저장된 구성을 불러왔어요');
+});

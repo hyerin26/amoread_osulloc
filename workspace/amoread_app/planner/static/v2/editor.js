@@ -550,7 +550,59 @@ $('#secList').addEventListener('drop', e => { const li = e.target.closest('[data
   const item = secs.splice(secs.findIndex(s => s.id === dragSec), 1)[0]; secs.splice(secs.findIndex(s => s.id === li.dataset.li), 0, item); dragSec = null; render(); });
 $('#xlsDown').addEventListener('click', openTemplate);
 $('#xlsUp').addEventListener('click', openUpload);
-$('#nextBtn').addEventListener('click', () => toast(Object.keys(drafts).length ? '반영하지 않은 할인이 있어요. 상품 탭에서 반영하거나 되돌려 주세요' : '예시예요: 미리보기·내보내기로 넘어가요'));
+$('#nextBtn').addEventListener('click', () => { if (Object.keys(drafts).length) { toast('반영하지 않은 할인이 있어요. 상품 탭에서 반영하거나 되돌려 주세요'); return; } if (!PLAN.id) { toast('예시예요: 미리보기·내보내기로 넘어가요'); return; } location.assign(`/v2/preview?id=${PLAN.id}`); });
 let toastT;
 function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2800); }
 render();
+// ================= 기획안 잇기 (새 버전) =================
+// 구좌 목록 = 기획안의 page.sections (구좌 구성에서 정한 것). 제목·설명·버튼·엑셀 카테고리명·디자인 요청은 원래 칸에,
+// 추가 문구·번호·버튼 켜기·카드 모양·후기·이벤트 조건·레퍼런스는 구좌의 v2에 저장해요.
+// shortcut: 카드에 넣은 상품(slots)은 아직 저장하지 않아요 — 상품이 예시(P101…)라서. 상품·할인을 실제 상품과 이을 때 함께 저장
+let liveOn = false, lastE = null;
+function fromSection(x) {
+  const v = x.v2 || {}, layout = x.layoutId || 'hero', k = kindOf(layout);
+  const s = { id: x.sectionId, name: x.headline || x.name || '', layout, role: x.subhead || '', scope: v.scope || '', num: !!v.num,
+    cta: x.cta || '', ctaOn: v.ctaOn ?? !!x.cta, ctaTo: v.ctaTo || '', refs: v.refs || [], att: [], notes: x.designNotes || '',
+    moods: (v.moods || []).map(m => ({ id: m.id, pts: new Set(m.pts || []) })), lines: (v.lines || []).map(l => ({ id: l.id, text: l.text || '' })), cat: x.zone_tag || '' };
+  if (k === 'product') {
+    s.card = v.card?.order && v.card?.on ? { order: v.card.order, on: v.card.on } : cardShape('가격 표시');
+    if (x.tabs?.length) { s.tab = 0; s.tabs = x.tabs.map(t => ({ id: t.tabId, name: t.label, cat: t.zone_tag || '', cards: [slot(), slot()] })); }
+    else s.cards = [slot(), slot(), slot(), slot()];
+  }
+  if (k === 'review') s.rv = v.rv || { shape: 'mix', groups: [], order: [], show: { img: 1, name: 1, price: 0 }, author: 'hide' };
+  if (k === 'event') s.ev = v.ev || { how: '', reward: '', rewardText: '', pick: '', count: '', when: '', login: true, notice: '' };
+  return s;
+}
+const cut = (t, n) => String(t || '').slice(0, n);
+function toSection(s, i) {
+  return { sectionId: s.id, order: i, name: cut(s.name, 40), headline: cut(s.name, 120), subhead: cut(s.role, 400), cta: cut(s.cta, 40),
+    layoutId: s.layout, zone_tag: cut(s.cat, 40), designNotes: cut(s.notes, 2000),
+    ...(s.tabs ? { tabs: s.tabs.map(t => ({ tabId: t.id, label: cut(t.name, 40), zone_tag: cut(t.cat, 40) })) } : {}),
+    v2: { scope: cut(s.scope, 200), num: !!s.num, ctaOn: !!s.ctaOn, ctaTo: cut(s.ctaTo, 60), lines: (s.lines || []).map(l => ({ id: l.id, text: cut(l.text, 120) })),
+      refs: s.refs || [], moods: (s.moods || []).map(m => ({ id: m.id, pts: [...m.pts] })),
+      ...(s.card ? { card: { order: s.card.order, on: s.card.on } } : {}), ...(s.rv ? { rv: s.rv } : {}), ...(s.ev ? { ev: s.ev } : {}) } };
+}
+function saveEditor() {
+  if (!liveOn) return;
+  const out = secs.map(toSection), j = JSON.stringify(out);
+  if (j === lastE) return;
+  lastE = j;
+  PLAN.save(d => {
+    const old = Object.fromEntries((d.page?.sections || []).map(x => [x.sectionId, x]));
+    d.page = { ...(d.page || {}), sections: out.map(o => ({ ...(old[o.sectionId] || {}), ...o, v2: { ...(old[o.sectionId]?.v2 || {}), ...o.v2 } })) };
+  });
+}
+const renderBase = render;
+render = function () { renderBase(); saveEditor(); };
+document.addEventListener('input', () => setTimeout(saveEditor));
+document.addEventListener('change', () => setTimeout(saveEditor));
+PLAN.ready.then(doc => {
+  if (!doc) return;
+  const list = (doc.page?.sections || []).slice().sort((a, b) => a.order - b.order);
+  if (!list.length) { toast('이 기획안은 아직 구좌 구성을 정하지 않았어요. 02 구좌 구성에서 고르면 여기에 나와요 (지금은 예시)'); return; }
+  secs = list.map(fromSection);
+  cur = secs[0].id; tab = 'copy';
+  uidN = Math.max(uidN, ...secs.flatMap(s => [s.id, ...(s.tabs || []).map(t => t.id), ...s.lines.map(l => l.id)]).map(x => +String(x).replace(/\D/g, '') || 0));
+  liveOn = true; lastE = JSON.stringify(secs.map(toSection));
+  render();
+});

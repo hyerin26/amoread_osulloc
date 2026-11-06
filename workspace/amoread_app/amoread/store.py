@@ -71,6 +71,17 @@ def load(pid: str) -> dict:
     return d
 
 
+def _keep_section_v2(page, prev_page):
+    """예전 화면은 구좌의 v2(새 버전 편집 값)를 보내지 않는다 → 같은 sectionId의 저장된 v2를 이어 붙인다."""
+    if not page or not prev_page:
+        return page
+    old = {s.get("sectionId"): s.get("v2") for s in prev_page.get("sections") or []}
+    for s in page.get("sections") or []:
+        if s.get("v2") is None and old.get(s.get("sectionId")) is not None:
+            s["v2"] = old[s.get("sectionId")]
+    return page
+
+
 def save(doc: dict) -> dict:
     """doc: 검증된 요청 dict(api.ProjectReq.model_dump()). id가 없거나 형식이 틀리면 새로 만든다."""
     PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -85,7 +96,7 @@ def save(doc: dict) -> dict:
         "promo_rows": [{k: r.get(k) for k in engine.PLAN_ROW_FIELDS} for r in (doc.get("promo_rows") or [])][:500],
         "deal_plan": doc.get("deal_plan"),   # 하루특가 설정 (하루 자리 수, 후보 상품). 없으면 null
         "pool": (doc.get("pool") or [])[:100],   # 후보 상품 (역할 미정)
-        "page": doc.get("page"),
+        "page": _keep_section_v2(doc.get("page"), prev.get("page")),
         "v2": doc.get("v2") if doc.get("v2") is not None else prev.get("v2"),   # 새 버전 값: 예전 화면이 저장해도 지워지지 않게
         "links": doc.get("links") or prev.get("links") or {"legacy_plan_id": None, "promo_work_keys": []},
         "snapshot": prev.get("snapshot"),
