@@ -287,7 +287,9 @@ async function loadSettings() {
   keys.forEach((k, i) => { const x = lists[i]; if (!x) return; Object.assign(LISTS[k], { cols: LIVE_LISTS[k].cols, key: LIVE_LISTS[k].key, rows: (x.items || []).map(LIVE_LISTS[k].from), live: true }); });
   for (const k of ['kind', 'holiday', 'target']) Object.assign(LISTS[k], { off: true, rows: [] });
   if (openList && LISTS[openList].off) { openList = null; draft = null; }
-  SET_LIVE = !!mt; render();
+  SET_LIVE = !!mt;
+  if (SET_LIVE) document.querySelector('.demo').innerHTML = '<b>실제 데이터예요.</b> 데이터 상태·외부 연결·사전과 목록(명분 사전·검색어 묶음·보자기)은 서버 값이고, 저장하면 같은 settings 파일에 들어가요. 화면 저장이 아직 없는 목록 3개와 유튜브·구글 트렌드 카드는 안내만 해요.';
+  render();
   if (running) pollRebuild();
 }
 loadSettings();

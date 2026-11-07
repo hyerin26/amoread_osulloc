@@ -315,7 +315,9 @@ async function buildLive(doc) {
   if (past) CANDS[bi] = past; else CANDS.splice(bi, 1);
   const mix = CANDS.find(c => c.id === 'C');
   if (mix) Object.assign(mix, { title: '레퍼런스 조합 추천 (예시)', why: '레퍼런스 라이브러리가 아직 예시예요. 연결되면 실제 페이지의 구좌를 골라 이어요. 지금은 구성 모양만 참고하세요' });
-  COMP_LIVE = true;
+  COMP_LIVE = true; n = 3;
+  document.querySelectorAll('.demo .seg, .demo > .cap').forEach(x => { x.hidden = true; });   // 목업 보기용 개수 고르기는 숨김
+  const dp = document.querySelector('.demo p'); if (dp) dp.innerHTML = '<b>이 기획안으로 만든 추천이에요.</b> A는 분류·키워드 규칙, B는 PROMO_WORK 지난 행사의 진열 칸 순서예요. C(레퍼런스 조합)와 원본 페이지 캡처는 아직 예시예요.';
 }
 
 let toastT;

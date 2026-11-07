@@ -724,5 +724,6 @@ PLAN.ready.then(async doc => {
   await loadReviews([...items.map(i => i.seq), ...secs.flatMap(s => allCards(s).map(c => c.seq).filter(Boolean)), ...secs.flatMap(s => s.rv?.groups.map(g => g.seq) || [])]);
   secs.forEach(s => { if (s.rv) s.rv.groups = s.rv.groups.filter(g => P[g.seq]); });   // 예시 상품(P106 등)이 남아 있으면 뺌
   liveOn = true; lastE = JSON.stringify([secs.map(toSection), items]);
+  document.querySelector('.demo').innerHTML = '<b>이 기획안의 실제 내용이에요.</b> 구좌는 구좌 구성에서 정한 것, 상품·가격·원가·후기는 실제 데이터예요. 카드에 넣거나 할인을 고치면 상품·할인과 같은 값으로 저장돼요. 레퍼런스·느낌 이미지와 AI 문구 다듬기는 아직 예시예요.';
   render();
 });

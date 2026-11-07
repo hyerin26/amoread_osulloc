@@ -353,6 +353,7 @@ function loadOurs() {
   OURS.state = 'loading';
   const get = u => v2api(u).catch(() => null);
   Promise.all([get('/api/seasons'), get('/api/am/concepts?limit=200'), get('/api/products')]).then(([sea, con, pr]) => {
+    const dm = document.querySelector('.demo'); if (dm) dm.innerHTML = dm.innerHTML.replace('우리 데이터, 메인 카피 제안은 아직 예시예요.', '우리 데이터는 실제(명분 사전·지난 컨셉·상품)예요. 메인 카피 제안은 규칙으로 만든 문장, 느낌 레퍼런스는 아직 예시예요.');
     Object.assign(OURS, { state: 'ok', seasons: sea?.items || [], concepts: con?.items || [], prods: (pr?.products || []).filter(x => x.active) });
     renderSide();
   });
