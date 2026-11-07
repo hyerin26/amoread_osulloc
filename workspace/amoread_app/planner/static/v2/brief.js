@@ -1,4 +1,5 @@
 // ---------------- 예시 데이터 (가상) ----------------
+const OURS = { state: 'off' };   // 우리 데이터 (기획안이 열려 있을 때 loadOurs)
 // 종류로 묶음 (plans/22 §5: 회사 이름이 아니라 무엇을 알려 주나로)
 const CH = { search: '검색', text: '글', video: '영상', ours: '우리 데이터' };
 // 채널 설명: 연결 후보 (plans/20 3장). 지금은 모두 예시
@@ -117,12 +118,13 @@ function renderSide() {
   const canOpen = d.kids.length > 0, isOpen = path.includes(k) && path.indexOf(k) < path.length - 1;
   const deep = path.indexOf(k) >= 0 ? path.indexOf(k) - center : parentOf(k) - center + 1;
   const rec = live(k);
-  el.innerHTML = `<div class="overline">키워드 <span class="tag demo-t">우리 데이터는 예시</span></div><h2>${esc(k)}</h2>
+  const ours = oursOf(k);
+  el.innerHTML = `<div class="overline">키워드${ours ? '' : ' <span class="tag demo-t">우리 데이터는 예시</span>'}</div><h2>${esc(k)}</h2>
     <h3>어디서 왔나요</h3><div class="tags">${d.ch.map(c => `<span class="tag" title="${esc(CH_SRC[c])}">${CH[c]}</span>`).join('') || '<span class="cap">-</span>'}</div>
     <h3>검색 <span class="tag ok-t">실제</span></h3>${liveSearch(rec)}
     <h3>글 <span class="tag ok-t">실제</span></h3>${livePosts(rec)}
     <h3>영상</h3><p class="cap">유튜브는 아직 연결 전이에요</p>
-    <h3>우리 데이터</h3>${d.ours.length ? `<ul>${d.ours.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : '<p class="cap">연결된 내용이 없어요</p>'}
+    <h3>우리 데이터${ours ? ' <span class="tag ok-t">실제</span>' : ''}</h3>${(ours || d.ours).length ? `<ul>${(ours || d.ours).map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : `<p class="cap">${ours === null && OURS.state === 'loading' ? '불러오는 중…' : '연결된 내용이 없어요'}</p>`}
     <div class="acts">
       <button class="btn primary" data-pick="${esc(k)}">${picked.includes(k) ? '고른 키워드에서 빼기' : '이 키워드 고르기'}</button>
       <button class="btn" data-open-k="${esc(k)}" ${canOpen && !isOpen ? '' : 'disabled'}>${!canOpen ? '더 펼칠 키워드가 없어요' : isOpen ? '펼쳐 둔 갈래예요' : deep >= MAX_DEPTH ? '가운데로 옮겨서 펼치기' : `더 펼치기 (${d.kids.length})`}</button>
@@ -344,7 +346,31 @@ function saveBrief() {
     d.v2.keywords = picked.filter(k => k.length <= 20).slice(0, 30);
   });
 }
+// ---------- 우리 데이터 (기획안이 열려 있을 때, 실제): 명분 사전 · 지난 컨셉 · 이름이 겹치는 판매 중 상품 · 효능 표현 ----------
+// 서버 안에서만 읽어요 (밖으로 보내지 않음). 규칙: 띄어쓰기를 뺀 키워드가 이름·컨셉에 들어 있으면 연결
+const EFFICACY = ['면역', '다이어트', '치료', '개선', '예방', '해독', '감기', '비염', '알레르기'];
+function loadOurs() {
+  OURS.state = 'loading';
+  const get = u => v2api(u).catch(() => null);
+  Promise.all([get('/api/seasons'), get('/api/am/concepts?limit=200'), get('/api/products')]).then(([sea, con, pr]) => {
+    Object.assign(OURS, { state: 'ok', seasons: sea?.items || [], concepts: con?.items || [], prods: (pr?.products || []).filter(x => x.active) });
+    renderSide();
+  });
+}
+function oursOf(k) {
+  if (OURS.state !== 'ok') return OURS.state === 'loading' ? [] : null;
+  const kk = String(k).replace(/\s/g, ''), has = t => String(t || '').replace(/\s/g, '').includes(kk), out = [];
+  const sea = OURS.seasons.filter(m => has(m.name) || has(m.keyword) || (m.seeds || []).some(has));
+  if (sea.length) out.push(`명분 사전에 있어요: ${sea.slice(0, 3).map(m => `${m.name} (${m.kind})`).join(', ')}`);
+  const con = OURS.concepts.filter(c => c.id !== PLAN.id && (has(c.title) || has(c.myeongbun) || has(c.concept)));
+  out.push(con.length ? `지난 컨셉에 썼어요: ${con.slice(0, 2).map(c => `${c.title} (${String(c.date || '').slice(0, 7)})`).join(', ')}${con.length > 2 ? ` 외 ${con.length - 2}개` : ''}` : '지난 컨셉·기획안에 쓴 적 없어요');
+  const pr = OURS.prods.filter(x => has(x.name)).sort((a, b) => (b.sales_28 || 0) - (a.sales_28 || 0));
+  if (pr.length) out.push(`이름이 겹치는 판매 중 상품 ${pr.length}개: ${pr.slice(0, 3).map(x => x.name).join(', ')}${pr.length > 3 ? ' …' : ''}`);
+  if (EFFICACY.some(w => String(k).includes(w))) out.push('효능처럼 읽힐 수 있어 문구 검토가 필요해요');
+  return out;
+}
 PLAN.ready.then(doc => {
+  if (doc) loadOurs();
   if (!doc) return;
   const b = doc.brief || {};
   setRoot((b.myeongbun || doc.v2.seed || ROOT).slice(0, 20));
