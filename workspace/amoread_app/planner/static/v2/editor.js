@@ -718,7 +718,8 @@ PLAN.ready.then(async doc => {
     .map(r => ({ seq: String(r.seq), rate: r.type === '큐레이션' ? 0 : r.rate || 0, source: 'plan', appeal: r.appeal || '' }));
   items = items.filter((it, i) => items.findIndex(x => x.seq === it.seq) === i);
   secs = list.map(fromSection);
-  cur = secs[0].id; tab = 'copy'; pickTab = 'plan';
+  const want = decodeURIComponent(((location.hash || "").match(/^#s=(.+)$/) || [])[1] || '');   // 미리보기 [구좌 보기]에서 온 구좌
+  cur = secs.some(s => s.id === want) ? want : secs[0].id; tab = 'copy'; pickTab = 'plan';
   uidN = Math.max(uidN, ...secs.flatMap(s => [s.id, ...(s.tabs || []).map(t => t.id), ...s.lines.map(l => l.id), ...allCards(s).map(c => c.id)]).map(x => +String(x).replace(/\D/g, '') || 0));
   await loadReviews([...items.map(i => i.seq), ...secs.flatMap(s => allCards(s).map(c => c.seq).filter(Boolean)), ...secs.flatMap(s => s.rv?.groups.map(g => g.seq) || [])]);
   secs.forEach(s => { if (s.rv) s.rv.groups = s.rv.groups.filter(g => P[g.seq]); });   // 예시 상품(P106 등)이 남아 있으면 뺌
