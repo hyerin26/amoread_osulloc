@@ -1,6 +1,6 @@
 // ---------------- 예시 데이터 (가상) ----------------
 const LAYOUTS = { hero: '단일 비주얼', 'text-cta': '텍스트와 버튼', grid2: '2열 상품', grid3: '3열 상품', split: '좌우 분할', benefit: '혜택 안내', 'deal-banner': '날짜별 특가' };
-const COPY = '피크닉 가방에 차 한 병';
+let COPY = '피크닉 가방에 차 한 병';   // 기획안이면 메인 카피(없으면 명분)
 // 원본 프로모션 전체 페이지 (1): 자사몰 지난 행사와 외부 페이지. secs = 그 페이지의 원본 구좌 레퍼런스 (2) 이름
 const PAGES = {
   // r = 첫 화면 캡처 비율(가로:세로, 예시). 프로모션 이미지는 대부분 세로가 길다
@@ -83,7 +83,7 @@ function demoImg(w, h, alt) {
 function visual(c) {
   if (c.type === 'single') {
     const p = PAGES[c.page];
-    return `<button class="vis thumb" data-orig="${c.page}" aria-label="${esc(p.name)} 원본 페이지 보기">${demoImg(p.r[0], p.r[1], '')}<span class="lb">원본 첫 화면 · 예시 ${p.r[0]}:${p.r[1]}</span></button>`;
+    return `<button class="vis thumb" data-orig="${c.page}" aria-label="${esc(p.name)} 원본 페이지 보기">${demoImg(p.r[0], p.r[1], '')}<span class="lb">${p.zones ? `진열 칸 ${p.secs.length}개 · 캡처 연결 전` : `원본 첫 화면 · 예시 ${p.r[0]}:${p.r[1]}`}</span></button>`;
   }
   if (c.type === 'mix') {
     const s = srcList(c), show = s.slice(0, s.length > 4 ? 3 : 4), more = s.length - show.length;
@@ -119,7 +119,7 @@ function mergeGroup(gk) {
 function renderCands() {
   const list = shown(), box = $('#cands');
   box.className = `cands n${list.length}`;
-  $('#candCap').textContent = `브리프(분류·키워드·메인 카피)와 레퍼런스로 ${list.length}개를 만들었어요`;
+  $('#candCap').textContent = COMP_LIVE ? `이 기획안의 브리프(분류·키워드·메인 카피)와 PROMO_WORK 지난 행사로 ${list.length}개를 만들었어요` : `브리프(분류·키워드·메인 카피)와 레퍼런스로 ${list.length}개를 만들었어요`;
   box.innerHTML = list.map(c => {
     return `<article class="cand n${list.length}" ${chosen === c.id ? 'aria-current="true"' : ''} aria-labelledby="c${c.id}">
       <div class="head"><span class="letter">${c.id}</span><div class="grow"><h3 id="c${c.id}">${esc(c.title)}</h3><p class="cap">${esc(basisOf(c))}</p></div>${headTag(c)}</div>
@@ -240,12 +240,12 @@ $('#nextBtn').addEventListener('click', () => { if (!PLAN.id) { toast(`예시예
 function openOrig(pageKey, mark) {
   const p = PAGES[pageKey]; if ($('#srcDlg').open) $('#srcDlg').close();
   $('#origH').textContent = p.name;
-  $('#origSub').textContent = `${p.from}${p.period ? ` · ${p.period}` : ''} · 실제로 걸렸던 페이지 한 장 전체예요`;
+  $('#origSub').textContent = p.zones ? `${p.from}${p.period ? ` · ${p.period}` : ''} · PROMO_WORK 카테고리명(진열 칸)을 행 순서대로 늘어놓았어요` : `${p.from}${p.period ? ` · ${p.period}` : ''} · 실제로 걸렸던 페이지 한 장 전체예요`;
   $('#origBody').innerHTML = p.secs.map((nm, i) => `<div class="oseg ${nm === mark ? 'used' : ''}"><div class="t"><span class="grow">${i + 1}. ${esc(nm)}</span>
-      ${nm === mark ? '<span class="tag real">이번 구성에 가져온 구좌</span>' : ''}<span class="tag">원본 구좌 레퍼런스</span></div>
+      ${nm === mark ? '<span class="tag real">이번 구성에 가져온 구좌</span>' : ''}<span class="tag">${p.zones ? `진열 칸 · 상품 ${p.zones[i]?.count ?? '-'}개` : '원본 구좌 레퍼런스'}</span></div>
     <div class="ph" aria-hidden="true" data-h="${i === 0 ? 120 : 64}"></div></div>`).join('');
   $$('#origBody .ph').forEach(x => { x.style.height = `${x.dataset.h}px`; });
-  $('#origNote').textContent = '캡처를 연결하기 전이라 빗금 자리로 보여요. 각 칸(원본 구좌 레퍼런스)은 다음 화면 구좌 편집에서 참고로 붙이거나 레이아웃을 가져올 수 있어요.';
+  $('#origNote').textContent = p.zones ? '페이지 캡처는 아직 없어서, 그 행사 할인 행의 카테고리명(진열 칸) 순서로 보여요. 같은 유형·같은 칸 수의 진열 칸은 한 구좌 안 탭이었을 가능성이 높아 묶었어요 (추정).' : '캡처를 연결하기 전이라 빗금 자리로 보여요. 각 칸(원본 구좌 레퍼런스)은 다음 화면 구좌 편집에서 참고로 붙이거나 레이아웃을 가져올 수 있어요.';
   $('#origDlg').showModal();
   if (mark) $('#origBody .used')?.scrollIntoView({ block: 'center' });
 }
@@ -262,6 +262,60 @@ function openSources(id) {
       <td><button class="btn sm" data-orig="${g.src[0]}" data-mark="${esc(g.src[1])}">전체 페이지 보기</button></td></tr>`;
   }).join('')}</tbody></table>`;
   $('#srcDlg').showModal();
+}
+
+
+// ---------- 추천 구성안을 이 기획안으로 (실제) ----------
+// A = 분류·고른 키워드·메인 카피로 만든 규칙 틀 / B = PROMO_WORK 지난 상시 할인 중 명분 단어·시기가 가장 가까운 행사의 진열 칸(카테고리명) 순서
+// C = 레퍼런스 조합: 레퍼런스 라이브러리가 아직 예시라 예시로 남김 (그렇다고 표시)
+const CLS_N = { season: '시즌', brand: '브랜드기획전', launch: '런칭', collab: '콜라보', clear: '클리어런스' };
+const Z_RULES = [['요일', /^[월화수목금토일]\s/], ['가격대', /만\s*원|원\s*이상|원대|가격대/], ['혜택 방식', /혜택|균일가|할인|쿠폰|\d\s*\+\s*\d|정율|정액|페이백|사은품|%/], ['', /^\d+$|가이드\s*\d+$|ROOM$|\s0\d$/i],
+  ['포장·구성', /보자기|쇼핑백|보틀|\d+\s*입$|PRESTIGE|패키지/i], ['큐레이션', /인기|재구매|리뷰|후기|급상승|새로|NEW|베스트|BEST|순위|카트|트렌디|같이\s*구매|핫템/i],
+  ['차 종류', /말차|허브|블렌디드|녹차|발효차|잎차|콤부|콜드브루|밀크티|티푸드|티웨어|아이스티|그린티|티세트|디저트|스프레드|비스코티|초콜릿|랑드샤|스킨케어/], ['취향·테마', /달콤|은은|무카페인|다양|하절|리추얼|티타임|민트|선물/]];   // 예전 화면 sources/zones.js와 같은 규칙
+const zKind = n => (Z_RULES.find(([, re]) => re.test(n)) || [''])[0];
+const layoutFor = n => (n % 3 === 0 || n === 5) && n !== 6 ? 'grid3' : 'grid2';
+function zoneUnits(items) {   // 행 순서대로 진열 칸 → 같은 유형·같은 칸 수 2개 이상은 탭 묶음 (zones.js units와 같음)
+  const m = new Map(), list = items.some(x => Number.isFinite(x.row)) ? [...items].sort((x, y) => (x.row ?? 1e9) - (y.row ?? 1e9)) : items;   // 원천 행 순서 = 진열 순서
+  list.forEach(x => { const z = String(x.zone || '').trim(); if (!z || z === '-' || /미노출/.test(z)) return; m.set(z, (m.get(z) || 0) + 1); });
+  const zones = [...m].map(([name, count]) => ({ name, count, kind: zKind(name) })), key = z => z.kind ? `${z.kind}|${z.count}` : null, size = new Map(), out = [], at = new Map();
+  zones.forEach(z => { const k = key(z); if (k) size.set(k, (size.get(k) || 0) + 1); });
+  zones.forEach(z => { const k = key(z); if (k && size.get(k) >= 2) { if (at.has(k)) { out[at.get(k)].zones.push(z); return; } at.set(k, out.length); out.push({ kind: z.kind, zones: [z], group: true }); } else out.push({ kind: z.kind, zones: [z], group: false }); });
+  return { zones, units: out };
+}
+const words = t => String(t || '').split(/[\s,·/()]+/).map(w => w.replace(/^\d+/, '')).filter(w => w.length >= 2);
+async function pastCand(doc) {
+  const rv = await v2api('/api/review').catch(() => null);
+  const ws = (rv?.waves || []).filter(w => w.type === '상시' && w.status === '완료'), ref = doc.brief?.period?.start || new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+  const ks = [...words(doc.brief?.myeongbun), ...words(doc.v2?.seed), ...(doc.v2?.keywords || []), ...words(doc.title)];
+  const ranked = ws.map(w => { const hit = ks.find(x => String(w.promo || '').replace(/\s/g, '').includes(x.replace(/\s/g, ''))), d = Math.abs(+ref.slice(5, 7) - +String(w.start).slice(5, 7)), md = Math.min(d, 12 - d);
+    return { w, hit, md, k: (hit ? 100 : 0) + (md <= 1 ? 30 : md <= 2 ? 10 : 0) }; }).sort((a, b) => b.k - a.k || String(b.w.start).localeCompare(String(a.w.start))).slice(0, 6);
+  for (const c of ranked) {
+    const d = await v2api(`/api/review/wave?key=${encodeURIComponent(c.w.key)}`).catch(() => null);
+    const { zones, units } = zoneUnits(d?.items_detail || []);
+    if (zones.length < 2) continue;
+    const per = `${String(c.w.start).slice(0, 10).replace(/-/g, '.')}~${String(c.w.end).slice(5, 10).replace('-', '.')}`;
+    PAGES.past = { name: c.w.promo, from: '자사몰', period: per, r: [9, 16], secs: zones.map(z => z.name), zones };
+    const secs = [['메인 비주얼', 'hero', '명분과 메인 카피를 첫 화면에 크게']].concat(units.map(u => u.group
+      ? [`${u.kind}별 추천`, layoutFor(u.zones[0].count), `지난 행사에서 '${u.kind}' 진열 칸 ${u.zones.length}개를 탭으로 쓴 것 같아요 (칸마다 상품 ${u.zones[0].count}개)`, { kind: u.kind, tabs: u.zones.map(z => z.name.slice(0, 40)) }]
+      : [u.zones[0].name.slice(0, 40), layoutFor(u.zones[0].count), `지난 행사 진열 칸 · 상품 ${u.zones[0].count}개`]));
+    return { id: 'B', type: 'single', page: 'past', title: `지난 '${c.w.promo}'처럼`, why: `PROMO_WORK 지난 상시 할인 '${c.w.promo}'의 진열 칸(카테고리명)을 행 순서대로 옮겼어요`,
+      match: [[c.hit ? `같은 말: ${c.hit}` : '같은 명분 단어', !!c.hit], ['비슷한 시기', c.md <= 1], [`할인 행 ${c.w.rows}개`, true]], secs: secs.slice(0, 12) };
+  }
+  return null;
+}
+let COMP_LIVE = false;
+async function buildLive(doc) {
+  const kw = (doc.v2?.keywords || [])[0] || doc.v2?.seed || doc.brief?.myeongbun || '', cls = CLS_N[doc.v2?.cls] || '분류 미정', base = CANDS.find(c => c.id === 'A');
+  COPY = doc.brief?.key_copy || doc.brief?.myeongbun || doc.title || '';
+  Object.assign(base, { title: `${cls} 기본형`, why: `${cls} 프로모션의 기본 틀에 고른 키워드를 넣었어요`, basis: `분류: ${cls}`,
+    match: [[`같은 분류: ${cls}`, !!doc.v2?.cls], [`키워드: ${kw || '없음'}`, !!kw], ['메인 카피', !!doc.brief?.key_copy]],
+    secs: [['메인 비주얼', 'hero', '명분과 메인 카피를 첫 화면에 크게'], ...(doc.v2?.keywords || []).slice(0, 2).map(k => [`${k} 추천`, 'grid2', `고른 키워드 '${k}'에 맞는 상품`]),
+      ...(kw && !(doc.v2?.keywords || []).length ? [[`${kw} 추천`, 'grid2', `'${kw}'에 맞는 상품`]] : []), ['하루특가', 'deal-banner', '날짜마다 바뀌는 특가로 다시 찾게'], ['혜택 안내', 'benefit', '쿠폰·사은품 같은 혜택을 한곳에']] });
+  const past = await pastCand(doc), bi = CANDS.findIndex(c => c.id === 'B');
+  if (past) CANDS[bi] = past; else CANDS.splice(bi, 1);
+  const mix = CANDS.find(c => c.id === 'C');
+  if (mix) Object.assign(mix, { title: '레퍼런스 조합 추천 (예시)', why: '레퍼런스 라이브러리가 아직 예시예요. 연결되면 실제 페이지의 구좌를 골라 이어요. 지금은 구성 모양만 참고하세요' });
+  COMP_LIVE = true;
 }
 
 let toastT;
@@ -289,10 +343,11 @@ function saveCompose() {
 const renderEditBase = renderEdit;
 renderEdit = function () { renderEditBase(); saveCompose(); };
 document.addEventListener('input', () => setTimeout(saveCompose));
-PLAN.ready.then(doc => {
+PLAN.ready.then(async doc => {
   if (!doc) return;
+  await buildLive(doc);
   const secs = (doc.page?.sections || []).slice().sort((a, b) => a.order - b.order);
-  if (!secs.length) return;
+  if (!secs.length) { render(); return; }
   chosen = doc.v2.compose || 'blank';
   if (chosen !== 'blank' && !shown().some(c => c.id === chosen)) n = 3;
   rows = secs.map(x => ({ id: x.sectionId, name: x.name || x.headline || '구좌', layout: x.layoutId || 'hero', why: x.role || '',
