@@ -118,6 +118,13 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .w-card .sp { color: var(--ink); font-weight: var(--fw-strong); }
 .w-card .rv { color: var(--ink2); font-size: 10px; }
 .w-card .st { color: var(--accent); font-size: 10px; }
+/* 켜져 있는데 비어 있는 칸: 숨기지 않고 점선 자리로 */
+.w-card .gap { justify-self: start; font-size: 9px; padding: 0 5px; border: 1px dashed var(--warn); border-radius: 4px; color: var(--mute); background: var(--surface); }
+.w-card .lab.gap, .w-card.ph .lab.gap { color: var(--mute) !important; background: var(--surface); border-radius: 4px 0 4px 0; }
+.ws .w-card { cursor: pointer; }
+.ws .w-card:hover { border-color: var(--accent); }
+.w-card.sel { box-shadow: 0 0 0 2px var(--accent); }
+.el .def { grid-column: 2 / -1; display: grid; gap: 4px; padding-bottom: 4px; }
 .w-card .bt { justify-self: start; margin-top: 2px; font-size: 9px; padding: 1px 6px; border-radius: 4px; background: var(--ink); color: var(--surface); }
 .w-more { display: block; margin-top: 8px; padding: 8px; border-radius: 8px; background: var(--ink); color: var(--surface); text-align: center; font-size: var(--fs-cap); }
 .w-deal { background: var(--ink); color: var(--surface); border-radius: 8px; padding: 12px; font-size: var(--fs-cap); }

@@ -16,7 +16,9 @@ let REVIEWS = { v1: { seq: 'P106', rating: 5, text: '물 조금 넣고 흔든 �
 let BRIEF_MOODS = [{ name: '돗자리 위 티타임', src: '핀터레스트 보드 · 봄 피크닉', pts: ['색감', '소품'], r: [2, 3] }, { name: '연둣빛 봄 색감', src: '외부 캠페인 일부', pts: ['색감'], r: [4, 5] }];
 const ON_SALE = ['img', 'label', 'pill', 'appeal', 'tag', 'name', 'list', 'first', 'pct', 'pname', 'sale'];
 const ON_PRICE = ['img', 'label', 'appeal', 'tag', 'name', 'list', 'pname', 'sale'];
-const c = (seq, x = {}) => ({ seq, label: '', tag: '', pill: '', copy: '', off: [], ...x });
+// 카드 값은 구좌 편집의 '카드 값 → 구좌 기본값'을 풀어 놓은 것 (pill = 종류, pillText = 직접 쓴 알약 글)
+const c = (seq, x = {}) => ({ seq, label: '', tag: '', pill: '', pillText: '', copy: '', btn: '', off: [], ...x });
+let END_P = '2026-03-15';   // 남은 기간 알약 (기획안이면 기간 끝)
 let SECS = [
   { name: '메인 비주얼', layout: 'hero', headline: META.copy, subhead: '들고 나가는 봄, 한 병의 여유', num: false, cta: null,
     refs: [{ name: '봄 캠페인 메인 비주얼', page: '○○ 봄 캠페인 · 외부', note: '상단 여백과 손글씨 느낌', r: [4, 5] }], moods: [{ name: '보온병 들고 산책', src: '핀터레스트 보드 · 아웃도어', pts: ['구도'], r: [9, 16] }], notes: '' },
@@ -50,6 +52,9 @@ function priceOf(seq) {
 }
 const judgeLv = seq => { const p = PRODUCTS[seq], pr = priceOf(seq); return pr.fin >= p.price || !p.cost ? 'none' : p.cost / (pr.fin / 1.1) > 0.45 ? 'warn' : 'ok'; };
 function pillText(cd) {
+  if (cd.pill === 'own') return cd.pillText;
+  if (cd.pill === 'until') return END_P ? `${+END_P.slice(5, 7)}/${+END_P.slice(8)}까지` : '';
+  if (cd.pill === 'today') return `오늘만 ${priceOf(cd.seq).pct}%`;
   if (cd.pill !== 'up') return '';
   const p = PRODUCTS[cd.seq], d = p.after == null ? 0 : p.after - priceOf(cd.seq).fin;
   return d > 0 ? `특가 종료 시 ${d.toLocaleString('ko-KR')}원 비싸져요` : '';
@@ -64,6 +69,9 @@ function checks() {
     if (!LIVE) cardsOf(s).forEach(cd => { if (cd.seq && judgeLv(cd.seq) === 'warn') out.push({ lv: 'warn', t: `${PRODUCTS[cd.seq].name}: 최종가 기준 원가율 주의 (판정)`, ...go(i) }); });
     const empty = cardsOf(s).filter(cd => !cd.seq).length; if (empty) out.push({ lv: 'info', t: `${s.name}: 상품 미정 카드 ${empty}개 (디자이너 기획안에 '미정'으로 보여요)`, ...go(i) });
     cardsOf(s).forEach(cd => { if (cd.seq && cd.pill === 'up' && !pillText(cd)) out.push({ lv: 'warn', t: `${PRODUCTS[cd.seq].name}: 가격 오름 예고를 계산하지 못했어요`, ...go(i) }); });
+    // 켜져 있는데 빈 글 칸 (상품이 있는 카드만, 가격 오름 예고는 위에서 따로)
+    const gaps = {}; if (s.on) cardsOf(s).forEach(cd => { if (cd.seq) GAP_KEYS.forEach(k => { if (s.on.includes(k) && !cd.off.includes(k) && !cellOf(k, cd) && !(k === 'pill' && cd.pill === 'up')) gaps[k] = (gaps[k] || 0) + 1; }); });
+    if (Object.keys(gaps).length) out.push({ lv: 'info', t: `${s.name}: 켜 둔 글 칸이 비어 있어요 (${Object.entries(gaps).map(([k, n]) => `${COLS.find(x => x[0] === k)[1]} ${n}`).join(', ')}) · 디자이너 파일에서는 빠져요`, ...go(i) });
     if (s.layout === 'review') out.push({ lv: 'info', t: `${s.name}: 후기를 페이지에 써도 되는지 운영·법무 확인 필요`, ...go(i) });
     if (s.ev && !s.ev.notice) out.push({ lv: 'warn', t: `${s.name}: 이벤트 유의사항이 비어 있어요 (운영·법무 기준 확인 필요)`, ...go(i) });
     if (s.layout === 'deal-banner') out.push({ lv: 'info', t: '하루특가: 날짜별 상품은 상품·할인의 하루특가 편성 기준이에요', ...go(i) });
@@ -153,12 +161,14 @@ function renderPage() {
 
 // ================= 카드 문구표 =================
 // 칸은 구좌에서 켜진 요소만. 숫자는 서비스가 계산한 값 (옮겨 적기 실수 방지)
-const COLS = [['label', '모서리 라벨'], ['pill', '알약'], ['appeal', '소구문구'], ['tag', '이름 앞 태그'], ['name', '상품명'], ['list', '정가'], ['first', '1단 가격'], ['pct', '할인율'], ['pname', '가격 이름'], ['sale', '판매가'], ['copy', '카드 문구']];
+const COLS = [['label', '모서리 라벨'], ['pill', '알약'], ['appeal', '소구문구'], ['tag', '이름 앞 태그'], ['name', '상품명'], ['list', '정가'], ['first', '1단 가격'], ['pct', '할인율'], ['pname', '가격 이름'], ['sale', '판매가'], ['copy', '카드 문구'], ['btn', '버튼']];
+const GAP_KEYS = ['label', 'pill', 'appeal', 'tag', 'copy', 'btn'];
 function cellOf(k, cd) {
   if (!cd.seq) return k === 'name' ? '미정' : '';
+  if (cd.off.includes(k)) return '';   // 이 카드에서만 끈 요소
   const p = PRODUCTS[cd.seq], pr = priceOf(cd.seq);
   return { label: cd.label, pill: pillText(cd), appeal: ITEMS[cd.seq]?.appeal || '', tag: cd.tag ? `[${cd.tag}]` : '', name: p.name, list: pr.fin < pr.list ? won(pr.list) : '',
-    first: pr.ex ? won(pr.first) : '', pct: pr.pct ? `${pr.pct}%` : '', pname: pr.pname, sale: won(pr.fin), copy: cd.copy }[k] || '';
+    first: pr.ex ? won(pr.first) : '', pct: pr.pct ? `${pr.pct}%` : '', pname: pr.pname, sale: won(pr.fin), copy: cd.copy, btn: cd.btn }[k] || '';
 }
 function cardTables() {
   return SECS.filter(s => s.on).map(s => { const cols = COLS.filter(([k]) => s.on.includes(k) || k === 'copy' && cardsOf(s).some(x => x.copy)), rows = cardsOf(s);
@@ -214,7 +224,10 @@ const CLSN = { season: '시즌', brand: '브랜드기획전', launch: '런칭', 
 const fmtD = d => `${d}(${'일월화수목금토'[new Date(d).getDay()]})`;
 function toSec(x) {
   const v = x.v2 || {}, lay = x.layoutId || 'hero', ex = v.cards || {};
-  const mk = sl => { const e = ex[sl.slotId] || {}; return c(sl.seq && PRODUCTS[sl.seq] ? String(sl.seq) : null, { label: e.label || '', tag: e.tag || '', pill: e.pill || '', copy: sl.customCopy || '', off: e.off || [] }); };
+  const df = { btn: '담기', ...(v.card?.def || {}) };   // 구좌 기본값 (예전 기획안은 버튼 '담기'만)
+  const mk = sl => { const e = ex[sl.slotId] || {};
+    return c(sl.seq && PRODUCTS[sl.seq] ? String(sl.seq) : null, { label: e.label || df.label || '', tag: e.tag || df.tag || '', pill: e.pill || df.pill || '', pillText: (e.pill ? e.pillText : df.pillText) || '',
+      copy: sl.customCopy || df.copy || '', btn: e.btn || df.btn || '', off: e.off || [] }); };
   const s = { id: x.sectionId, name: x.headline || x.name || '', role: x.subhead || '', lines: (v.lines || []).map(l => l.text).filter(Boolean), layout: lay, num: !!v.num,
     scope: v.scope || '', cta: (v.ctaOn ?? !!x.cta) && x.cta ? [x.cta, v.ctaTo || ''] : null, refs: [], moods: [], notes: x.designNotes || '' };
   if (['grid2', 'grid3', 'feat'].includes(lay)) {
@@ -293,7 +306,7 @@ PLAN.ready.then(async doc => {
   ROWS = doc.promo_rows || [];
   ITEMS = Object.fromEntries(ROWS.filter(r => r.type !== '하루특가' && r.seq && !r.items?.length).reverse().map(r => [String(r.seq), { rate: r.type === '큐레이션' ? 0 : r.rate || 0, appeal: r.appeal || '' }]));
   EXTRAS = doc.v2?.extras || []; BRIEF_MOODS = []; REVIEWS = {};
-  const b = doc.brief || {};
+  const b = doc.brief || {}; END_P = b.period?.end || '';
   META = { title: doc.title, cls: CLSN[doc.v2?.cls] || '분류 미정', period: b.period ? `${fmtD(b.period.start)} ~ ${fmtD(b.period.end).slice(5)}` : '기간 미정',
     page: b.page_kind === '이벤트' ? '이벤트 페이지' : b.page_kind || '이벤트 페이지', myeongbun: b.myeongbun || '', concept: b.concept || '', copy: b.key_copy || '', who: b.audience || '', keywords: doc.v2?.keywords || [] };
   SECS = list.map(toSec);

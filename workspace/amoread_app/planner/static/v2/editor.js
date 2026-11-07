@@ -73,18 +73,22 @@ const PRESETS = {
   '후기와 함께': { img: 1, label: 0, pill: 0, appeal: 0, tag: 0, name: 1, list: 0, first: 0, pct: 0, pname: 0, sale: 0, rating: 1, review: 1, ai: 0, copy: 0, btn: 0 },
 };
 const ORDER = ['img', 'label', 'pill', 'appeal', 'tag', 'name', 'list', 'first', 'pct', 'pname', 'sale', 'rating', 'review', 'ai', 'copy', 'btn'];
-const LABELS = ['', 'BEST', 'NEW', '한정', '재입고', 'PRESTIGE'];
+const LABELS = ['BEST', 'NEW', '한정', '재입고', 'PRESTIGE'];   // 라벨 추천 (직접 써도 됨)
+// 직접 쓰는 요소: 구좌 기본값(카드 모양 탭) + 카드마다 바꾸기(카드 문구). 카드 값이 비면 기본값. 소구문구는 상품마다라 따로
+const DIRECT = ['label', 'pill', 'tag', 'copy', 'btn'];
+const DEF0 = { label: '', pill: '', pillText: '', tag: '', copy: '', btn: '담기' };
+const LABEL_DL = `<datalist id="labelList">${LABELS.map(l => `<option value="${l}">`).join('')}</datalist>`;
 const PILLS = [['', '없음'], ['up', '가격 오름 예고 (특가 종료 시 n원 비싸져요)'], ['today', '오늘만 (하루특가)'], ['until', '남은 기간 (○/○까지)'], ['own', '직접 쓰기']];
 const EFFICACY = ['면역', '다이어트', '치료', '개선', '예방', '해독'];   // 지금 툴 engine.efficacy_flags와 같은 쪽의 검사 (예시 단어)
 let END = '2026-03-15';
 
 let uidN = 0; const uid = p => `${p}${++uidN}`;
-const slot = (seq = null, x = {}) => ({ id: uid('c'), seq, copy: '', label: '', tag: '', pill: '', pillText: '', off: [], ...x });
-const cardShape = preset => ({ order: [...ORDER], on: { ...PRESETS[preset] } });
+const slot = (seq = null, x = {}) => ({ id: uid('c'), seq, copy: '', label: '', tag: '', pill: '', pillText: '', btn: '', off: [], ...x });
+const cardShape = preset => ({ order: [...ORDER], on: { ...PRESETS[preset] }, def: { ...DEF0 } });
 let secs = [
   { id: 's1', name: '메인 비주얼', layout: 'hero', headline: COPY, subhead: '들고 나가는 봄, 한 병의 여유', role: '', scope: '', num: false, cta: '', ctaOn: false, ctaTo: '', refs: ['r1'], att: [], notes: '', moods: [{ id: 'm3', pts: new Set(['구도']) }] },
   { id: 's2', name: '첫 잔, 벚꽃', layout: 'feat', headline: '', subhead: '', role: '돗자리를 펴고 처음 따르는 봄 한 잔', scope: '시즌 한정 티', num: true, cta: '시즌 한정 더보기', ctaOn: true, ctaTo: '시즌 한정 카테고리', refs: ['r2', 'r4'], att: [], notes: '', moods: [],
-    card: { order: [...ORDER], on: { ...PRESETS['할인율 강조'], pill: 1 } }, cards: [slot('P101', { label: 'BEST', tag: '봄 한정', pill: 'up' }), slot('P104', { tag: '보자기' }), slot('P106'), slot()] },
+    card: { order: [...ORDER], on: { ...PRESETS['할인율 강조'], pill: 1 }, def: { ...DEF0 } }, cards: [slot('P101', { label: 'BEST', tag: '봄 한정', pill: 'up' }), slot('P104', { tag: '보자기' }), slot('P106'), slot()] },
   { id: 's3', name: '가격대별 선물 추천', layout: 'grid2', headline: '', subhead: '예산에 맞춰 골라 보세요', role: '', scope: '선물 세트', num: true, cta: '', ctaOn: false, ctaTo: '', refs: ['r3'], att: [], notes: '', moods: [], tab: 0,
     card: cardShape('가격 표시'), tabs: [{ id: 't1', name: '1만원대', cards: [slot('P107'), slot()] }, { id: 't2', name: '2만원대', cards: [slot(), slot()] }, { id: 't3', name: '3만원 이상', cards: [slot('P110', { label: 'PRESTIGE', tag: '한정 보자기' }), slot()] }] },
   { id: 's4', name: '오늘의 하루특가', layout: 'deal-banner', headline: '', subhead: '', role: '', scope: '', num: false, cta: '', ctaOn: false, ctaTo: '', refs: [], att: [], notes: '', moods: [] },
@@ -139,19 +143,31 @@ function pillUp(seq) {
   const d = p.after - pr.fin;
   return d > 0 ? { ok: true, text: `특가 종료 시 ${d.toLocaleString('ko-KR')}원 비싸져요`, why: `끝난 다음 날 상시 할인가 ${won(p.after)} 기준` } : { ok: false, why: '끝난 다음 날 가격이 지금과 같거나 더 싸요' };
 }
-function pillText(c) {
-  if (!c.pill) return '';
-  if (c.pill === 'own') return c.pillText;
-  if (c.pill === 'today') return `오늘만 ${priceOf(c.seq).pct}%`;
-  if (c.pill === 'until') return `${+END.slice(5, 7)}/${+END.slice(8)}까지`;
+// 카드에 보일 값: 카드에 쓴 값, 비었으면 구좌 기본값
+const valOf = (c, s, k) => c[k] || s.card.def?.[k] || '';
+const pillOf = (c, s) => c.pill ? { pill: c.pill, own: c.pillText } : { pill: s.card.def?.pill || '', own: s.card.def?.pillText || '' };
+function pillText(c, s) {
+  const { pill, own } = pillOf(c, s);
+  if (!pill) return '';
+  if (pill === 'own') return own;
+  if (pill === 'until') return END ? `${+END.slice(5, 7)}/${+END.slice(8)}까지` : '';   // 기간을 안 정한 기획안은 빈 칸
+  if (!c.seq) return pill === 'today' ? '오늘만 00%' : '특가 종료 시 0원 비싸져요';   // 상품 고르기 전 예시
+  if (pill === 'today') return `오늘만 ${priceOf(c.seq).pct}%`;
   const u = pillUp(c.seq); return u.ok ? u.text : '';
+}
+// 켜져 있는데 비어 있는 칸 (상품이 있는 카드만): 카드에서 숨기지 않고 점선으로, 목록·미리보기에서 알림
+function gapsOf(s, c) {
+  if (!c.seq) return [];
+  const on = k => s.card.on[k] && !c.off.includes(k);
+  return ['label', 'pill', 'appeal', 'tag', 'copy', 'btn'].filter(k => on(k) && !(k === 'pill' ? pillText(c, s) : k === 'appeal' ? itemOf(c.seq)?.appeal : valOf(c, s, k)));
 }
 const maxRate = seq => { const p = P[seq], ex = extraOf(seq); if (!p.cost) return 0; for (let r = 80; r >= 0; r--) { if (p.cost / (extraPrice(r10(p.price * (1 - r / 100)), p.price, ex) / 1.1) <= TARGET) return r; } return 0; };   // 기준 안 가장 깊은 1단 할인 (%)
 
 // ================= 목록 · 와이어프레임 =================
 function secState(s) {
   const k = kindOf(s.layout);
-  if (k === 'product') { const all = allCards(s), done = all.filter(c => c.seq).length; return [`상품 ${done}/${all.length}`, done === all.length && all.length > 0]; }
+  if (k === 'product') { const all = allCards(s), done = all.filter(c => c.seq).length, g = all.reduce((n, c) => n + gapsOf(s, c).length, 0);
+    return [`상품 ${done}/${all.length}${g ? ` · 빈 칸 ${g}` : ''}`, done === all.length && all.length > 0 && !g]; }
   if (k === 'review') { const n = s.rv.order.length; return [`후기 ${n}개`, n > 0]; }
   if (k === 'event') { const e = s.ev; const ok = e.how && e.reward && e.when; return [ok ? '운영 조건 있음' : '운영 조건 채우기', !!ok]; }
   if (k === 'deal') return ['하루특가 편성에서', true];
@@ -167,26 +183,25 @@ function moveSec(id, d) {
   const i = secs.findIndex(s => s.id === id), j = i + d; if (i < 0 || j < 0 || j >= secs.length) return false;
   [secs[i], secs[j]] = [secs[j], secs[i]]; return true;
 }
+// 카드 한 장. 직접 쓰는 요소는 상품이 있든 없든 같은 값(카드 값 → 구좌 기본값). 켜져 있는데 비면 점선 자리로 남김 (사라지지 않게).
+// 상품을 고르기 전에는 자동 요소(상품명·가격·별점)만 예시 글
 function wCard(c, s) {
-  if (!c.seq) {   // 상품을 고르기 전: 켜진 요소마다 예시 글 (모양을 먼저 볼 수 있게)
-    const on = k => s.card.on[k] && !c.off.includes(k);
-    const ph = { img: () => `<span class="img">${on('label') ? '<span class="lab">라벨</span>' : ''}</span>`, label: () => '', pill: () => '<span class="pill">알약 문구</span>', appeal: () => '<span class="ap">소구문구</span>',
-      tag: () => '', name: () => `<span class="nm">${on('tag') ? '[태그] ' : ''}상품명</span>`, list: () => '<span class="op">정가</span>', first: () => '<span class="op">1단 가격</span>', pct: () => '', pname: () => '',
-      sale: () => `<span class="pr">${on('pct') ? '<span class="pct">00%</span>' : ''}${on('pname') ? '<span class="pn">가격 이름</span>' : ''}${on('sale') ? '<span class="sp">판매가</span>' : ''}</span>`,
-      rating: () => '<span class="st">★ 별점(리뷰 수)</span>', review: () => '<span class="rv">“후기 한 줄”</span>', ai: () => '', copy: () => '<span>카드 문구</span>', btn: () => '<span class="bt">버튼</span>' };
-    return `<div class="w-card ph">${s.card.order.filter(k => on(k) || (k === 'sale' && (on('pct') || on('pname')))).map(k => ph[k]()).join('')}<span class="hint">상품 고르기</span></div>`;
-  }
-  const p = P[c.seq], pr = priceOf(c.seq), on = k => s.card.on[k] && !c.off.includes(k), it = itemOf(c.seq);
-  const parts = { img: () => `<span class="img">${on('label') && c.label ? `<span class="lab">${esc(c.label)}</span>` : ''}</span>`, label: () => '',
-    pill: () => { const t = pillText(c); return t ? `<span class="pill">${esc(t).replace(/(\d[\d,]*원|\d+%)/, '<b>$1</b>')}</span>` : ''; },
-    appeal: () => it?.appeal ? `<span class="ap">${esc(it.appeal)}</span>` : '', tag: () => '',
-    name: () => `<span class="nm">${on('tag') && c.tag ? `[${esc(c.tag)}] ` : ''}${esc(p.name)}</span>`,
-    list: () => pr.fin < pr.list ? `<span class="op">${won(pr.list)}</span>` : '', first: () => pr.ex ? `<span class="op">${won(pr.first)}</span>` : '',
-    pct: () => '', pname: () => '', sale: () => `<span class="pr">${on('pct') && pr.pct > 0 ? `<span class="pct">${pr.pct}%</span>` : ''}${on('pname') ? `<span class="pn">${esc(pr.pname)}</span>` : ''}${on('sale') ? `<span class="sp">${won(pr.fin)}</span>` : ''}</span>`,
-    rating: () => p.rating == null ? '' : `<span class="st">★ ${p.rating}(${p.reviews})</span>`, review: () => { const v = REVIEWS.find(r => r.seq === c.seq && r.best); return v ? `<span class="rv">“${esc(v.text.slice(0, 34))}…”</span>` : ''; },
-    ai: () => '<span class="rv">AI 후기 요약 (연결 예정)</span>', copy: () => c.copy ? `<span>${esc(c.copy)}</span>` : '', btn: () => '<span class="bt">담기</span>' };
+  const has = !!c.seq, p = has ? P[c.seq] : null, pr = has ? priceOf(c.seq) : null, it = has ? itemOf(c.seq) : null, on = k => s.card.on[k] && !c.off.includes(k);
+  const gap = t => `<span class="gap">${t}</span>`, lab = valOf(c, s, 'label'), tag = valOf(c, s, 'tag'), pt = pillText(c, s), pk = pillOf(c, s).pill;
+  const parts = { img: () => `<span class="img">${on('label') ? (lab ? `<span class="lab">${esc(lab)}</span>` : '<span class="lab gap">라벨 비어 있음</span>') : ''}</span>`, label: () => '',
+    pill: () => pt ? `<span class="pill">${esc(pt).replace(/(\d[\d,]*원|\d+%)/, '<b>$1</b>')}</span>` : gap(!pk ? '알약 종류 미정' : pk === 'up' ? '알약: 가격 오름 계산 불가' : '알약 문구 비어 있음'),
+    appeal: () => !has ? '<span class="ap">소구문구</span>' : it?.appeal ? `<span class="ap">${esc(it.appeal)}</span>` : gap('소구문구 비어 있음'), tag: () => '',
+    name: () => `<span class="nm">${on('tag') ? (tag ? `[${esc(tag)}] ` : `${gap('[태그]')} `) : ''}${has ? esc(p.name) : '상품명'}</span>`,
+    list: () => !has ? '<span class="op">정가</span>' : pr.fin < pr.list ? `<span class="op">${won(pr.list)}</span>` : '',
+    first: () => !has ? '<span class="op">1단 가격</span>' : pr.ex ? `<span class="op">${won(pr.first)}</span>` : '', pct: () => '', pname: () => '',
+    sale: () => `<span class="pr">${on('pct') && (!has || pr.pct > 0) ? `<span class="pct">${has ? pr.pct : '00'}%</span>` : ''}${on('pname') ? `<span class="pn">${has ? esc(pr.pname) : '가격 이름'}</span>` : ''}${on('sale') ? `<span class="sp">${has ? won(pr.fin) : '판매가'}</span>` : ''}</span>`,
+    rating: () => !has ? '<span class="st">★ 별점(리뷰 수)</span>' : p.rating == null ? '' : `<span class="st">★ ${p.rating}(${p.reviews})</span>`,
+    review: () => { if (!has) return '<span class="rv">“후기 한 줄”</span>'; const v = REVIEWS.find(r => r.seq === c.seq && r.best); return v ? `<span class="rv">“${esc(v.text.slice(0, 34))}…”</span>` : ''; },
+    ai: () => '<span class="rv">AI 후기 요약 (연결 예정)</span>',
+    copy: () => { const t = valOf(c, s, 'copy'); return t ? `<span>${esc(t)}</span>` : gap('카드 문구 비어 있음'); },
+    btn: () => { const t = valOf(c, s, 'btn'); return t ? `<span class="bt">${esc(t)}</span>` : gap('버튼 문구 비어 있음'); } };
   // 가격 줄: 정가·1단은 위 줄, 할인율·가격 이름·판매가는 한 줄 (판매가를 끄면 줄 전체를 그리지 않음)
-  return `<div class="w-card f">${s.card.order.filter(k => on(k) || (k === 'sale' && (on('pct') || on('pname')))).map(k => parts[k]()).join('')}</div>`;
+  return `<div class="w-card ${has ? 'f' : 'ph'}${c.id === openMore ? ' sel' : ''}" data-card="${c.id}">${s.card.order.filter(k => on(k) || (k === 'sale' && (on('pct') || on('pname')))).map(k => parts[k]()).join('')}${has ? '' : '<span class="hint">상품 고르기</span>'}</div>`;
 }
 function wBody(s) {
   const k = kindOf(s.layout);
@@ -255,15 +270,28 @@ function copyTab(s) {
     <div class="box"><span class="cap">문구 제안 <span class="tag demo-t">연결 예정</span></span><p class="hint">브리프 컨셉으로 제목·설명을 이야기 순서(코스·방·여정)로 제안해요. 예) 가을 차회: 01 마중차 · 첫 인사를 건네며 입맛을 돋궈줄 차</p></div>`;
 }
 // 카드 모양 탭: 이 구좌의 카드 모두에 같은 모양 (요소 켜고 끄기·순서). 위에 견본 카드를 바로 보여줌
+const sampleOf = s => cardsOf(s).find(c => c.seq) || slot();
+const PH = { label: '예) BEST', tag: '예) 한정 보자기', copy: '예) 선물 포장 무료', btn: '예) 담기' }, MAX = { label: 20, tag: 20, copy: 60, btn: 20, pillText: 30 };
+// 알약 고르기 (구좌 기본값이면 first = ['', '없음'], 카드면 ['', '구좌 기본값 따르기'])
+const pillSel = (attr, val, first, upOk = true) => `<select ${attr} aria-label="알약 종류">${[first, ...PILLS.slice(1)].map(([v, n]) => `<option value="${v}" ${val === v ? 'selected' : ''} ${v === 'up' && !upOk && val !== 'up' ? 'disabled' : ''}>${n}${v === 'up' && !upOk ? ' — 계산 불가' : ''}</option>`).join('')}</select>`;
+// 카드 모양 탭의 기본값 칸: 직접 쓰는 요소를 켜면 그 자리에서 이 구좌 카드 모두의 기본 글을 정함
+function defRow(s, k) {
+  const d = s.card.def, nm = ELS[k][0];
+  if (k === 'appeal') return '<div class="def"><span class="hint">상품마다 달라요. 카드를 눌러 카드 문구에서 써요 (상품·할인·엑셀과 같은 값)</span></div>';
+  if (k === 'pill') return `<div class="def">${pillSel('data-df="pill"', d.pill, ['', '없음'])}${d.pill === 'own' ? `<input type="text" data-df="pillText" maxlength="30" value="${esc(d.pillText)}" placeholder="예) 마지막 수량" aria-label="알약 기본 문구">` : ''}
+    <span class="hint">카드마다 바꿀 수 있어요${d.pill === 'up' ? ' · 다음 날 가격을 못 찾은 상품은 빈 칸으로 보여요' : ''}</span></div>`;
+  return `<div class="def"><input type="text" data-df="${k}" maxlength="${MAX[k]}" value="${esc(d[k])}" placeholder="${PH[k]}" aria-label="${nm} 기본값" ${k === 'label' ? 'list="labelList"' : ''}>
+    <span class="hint">이 구좌 카드 모두 · 카드마다 바꿀 수 있어요</span></div>`;
+}
 function shapeTab(s) {
-  const sample = cardsOf(s).find(c => c.seq) || slot();
-  const sh = s.card;
-  return `<div class="f"><span class="l">견본 카드 <em>${sample.seq ? '첫 상품으로 보여요' : '상품이 없어도 예시 글로 자리를 채워요'}</em></span><div class="sample">${wCard(sample, s)}</div></div>
-    <div class="f"><span class="l">카드 모양 <em>이 구좌의 카드 모두 · 순서는 ↑↓</em></span>
+  const sample = sampleOf(s), sh = s.card;
+  return `${LABEL_DL}<div class="f"><span class="l">견본 카드 <em>${sample.seq ? '첫 상품으로 보여요' : '상품이 없어도 예시 글로 자리를 채워요'}</em></span><div class="sample">${wCard(sample, s)}</div></div>
+    <div class="f"><span class="l">카드 모양 <em>이 구좌의 카드 모두 · 순서는 ↑↓ · 직접 쓰는 요소는 켜면 기본 글을 바로 써요</em></span>
       <div class="chips-row"><span class="cap">빠른 설정</span>${Object.keys(PRESETS).map(k => `<button class="chip" data-preset="${k}">${k}</button>`).join('')}</div>
       <ul class="els">${sh.order.map((k, j) => `<li class="el ${sh.on[k] ? '' : 'off'}"><input type="checkbox" data-elon="${k}" ${sh.on[k] ? 'checked' : ''} ${k === 'ai' ? 'disabled' : ''} aria-label="${ELS[k][0]} 보이기">
         <span><span class="nm">${ELS[k][0]}</span> <span class="src">${ELS[k][1]}</span></span>
-        <span class="tools"><button class="ib" data-elmv="${j}:-1" ${j ? '' : 'disabled'} aria-label="${ELS[k][0]} 위로">↑</button><button class="ib" data-elmv="${j}:1" ${j < sh.order.length - 1 ? '' : 'disabled'} aria-label="${ELS[k][0]} 아래로">↓</button></span></li>`).join('')}</ul>
+        <span class="tools"><button class="ib" data-elmv="${j}:-1" ${j ? '' : 'disabled'} aria-label="${ELS[k][0]} 위로">↑</button><button class="ib" data-elmv="${j}:1" ${j < sh.order.length - 1 ? '' : 'disabled'} aria-label="${ELS[k][0]} 아래로">↓</button></span>
+        ${sh.on[k] && (DIRECT.includes(k) || k === 'appeal') ? defRow(s, k) : ''}</li>`).join('')}</ul>
       <span class="hint">요소 목록은 늘릴 수 있어요. 지금 목록은 자사몰 지난 페이지에서 본 것이에요.</span></div>
 `;
 }
@@ -276,36 +304,53 @@ function productsTab(s) {
         <span class="tools"><button class="ib" data-tabpick="${j}" aria-label="${esc(t.name)} 탭 상품 보기" title="이 탭 상품 보기">▸</button><button class="ib" data-tabmv="${j}:-1" ${j ? '' : 'disabled'} aria-label="위로">↑</button><button class="ib" data-tabmv="${j}:1" ${j < s.tabs.length - 1 ? '' : 'disabled'} aria-label="아래로">↓</button><button class="ib" data-tabdel="${j}" ${s.tabs.length > 1 ? '' : 'disabled'} aria-label="${esc(t.name)} 탭 삭제">✕</button></span></div>`).join('')}</div>
       <div><button class="btn xs" data-tabadd>+ 탭 추가</button></div></div>` : '';
   return `    ${tabsEd}
-    <p class="hint">카드에 무엇을 보일지는 '카드 모양' 탭에서 정해요. 여기서는 어떤 상품을 넣을지와 할인만 다뤄요.</p>
+    <p class="hint">카드에 무엇을 보일지는 '카드 모양' 탭에서 정해요. 여기서는 상품·할인과 카드마다의 글(▸ 카드 문구)을 다뤄요. 와이어프레임의 카드를 눌러도 열려요.</p>
     <div class="f"><span class="l">카드${s.tabs ? ` · '${esc(s.tabs[s.tab].name)}' 탭` : ''} <em>${cards.filter(c => c.seq).length}/${cards.length}칸 · 할인율은 1단(할인 행), 금액은 최종가</em></span>
       <ul class="slots">${cards.map((c, k) => slotHTML(c, k, s)).join('')}</ul>
       <div><button class="btn xs" data-addcard>+ 빈 카드</button></div></div>
     ${nDraft ? `<div class="applybar" role="status"><span class="grow">할인 ${nDraft}건을 바꿨어요. 반영하면 상품·할인에도 같은 값이 들어가요</span><button class="btn xs" data-undo>되돌리기</button><button class="btn xs primary" data-apply>반영</button></div>` : ''}`;
 }
 function slotHTML(c, k, s) {
-  if (!c.seq) return `<li class="slot"><div class="row1"><span class="nm none">카드 ${k + 1} · 상품 미정</span><span></span><span></span><button class="btn xs primary" data-pick="${c.id}">상품 고르기</button></div></li>`;
-  const p = P[c.seq], pr = priceOf(c.seq), j = judge(c.seq), it = itemOf(c.seq), open = openMore === c.id;
-  return `<li class="slot"><div class="row1"><span class="nm" title="${esc(p.name)}">${esc(p.name)}</span>
+  const open = openMore === c.id, g = gapsOf(s, c).length, more = `<button class="btn xs" data-more="${c.id}" aria-expanded="${open}">${open ? '▾' : '▸'} 카드 문구${g ? ` · 빈 칸 ${g}` : ''}</button>`;
+  if (!c.seq) return `<li class="slot" data-slot="${c.id}"><div class="row1"><span class="nm none">카드 ${k + 1} · 상품 미정</span><span></span>${more}<button class="btn xs primary" data-pick="${c.id}">상품 고르기</button></div>${open ? cardMore(c, s) : ''}</li>`;
+  const p = P[c.seq], pr = priceOf(c.seq), j = judge(c.seq), it = itemOf(c.seq);
+  return `<li class="slot" data-slot="${c.id}"><div class="row1"><span class="nm" title="${esc(p.name)}">${esc(p.name)}</span>
       <span class="rate"><input type="number" data-rate="${c.seq}" min="0" max="90" step="1" value="${Math.round(rateOf(c.seq) * 100)}" aria-label="${esc(p.name)} 1단 할인율 (%)">%</span>
       <span class="fin">${won(pr.fin)}<small>${pr.ex ? `${esc(extraText(pr.ex))} · 정가 대비 ${pr.pct}%` : pr.pct ? `정가 대비 ${pr.pct}%` : '할인 없음'}</small></span>
       <button class="judge ${j.lv}" data-judge="${c.id}" aria-expanded="${openJudge === c.id}" title="눌러서 근거 보기">${j.t}</button></div>
     <div class="row2">${c.seq in drafts ? '<span class="draft">할인 바꿈</span>' : ''}${it?.source === 'excel' ? '<span class="tag">엑셀로 받음</span>' : ''}<span class="grow"></span>
-      <button class="btn xs" data-more="${c.id}" aria-expanded="${open}">${open ? '▾' : '▸'} 이 카드만</button><button class="btn xs" data-pick="${c.id}">바꾸기</button><button class="ib" data-rmcard="${c.id}" aria-label="${esc(p.name)} 카드 삭제">✕</button></div>
+      ${more}<button class="btn xs" data-pick="${c.id}">바꾸기</button><button class="ib" data-rmcard="${c.id}" aria-label="${esc(p.name)} 카드 삭제">✕</button></div>
     ${openJudge === c.id ? `<div class="row2"><div class="jpop">${j.cra != null ? `최종가 ${won(pr.fin)} 기준 할인 후 원가율 <b>${Math.round(j.cra * 100)}%</b> · ${esc(j.why)}<br>기준 안에서 가장 깊은 1단 할인은 <b>${maxRate(c.seq)}%</b>예요${pr.ex ? ` (${esc(pr.ex.name)} 포함)` : ''}. 원가 정보라 디자이너 기획안에는 넣지 않아요.` : esc(j.why)}</div></div>` : ''}
     ${open ? cardMore(c, s) : ''}</li>`;
 }
+// 카드 문구: 이 구좌에서 켜진 요소를 카드 순서대로. 직접 쓰는 요소는 입력칸(비우면 구좌 기본값), 자동 요소는 어디서 오는지만
 function cardMore(c, s) {
-  const it = itemOf(c.seq), fl = EFFICACY.filter(w => (it?.appeal || '').includes(w)), up = pillUp(c.seq);
-  return `<div class="more">
-    <label class="f"><span>소구문구 <em>엑셀 PROMO_WORK 소구문구와 같은 값</em></span><input type="text" data-appeal="${c.seq}" maxlength="80" value="${esc(it?.appeal || '')}" placeholder="예) 세작, 우전, 홍우전까지 포함한">
-      ${fl.length ? `<span class="warnline">효능으로 읽힐 수 있는 표현: ${fl.join(', ')}</span>` : ''}</label>
-    <div class="two"><label class="f"><span>이름 앞 태그</span><input type="text" data-cf="tag" maxlength="20" value="${esc(c.tag)}" placeholder="예) 한정 보자기"></label>
-      <label class="f"><span>모서리 라벨</span><select data-cf="label">${LABELS.map(l => `<option value="${l}" ${c.label === l ? 'selected' : ''}>${l || '없음'}</option>`).join('')}</select></label></div>
-    <label class="f"><span>알약</span><select data-cf="pill">${PILLS.map(([v, n]) => `<option value="${v}" ${c.pill === v ? 'selected' : ''} ${v === 'up' && !up.ok ? 'disabled' : ''}>${n}${v === 'up' && !up.ok ? ' — 계산 불가' : ''}</option>`).join('')}</select>
-      ${c.pill === 'own' ? `<input type="text" data-cf="pillText" maxlength="30" value="${esc(c.pillText)}" placeholder="직접 쓰기"><span class="hint">가격·기간 숫자를 쓰면 한 번 더 확인해 주세요</span>` : ''}
-      <span class="hint">${c.pill === 'up' || !up.ok ? esc(up.ok ? `${up.text} · ${up.why}` : `가격 오름 예고: ${up.why}`) : ''}</span></label>
-    <label class="f"><span>카드 문구 <em>(선택)</em></span><input type="text" data-cf="copy" maxlength="60" value="${esc(c.copy)}"></label>
-    <div class="f"><span class="l">이 카드만 끄기</span><div class="chips-row">${s.card.order.filter(k => s.card.on[k]).map(k => `<button class="chip" data-off="${c.id}|${k}" aria-pressed="${c.off.includes(k)}">${ELS[k][0].replace(/ \(.*\)/, '')}</button>`).join('')}</div></div></div>`;
+  const d = s.card.def, ks = s.card.order.filter(k => s.card.on[k] && !c.off.includes(k)), short = k => ELS[k][0].replace(/ \(.*\)/, '');
+  const mine = k => k === 'pill' ? !!c.pill : !!c[k];
+  const state = k => mine(k) ? `<span class="tag">이 카드만</span><button class="btn xs ghost" data-cfreset="${k}">기본값으로</button>`
+    : (k === 'pill' ? d.pill : d[k]) ? '<span class="hint">구좌 기본값을 쓰고 있어요</span>' : '';
+  const field = k => {
+    if (k === 'appeal') {
+      if (!c.seq) return '<div class="f"><span class="l">소구문구</span><span class="hint">상품을 고르면 그 상품의 소구문구가 들어가요</span></div>';
+      const it = itemOf(c.seq), fl = EFFICACY.filter(w => (it?.appeal || '').includes(w));
+      return `<label class="f"><span>소구문구 <em>상품마다 · 상품·할인·엑셀과 같은 값 · 상품을 바꾸면 그 상품 것으로</em></span><input type="text" data-appeal="${c.seq}" maxlength="80" value="${esc(it?.appeal || '')}" placeholder="예) 세작, 우전, 홍우전까지 포함한">
+        ${fl.length ? `<span class="warnline">효능으로 읽힐 수 있는 표현: ${fl.join(', ')}</span>` : ''}</label>`;
+    }
+    if (k === 'pill') {
+      const up = c.seq ? pillUp(c.seq) : { ok: true }, cur = pillOf(c, s);
+      return `<div class="f"><span class="l">알약 ${state(k)}</span>${pillSel('data-cf="pill"', c.pill, ['', `구좌 기본값 따르기 (${(PILLS.find(x => x[0] === d.pill) || PILLS[0])[1].replace(/ \(.*\)/, '')})`], up.ok)}
+        ${c.pill === 'own' ? `<input type="text" data-cf="pillText" maxlength="30" value="${esc(c.pillText)}" placeholder="직접 쓰기" aria-label="알약 문구"><span class="hint">가격·기간 숫자를 쓰면 한 번 더 확인해 주세요</span>` : ''}
+        ${cur.pill === 'up' && c.seq ? `<span class="hint">${esc(up.ok ? `${up.text} · ${up.why}` : `가격 오름 예고: ${up.why}`)}</span>` : ''}</div>`;
+    }
+    return `<label class="f"><span>${ELS[k][0]} ${state(k)}</span><input type="text" data-cf="${k}" maxlength="${MAX[k]}" value="${esc(c[k])}" placeholder="${d[k] ? esc(d[k]) : PH[k]}" ${k === 'label' ? 'list="labelList"' : ''}>
+      ${!c[k] && !d[k] ? '<span class="hint">비어 있어요. 여기나 카드 모양 탭(구좌 기본값)에서 써 주세요</span>' : ''}</label>`;
+  };
+  const rows = ks.filter(k => DIRECT.includes(k) || k === 'appeal').map(field).join('');
+  const auto = ks.filter(k => !DIRECT.includes(k) && !['appeal', 'img', 'ai', 'pct', 'pname'].includes(k));
+  return `<div class="more">${LABEL_DL}
+    ${rows || '<p class="hint">직접 쓰는 요소(라벨·알약·태그·카드 문구·버튼)가 모두 꺼져 있어요. 카드 모양 탭에서 켜요.</p>'}
+    ${auto.length ? `<p class="hint">자동으로 채워요: ${auto.map(short).join(' · ')} — 상품 데이터에서 와요</p>` : ''}
+    <div class="f"><span class="l">이 카드에서만 끄기</span><div class="chips-row">${s.card.order.filter(k => s.card.on[k]).map(k => `<button class="chip" data-off="${c.id}|${k}" aria-pressed="${c.off.includes(k)}">${short(k)}</button>`).join('')}</div></div></div>`;
 }
 function eventTab(s) {
   const e = s.ev, f = (lab, key, ph) => `<label class="f"><span>${lab}</span><input type="text" data-ev="${key}" value="${esc(e[key])}" placeholder="${esc(ph)}"></label>`;
@@ -412,11 +457,21 @@ function openPick(cardId) {
     <div class="db">${pickList()}</div>`;
   $('#drawer').hidden = false; $('#scrim').hidden = false; $('#drawer [data-ptab][aria-selected="true"]').focus();
 }
+// 와이어프레임에서 카드를 누르면: 그 구좌의 상품 탭에서 그 카드의 '카드 문구'를 펼침 (키보드는 상품 탭의 [▸ 카드 문구])
+function openCard(sid, cid) {
+  cur = sid; const s = S(); if (s.tabs) s.tab = Math.max(0, s.tabs.findIndex(t => t.cards.some(c => c.id === cid)));
+  tab = 'products'; openMore = cid; openJudge = null; render();
+  document.querySelector(`[data-slot="${cid}"]`)?.scrollIntoView?.({ block: 'nearest' });
+  refocus(`[data-slot="${cid}"] .more input, [data-slot="${cid}"] .more select`) || refocus(`[data-more="${cid}"]`);
+}
 function closePick() { $('#drawer').hidden = true; $('#scrim').hidden = true; pickFor = null; }
 function choose(seq) {
   const c = allCards(S()).find(x => x.id === pickFor); if (!c) return;
-  c.seq = seq; if (!itemOf(seq)) items.push({ seq, rate: 0, source: 'direct', appeal: '' });
-  closePick(); render(); if (liveOn) loadReviews([seq]).then(n => n && render()); toast(`${P[seq].name}을 넣었어요${itemOf(seq).rate ? '' : '. 할인율은 카드에서 정해요'}`);
+  // 카드 자리의 글(라벨·알약·태그·카드 문구·버튼)은 그대로, 상품을 따라가는 값(상품명·가격·소구문구)만 바뀜
+  const kept = c.seq && c.seq !== seq && DIRECT.some(k => c[k]);
+  c.seq = seq; c.keep = null; if (!itemOf(seq)) items.push({ seq, rate: 0, source: 'direct', appeal: '' });
+  closePick(); render(); if (liveOn) loadReviews([seq]).then(n => n && render());
+  toast(`${P[seq].name}을 넣었어요${kept ? '. 이 카드에 쓴 라벨·알약 등은 그대로예요' : ''}${itemOf(seq).rate ? '' : '. 할인율은 카드에서 정해요'}`);
 }
 
 // ================= 엑셀 =================
@@ -463,6 +518,7 @@ document.addEventListener('click', e => {
   if (d('linedel')) { s.lines.splice(+v('linedel'), 1); render(); return; }
   if (d('linemv')) { const [j, dd] = v('linemv').split(':').map(Number); [s.lines[j], s.lines[j + dd]] = [s.lines[j + dd], s.lines[j]]; render(); refocus(`[data-linemv="${j + dd}:${dd}"]`); return; }
   if (d('secmv')) { const [id, dd] = v('secmv').split(':'); if (moveSec(id, +dd)) { render(); refocus(`[data-secmv="${id}:${dd}"]:not([disabled])`) || refocus(`[data-sec="${id}"]`); } return; }
+  if (t.closest('#phone [data-card]')) { openCard(t.closest('[data-sec]').dataset.sec, t.closest('[data-card]').dataset.card); return; }
   if (d('sec')) { cur = v('sec'); openJudge = openMore = null; render(); return; }
   if (d('tab')) { tab = v('tab'); renderPanel(); refocus(`[data-tab="${tab}"]`); return; }
   if (d('close') || t.id === 'scrim') { closePick(); return; }
@@ -479,7 +535,8 @@ document.addEventListener('click', e => {
   if (d('addcard')) { cardsOf(s).push(slot()); render(); return; }
   if (d('preset')) { s.card.on = { ...PRESETS[v('preset')] }; render(); toast(`'${v('preset')}'로 맞췄어요. 요소마다 다시 켜고 끌 수 있어요`); return; }
   if (d('elmv')) { const [j, dd] = v('elmv').split(':').map(Number), o = s.card.order; [o[j], o[j + dd]] = [o[j + dd], o[j]]; render(); refocus(`[data-elmv="${j + dd}:${dd}"]`); return; }
-  if (d('off')) { const [cid, k] = v('off').split('|'), c = allCards(s).find(x => x.id === cid); c.off = c.off.includes(k) ? c.off.filter(x => x !== k) : c.off.concat(k); render(); return; }
+  if (d('off')) { const [cid, k] = v('off').split('|'), c = allCards(s).find(x => x.id === cid); c.off = c.off.includes(k) ? c.off.filter(x => x !== k) : c.off.concat(k); render(); refocus(`[data-off="${cid}|${k}"]`); return; }
+  if (d('cfreset')) { const k = v('cfreset'), c = allCards(s).find(x => x.id === openMore); if (c) { c[k] = ''; if (k === 'pill') c.pillText = ''; render(); refocus(`[data-cf="${k}"]`); } return; }
   if (d('apply')) { Object.entries(drafts).forEach(([seq, r]) => { const it = itemOf(seq); if (it) it.rate = r; }); const n = Object.keys(drafts).length; drafts = {}; render(); toast(`할인 ${n}건을 반영했어요. 상품·할인에도 같은 값이에요`); return; }
   if (d('undo')) { drafts = {}; render(); toast('바꾼 할인을 되돌렸어요'); return; }
   if (d('tabpick')) { s.tab = +v('tabpick'); render(); return; }
@@ -518,7 +575,8 @@ document.addEventListener('input', e => {
   if (t.id === 'pq') { t.closest('.search')?.classList.toggle('has-value', !!t.value); q = t.value; const tmp = document.createElement('div'); tmp.innerHTML = pickList(); $('#phits').outerHTML = tmp.querySelector('#phits').outerHTML; return; }
   if (!s) return;
   if (t.dataset.sf) { s[t.dataset.sf] = t.value; renderPhone(); renderList(); if (t.dataset.sf === 'name') $('#panel h2').textContent = s.name; return; }
-  if (t.dataset.cf) { const c = allCards(s).find(x => x.id === openMore); if (c) { c[t.dataset.cf] = t.value; renderPhone(); } return; }
+  if (t.dataset.cf && t.tagName !== 'SELECT') { const c = allCards(s).find(x => x.id === openMore); if (c) { c[t.dataset.cf] = t.value; renderPhone(); renderList(); } return; }
+  if (t.dataset.df && t.tagName !== 'SELECT') { s.card.def[t.dataset.df] = t.value; renderPhone(); renderList(); const sm = $('#pbody .sample'); if (sm) sm.innerHTML = wCard(sampleOf(s), s); return; }
   if (t.dataset.appeal) { const it = itemOf(t.dataset.appeal); if (it) it.appeal = t.value; renderPhone(); return; }
   if (t.dataset.line != null) { s.lines[+t.dataset.line].text = t.value; renderPhone(); return; }
   if (t.dataset.tabname != null) { s.tabs[+t.dataset.tabname].name = t.value; renderPhone(); renderList(); return; }
@@ -531,7 +589,8 @@ document.addEventListener('change', e => {
   if (t.dataset.rate) { const seq = t.dataset.rate, val = Math.min(90, Math.max(0, Math.round(+t.value || 0))) / 100; if (val === (itemOf(seq)?.rate ?? 0)) delete drafts[seq]; else drafts[seq] = val; renderPanel(); renderPhone(); refocus(`[data-rate="${seq}"]`); return; }
   if (t.matches('[data-layout]')) { setLayout(s, t.value); render(); toast(`구좌 종류를 '${LNAME[t.value]}'로 바꿨어요. 문구·메모는 그대로예요`); return; }
   if (t.dataset.elon) { s.card.on[t.dataset.elon] = t.checked ? 1 : 0; render(); refocus(`[data-elon="${t.dataset.elon}"]`); return; }
-  if (t.dataset.cf === 'label' || t.dataset.cf === 'pill') { const c = allCards(s).find(x => x.id === openMore); if (c) c[t.dataset.cf] = t.value; render(); return; }
+  if (t.dataset.cf === 'pill') { const c = allCards(s).find(x => x.id === openMore); if (c) c.pill = t.value; render(); refocus('[data-cf="pill"]'); return; }
+  if (t.dataset.df === 'pill') { s.card.def.pill = t.value; render(); refocus('[data-df="pill"]'); return; }
   if (t.matches('[data-num]')) { s.num = t.checked; render(); return; }
   if (t.matches('[data-ctaon]')) { s.ctaOn = t.checked; if (s.ctaOn && !s.cta) s.cta = kindOf(s.layout) === 'product' ? `${s.scope || s.name} 더보기` : kindOf(s.layout) === 'event' ? '참여하기' : '자세히 보기'; render(); refocus('[data-ctaon]'); return; }
   if (t.matches('[data-evlogin]')) { s.ev.login = t.checked; return; }
@@ -575,9 +634,10 @@ function fromSection(x) {
   // 카드 = 저장된 slots (상품 목록에 없는 SEQ는 비워 보이되 저장할 때 그대로 돌려놓음)
   const ex = v.cards || {}, slots = x.slots || [];
   const mk = sl => { const e = ex[sl.slotId] || {}, ok = sl.seq && P[sl.seq];
-    return slot(ok ? String(sl.seq) : null, { id: sl.slotId, copy: sl.customCopy || '', label: e.label || '', tag: e.tag || '', pill: e.pill || '', pillText: e.pillText || '', off: e.off || [], keep: !ok && sl.seq ? String(sl.seq) : null }); };
+    return slot(ok ? String(sl.seq) : null, { id: sl.slotId, copy: sl.customCopy || '', label: e.label || '', tag: e.tag || '', pill: e.pill || '', pillText: e.pillText || '', btn: e.btn || '', off: e.off || [], keep: !ok && sl.seq ? String(sl.seq) : null }); };
   if (k === 'product') {
-    s.card = v.card?.order && v.card?.on ? { order: v.card.order, on: v.card.on } : cardShape('가격 표시');
+    // 기본값(def)이 없던 기획안 = 버튼 '담기'만 기본 (예전에 고정이던 값)
+    s.card = v.card?.order && v.card?.on ? { order: v.card.order, on: v.card.on, def: { ...DEF0, ...(v.card.def || {}) } } : cardShape('가격 표시');
     if (x.tabs?.length) { s.tab = 0; const first = x.tabs[0].tabId;
       s.tabs = x.tabs.map(t => { const cs = slots.filter(sl => (sl.tabId || first) === t.tabId).map(mk); return { id: t.tabId, name: t.label, cat: t.zone_tag || '', cards: cs.length ? cs : [slot(), slot()] }; }); }
     else s.cards = slots.length ? slots.map(mk) : [slot(), slot(), slot(), slot()];
@@ -588,8 +648,9 @@ function fromSection(x) {
 }
 const cut = (t, n) => String(t || '').slice(0, n);
 const slotOut = (c, tabId) => ({ slotId: c.id, seq: c.seq || c.keep || null, items: null, placeholderStatus: c.seq || c.keep ? 'AVAILABLE' : 'UNDECIDED', customCopy: cut(c.copy, 200), tabId });
-const cardExtra = s => Object.fromEntries(allCards(s).filter(c => c.label || c.tag || c.pill || c.pillText || c.off.length)
-  .map(c => [c.id, { label: cut(c.label, 20), tag: cut(c.tag, 20), pill: c.pill, pillText: cut(c.pillText, 30), off: c.off }]));
+const cardExtra = s => Object.fromEntries(allCards(s).filter(c => c.label || c.tag || c.pill || c.pillText || c.btn || c.off.length)
+  .map(c => [c.id, { label: cut(c.label, 20), tag: cut(c.tag, 20), pill: c.pill, pillText: cut(c.pillText, 30), btn: cut(c.btn, 20), off: c.off }]));
+const defOut = d => ({ label: cut(d.label, 20), pill: d.pill || '', pillText: cut(d.pillText, 30), tag: cut(d.tag, 20), copy: cut(d.copy, 60), btn: cut(d.btn, 20) });
 function toSection(s, i) {
   return { sectionId: s.id, order: i, name: cut(s.name, 40), headline: cut(s.name, 120), subhead: cut(s.role, 400), cta: cut(s.cta, 40),
     layoutId: s.layout, zone_tag: cut(s.cat, 40), designNotes: cut(s.notes, 2000),
@@ -597,7 +658,7 @@ function toSection(s, i) {
     ...(s.card ? { slots: (s.tabs ? s.tabs.flatMap(t => t.cards.map(c => slotOut(c, t.id))) : (s.cards || []).map(c => slotOut(c, null))).slice(0, 40) } : {}),
     v2: { scope: cut(s.scope, 200), num: !!s.num, ctaOn: !!s.ctaOn, ctaTo: cut(s.ctaTo, 60), lines: (s.lines || []).map(l => ({ id: l.id, text: cut(l.text, 120) })),
       refs: s.refs || [], moods: (s.moods || []).map(m => ({ id: m.id, pts: [...m.pts] })),
-      ...(s.card ? { card: { order: s.card.order, on: s.card.on }, cards: cardExtra(s) } : {}), ...(s.rv ? { rv: s.rv } : {}), ...(s.ev ? { ev: s.ev } : {}) } };
+      ...(s.card ? { card: { order: s.card.order, on: s.card.on, def: defOut(s.card.def) }, cards: cardExtra(s) } : {}), ...(s.rv ? { rv: s.rv } : {}), ...(s.ev ? { ev: s.ev } : {}) } };
 }
 // 이 화면의 할인(items) → 기획안 promo_rows (하루특가·조합 행은 건드리지 않음)
 function rowsFromItems(d) {
@@ -713,7 +774,7 @@ PLAN.ready.then(async doc => {
   for (const k of Object.keys(P)) delete P[k];
   PRODUCTS = prods.filter(r => r.seq && r.price).map(edP); PRODUCTS.forEach(p => { P[p.seq] = p; });
   REVIEWS = []; EXTRAS = doc.v2?.extras || []; KWS = (doc.v2?.keywords || []).filter(Boolean);
-  PERIOD = [doc.brief?.period?.start || '', doc.brief?.period?.end || '']; END = PERIOD[1] || END;
+  PERIOD = [doc.brief?.period?.start || '', doc.brief?.period?.end || '']; END = PERIOD[1];
   items = (doc.promo_rows || []).filter(r => r.type !== '하루특가' && r.seq && P[r.seq] && !r.items?.length)
     .map(r => ({ seq: String(r.seq), rate: r.type === '큐레이션' ? 0 : r.rate || 0, source: 'plan', appeal: r.appeal || '' }));
   items = items.filter((it, i) => items.findIndex(x => x.seq === it.seq) === i);
