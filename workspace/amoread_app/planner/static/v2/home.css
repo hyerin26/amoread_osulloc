@@ -233,3 +233,4 @@ input:disabled { background: var(--sunken); color: var(--mute); }
 .search:has(input:disabled) input[type=search] { color: var(--mute); cursor: not-allowed; }
 .search-meta { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); }
 .search-meta.none { color: var(--ink2); }
+.c-mall { background: var(--sunken); color: var(--ink2); border: 1px solid var(--line); }   /* PROMO_WORK 행사 (분류 없음) */
