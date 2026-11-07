@@ -3,7 +3,7 @@ const COPY = '피크닉 가방에 차 한 병';
 const TARGET = 0.45;   // 할인 후 원가율 기준 (지금 툴 config와 같은 값)
 // cost = 가상 원가 (판정을 열었을 때만 원가율로 보임). after = 행사가 끝난 다음 날 상시 할인가(찾았을 때만, 블프 사례: 정가로 돌아가지 않음)
 // rating·reviews = 별점·리뷰 수(리뷰 데이터에서 자동)
-const PRODUCTS = [
+let PRODUCTS = [
   { seq: 'P101', name: '벚꽃 블렌딩 티 10입', price: 18000, cost: 4300, days: 210, ly: true, kw: [], after: 15300, rating: 4.8, reviews: 312 },
   { seq: 'P102', name: '피크닉 콜드브루 티 세트', price: 32000, cost: 9800, days: 95, ly: false, kw: ['피크닉', '보온병'], after: null, rating: 4.6, reviews: 88 },
   { seq: 'P103', name: '휴대용 티 텀블러 세트', price: 45000, cost: 16500, days: 400, ly: false, kw: ['보온병'], after: 40500, rating: 4.7, reviews: 140 },
@@ -23,9 +23,9 @@ let items = [
   { seq: 'P106', rate: 0.1, source: 'direct', appeal: '' },
 ];
 // 2단: 추가 혜택 (상품·할인 공간에서 정함). 자사몰 설·감사선물전 사례: 할인가에서 약 5% 더 = '얼리버드가'
-const EXTRAS = [{ id: 'eb', name: '얼리버드', on: 'sale', pct: 0.05, seqs: ['P110', 'P104'] }];
+let EXTRAS = [{ id: 'eb', name: '얼리버드', calc: 'sale_pct', val: 5, seqs: ['P110', 'P104'] }];   // 상품·할인과 같은 모양 (기획안이면 doc.v2.extras)
 // 고객 후기 (리뷰 데이터 열: 평점, 구매후기, 나만의TIP, 베스트여부, 등록일 — 제목·작성자 없음)
-const REVIEWS = [
+let REVIEWS = [
   { id: 'v1', seq: 'P106', rating: 5, best: true, date: '2026-02-11', gift: false, repeat: true, text: '물 조금 넣고 흔든 뒤 우유에 부으면 바로 말차라떼가 돼서 출근 전에도 부담 없이 마실 수 있어요.' },
   { id: 'v2', seq: 'P106', rating: 5, best: false, date: '2026-03-02', gift: false, repeat: true, text: '벌써 세 번째 구매예요. 진하고 쓴맛이 덜해서 매일 마셔요.' },
   { id: 'v3', seq: 'P104', rating: 5, best: true, date: '2026-01-20', gift: true, repeat: false, text: '어머니 선물로 드렸는데 포장이 예쁘고 향이 은은하다고 좋아하셨어요.' },
@@ -76,7 +76,7 @@ const ORDER = ['img', 'label', 'pill', 'appeal', 'tag', 'name', 'list', 'first',
 const LABELS = ['', 'BEST', 'NEW', '한정', '재입고', 'PRESTIGE'];
 const PILLS = [['', '없음'], ['up', '가격 오름 예고 (특가 종료 시 n원 비싸져요)'], ['today', '오늘만 (하루특가)'], ['until', '남은 기간 (○/○까지)'], ['own', '직접 쓰기']];
 const EFFICACY = ['면역', '다이어트', '치료', '개선', '예방', '해독'];   // 지금 툴 engine.efficacy_flags와 같은 쪽의 검사 (예시 단어)
-const END = '2026-03-15';
+let END = '2026-03-15';
 
 let uidN = 0; const uid = p => `${p}${++uidN}`;
 const slot = (seq = null, x = {}) => ({ id: uid('c'), seq, copy: '', label: '', tag: '', pill: '', pillText: '', off: [], ...x });
@@ -120,7 +120,7 @@ const extraOf = seq => EXTRAS.find(e => e.seqs.includes(seq)) || null;
 // 정가 → 1단(할인 행 할인율) → 2단(추가 혜택, 있을 때만). 카드의 %는 정가 대비 최종
 function priceOf(seq) {
   const p = P[seq], r = rateOf(seq), first = r10(p.price * (1 - r)), ex = extraOf(seq);
-  const fin = ex ? r10(first * (1 - ex.pct)) : first;
+  const fin = extraPrice(first, p.price, ex);
   return { list: p.price, first, fin, ex, pct: Math.round((1 - fin / p.price) * 100), pname: ex ? `${ex.name}가` : r ? '할인가' : '판매가' };
 }
 // 판정은 최종 가격으로 (2단을 빼면 남는 게 실제보다 커 보임). 80% 이상 차단, 할인 후 원가율 45% 넘으면 주의
@@ -128,6 +128,7 @@ function judge(seq) {
   const p = P[seq], pr = priceOf(seq);
   if (pr.fin >= p.price) return { lv: 'none', t: '할인 없음', why: '할인 없이 구좌에 놓이는 상품이에요 (PROMO_WORK 큐레이션)' };
   if (1 - pr.fin / p.price >= 0.8) return { lv: 'err', t: '확인 필요', why: '할인율 80% 이상은 막혀요' };
+  if (!p.cost) return { lv: 'none', t: '원가 없음', why: '원가 정보가 없는 상품이라 판정하지 않아요' };
   const cra = p.cost / (pr.fin / 1.1);
   return cra > TARGET ? { lv: 'warn', t: '주의', cra, why: `최종가 기준 할인 후 원가율이 기준(${Math.round(TARGET * 100)}%)을 넘어요` } : { lv: 'ok', t: '괜찮음', cra, why: `최종가 기준으로 기준(${Math.round(TARGET * 100)}%) 안이에요` };
 }
@@ -145,7 +146,7 @@ function pillText(c) {
   if (c.pill === 'until') return `${+END.slice(5, 7)}/${+END.slice(8)}까지`;
   const u = pillUp(c.seq); return u.ok ? u.text : '';
 }
-const maxRate = seq => { const p = P[seq], ex = extraOf(seq); const k = ex ? (1 - ex.pct) : 1; return Math.floor((1 - p.cost * 1.1 / TARGET / p.price / k) * 100); };   // 기준 안 가장 깊은 1단 할인 (%)
+const maxRate = seq => { const p = P[seq], ex = extraOf(seq); if (!p.cost) return 0; for (let r = 80; r >= 0; r--) { if (p.cost / (extraPrice(r10(p.price * (1 - r / 100)), p.price, ex) / 1.1) <= TARGET) return r; } return 0; };   // 기준 안 가장 깊은 1단 할인 (%)
 
 // ================= 목록 · 와이어프레임 =================
 function secState(s) {
@@ -182,7 +183,7 @@ function wCard(c, s) {
     name: () => `<span class="nm">${on('tag') && c.tag ? `[${esc(c.tag)}] ` : ''}${esc(p.name)}</span>`,
     list: () => pr.fin < pr.list ? `<span class="op">${won(pr.list)}</span>` : '', first: () => pr.ex ? `<span class="op">${won(pr.first)}</span>` : '',
     pct: () => '', pname: () => '', sale: () => `<span class="pr">${on('pct') && pr.pct > 0 ? `<span class="pct">${pr.pct}%</span>` : ''}${on('pname') ? `<span class="pn">${esc(pr.pname)}</span>` : ''}${on('sale') ? `<span class="sp">${won(pr.fin)}</span>` : ''}</span>`,
-    rating: () => `<span class="st">★ ${p.rating}(${p.reviews})</span>`, review: () => { const v = REVIEWS.find(r => r.seq === c.seq && r.best); return v ? `<span class="rv">“${esc(v.text.slice(0, 34))}…”</span>` : ''; },
+    rating: () => p.rating == null ? '' : `<span class="st">★ ${p.rating}(${p.reviews})</span>`, review: () => { const v = REVIEWS.find(r => r.seq === c.seq && r.best); return v ? `<span class="rv">“${esc(v.text.slice(0, 34))}…”</span>` : ''; },
     ai: () => '<span class="rv">AI 후기 요약 (연결 예정)</span>', copy: () => c.copy ? `<span>${esc(c.copy)}</span>` : '', btn: () => '<span class="bt">담기</span>' };
   // 가격 줄: 정가·1단은 위 줄, 할인율·가격 이름·판매가는 한 줄 (판매가를 끄면 줄 전체를 그리지 않음)
   return `<div class="w-card f">${s.card.order.filter(k => on(k) || (k === 'sale' && (on('pct') || on('pname')))).map(k => parts[k]()).join('')}</div>`;
@@ -268,7 +269,7 @@ function shapeTab(s) {
 }
 function productsTab(s) {
   if (s.layout === 'deal-banner') return `<div class="info-box">하루특가는 날짜마다 상품이 바뀌어서 상품·할인의 하루특가 편성에서 정해요. 여기서는 구좌 모양과 문구만 정해요.</div>
-    <button class="btn sm" data-toast="예시예요: 상품·할인의 하루특가 편성을 열어요">하루특가 편성 열기</button>`;
+    ${liveOn ? '<button class="btn sm" data-godeals>하루특가 편성 열기</button>' : '<button class="btn sm" data-toast="예시예요: 상품·할인의 하루특가 편성을 열어요">하루특가 편성 열기</button>'}`;
   const cards = cardsOf(s), nDraft = Object.keys(drafts).length, sh = s.card;
   const tabsEd = s.tabs ? `<div class="f"><span class="l">탭 <em>탭 하나가 PROMO_WORK 칸 하나 · 고객은 첫 탭을 먼저 봐요</em></span><div class="tabs-ed">${s.tabs.map((t, j) => `<div class="tabrow" ${j === s.tab ? 'aria-current="true"' : ''}>
         <input type="text" data-tabname="${j}" value="${esc(t.name)}" maxlength="40" aria-label="${j + 1}번 탭 이름">
@@ -286,7 +287,7 @@ function slotHTML(c, k, s) {
   const p = P[c.seq], pr = priceOf(c.seq), j = judge(c.seq), it = itemOf(c.seq), open = openMore === c.id;
   return `<li class="slot"><div class="row1"><span class="nm" title="${esc(p.name)}">${esc(p.name)}</span>
       <span class="rate"><input type="number" data-rate="${c.seq}" min="0" max="90" step="1" value="${Math.round(rateOf(c.seq) * 100)}" aria-label="${esc(p.name)} 1단 할인율 (%)">%</span>
-      <span class="fin">${won(pr.fin)}<small>${pr.ex ? `${esc(pr.ex.name)} ${Math.round(pr.ex.pct * 100)}% 더 · 정가 대비 ${pr.pct}%` : pr.pct ? `정가 대비 ${pr.pct}%` : '할인 없음'}</small></span>
+      <span class="fin">${won(pr.fin)}<small>${pr.ex ? `${esc(extraText(pr.ex))} · 정가 대비 ${pr.pct}%` : pr.pct ? `정가 대비 ${pr.pct}%` : '할인 없음'}</small></span>
       <button class="judge ${j.lv}" data-judge="${c.id}" aria-expanded="${openJudge === c.id}" title="눌러서 근거 보기">${j.t}</button></div>
     <div class="row2">${c.seq in drafts ? '<span class="draft">할인 바꿈</span>' : ''}${it?.source === 'excel' ? '<span class="tag">엑셀로 받음</span>' : ''}<span class="grow"></span>
       <button class="btn xs" data-more="${c.id}" aria-expanded="${open}">${open ? '▾' : '▸'} 이 카드만</button><button class="btn xs" data-pick="${c.id}">바꾸기</button><button class="ib" data-rmcard="${c.id}" aria-label="${esc(p.name)} 카드 삭제">✕</button></div>
@@ -322,9 +323,9 @@ function reviewTab(s) {
   const rv = s.rv;
   const group = (g, gi) => {
     const list = REVIEWS.filter(r => r.seq === g.seq).sort((a, b) => (b.best - a.best) || b.rating - a.rating);
-    return `<div class="box"><div class="f"><span class="l">${esc(P[g.seq].name)} <em>★ ${P[g.seq].rating} (${P[g.seq].reviews}) · 자동</em></span></div>
+    return `<div class="box"><div class="f"><span class="l">${esc(P[g.seq].name)} <em>${P[g.seq].rating == null ? '후기 요약 없음' : `★ ${P[g.seq].rating} (${P[g.seq].reviews})`} · 자동</em></span></div>
       <div class="rvs">${list.map(v => { const pk = g.picks.find(x => x.id === v.id); return `<div class="rvi ${pk ? 'on' : ''}">
-        <span class="meta"><span class="stars">${'★'.repeat(v.rating)}</span>${v.best ? '<span class="tag real">베스트</span>' : ''}${v.gift ? '<span class="tag">선물 언급</span>' : ''}${v.repeat ? '<span class="tag">재구매 언급</span>' : ''}<span>${v.date}</span><span class="grow"></span>
+        <span class="meta"><span class="stars">${'★'.repeat(v.rating)}</span>${v.best ? '<span class="tag real">베스트</span>' : ''}${v.gift ? '<span class="tag">선물 언급</span>' : ''}${v.repeat ? '<span class="tag">재구매 언급</span>' : ''}<span>${v.date || ''}</span><span class="grow"></span>
           <button class="btn xs ${pk ? '' : 'primary'}" data-rvpick="${gi}|${v.id}">${pk ? '빼기' : '고르기'}</button></span>
         <span class="body">${esc(v.text)}</span>
         ${pk ? `<label class="f"><span>한 줄 제목 <em>(선택) ${esc(pk.titleSrc)}</em></span><input type="text" data-rvtitle="${gi}|${v.id}" maxlength="40" value="${esc(pk.title)}" placeholder="예) 작고 간편해서 매일 손이 가요">
@@ -334,7 +335,7 @@ function reviewTab(s) {
       <span class="hint">상품 카드 안에 후기 한 줄을 넣으려면 상품 구좌의 카드 모양에서 '고객 후기 한 줄'을 켜요.</span></div>
     <div class="f"><span class="l">후기와 함께 보여줄 것 <em>자동 · 상품·할인 값 그대로</em></span><div class="chips-row">${[['img', '상품 이미지'], ['name', '상품명'], ['price', '가격']].map(([k, n]) => `<button class="chip" data-rvshow="${k}" aria-pressed="${!!rv.show[k]}">${n}</button>`).join('')}</div></div>
     <div class="f"><span class="l">보여줄 순서 <em>${rv.order.length}개 · ↑↓로 바꿔요${rv.shape === 'per' ? ' · 상품별 묶음은 먼저 나온 상품 차례로 묶여요' : ''}</em></span>
-      ${rv.order.length ? `<ul class="els">${rv.order.map((id, j) => { const v = REVIEWS.find(r => r.id === id), pk = rv.groups.flatMap(g => g.picks).find(x => x.id === id); return `<li class="el"><span class="cap">${j + 1}</span>
+      ${rv.order.length ? `<ul class="els">${rv.order.map((id, j) => { const v = REVIEWS.find(r => r.id === id), pk = rv.groups.flatMap(g => g.picks).find(x => x.id === id); if (!v) return ''; return `<li class="el"><span class="cap">${j + 1}</span>
         <span><span class="nm">${esc(pk?.title || v.text.slice(0, 18) + '…')}</span> <span class="src">${esc(P[v.seq].name)}</span></span>
         <span class="tools"><button class="ib" data-rvmv="${j}:-1" ${j ? '' : 'disabled'} aria-label="위로">↑</button><button class="ib" data-rvmv="${j}:1" ${j < rv.order.length - 1 ? '' : 'disabled'} aria-label="아래로">↓</button></span></li>`; }).join('')}</ul>` : '<p class="hint">아래에서 후기를 고르면 여기 차례대로 쌓여요.</p>'}</div>
     <span class="sub">상품별 후기 고르기</span>
@@ -393,8 +394,10 @@ function pickList() {
   const row = (p, meta) => `<li class="pitem"><span class="pn">${esc(p.name)} ${mark(p)}</span><span class="pm">${esc(meta)}</span><button class="btn xs ${inSec.has(p.seq) ? '' : 'primary'}" data-choose="${p.seq}">고르기</button></li>`;
   const meta = p => { const it = itemOf(p.seq); return `${p.seq} · ${won(p.price)}${it ? ` · 할인 ${Math.round(it.rate * 100)}%${it.source === 'excel' ? ' · 엑셀로 받음' : ''}` : ''}`; };
   if (pickTab === 'plan') return items.length ? `<p class="hint">상품·할인에 직접 넣었거나 엑셀로 받은 상품이에요. 고르면 그 할인율 그대로 들어가요.</p><ul class="plist">${items.map(i => row(P[i.seq], meta(P[i.seq]))).join('')}</ul>` : '<p class="hint">아직 이 기획안에 상품이 없어요.</p>';
-  if (pickTab === 'search') { const hits = PRODUCTS.filter(p => !q || p.name.includes(q) || p.seq.toLowerCase().includes(q.toLowerCase()));
+  if (pickTab === 'search') { const qq = q.replace(/\s/g, '').toLowerCase(), hits = PRODUCTS.filter(p => !qq || p.name.replace(/\s/g, '').toLowerCase().includes(qq) || p.seq.toLowerCase().startsWith(qq))
+      .sort((a, b) => (b.active ? 1 : 0) - (a.active ? 1 : 0) || (b.sales28 || 0) - (a.sales28 || 0)).slice(0, liveOn ? 30 : 99);
     return `<label class="search block ${q ? 'has-value' : ''}" id="pqS"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input type="search" id="pq" value="${esc(q)}" placeholder="상품명이나 SEQ로 찾기" aria-label="상품 찾기" autocomplete="off"><button class="clear" type="button" data-sclear aria-label="검색어 지우기"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button></label><ul class="plist" id="phits">${hits.map(p => row(p, meta(p))).join('') || `<li class="search-meta none">'${esc(q)}'와 맞는 상품이 없어요. 다른 이름이나 SEQ로 찾아 주세요.</li>`}</ul>`; }
+  if (liveOn) return recLive(row, meta);
   const grp = (t, sub, list) => `<div><h3>${t}</h3><p class="hint">${sub}</p><ul class="plist">${list.map(([p, m]) => row(p, m)).join('') || '<li class="hint">없어요</li>'}</ul></div>`;
   return `${grp('작년 비슷한 기획에서 쓴 상품', '봄맞이 티 컬렉션 (2026.03)', PRODUCTS.filter(p => p.ly).slice(0, 4).map(p => [p, meta(p)]))}
     ${grp('오래 행사에 안 쓴 상품', '마지막 행사가 오래된 순서', [...PRODUCTS].sort((a, b) => b.days - a.days).slice(0, 4).map(p => [p, `${meta(p)} · 마지막 행사 ${p.days}일 전`]))}
@@ -413,7 +416,7 @@ function closePick() { $('#drawer').hidden = true; $('#scrim').hidden = true; pi
 function choose(seq) {
   const c = allCards(S()).find(x => x.id === pickFor); if (!c) return;
   c.seq = seq; if (!itemOf(seq)) items.push({ seq, rate: 0, source: 'direct', appeal: '' });
-  closePick(); render(); toast(`${P[seq].name}을 넣었어요${itemOf(seq).rate ? '' : '. 할인율은 카드에서 정해요'}`);
+  closePick(); render(); if (liveOn) loadReviews([seq]).then(n => n && render()); toast(`${P[seq].name}을 넣었어요${itemOf(seq).rate ? '' : '. 할인율은 카드에서 정해요'}`);
 }
 
 // ================= 엑셀 =================
@@ -429,11 +432,13 @@ function templateRows() {
 function openTemplate() {
   const rows = templateRows();
   dlg('상품 엑셀 양식', '구좌 구성에 맞춘 양식', `맨 앞에 구좌·탭 열 하나, 그다음은 PROMO_WORK 붙여넣기와 같은 13열이에요. 카드 수만큼 줄이 들어가 있어요 (${rows.length}줄).`,
-    `<div class="tscroll"><table class="t"><thead><tr><th>구좌·탭 (붙여넣지 않음)</th>${XLS_COLS.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr><td class="pre">${esc(r.where)}</td><td class="auto">-</td><td>2026-03-02</td><td>2026-03-15</td><td>봄 피크닉</td><td>상시</td><td>${esc(r.seq)}</td><td class="auto">-</td><td>${esc(r.cat) || '<span class="auto">비움</span>'}</td><td>${esc(r.appeal)}</td><td>정율</td><td class="auto">-</td><td>${esc(r.rate)}</td><td class="auto">-</td></tr>`).join('')}</tbody></table></div>
+    `<div class="tscroll"><table class="t"><thead><tr><th>구좌·탭 (붙여넣지 않음)</th>${XLS_COLS.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr><td class="pre">${esc(r.where)}</td><td class="auto">-</td><td>${esc(liveOn ? PERIOD[0] : '2026-03-02')}</td><td>${esc(liveOn ? PERIOD[1] : '2026-03-15')}</td><td>${esc(liveOn ? PLAN.doc.title : '봄 피크닉')}</td><td>상시</td><td>${esc(r.seq)}</td><td class="auto">-</td><td>${esc(r.cat) || '<span class="auto">비움</span>'}</td><td>${esc(r.appeal)}</td><td>정율</td><td class="auto">-</td><td>${esc(r.rate)}</td><td class="auto">-</td></tr>`).join('')}</tbody></table></div>
      <p class="hint">맨 앞 '구좌·탭' 열은 올릴 때 어느 구좌인지 맞추는 열이라 PROMO_WORK에는 붙여 넣지 않아요 (그다음 열부터 복사). 카테고리명은 정한 구좌만 채우고 나머지는 비워 둬요. 회색 = PROMO_WORK에서 자동으로 채워지는 칸. 추가 혜택(얼리버드 등 2단)은 넣는 방법을 확인하기 전까지 '검증' 시트와 메모에만 적어요 (${rows.filter(r => r.ex).length}줄).</p>`,
-    '<button class="btn sm primary" data-toast="예시예요: 실제로는 .xlsx 파일로 내려받아요">.xlsx 내려받기</button>');
+    liveOn ? '<button class="btn sm primary" data-csvdown>CSV 내려받기 (엑셀로 열려요)</button>' : '<button class="btn sm primary" data-toast="예시예요: 실제로는 .xlsx 파일로 내려받아요">.xlsx 내려받기</button>');
 }
 function openUpload() {
+  if (liveOn) { dlg('엑셀 올리기', '채운 양식(CSV)을 골라 주세요', '[엑셀 양식 받기]로 받은 파일을 엑셀에서 채우고 CSV로 저장한 파일이에요. 바뀌는 것을 먼저 보여 드려요.',
+    '<label class="f"><span>파일</span><input type="file" accept=".csv,text/csv" data-csvup></label><p class="hint">맨 앞 \'구좌·탭\' 열로 구좌를 찾고, 같은 구좌·탭 안에서는 줄 순서대로 카드 1, 2, 3…에 넣어요. SEQ·소구문구·할인율만 읽어요.</p>', ''); return; }
   const chg = [['가격대별 선물 추천 · 2만원대', '카드 1', 'P108', 0.1], ['가격대별 선물 추천 · 2만원대', '카드 2', 'P109', 0.15], ['첫 잔, 벚꽃', '카드 4', 'P102', 0.2]];
   dlg('엑셀 올리기', '올린 파일: 봄피크닉_상품.xlsx (예시)', '바뀌는 것을 먼저 보여 드려요. 반영하면 상품·할인에도 같은 값이 들어가요.',
     `<table class="t"><thead><tr><th>구좌·탭</th><th>자리</th><th>지금</th><th>엑셀</th><th>할인율</th></tr></thead><tbody>${chg.map(([a, b, seq, r]) => `<tr class="chg"><td>${esc(a)}</td><td>${b}</td><td class="auto">비어 있음</td><td>${esc(P[seq].name)}</td><td>${Math.round(r * 100)}%</td></tr>`).join('')}</tbody></table>
@@ -465,7 +470,8 @@ document.addEventListener('click', e => {
   if (d('choose')) { choose(v('choose')); return; }
   if (d('pick')) { openPick(v('pick')); return; }
   if (d('toast')) { toast(v('toast')); return; }
-  if (d('upapply')) { applyUpload(); return; }
+  if (d('godeals')) { PLAN.flush().then(() => location.assign(`/v2/deals?id=${PLAN.id}`)); return; }
+  if (d('upapply')) { liveOn ? applyCsv() : applyUpload(); return; }
   if (!s) return;
   if (d('judge')) { openJudge = openJudge === v('judge') ? null : v('judge'); renderPanel(); refocus(`[data-judge="${v('judge')}"]`); return; }
   if (d('more')) { openMore = openMore === v('more') ? null : v('more'); renderPanel(); refocus(`[data-more="${v('more')}"]`); return; }
@@ -486,7 +492,7 @@ document.addEventListener('click', e => {
   if (d('rvpick')) { const [gi, id] = v('rvpick').split('|'), g = s.rv.groups[+gi], i = g.picks.findIndex(x => x.id === id); if (i >= 0) { g.picks.splice(i, 1); s.rv.order = s.rv.order.filter(x => x !== id); } else { g.picks.push({ id, title: '', titleSrc: '직접' }); s.rv.order.push(id); } render(); return; }
   if (d('rvshow')) { const k = v('rvshow'); s.rv.show[k] = s.rv.show[k] ? 0 : 1; render(); refocus(`[data-rvshow="${k}"]`); return; }
   if (d('rvmv')) { const [j, dd] = v('rvmv').split(':').map(Number), o = s.rv.order; [o[j], o[j + dd]] = [o[j + dd], o[j]]; render(); refocus(`[data-rvmv="${j + dd}:${dd}"]`); return; }
-  if (d('rvadd')) { const used = s.rv.groups.map(g => g.seq), next = [...new Set(REVIEWS.map(r => r.seq))].find(x => !used.includes(x)); if (next) { s.rv.groups.push({ seq: next, picks: [] }); render(); } else toast('예시 후기가 있는 상품을 모두 넣었어요'); return; }
+  if (d('rvadd')) { const used = s.rv.groups.map(g => g.seq), next = [...new Set(REVIEWS.map(r => r.seq))].find(x => !used.includes(x)); if (next) { s.rv.groups.push({ seq: next, picks: [] }); render(); } else toast(liveOn ? '후기가 있는 이 기획안 상품을 모두 넣었어요 (상품을 카드에 넣으면 그 후기도 여기 나와요)' : '예시 후기가 있는 상품을 모두 넣었어요'); return; }
   if (d('refview')) { const r = REFS[v('refview')]; dlg('원본 구좌 레퍼런스 · 미리보기', r.name, `${r.from} · ${r.page} — 미리보기만 해요. 이 구좌는 바뀌지 않아요.`, `<div class="thumb big">${demoImg(r.r[0], r.r[1])}</div><p class="hint">원본 비율 ${r.r[0]}:${r.r[1]} (예시). 캡처를 연결하면 실제 이미지가 보여요.</p>`, '<button class="btn sm" data-toast="예시예요: 원본 프로모션 전체 페이지를 열어요">전체 페이지 보기</button>'); return; }
   if (d('refatt')) { const k = v('refatt'), i = s.att.findIndex(a => a.ref === k); if (i >= 0) s.att.splice(i, 1); else s.att.push({ ref: k, note: '' }); render(); toast(i >= 0 ? '참고에서 뺐어요' : '참고로 붙였어요. 디자인 요청 탭에서 참고할 점을 적을 수 있어요'); return; }
   if (d('reflay') && !d('reflay').disabled) { const r = REFS[v('reflay')]; setLayout(s, r.layout); render(); toast(`레이아웃을 '${LNAME[r.layout]}'로 가져왔어요. 문구·메모는 그대로예요`); return; }
@@ -505,7 +511,7 @@ function setLayout(s, ly) {
   s.layout = ly; const k = kindOf(ly);
   if (k === 'product') { s.card ||= cardShape('가격 표시'); if (!s.tabs) s.cards ||= [slot(), slot()]; }
   if (k === 'event') s.ev ||= { how: '', reward: '', rewardText: '', pick: '선착순', count: '', when: '', login: true, notice: '' };
-  if (k === 'review') s.rv ||= { shape: 'mix', groups: [{ seq: 'P106', picks: [] }], order: [], show: { img: 1, name: 1, price: 0 }, author: 'hide' };
+  if (k === 'review') s.rv ||= { shape: 'mix', groups: liveOn ? [] : [{ seq: 'P106', picks: [] }], order: [], show: { img: 1, name: 1, price: 0 }, author: 'hide' };
 }
 document.addEventListener('input', e => {
   const t = e.target, s = S();
@@ -553,56 +559,169 @@ $('#xlsUp').addEventListener('click', openUpload);
 $('#nextBtn').addEventListener('click', () => { if (Object.keys(drafts).length) { toast('반영하지 않은 할인이 있어요. 상품 탭에서 반영하거나 되돌려 주세요'); return; } if (!PLAN.id) { toast('예시예요: 미리보기·내보내기로 넘어가요'); return; } PLAN.flush().then(() => location.assign(`/v2/preview?id=${PLAN.id}`)); });
 let toastT;
 function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2800); }
+let liveOn = false, lastE = null, KWS = [], PERIOD = ['', ''];
 render();
 // ================= 기획안 잇기 (새 버전) =================
-// 구좌 목록 = 기획안의 page.sections (구좌 구성에서 정한 것). 제목·설명·버튼·엑셀 카테고리명·디자인 요청은 원래 칸에,
-// 추가 문구·번호·버튼 켜기·카드 모양·후기·이벤트 조건·레퍼런스는 구좌의 v2에 저장해요.
-// shortcut: 카드에 넣은 상품(slots)은 아직 저장하지 않아요 — 상품이 예시(P101…)라서. 상품·할인을 실제 상품과 이을 때 함께 저장
-let liveOn = false, lastE = null;
+// 구좌 목록 = 기획안의 page.sections (구좌 구성에서 정한 것). 제목·설명·버튼·엑셀 카테고리명·디자인 요청·카드 상품(slots)은 원래 칸에,
+// 추가 문구·번호·버튼 켜기·카드 모양·카드별 라벨·태그·알약·후기·이벤트 조건·레퍼런스는 구좌의 v2에 저장해요.
+// 상품·할인 값(할인율·소구문구)은 상품·할인 화면과 같은 promo_rows: 카드에 넣거나 할인을 고치면 그 행을 고치고, 없으면 행을 더해요(지우지는 않음)
+const edP = r => ({ seq: String(r.seq), name: r.name, price: r.price, cost: r.cost || 0, days: r.days_since_promo ?? '-', ly: (r.ly_next28 || 0) > 0, lyAmt: r.ly_next28 || 0,
+  kw: [], after: null, rating: null, reviews: null, active: !!r.active, sales28: r.sales_28 || 0, category: r.category || '' });
 function fromSection(x) {
   const v = x.v2 || {}, layout = x.layoutId || 'hero', k = kindOf(layout);
   const s = { id: x.sectionId, name: x.headline || x.name || '', layout, role: x.subhead || '', scope: v.scope || '', num: !!v.num,
     cta: x.cta || '', ctaOn: v.ctaOn ?? !!x.cta, ctaTo: v.ctaTo || '', refs: v.refs || [], att: [], notes: x.designNotes || '',
     moods: (v.moods || []).map(m => ({ id: m.id, pts: new Set(m.pts || []) })), lines: (v.lines || []).map(l => ({ id: l.id, text: l.text || '' })), cat: x.zone_tag || '' };
+  // 카드 = 저장된 slots (상품 목록에 없는 SEQ는 비워 보이되 저장할 때 그대로 돌려놓음)
+  const ex = v.cards || {}, slots = x.slots || [];
+  const mk = sl => { const e = ex[sl.slotId] || {}, ok = sl.seq && P[sl.seq];
+    return slot(ok ? String(sl.seq) : null, { id: sl.slotId, copy: sl.customCopy || '', label: e.label || '', tag: e.tag || '', pill: e.pill || '', pillText: e.pillText || '', off: e.off || [], keep: !ok && sl.seq ? String(sl.seq) : null }); };
   if (k === 'product') {
     s.card = v.card?.order && v.card?.on ? { order: v.card.order, on: v.card.on } : cardShape('가격 표시');
-    if (x.tabs?.length) { s.tab = 0; s.tabs = x.tabs.map(t => ({ id: t.tabId, name: t.label, cat: t.zone_tag || '', cards: [slot(), slot()] })); }
-    else s.cards = [slot(), slot(), slot(), slot()];
+    if (x.tabs?.length) { s.tab = 0; const first = x.tabs[0].tabId;
+      s.tabs = x.tabs.map(t => { const cs = slots.filter(sl => (sl.tabId || first) === t.tabId).map(mk); return { id: t.tabId, name: t.label, cat: t.zone_tag || '', cards: cs.length ? cs : [slot(), slot()] }; }); }
+    else s.cards = slots.length ? slots.map(mk) : [slot(), slot(), slot(), slot()];
   }
   if (k === 'review') s.rv = v.rv || { shape: 'mix', groups: [], order: [], show: { img: 1, name: 1, price: 0 }, author: 'hide' };
   if (k === 'event') s.ev = v.ev || { how: '', reward: '', rewardText: '', pick: '', count: '', when: '', login: true, notice: '' };
   return s;
 }
 const cut = (t, n) => String(t || '').slice(0, n);
+const slotOut = (c, tabId) => ({ slotId: c.id, seq: c.seq || c.keep || null, items: null, placeholderStatus: c.seq || c.keep ? 'AVAILABLE' : 'UNDECIDED', customCopy: cut(c.copy, 200), tabId });
+const cardExtra = s => Object.fromEntries(allCards(s).filter(c => c.label || c.tag || c.pill || c.pillText || c.off.length)
+  .map(c => [c.id, { label: cut(c.label, 20), tag: cut(c.tag, 20), pill: c.pill, pillText: cut(c.pillText, 30), off: c.off }]));
 function toSection(s, i) {
   return { sectionId: s.id, order: i, name: cut(s.name, 40), headline: cut(s.name, 120), subhead: cut(s.role, 400), cta: cut(s.cta, 40),
     layoutId: s.layout, zone_tag: cut(s.cat, 40), designNotes: cut(s.notes, 2000),
     ...(s.tabs ? { tabs: s.tabs.map(t => ({ tabId: t.id, label: cut(t.name, 40), zone_tag: cut(t.cat, 40) })) } : {}),
+    ...(s.card ? { slots: (s.tabs ? s.tabs.flatMap(t => t.cards.map(c => slotOut(c, t.id))) : (s.cards || []).map(c => slotOut(c, null))).slice(0, 40) } : {}),
     v2: { scope: cut(s.scope, 200), num: !!s.num, ctaOn: !!s.ctaOn, ctaTo: cut(s.ctaTo, 60), lines: (s.lines || []).map(l => ({ id: l.id, text: cut(l.text, 120) })),
       refs: s.refs || [], moods: (s.moods || []).map(m => ({ id: m.id, pts: [...m.pts] })),
-      ...(s.card ? { card: { order: s.card.order, on: s.card.on } } : {}), ...(s.rv ? { rv: s.rv } : {}), ...(s.ev ? { ev: s.ev } : {}) } };
+      ...(s.card ? { card: { order: s.card.order, on: s.card.on }, cards: cardExtra(s) } : {}), ...(s.rv ? { rv: s.rv } : {}), ...(s.ev ? { ev: s.ev } : {}) } };
+}
+// 이 화면의 할인(items) → 기획안 promo_rows (하루특가·조합 행은 건드리지 않음)
+function rowsFromItems(d) {
+  const rows = d.promo_rows ||= [], promo = cut(d.title, 60), per = d.brief?.period || {};
+  for (const it of items) {
+    const rate = Math.round(it.rate * 1000) / 1000, appeal = cut(it.appeal, 80);
+    const r = rows.find(x => x.type !== '하루특가' && !x.items?.length && String(x.seq) === it.seq);
+    if (r) { r.rate = rate; r.appeal = appeal; if (rate > 0 && r.type === '큐레이션') r.type = '상시'; }
+    else rows.push({ promo, type: rate > 0 ? '상시' : '큐레이션', start: per.start || null, end: per.end || null, seq: it.seq, items: null, rate, appeal, category_tag: '', clearance: false, memo: '' });
+  }
 }
 function saveEditor() {
   if (!liveOn) return;
-  const out = secs.map(toSection), j = JSON.stringify(out);
+  const out = secs.map(toSection), j = JSON.stringify([out, items]);
   if (j === lastE) return;
   lastE = j;
   PLAN.save(d => {
     const old = Object.fromEntries((d.page?.sections || []).map(x => [x.sectionId, x]));
     d.page = { ...(d.page || {}), sections: out.map(o => ({ ...(old[o.sectionId] || {}), ...o, v2: { ...(old[o.sectionId]?.v2 || {}), ...o.v2 } })) };
+    rowsFromItems(d);
   });
 }
+// 후기·별점: 상품마다 /api/product/{seq}의 후기 요약 (리뷰 수·평균·근거 후기 2개, 작성자 없음)
+async function loadReviews(seqs) {
+  const got = await Promise.all([...new Set(seqs)].filter(q => P[q] && P[q].rating == null).slice(0, 60).map(q => PRODUCTS_API.detail(q).then(d => [q, d])));
+  for (const [q, d] of got) {
+    const r = d?.reviews; if (!r) continue;
+    P[q].rating = r.avg == null ? null : r.avg.toFixed(1); P[q].reviews = r.n;
+    (r.quotes || []).forEach((t, i) => { const id = `${q}_${i}`; if (!REVIEWS.some(x => x.id === id)) REVIEWS.push({ id, seq: q, rating: null, best: i === 0, date: '', gift: /선물|드렸|부모님|지인/.test(t), repeat: /재구매|또 ?구매|번째/.test(t), text: t }); });
+  }
+  return got.length;
+}
+// 상품 고르기 '추천' (실제 상품, 규칙): 작년 이맘때 잘 팔린 / 오래 행사에 안 쓴 / 브리프 키워드와 이름이 겹치는
+function recLive(row, meta) {
+  const act = PRODUCTS.filter(p => p.active), man = n => `${Math.round(n / 10000).toLocaleString('ko-KR')}만원`;
+  const ly = act.filter(p => p.lyAmt > 0).sort((a, b) => b.lyAmt - a.lyAmt).slice(0, 5);
+  const rest = act.filter(p => typeof p.days === 'number' && p.sales28 > 0).sort((a, b) => b.days - a.days).slice(0, 5);
+  const kw = act.map(p => [p, KWS.filter(k => p.name.replace(/\s/g, '').includes(k.replace(/\s/g, '')))]).filter(([, m]) => m.length).sort((a, b) => b[0].sales28 - a[0].sales28).slice(0, 6);
+  const grp = (t, sub, list) => `<div><h3>${t}</h3><p class="hint">${esc(sub)}</p><ul class="plist">${list.map(([p, m]) => row(p, m)).join('') || '<li class="hint">없어요</li>'}</ul></div>`;
+  return `${grp('작년 이맘때 잘 팔린 상품', '앞으로 4주에 해당하는 작년 4주 매출순', ly.map(p => [p, `${meta(p)} · 작년 ${man(p.lyAmt)}`]))}
+    ${grp('오래 행사에 안 쓴 상품', '최근 28일 판매가 있고 마지막 행사가 오래된 순서', rest.map(p => [p, `${meta(p)} · 마지막 행사 ${p.days}일 전`]))}
+    ${grp('고른 키워드와 이름이 겹치는 상품', KWS.length ? `브리프 키워드 ${KWS.map(k => `'${k}'`).join(' · ')}` : '브리프에서 고른 키워드가 없어요', kw.map(([p, m]) => [p, `${meta(p)} · ${m.join(', ')}`]))}
+    <p class="hint">판매 중인 상품만 · 실제 판매·행사 이력으로 고른 규칙이에요 (AI 아님).</p>`;
+}
+// ---------- 엑셀 (CSV): 양식 내려받기 / 채운 파일 올리기 ----------
+const csvCell = v => { const t = String(v ?? ''); return /[",\r\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+function csvParse(text) {
+  const rows = []; let row = [], cell = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; } else if (ch === '"') q = false; else cell += ch; continue; }
+    if (ch === '"') q = true; else if (ch === ',') { row.push(cell); cell = ''; } else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = ''; } else cell += ch;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows.filter(r => r.some(c => c.trim()));
+}
+function downloadCsv() {
+  const rows = templateRows(), title = PLAN.doc?.title || '기획안';
+  const body = [['구좌·탭', ...XLS_COLS], ...rows.map(r => [r.where, '', PERIOD[0], PERIOD[1], title, '상시', r.seq, '', r.cat, r.appeal, '정율', '', r.rate, ''])].map(r => r.map(csvCell).join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + body], { type: 'text/csv;charset=utf-8' }));
+  a.download = `${title.replace(/[\\/:*?"<>|]/g, '_').slice(0, 40)}_상품양식.csv`;
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast(`양식을 내려받았어요 (${rows.length}줄). 엑셀에서 열어 SEQ·소구문구·할인율을 채운 뒤 CSV로 저장해 올려 주세요`);
+}
+let upPlan = [];
+async function readCsv(f) {
+  if (f.size > 2e6) { toast('2MB가 넘는 파일은 올릴 수 없어요'); return; }
+  const buf = await f.arrayBuffer();
+  let text; try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch { text = new TextDecoder('euc-kr').decode(buf); }   // 엑셀 'CSV(쉼표로 분리)'는 euc-kr
+  const rows = csvParse(text.replace(/^﻿/, '')); if (rows[0]?.[0]?.trim() === '구좌·탭') rows.shift();
+  const where = {}; secs.filter(s => s.card).forEach(s => (s.tabs ? s.tabs.map(t => [`${s.name} · ${t.name}`, s, t]) : [[s.name, s, null]]).forEach(([w, ss, t]) => { where[w] = { s: ss, t }; }));
+  const seen = {}, bad = []; upPlan = [];
+  rows.forEach((r, n) => {
+    const w = (r[0] || '').trim(), seq = (r[6] || '').trim(), raw = (r[12] || '').trim(), rate = raw.endsWith('%') ? parseFloat(raw) / 100 : parseFloat(raw) > 1 ? parseFloat(raw) / 100 : parseFloat(raw);
+    const k = seen[w] = (seen[w] ?? -1) + 1;
+    if (!seq) return;
+    if (!where[w]) { bad.push(`${n + 2}줄: '${w}' 구좌·탭을 이 기획안에서 못 찾았어요`); return; }
+    if (!P[seq]) { bad.push(`${n + 2}줄: SEQ ${seq}를 상품 목록에서 못 찾았어요`); return; }
+    if (raw && !(rate >= 0 && rate < 0.9)) { bad.push(`${n + 2}줄: 할인율 '${raw}'을 읽지 못했어요 (예: 20%)`); return; }
+    const cards = where[w].t ? where[w].t.cards : where[w].s.cards;
+    upPlan.push({ w, sid: where[w].s.id, tid: where[w].t?.id || null, k, seq, rate: raw ? rate : null, appeal: (r[9] || '').trim().slice(0, 80), now: cards[k]?.seq ? P[cards[k].seq].name : '비어 있음' });
+  });
+  dlg('엑셀 올리기', `올린 파일: ${f.name}`, '바뀌는 것을 먼저 보여 드려요. 반영하면 상품·할인에도 같은 값이 들어가요.',
+    `<table class="t"><thead><tr><th>구좌·탭</th><th>자리</th><th>지금</th><th>엑셀</th><th>할인율</th></tr></thead><tbody>${upPlan.map(x => `<tr class="chg"><td>${esc(x.w)}</td><td>카드 ${x.k + 1}</td><td class="auto">${esc(x.now)}</td><td>${esc(P[x.seq].name)}</td><td>${x.rate == null ? '그대로' : `${Math.round(x.rate * 100)}%`}</td></tr>`).join('') || '<tr><td colspan="5" class="cap">반영할 줄이 없어요</td></tr>'}</tbody></table>
+     ${bad.length ? `<p class="warnline">반영하지 않는 줄 ${bad.length}개</p><ul class="mini">${bad.slice(0, 20).map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}`,
+    upPlan.length ? `<button class="btn sm primary" data-upapply>${upPlan.length}건 반영</button>` : '');
+}
+function applyCsv() {
+  for (const x of upPlan) {
+    const s = secs.find(y => y.id === x.sid); if (!s) continue;
+    const cards = x.tid ? s.tabs.find(t => t.id === x.tid).cards : s.cards;
+    while (cards.length <= x.k) cards.push(slot());
+    cards[x.k].seq = x.seq; cards[x.k].keep = null;
+    const it = itemOf(x.seq) || (items.push({ seq: x.seq, rate: 0, source: 'excel', appeal: '' }), itemOf(x.seq));
+    if (x.rate != null) it.rate = x.rate; if (x.appeal) it.appeal = x.appeal; it.source = 'excel';
+  }
+  const n = upPlan.length; upPlan = []; $('#dlg').close(); render(); loadReviews(items.map(i => i.seq)).then(k => k && render()); toast(`엑셀에서 ${n}건을 반영했어요`);
+}
+document.addEventListener('click', e => { if (e.target.closest('[data-csvdown]')) downloadCsv(); });
+document.addEventListener('change', e => { if (e.target.matches?.('[data-csvup]') && e.target.files[0]) readCsv(e.target.files[0]); });
+
 const renderBase = render;
 render = function () { renderBase(); saveEditor(); };
 document.addEventListener('input', () => setTimeout(saveEditor));
 document.addEventListener('change', () => setTimeout(saveEditor));
-PLAN.ready.then(doc => {
+PLAN.ready.then(async doc => {
   if (!doc) return;
   const list = (doc.page?.sections || []).slice().sort((a, b) => a.order - b.order);
   if (!list.length) { toast('이 기획안은 아직 구좌 구성을 정하지 않았어요. 02 구좌 구성에서 고르면 여기에 나와요 (지금은 예시)'); return; }
+  let prods;
+  try { prods = await PRODUCTS_API.all(); } catch (e) { toast(`상품을 불러오지 못해 예시로 보여요: ${e.message}`); return; }
+  for (const k of Object.keys(P)) delete P[k];
+  PRODUCTS = prods.filter(r => r.seq && r.price).map(edP); PRODUCTS.forEach(p => { P[p.seq] = p; });
+  REVIEWS = []; EXTRAS = doc.v2?.extras || []; KWS = (doc.v2?.keywords || []).filter(Boolean);
+  PERIOD = [doc.brief?.period?.start || '', doc.brief?.period?.end || '']; END = PERIOD[1] || END;
+  items = (doc.promo_rows || []).filter(r => r.type !== '하루특가' && r.seq && P[r.seq] && !r.items?.length)
+    .map(r => ({ seq: String(r.seq), rate: r.type === '큐레이션' ? 0 : r.rate || 0, source: 'plan', appeal: r.appeal || '' }));
+  items = items.filter((it, i) => items.findIndex(x => x.seq === it.seq) === i);
   secs = list.map(fromSection);
-  cur = secs[0].id; tab = 'copy';
-  uidN = Math.max(uidN, ...secs.flatMap(s => [s.id, ...(s.tabs || []).map(t => t.id), ...s.lines.map(l => l.id)]).map(x => +String(x).replace(/\D/g, '') || 0));
-  liveOn = true; lastE = JSON.stringify(secs.map(toSection));
+  cur = secs[0].id; tab = 'copy'; pickTab = 'plan';
+  uidN = Math.max(uidN, ...secs.flatMap(s => [s.id, ...(s.tabs || []).map(t => t.id), ...s.lines.map(l => l.id), ...allCards(s).map(c => c.id)]).map(x => +String(x).replace(/\D/g, '') || 0));
+  await loadReviews([...items.map(i => i.seq), ...secs.flatMap(s => allCards(s).map(c => c.seq).filter(Boolean)), ...secs.flatMap(s => s.rv?.groups.map(g => g.seq) || [])]);
+  secs.forEach(s => { if (s.rv) s.rv.groups = s.rv.groups.filter(g => P[g.seq]); });   // 예시 상품(P106 등)이 남아 있으면 뺌
+  liveOn = true; lastE = JSON.stringify([secs.map(toSection), items]);
   render();
 });

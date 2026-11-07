@@ -177,6 +177,17 @@ class PoolItem(BaseModel):
     source: str = Field(default="", max_length=40)
 
 
+class Extra(BaseModel):
+    """추가 혜택(2단, 쿠폰·얼리버드 등). PROMO_WORK 엑셀에는 1단만 들어가서, 새 버전 화면 값으로만 둔다."""
+    id: str = Field(pattern=SID)
+    name: str = Field(default="", max_length=20)
+    calc: Literal["sale_pct", "won", "list_pct"] = "sale_pct"   # 할인가에서 n% 더 | n원 더 | 정가에서 n% (더 싼 쪽)
+    val: float = Field(default=0, ge=0, le=10_000_000)
+    seqs: list[Annotated[str, Field(max_length=12)]] = Field(default_factory=list, max_length=100)
+    s: str = Field(default="", max_length=10)
+    e: str = Field(default="", max_length=10)
+
+
 class V2Meta(BaseModel):
     """새 버전(/v2) 화면만 쓰는 값. 예전 화면은 보내지 않으므로, 안 보내면 저장된 값을 그대로 둔다 (store.save)."""
     cls: Literal["", "season", "brand", "launch", "collab", "clear"] = ""   # 분류 5종 (plans/20 §4-1)
@@ -184,6 +195,7 @@ class V2Meta(BaseModel):
     keywords: list[Annotated[str, Field(max_length=20)]] = Field(default_factory=list, max_length=30)   # 브리프에서 고른 키워드
     stage: Literal["brief", "compose", "editor", "preview", "deals"] = "brief"   # 마지막으로 연 단계 (홈 목록 '지금 단계')
     compose: Literal["", "A", "B", "C", "blank"] = ""   # 구좌 구성에서 고른 추천안 (구성은 page.sections)
+    extras: list[Extra] = Field(default_factory=list, max_length=20)   # 추가 혜택 (상품·할인 = 구좌 편집 같은 값)
 
 
 class ProjectReq(BaseModel):

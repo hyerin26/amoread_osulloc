@@ -53,13 +53,14 @@ function loadPlan(doc, prods) {
   const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10), add = (d, n) => new Date(Date.parse(d) + n * 864e5).toISOString().slice(0, 10);
   PERIOD = doc.brief?.period ? [doc.brief.period.start, doc.brief.period.end] : [today, add(today, 13)];
   const span = new Set(Array.from({ length: Math.min(31, days(PERIOD[0], PERIOD[1])) }, (_, i) => add(PERIOD[0], i)));
-  items = []; deals = {}; extras = []; keepRows = [];
+  items = []; deals = {}; keepRows = []; const places = placesOf(doc);
+  extras = (doc.v2?.extras || []).map(x => ({ ...x, seqs: [...(x.seqs || [])] }));
   for (const r of doc.promo_rows || []) {
     const seq = r.items?.length ? comboOf(r.items) : String(r.seq || '');
     if (!seq || !P[seq]) { keepRows.push(r); continue; }   // 화면에 못 그리는 행도 저장할 때 그대로 돌려놓음
     if (r.type === '하루특가') { (deals[r.start] ||= []).push([seq, r.rate || 0, r]); span.add(r.start); continue; }
     items.push({ seq, type: r.type === '큐레이션' ? '할인 없음' : P[seq].combo ? '조합' : '상시', rate: r.type === '큐레이션' ? 0 : r.rate || 0,
-      s: r.start || PERIOD[0], e: r.end || PERIOD[1], appeal: r.appeal || '', clear: !!r.clearance, where: [], row: r });
+      s: r.start || PERIOD[0], e: r.end || PERIOD[1], appeal: r.appeal || '', clear: !!r.clearance, where: places[seq] || [], row: r });
   }
   DEAL_DATES = [...span].sort();
   pool = (doc.pool || []).filter(x => x.seq && P[x.seq]).map(x => ({ seq: String(x.seq), src: x.source || '후보', memo: x.memo || '' }));
@@ -69,7 +70,7 @@ function loadPlan(doc, prods) {
   slotsPerDay = doc.deal_plan?.slots || 4;
   sel = items[0]?.seq || null; tab = 'items'; LIVE = true;
   document.querySelector('.head h1').textContent = doc.title;
-  document.querySelector('.demo').innerHTML = '<b>이 기획안의 실제 상품이에요.</b> 정가·원가·평소 판매·마지막 행사·이미 잡힌 행사는 실제 값이고, 고치면 이 기획안에 저장돼요. <b>할인 깊이별 반응·예상 매출·리뷰·지난 행사 할인 기준은 아직 예시</b>예요. 추가 혜택은 아직 저장되지 않아요.';
+  document.querySelector('.demo').innerHTML = '<b>이 기획안의 실제 상품이에요.</b> 정가·원가·평소 판매·마지막 행사·이미 잡힌 행사는 실제 값이고, 고치면 이 기획안에 저장돼요. 반응·예상 매출·지난 행사 할인 기준은 지난 실적 관찰값이에요 (원인으로 단정하지 않아요). 놓인 곳은 구좌 편집의 카드에서 와요.';
   lastSaved = snapshot();
 }
 const rowItems = q => P[q].combo ? (P[q].items || P[q].combo.map(s => ({ seq: s, qty: 1 }))) : null;
@@ -80,13 +81,14 @@ function toRows() {
   for (const d of Object.keys(deals).sort()) for (const [q, r, row] of deals[d]) rows.push({ ...blank, ...row, type: '하루특가', start: d, end: d, seq: P[q].combo ? null : q, items: rowItems(q), rate: r });
   return rows.concat(keepRows).slice(0, 500);
 }
-const snapshot = () => JSON.stringify([toRows(), pool, dealCands, slotsPerDay]);
+const snapshot = () => JSON.stringify([toRows(), pool, dealCands, slotsPerDay, extras]);
 function persist() {
   if (!LIVE) return;
   const s = snapshot(); if (s === lastSaved) return; lastSaved = s;
   PLAN.save(d => {
     d.promo_rows = toRows();
     d.pool = pool.map(x => ({ seq: x.seq, items: null, memo: String(x.memo || '').slice(0, 200), source: String(x.src || '').slice(0, 40) })).concat(keepPool).slice(0, 100);
+    d.v2 = { ...(d.v2 || {}), extras: extras.slice(0, 20).map(x => ({ id: x.id, name: String(x.name || '').slice(0, 20), calc: x.calc, val: Math.max(0, +x.val || 0), seqs: x.seqs.filter(q => P[q] && !P[q].combo).slice(0, 100), s: x.s || '', e: x.e || '' })) };
     d.deal_plan = { ...(d.deal_plan || {}), slots: slotsPerDay, candidates: dealCands.map(seq => ({ seq, items: null, rate: null, memo: '' })).concat(keepCands).slice(0, 100) };
   });
 }
@@ -136,9 +138,19 @@ function maxRate(seq) { for (let r = 80; r >= 0; r--) { if (craOf(seq, priceOf(s
 // 반응(평소 대비 판매 배수): 지난 실적의 할인 깊이별 중앙값을 흉내 낸 예시 표 (지금 툴 lift_by_rate 자리)
 const LIFT = [[0.1, 1.1], [0.2, 1.4], [0.3, 1.8], [0.4, 2.4], [0.5, 2.9]];
 const bucketOf = pct => { const k = LIFT.findIndex(([r]) => pct / 100 <= r); return k < 0 ? LIFT.length - 1 : k; };
-const liftOf = pct => pct <= 0 ? 1 : LIFT[bucketOf(pct)][1];
+let LV = null, PT = null;   // 기획안이면 /api/levers(하루특가 깊이·요일·쉰 기간…)·/api/patterns(유형×가격대 할인율·반응)
+const DEPTH = [[25, '~25%'], [30, '26~30%'], [35, '31~35%'], [40, '36~40%'], [101, '41%~']];   // engine.DEPTH와 같은 구간
+const bandOf = pct => DEPTH.find(([u]) => pct <= u)[1];
+const patRow = seq => PT?.by_type_price?.find(r => r.유형 === '상시' && r.가격대 === P[seq]?.real?.price_band);
+function liveLift(pct, seq, deal) {
+  if (pct <= 0) return 1;
+  if (deal) { const cat = LV?.depth_by_category?.find(r => r.key === CAT[seq])?.cells, all = LV?.depth_all?.[0]?.cells, b = bandOf(pct); return +(cat?.[b]?.lift ?? all?.[b]?.lift ?? 1).toFixed(1); }
+  return +(patRow(seq)?.반응도_중앙 ?? 1).toFixed(1);
+}
+// 반응(평소 대비 판매 배수). seq·deal은 기획안(실제)일 때만 씀: 상시 = 같은 유형·가격대 중앙값, 하루특가 = 카테고리 할인 깊이별 중앙값
+const liftOf = (pct, seq, deal = false) => LIVE ? liveLift(pct, seq, deal) : pct <= 0 ? 1 : LIFT[bucketOf(pct)][1];
 // 예상 매출(참고): 평소 하루 수량 × 반응 × 일수 × 최종가, 범위는 ±25% (지금 툴: 평소 판매 × 요일 × 반응, 하위~상위 25%)
-function forecast(it) { const pr = priceOf(it.seq), q = P[it.seq].base * liftOf(pr.pct) * days(it.s, it.e), v = q * pr.fin; return [v * 0.75, v * 1.25]; }
+function forecast(it) { const pr = priceOf(it.seq), q = P[it.seq].base * liftOf(pr.pct, it.seq) * days(it.s, it.e), v = q * pr.fin; return [v * 0.75, v * 1.25]; }
 
 // ================= 묶음(조합) =================
 // 지금 툴 engine.recommend_bundles·suggest_partners와 같은 규칙 (예시 데이터로):
@@ -230,7 +242,7 @@ function itemsTab() {
       <td>${pr.ex ? `<span class="tag">${esc(pr.ex.name)}</span>` : '-'}</td>
       <td class="num fin">${won(pr.fin)}<small>${pr.pct ? `정가 대비 ${pr.pct}%` : '정가'}</small></td>
       <td class="num"><span class="cra ${j.lv === 'warn' ? 'warn' : ''}">${cra == null ? '-' : `${Math.round(cra * 100)}%`}</span></td>
-      <td class="num">${pr.pct ? `${liftOf(pr.pct)}배` : '-'}</td>
+      <td class="num">${pr.pct ? `${liftOf(pr.pct, i.seq)}배` : '-'}</td>
       <td class="num">${man(f[0])}~${man(f[1])}</td></tr>`;
   }).join('');
   return `<div class="lay"><section class="card">
@@ -257,7 +269,7 @@ function evidence() {
       <span>기준 안 최대</span><span>${p.cost ? `1단 ${m}%${pr.ex ? ` (${esc(pr.ex.name)} 포함)` : ''}` : '원가 없음'}</span></div>
     ${j.lv === 'warn' && !i.clear ? `<div class="chips-row">${floor5(m) >= 5 ? `<button class="btn xs primary" data-lower="${i.seq}">${floor5(m)}%로 낮추기</button>` : ''}${!p.combo ? `<button class="btn xs" data-pair="${i.seq}">이 상품과 묶을 짝 보기</button>` : ''}</div>` : ''}
     ${p.combo ? `<div><h4>구성품</h4><ul class="mini">${p.combo.map(q => `<li>${esc(P[q].name)} · 정가 ${won(P[q].price)}</li>`).join('')}</ul></div>` : ''}
-    <div><h4>할인 깊이별 반응 <span class="hint">평소 대비 판매 배수 · 지난 실적 관찰값</span></h4><div class="bars">${LIFT.map(([r, v], k) => `<div class="bar ${pr.pct > 0 && k === bucketOf(pr.pct) ? 'on' : ''}"><span>~${Math.round(r * 100)}%</span><i data-w="${v}"></i><span>${v}배</span></div>`).join('')}</div></div>
+    ${LIVE ? liveBars(i.seq, pr.pct) : `<div><h4>할인 깊이별 반응 <span class="hint">평소 대비 판매 배수 · 지난 실적 관찰값</span></h4><div class="bars">${LIFT.map(([r, v], k) => `<div class="bar ${pr.pct > 0 && k === bucketOf(pr.pct) ? 'on' : ''}"><span>~${Math.round(r * 100)}%</span><i data-w="${v}"></i><span>${v}배</span></div>`).join('')}</div></div>`}
     <div><h4>지난 행사</h4><ul class="mini"><li>${esc(p.last)}</li><li>마지막 행사 후 ${p.days}일</li></ul></div>
     <div><h4>같은 기간 이미 잡힌 행사 <span class="hint">PROMO_WORK</span></h4>${overlap.length ? `<ul class="mini">${overlap.map(o => `<li><span class="tag">겹침</span>${esc(o)}</li>`).join('')}</ul>` : '<p class="hint">겹치는 행사가 없어요</p>'}</div>
     <label class="f"><span>소구문구 <em>엑셀 소구문구 · 카드에도 같은 값</em></span><input type="text" data-appeal="${i.seq}" maxlength="80" value="${esc(i.appeal)}" placeholder="예) 세작, 우전, 홍우전까지 포함한">
@@ -284,7 +296,7 @@ function candList(d) {
   const cand = q => dealCands.includes(q) ? 1 : 0;   // 하루특가 후보로 보낸 상품 먼저
   const c = (LIVE ? realSeqs() : Object.keys(P)).filter(q => !used.has(q)).map(q => ({ q, m: maxRate(q), p: P[q] })).filter(x => x.m >= 20 || cand(x.q)).sort((a, b) => cand(b.q) - cand(a.q) || (b.p.days >= 61 && b.p.days <= 120) - (a.p.days >= 61 && a.p.days <= 120) || b.p.base - a.p.base).slice(0, 4);
   return `<div class="cands"><span class="cap">${md(d)} 추천 후보 <span class="tag demo-t">예시 규칙</span> · 쉰 기간 61~120일 먼저, 평소 잘 팔리는 순</span>${c.map(x => { const r = Math.min(40, x.m); return `<div class="cand"><span><b>${esc(x.p.name)}</b></span>
-      <span class="meta">제안 ${r}% · 기준 안 최대 ${x.m}% · 쉰 기간 ${x.p.days}일 · 예상(참고) ${man(x.p.base * liftOf(r) * priceOf(x.q, r / 100, null).fin * 0.75)}~${man(x.p.base * liftOf(r) * priceOf(x.q, r / 100, null).fin * 1.25)}원</span>
+      <span class="meta">제안 ${r}% · 기준 안 최대 ${x.m}% · 쉰 기간 ${x.p.days}일 · 예상(참고) ${man(x.p.base * liftOf(r, x.q, true) * priceOf(x.q, r / 100, null).fin * 0.75)}~${man(x.p.base * liftOf(r, x.q, true) * priceOf(x.q, r / 100, null).fin * 1.25)}원</span>
       <button class="btn xs primary" data-dealadd="${d}|${x.q}|${r}">넣기</button></div>`; }).join('')}<button class="btn xs ghost" data-fill="">닫기</button></div>`;
 }
 function extrasTab() {
@@ -328,14 +340,18 @@ function detailOf(seq) {
   // 실제 상품: 매출·작년·90일 판매(daily_qty)·마지막 행사는 실제, 반응·리뷰는 예시 그대로
   const r = p.real, dq = r.daily_qty || [], n = dq.length;
   const wk = Array.from({ length: 13 }, (_, w) => dq.slice(Math.max(0, n - 7 * (13 - w)), Math.max(0, n - 7 * (12 - w))).reduce((a, b) => a + b, 0));
-  return { ...demo, live: true, sales28: r.sales_28 || 0, prev: r.sales_prev28 ? (r.sales_28 || 0) / r.sales_prev28 - 1 : null, lyAmt: r.ly_next28 || 0, weeks: wk,
-    past: r.last_promo ? [[r.last_promo, r.last_promo_type || '-', `${Math.round((r.last_promo_rate || 0) * 100)}%`, '-', '-', '-']] : [] };
+  const dd = p.detail, h = dd?.history || [];
+  const hist = h.length ? h.slice(0, 6).map(x => [x.promo || '-', x.type || '-', x.rate != null ? `${Math.round(x.rate * 100)}%` : '-',
+    x.promo_qty != null && x.start && x.end ? Math.round(x.promo_qty / days(x.start, x.end)).toLocaleString('ko-KR') : '-', x.lift != null ? `${x.lift.toFixed(1)}배` : '-',
+    x.cost_ratio_after != null ? `${Math.round(x.cost_ratio_after * 100)}%` : '-']) : null;
+  return { ...demo, live: true, loaded: dd !== undefined, hist, tips: dd?.response?.tips || null, rv: dd?.reviews || null, sales28: r.sales_28 || 0, prev: r.sales_prev28 ? (r.sales_28 || 0) / r.sales_prev28 - 1 : null, lyAmt: r.ly_next28 || 0, weeks: wk,
+    past: hist || (r.last_promo ? [[r.last_promo, r.last_promo_type || '-', `${Math.round((r.last_promo_rate || 0) * 100)}%`, '-', '-', '-']] : []) };
 }
 function productDrawer(seq) {
   const p = P[seq], dt = detailOf(seq), it = itemOf(seq), m = maxRate(seq), sim = drawer.sim ?? Math.round(rateOf(seq) * 100);
   const sp = priceOf(seq, sim / 100, null), cra = sp.fin < p.price ? craOf(seq, sp.fin) : null, unit = sp.fin / 1.1 - p.cost;
   const pct = n => `${n > 0 ? '+' : ''}${Math.round(n * 100)}%`, inPlan = it ? `이 기획안: ${it.type}${it.rate ? ` ${Math.round(it.rate * 100)}%` : ''}` : pool.some(x => x.seq === seq) ? '이 기획안: 후보 상품' : '이 기획안에 없음';
-  const mx = Math.max(1, ...dt.weeks), EX = dt.live ? ' <span class="tag demo-t">예시</span>' : '';
+  const mx = Math.max(1, ...dt.weeks), EX = '';
   return `<div class="dh"><div class="grow"><div class="overline">상품 상세 · ${seq}</div><h2 id="drH">${esc(p.name)}</h2><span class="cap">${inPlan}</span></div><button class="btn sm" data-close>닫기</button></div>
   <div class="db">
     <div class="kv"><span>정가</span><span>${won(p.price)}</span><span>원가율 (정가)</span><span>${p.cost ? `${Math.round(p.cost / (p.price / 1.1) * 100)}%` : '원가 없음'}</span>
@@ -349,10 +365,10 @@ function productDrawer(seq) {
         <span>할인가 <b>${won(sp.fin)}</b></span><span>할인 후 원가율 <b class="${cra > TARGET ? 'is-over' : ''}">${cra == null ? '-' : Math.round(cra * 100) + '%'}</b></span><span>개당 이익 <b>${won(unit)}</b></span></div>
       <div class="puts"><button class="btn xs primary" data-put="${seq}|item|${sim}">이 할인으로 할인 상품에</button><button class="btn xs" data-put="${seq}|deal|${sim}">하루특가 후보로</button><button class="btn xs" data-put="${seq}|none|0">할인 없이</button><button class="btn xs" data-put="${seq}|pool|0">역할은 나중에</button><button class="btn xs ghost" data-pair="${seq}">묶을 짝 보기</button></div></div>
     <div class="ps"><h4>최근 90일 주별 판매 <span class="hint">${dt.live ? '실제 판매 수량' : '진하게 = 행사 주'}</span></h4><div class="spark" aria-label="13주 판매 수량">${dt.weeks.map((w, i) => `<i data-h="${Math.round(w / mx * 100)}" class="${!dt.live && (i === 4 || i === 5) ? 'ev' : ''}" title="${w}개"></i>`).join('')}</div></div>
-    <div class="ps"><h4>지난 행사 성과${dt.live ? ' <span class="hint">마지막 행사만 · 행사별 수량·반응은 아직 못 불러와요</span>' : ''}</h4><div class="tbl-wrap"><table class="t"><thead><tr><th>행사</th><th>유형</th><th class="num">할인</th><th class="num">하루 수량</th><th class="num">평소 대비</th><th class="num">원가율</th></tr></thead>
+    <div class="ps"><h4>지난 행사 성과${dt.live ? ` <span class="hint">${dt.hist ? '최근 6건 · 하루 수량 = 행사 수량 ÷ 일수 · 원가율 = 할인 후' : dt.loaded ? '이력을 못 불러와 마지막 행사만' : '불러오는 중…'}</span>` : ''}</h4><div class="tbl-wrap"><table class="t"><thead><tr><th>행사</th><th>유형</th><th class="num">할인</th><th class="num">하루 수량</th><th class="num">평소 대비</th><th class="num">원가율</th></tr></thead>
       <tbody>${dt.past.length ? '' : '<tr><td colspan="6" class="cap">지난 행사가 없어요</td></tr>'}${dt.past.map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td><td class="num">${r[4]}</td><td class="num">${r[5]}</td></tr>`).join('')}</tbody></table></div></div>
-    <div class="ps"><h4>할인 반응: 다음엔 몇 %?${EX}</h4><p class="cap">지난 행사에서 할인을 깊게 할수록 판매가 늘었지만 ${dt.next}%를 넘으면 늘어나는 폭이 줄었어요 → <b>${dt.next}% 안팎</b>을 권해요 (기준 안 최대 ${m}%)</p></div>
-    <div class="ps"><h4>고객 리뷰${EX}</h4><ul class="mini"><li>평점 ${dt.rating} · 선물 언급 ${dt.gift}건 · 재구매 언급 ${dt.again}건 <span class="hint">최근 8주</span></li><li>"${esc(dt.review)}"</li></ul></div>
+    <div class="ps"><h4>할인 반응: 다음엔 몇 %?${dt.live ? ' <span class="hint">지난 하루특가·카테고리 곡선·원가율로 고른 규칙</span>' : ''}</h4>${dt.live ? (dt.tips?.length ? `<ul class="mini">${dt.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : `<p class="hint">${dt.loaded ? '제안을 못 불러왔어요' : '불러오는 중…'}</p>`) : `<p class="cap">지난 행사에서 할인을 깊게 할수록 판매가 늘었지만 ${dt.next}%를 넘으면 늘어나는 폭이 줄었어요 → <b>${dt.next}% 안팎</b>을 권해요 (기준 안 최대 ${m}%)</p>`}</div>
+    <div class="ps"><h4>고객 리뷰</h4>${dt.live ? (dt.rv ? `<ul class="mini"><li>평점 ${dt.rv.avg == null ? '-' : dt.rv.avg.toFixed(1)} · 리뷰 ${dt.rv.n}건 · 선물 언급 ${dt.rv.gift}건 · 재구매 언급 ${dt.rv.repeat}건 <span class="hint">최근 리뷰 파일 · 작성자 정보 없음</span></li>${(dt.rv.quotes || []).map(q => `<li>"${esc(q)}"</li>`).join('')}</ul>` : `<p class="hint">${dt.loaded ? '이 상품 후기가 없어요' : '불러오는 중…'}</p>`) : `<ul class="mini"><li>평점 ${dt.rating} · 선물 언급 ${dt.gift}건 · 재구매 언급 ${dt.again}건 <span class="hint">최근 8주</span></li><li>"${esc(dt.review)}"</li></ul>`}</div>
   </div>`;
 }
 // 지난 행사 할인 기준: 예전 '지난 성과' 레버 보드 + 할인 패턴 (지난 실적 관찰값, 예시)
@@ -366,13 +382,39 @@ const LEVERS = [
 ];
 const PATTERN = [['상시 · 1만원대', '10%', '15%', '20%', '30%'], ['상시 · 2만원대', '15%', '20%', '25%', '35%'], ['상시 · 3만원 이상', '15%', '20%', '28%', '33%'], ['하루특가 · 전체', '30%', '35%', '40%', '50%']];
 function leversDrawer() {
-  return `<div class="dh"><div class="grow"><div class="overline">지난 행사 할인 기준</div><h2 id="drH">언제, 얼마나, 몇 개를 할인했을 때 잘 팔렸나</h2><span class="cap">요일 · 할인 깊이 · 쉰 기간 · 하루 품목 수 · 상시 길이 · 계절, 그리고 유형·가격대별 할인율이에요. 지난 행사 실적에서 본 값(예시)이고 약속은 아니에요</span></div><button class="btn sm" data-close>닫기</button></div>
+  const live = LIVE && LV, rows = live ? liveLevers() : LEVERS, pat = LIVE && PT ? livePattern() : PATTERN;
+  return `<div class="dh"><div class="grow"><div class="overline">지난 행사 할인 기준</div><h2 id="drH">언제, 얼마나, 몇 개를 할인했을 때 잘 팔렸나</h2><span class="cap">요일 · 할인 깊이 · 쉰 기간 · 하루 품목 수 · 상시 길이 · 계절, 그리고 유형·가격대별 할인율이에요. ${live ? `지난 행사 실적에서 본 값이고 약속은 아니에요 (하루특가 ${LV.n_deals}건)` : '지난 행사 실적에서 본 값(예시)이고 약속은 아니에요'}</span></div><button class="btn sm" data-close>닫기</button></div>
   <div class="db">
-    <div class="lvb">${LEVERS.map(([k, obs, say]) => `<div><b>${k}</b><span class="cap">${esc(obs)}</span><span class="say">${esc(say)}</span></div>`).join('')}</div>
+    <div class="lvb">${rows.map(([k, obs, say]) => `<div><b>${k}</b><span class="cap">${esc(obs)}</span><span class="say">${esc(say)}</span></div>`).join('')}</div>
     <div class="ps"><h4>유형 × 가격대별 할인율 <span class="hint">지난 행사 분포</span></h4><div class="tbl-wrap"><table class="t"><thead><tr><th>유형 · 가격대</th><th class="num">하위 25%</th><th class="num">중앙</th><th class="num">상위 25%</th><th class="num">최대</th></tr></thead>
-      <tbody>${PATTERN.map(r => `<tr><td>${r[0]}</td>${r.slice(1).map(c => `<td class="num">${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>
-    <p class="hint">회차별 성과·작년 행사 다시 쓰기는 홈의 '지난 기획안'에서, 계획 대비 실적은 나중에 붙여요.</p>
+      <tbody>${pat.map(r => `<tr><td>${esc(r[0])}</td>${r.slice(1).map(c => `<td class="num">${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>
+    <p class="hint">${live && LV.note ? esc(LV.note) : "회차별 성과·작년 행사 다시 쓰기는 홈의 '지난 기획안'에서, 계획 대비 실적은 나중에 붙여요."}</p>
   </div>`;
+}
+function liveLevers() {
+  const L = LV, best = (a, k = 'lift') => a?.length ? a.reduce((x, y) => ((y[k] || 0) > (x[k] || 0) ? y : x)) : null, f1 = v => (Math.round(v * 10) / 10).toFixed(1), out = [];
+  const wd = best(L.deal_weekday?.filter(w => w.n >= 20));
+  if (wd) out.push(['요일', `하루특가 반응이 가장 큰 요일은 ${wd.wd}요일 (평소의 ${f1(wd.lift)}배 · ${wd.n}건)`, `하루특가 날짜 ${DEAL_DATES.length}일 중 ${wd.wd}요일 ${DEAL_DATES.filter(d => '일월화수목금토'[new Date(d).getDay()] === wd.wd).length}일`]);
+  const dp = L.depth_all?.[0]?.cells;
+  if (dp) out.push(['할인 깊이', (L.depth_labels || []).filter(b => dp[b]).map(b => `${b} ${f1(dp[b].lift)}배`).join(' · '), '하루특가 전체 · 카테고리별은 표에서 상품을 누르면 근거에']);
+  const gp = best(L.gap?.filter(g => g.n >= 10));
+  if (gp) out.push(['쉰 기간', `특가를 ${gp.band} 쉬었을 때 반응이 가장 컸어요 (${f1(gp.lift)}배 · ${gp.n}건)`, `이 기획안 상품 중 61~120일 쉰 것 ${items.filter(i => { const d = P[i.seq].days; return d >= 61 && d <= 120; }).length}개`]);
+  const ip = best(L.items_per_day?.filter(x => x.days >= 5));
+  if (ip) out.push(['하루 품목 수', `하루 ${ip.band}일 때 품목당 반응이 가장 컸어요 (${f1(ip.lift)}배 · ${ip.days}일)`, `지금 하루 ${slotsPerDay}자리예요`]);
+  const sd = L.sangsi_decay?.value;
+  if (sd?.length >= 14) { const a = sd.slice(0, 7).reduce((x, y) => x + y, 0), b = sd.slice(7, 14).reduce((x, y) => x + y, 0); out.push(['상시 길이', `상시 할인 둘째 주 판매는 첫 주의 ${Math.round(b / a * 100)}%`, `기획안 기간 ${days(PERIOD[0], PERIOD[1])}일`]); }
+  const m = +PERIOD[0].slice(5, 7), mi = L.month_index?.filter(y => y.index?.[m - 1] != null).at(-1);
+  if (mi) out.push(['계절', `${m}월 매출 지수 ${mi.index[m - 1].toFixed(2)} (${mi.year}년, 연평균 = 1)`, mi.index[m - 1] >= 1 ? '수요가 받쳐 주는 달이에요' : '평소보다 조용한 달이에요']);
+  return out;
+}
+const pc = v => v == null ? '-' : `${Math.round(v * 100)}%`;
+const livePattern = () => (PT.by_type_price || []).map(r => [`${r.유형} · ${r.가격대} (${r.행사수}건)`, pc(r.할인율_하위25), pc(r.할인율_중앙), pc(r.할인율_상위25), pc(r.할인율_최대)]);
+function liveBars(seq, pct) {
+  const cat = LV?.depth_by_category?.find(r => r.key === CAT[seq])?.cells, cells = cat || LV?.depth_all?.[0]?.cells || {}, labs = (LV?.depth_labels || []).filter(b => cells[b]);
+  const mx = Math.max(1, ...labs.map(b => cells[b].lift)), row = patRow(seq);
+  return `<div><h4>할인 반응 <span class="hint">평소 대비 판매 배수 · 지난 실적 중앙값 · 원인으로 단정하지 않아요</span></h4>
+    ${row ? `<p class="cap">상시 · ${esc(row.가격대)}: 평소의 <b>${row.반응도_중앙.toFixed(1)}배</b> (행사 ${row.행사수}건 · 할인율 중앙 ${pc(row.할인율_중앙)})</p>` : ''}
+    ${labs.length ? `<p class="cap">하루특가 · ${cat ? esc(CAT[seq]) : '전체'} 할인 깊이별</p><div class="bars">${labs.map(b => `<div class="bar ${pct > 0 && bandOf(pct) === b ? 'on' : ''}"><span>${b}</span><i data-w="${cells[b].lift}" data-max="${mx}"></i><span>${cells[b].lift.toFixed(1)}배 · ${cells[b].n}건</span></div>`).join('')}</div>` : ''}</div>`;
 }
 function renderDrawer() {
   const el = $('#drawer'); el.hidden = $('#scrim').hidden = !drawer;
@@ -393,13 +435,17 @@ function putFromDetail(seq, role, r, src = '상품 상세') {
   closeDrawer(); render();
   toast({ item: it ? `${r}%로 바꿈에 넣었어요. [반영]을 눌러야 들어가요` : `${r}%로 할인 상품에 넣었어요`, deal: '하루특가 후보로 넣었어요. 하루특가 탭의 [채우기]에서 먼저 보여요', none: '할인 없이 넣었어요', pool: it ? '이미 이 기획안에 있어요' : '후보 상품에 넣었어요' }[role]);
 }
-function openDrawer(d) { drawer = d; renderDrawer(); $('#drawer [data-close]')?.focus(); }
+function openDrawer(d) {
+  drawer = d; renderDrawer(); $('#drawer [data-close]')?.focus();
+  const p = d.kind === 'product' && LIVE ? P[d.seq] : null;   // 행사 이력·반응 제안·후기는 열 때 한 번 불러옴
+  if (p?.real && p.detail === undefined) PRODUCTS_API.detail(d.seq).then(x => { p.detail = x || null; if (drawer?.kind === 'product' && drawer.seq === d.seq) renderDrawer(); });
+}
 function closeDrawer() { drawer = null; renderDrawer(); }
 function render() {
   renderSum();
   $('#body').innerHTML = ({ items: itemsTab, deals: dealsTab, extras: extrasTab, bundle: bundleTab, pool: poolTab })[tab]();
   // 막대 길이·자리 수는 CSSOM으로 (인라인 style 속성 없이, CSP와 같은 조건)
-  document.querySelectorAll('.bar i[data-w]').forEach(el => { el.style.width = `${Math.min(100, el.dataset.w / 3 * 100)}%`; });
+  document.querySelectorAll('.bar i[data-w]').forEach(el => { el.style.width = `${Math.min(100, el.dataset.w / (+el.dataset.max || 3) * 100)}%`; });
   document.querySelectorAll('.slots[data-n]').forEach(el => el.style.setProperty('--n', el.dataset.n));
   persist();
 }
@@ -471,6 +517,6 @@ function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add
 if (PLAN.id) $('#body').innerHTML = '<p class="hint">기획안 상품을 불러오는 중이에요…</p>'; else render();
 PLAN.ready.then(async doc => {
   if (!doc) { render(); return; }
-  try { loadPlan(doc, (await v2api('/api/products')).products || []); } catch (e) { LIVE = false; toast(`상품을 불러오지 못해 예시로 보여요: ${e.message}`); }
+  try { const [prods, lv, pt] = await Promise.all([PRODUCTS_API.all(), v2api('/api/levers').catch(() => null), v2api('/api/patterns').catch(() => null)]); LV = lv; PT = pt; loadPlan(doc, prods); } catch (e) { LIVE = false; toast(`상품을 불러오지 못해 예시로 보여요: ${e.message}`); }
   render();
 });
