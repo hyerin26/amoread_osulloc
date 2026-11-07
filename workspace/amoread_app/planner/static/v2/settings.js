@@ -10,6 +10,7 @@ const DATA = [
   { k: '몰 이벤트 목록 (홈 일정표)', v: '이벤트목록_1105.xlsx · 대상 O 42건', src: '11/5 이 화면에서 올림 · 몰 관리자에서 내려받은 파일', st: 'ok' },
 ];
 let refreshed = '11/6 09:00', running = false;
+let SET_LIVE = false;   // 서버에서 데이터 상태를 읽으면 true (loadSettings)
 let costFiles = [['★오설록 온라인 가이드_1104.xlsx', '11/4', true], ['★오설록 온라인 가이드_1021.xlsx', '10/21', false]];
 // 외부 연결: 키는 .env에만. 화면은 상태·사용량(자체 한도 기준)·받는 법만 (plans/22 §3·§3-5)
 const CONN = [
@@ -72,9 +73,9 @@ function renderData() {
     <div class="dlist">${DATA.map(d => `<div class="drow"><div><b>${esc(d.k)}</b><span class="cap">${esc(d.src)}</span></div><span class="v">${esc(d.v)}</span><span class="tag ${d.st}">${d.st === 'ok' ? '최신' : '확인 필요'}</span></div>`).join('')}</div>
     <div class="sec-head"><div><h3>원가 파일 (온라인 가이드)</h3><span class="cap">새 파일을 올리면 가장 최근 것을 써요. .xlsx만, 60MB까지. 원가는 기획 화면에만 보이고 공유 파일엔 안 들어가요</span></div>
       <button class="btn sm" data-pickcost>파일 올리기</button><input type="file" id="costFile" accept=".xlsx" hidden aria-label="원가 파일 고르기"></div>
-    <div class="sec-head"><div><h3>몰 이벤트 목록</h3><span class="cap">홈 일정표의 '몰에 걸린 페이지'예요. 몰 관리자 화면에서 내려받은 파일을 올려요 (자동으로 받을 수 있는지는 확인 중)</span></div>
-      <button class="btn sm" data-toast="예시예요: 이벤트 목록 파일을 올리면 홈 일정표가 바뀌어요. 바뀌는 행사를 먼저 보여 주고 반영해요">파일 올리기</button></div>
-    <ul class="files">${costFiles.map(([n, d, cur]) => `<li><span>${esc(n)}</span><span class="cap">${d} 올림</span>${cur ? '<span class="tag ok">지금 쓰는 파일</span>' : ''}</li>`).join('')}</ul>`;
+    ${SET_LIVE ? '<p class="cap note-gap">홈 일정표의 몰 행사는 PROMO_WORK(할인정보)에서 가져와요. 몰 이벤트 목록 파일을 따로 받을지는 엔지니어 확인 중이에요.</p>' : `<div class="sec-head"><div><h3>몰 이벤트 목록</h3><span class="cap">홈 일정표의 '몰에 걸린 페이지'예요. 몰 관리자 화면에서 내려받은 파일을 올려요 (자동으로 받을 수 있는지는 확인 중)</span></div>
+      <button class="btn sm" data-toast="예시예요: 이벤트 목록 파일을 올리면 홈 일정표가 바뀌어요. 바뀌는 행사를 먼저 보여 주고 반영해요">파일 올리기</button></div>`}
+    <ul class="files">${costFiles.map(([n, d, cur]) => `<li><span>${esc(n)}</span><span class="cap">${esc(d)} ${SET_LIVE ? '' : '올림'}</span>${cur ? '<span class="tag ok">지금 쓰는 파일</span>' : ''}</li>`).join('')}</ul>`;
 }
 function meter(label, [n, cap]) {
   const r = n / cap;
@@ -119,7 +120,7 @@ function renderLists() {
         <span class="cap">* 꼭 채워야 하는 칸</span><button class="btn sm ghost" data-revert ${nChanged ? '' : 'disabled'}>되돌리기</button><button class="btn sm primary" data-save ${nChanged ? '' : 'disabled'}>저장</button></div></div>`;
   }
   $('#lists').innerHTML = `<div class="sec-head"><div><h2 id="listsH">사전과 목록</h2><span class="cap">예전엔 CSV 파일을 직접 고쳤던 것들이에요. 여기서 고치면 같은 파일에 저장돼요</span></div></div>
-    <div class="lists">${Object.entries(LISTS).map(([k, l]) => `<button class="lcard" data-list="${k}" aria-pressed="${openList === k}"><b>${esc(l.name)}</b><span class="cap">${esc(l.desc)}</span><span class="cap">${l.rows.length}줄</span></button>`).join('')}</div>${ed}`;
+    <div class="lists">${Object.entries(LISTS).map(([k, l]) => `<button class="lcard" data-list="${k}" aria-pressed="${openList === k}" ${l.off ? 'disabled' : ''}><b>${esc(l.name)}</b><span class="cap">${esc(l.desc)}</span><span class="cap">${l.off ? `화면 저장 연결 전 · ${esc(l.file)}을 직접 고쳐요` : `${l.rows.length}줄`}</span></button>`).join('')}</div>${ed}`;
 }
 function renderRules() {
   $('#rules').innerHTML = `<div class="sec-head"><div><h2 id="rulesH">기획 기준</h2><span class="cap">계산에 쓰는 기준이에요. 화면에서는 바꾸지 않아요 (엔지니어가 .env·설정 파일에서)</span></div></div>
@@ -138,17 +139,19 @@ function validate(L, rows) {
     else if (v && c[4] && !c[4].test(v)) e[`${i}:${j}`] = c[5];
   }));
   const seen = new Map();   // 첫 칸이 같은 줄은 한 번만
-  rows.forEach((r, i) => { const k = (r[0] || '').trim(); if (!k) return; if (seen.has(k)) e[`${i}:0`] = `${seen.get(k) + 1}번째 줄과 같아요`; else seen.set(k, i); });
+  rows.forEach((r, i) => { const k = (L.key || [0]).map(j => (r[j] || '').trim()).join('|'); if (!(r[0] || '').trim()) return; if (seen.has(k)) e[`${i}:0`] = `${seen.get(k) + 1}번째 줄과 같아요`; else seen.set(k, i); });
   return e;
 }
 const focusCell = id => document.querySelector(`[data-cell="${id}"]`)?.focus();
 document.addEventListener('click', e => {
   const t = e.target, d = k => t.closest(`[data-${k}]`), v = k => d(k)?.dataset[k];
+  if (d('refresh') && SET_LIVE) { rebuild(false); return; }
   if (d('refresh')) { running = true; render(); setTimeout(() => { running = false; refreshed = '방금'; render(); toast('데이터를 갱신했어요 (예시)'); }, 900); return; }
   if (d('full')) { $('#dlg').showModal(); return; }
   if (d('pickcost')) { $('#costFile').click(); return; }
   if (d('toast')) { toast(v('toast')); return; }
   if (d('dlgno')) { $('#dlg').close(); return; }
+  if (d('dlgyes') && SET_LIVE) { $('#dlg').close(); rebuild(true); return; }
   if (d('dlgyes')) { $('#dlg').close(); toast('예시예요: 전체 다시 집계를 시작해요. 끝나면 알려 드려요'); return; }
   if (d('test')) { const b = d('test'); b.disabled = true; toast('키워드 하나(차)로 시험 호출해요 · 검색 2회, 트렌드 1회 사용');
     v2api('/api/keywords/expand', { q: '차', refresh: true }).then(r => { const s = r.sources;
@@ -162,6 +165,7 @@ document.addEventListener('click', e => {
   if (d('save')) { const L = LISTS[openList], clean = draft.filter(r => r.some(x => x.trim())).map(r => r.map(x => x.trim()));
     errs = validate(L, clean);
     if (Object.keys(errs).length) { draft = clean; lq = ''; render(); toast(`고칠 칸이 ${Object.keys(errs).length}개 있어요`); focusCell(Object.keys(errs)[0]); return; }
+    if (L.live) { saveList(L, clean); return; }
     L.rows = clean; draft = clean.map(r => r.slice()); render(); toast(`저장했어요 (예시: 실제로는 ${L.file})`); return; }
   if (d('sclear')) { lq = ''; render(); $('#lq')?.focus(); return; }
 });
@@ -178,11 +182,13 @@ document.addEventListener('change', e => {
   if (t.id === 'costFile') { const f = t.files[0]; if (!f) return;
     if (!/\.xlsx$/i.test(f.name)) { toast('.xlsx 파일만 올릴 수 있어요'); return; }
     if (f.size > 60 * 1024 * 1024) { toast('60MB가 넘어요. 필요 없는 시트를 지운 뒤 올려 주세요'); return; }
+    if (SET_LIVE) { uploadGuide(f); t.value = ''; return; }
     costFiles = [[f.name, '방금', true], ...costFiles.map(c => [c[0], c[1], false])]; render(); toast('원가 파일을 올렸어요 (예시: 실제로는 읽어서 확인한 뒤 바꿔요)'); }
 });
 
 // ================= 실제 데이터 (새 버전) =================
-// 네이버 검색·검색어 트렌드·검색광고 카드의 상태와 사용량은 서버에서 (키 값은 오지 않고 있음/없음만). 나머지 카드·덩어리는 아직 예시
+// 네이버 검색·검색어 트렌드·검색광고 카드의 상태와 사용량은 서버에서 (키 값은 오지 않고 있음/없음만).
+// 데이터 상태·원가 파일·갱신·사전과 목록(명분 사전·검색어 묶음·보자기)·기획 기준도 서버에서 (loadSettings). 유튜브·구글 트렌드 카드는 아직 안내만
 const LIVE_BUCKET = { search: 'naver_search', trend: 'naver_trend', ad: 'naver_searchad' };
 let connLoaded = 'loading';
 function loadConn() {
@@ -201,6 +207,91 @@ function loadConn() {
 const LIVE_SAY = { ok: '정상', no_key: '키 없음', error: '실패' };
 window.addEventListener('hashchange', renderToc);
 loadConn();
+
+// ---------- 실제: 데이터 상태 · 원가 파일 · 갱신 · 사전과 목록 · 기획 기준 ----------
+const DATE_RE = /^20\d\d-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+const SKINDS = ['명절·대목', '기념일', '절기·세시', '학사·생활', '직장', '차 고유', '날씨·계절', '쇼핑', '트렌드'];   // schedule.KINDS와 같음
+const LIVE_LISTS = {
+  season: { api: '/api/seasons', save: '/api/seasons', key: [0, 1],
+    cols: [['name', '명분', 30, 1], ['date', '날짜 (YYYY-MM-DD)', 10, 1, DATE_RE, '2026-12-25처럼'], ['end', '끝나는 날 (기간일 때)', 10, 0, DATE_RE, '2026-12-31처럼'],
+      ['kind', '종류', 10, 1, new RegExp(`^(${SKINDS.join('|')})$`), SKINDS.join(' · ')], ['lead', '준비 시작 (며칠 전)', 3, 1, NUM, '숫자만'], ['keyword', '행사 이름 키워드', 20],
+      ['seeds', '컨셉 씨앗 (|로 구분)', 250, 0, null, null, 1], ['memo', '메모', 120, 0, null, null, 1]],
+    from: it => [it.name, it.date, it.end && it.end !== it.date ? it.end : '', it.kind, String(it.lead ?? ''), it.keyword || '', (Array.isArray(it.seeds) ? it.seeds : []).join('|'), it.memo || ''],
+    to: r => ({ name: r[0], date: r[1], end: r[2], kind: r[3], lead: +r[4] || 0, keyword: r[5], seeds: r[6], memo: r[7] }) },
+  groups: { api: '/api/settings/trend-groups', save: '/api/settings/trend-groups', key: [0],
+    cols: [['name', '묶음 이름', 20, 1], ['keywords', '검색어 (;로 구분, 20개까지)', 400, 1, /^[^;]+(;[^;]+){0,19};?$/, '검색어를 ;로 나눠서 20개까지', 1], ['match', '연결 상품 이름 (;로 구분)', 300, 0, null, null, 1], ['category', '카테고리', 20], ['memo', '메모', 100, 0, null, null, 1]],
+    from: it => [it.name, it.keywords || '', it.match || '', it.category || '', it.memo || ''], to: r => ({ name: r[0], keywords: r[1], match: r[2], category: r[3], memo: r[4] }) },
+  wrap: { api: '/api/settings/wrap', save: '/api/settings/wrap', key: [0],
+    cols: [['wrap_seq', '보자기 SEQ', 12, 1, NUM, '숫자만'], ['base_seq', '본품 SEQ', 12, 1, NUM, '숫자만'], ['memo', '메모', 100, 0, null, null, 1]],
+    from: it => [it.wrap_seq, it.base_seq, it.memo || ''], to: r => ({ wrap_seq: r[0], base_seq: r[1], memo: r[2] }) },
+};
+const daysAgo = d => d ? Math.floor((Date.now() + 9 * 3600e3 - Date.parse(String(d).slice(0, 10))) / 864e5) : null;
+const mdd = d => d ? `${+String(d).slice(5, 7)}/${+String(d).slice(8, 10)}` : '-';
+function dataRows(mt, sap, sig) {
+  const m = mt?.meta || {}, out = [], g = (mt?.guides || []).find(x => x.in_use), rv = sig?.reviews || {};
+  const sd = daysAgo(m.sales_last_day);
+  out.push({ k: '판매실적', v: m.sales_last_day ? `SEQ별 일자 판매 · ${mdd(m.sales_last_day)}까지` : '아직 없어요', src: `리포트 서비스 CSV ${(m.sales_files || []).length}개`, st: m.sales_last_day && sd <= 3 ? 'ok' : 'warn',
+    note: m.sales_last_day ? `판매실적이 ${sd}일 전까지예요. 새 CSV를 넣고 데이터 갱신을 눌러 주세요` : '판매실적 CSV가 없어요' });
+  out.push({ k: '오설록닷컴 실적 (SAP)', v: sap?.ready ? `${mdd(sap.date)} 기준` : '아직 없어요', src: `자동 수집 ${sap?.status?.ran_at ? String(sap.status.ran_at).slice(5, 16) : '-'}`, st: sap?.ready && sap?.status?.ok !== false ? 'ok' : 'warn',
+    note: sap?.status?.ok === false ? `마지막 자동 수집 실패: ${sap.status.message || ''}` : 'SAP 실적을 아직 받지 않았어요' });
+  const sample = /샘플|가상/.test(g?.name || m.guide_file || '');
+  out.push({ k: '원가 (온라인 가이드)', v: g?.name || m.guide_file || '없음', src: g ? `${g.folder} · ${g.modified}` : '-', st: g && !sample ? 'ok' : 'warn',
+    note: sample ? '샘플(가상 원가) 파일을 쓰고 있어요. 원가율·판정이 실제와 달라요. 실제 온라인 가이드를 올려 주세요' : '원가 파일이 없어요' });
+  out.push({ k: '할인정보 (PROMO_WORK)', v: m.promo_workbook_modified ? `파일 수정 ${String(m.promo_workbook_modified).slice(5, 16)}` : '-', src: '읽기만 · 데이터 갱신 때 다시 읽어요', st: m.promo_workbook_modified ? 'ok' : 'warn', note: 'PROMO_WORK를 읽지 못했어요' });
+  const lastRv = (rv.files || []).slice(-1)[0] || '', rvEnd = (lastRv.match(/_(\d{8})\.csv$/) || [])[1], rvAgo = rvEnd ? daysAgo(`${rvEnd.slice(0, 4)}-${rvEnd.slice(4, 6)}-${rvEnd.slice(6)}`) : null;
+  out.push({ k: '고객 리뷰', v: rv.available ? `최근 ${rv.weeks}주 · ${fmt(rv.reviews || 0)}건 · 상품 ${rv.products}개` : '없어요', src: lastRv ? `주간 수집 · ${lastRv}` : '-', st: rv.available && rvAgo != null && rvAgo <= 10 ? 'ok' : 'warn',
+    note: rv.available ? `마지막 리뷰 파일이 ${rvAgo}일 전까지예요. 리뷰 수집기를 한 번 돌려 주세요` : '리뷰 파일이 없어요' });
+  return out;
+}
+let rebuildT = null;
+function pollRebuild() {
+  clearTimeout(rebuildT);
+  rebuildT = setTimeout(() => v2api('/api/rebuild').then(st => {
+    if (st.running) { pollRebuild(); return; }
+    running = false; loadSettings().then(() => toast(st.ok === false ? `갱신하지 못했어요: ${(st.log || []).slice(-1)[0] || ''}` : '데이터를 갱신했어요'));
+  }).catch(() => pollRebuild()), 2000);
+}
+function rebuild(full) {
+  running = true; render();
+  v2api('/api/rebuild', { full }).then(r => { toast(r.started ? (full ? '전체 다시 집계를 시작했어요. 끝나면 알려 드려요' : '데이터 갱신을 시작했어요') : '이미 갱신하는 중이에요'); pollRebuild(); })
+    .catch(e => { running = false; render(); toast(`시작하지 못했어요: ${e.message}`); });
+}
+function uploadGuide(f) {
+  const fd = new FormData(); fd.append('file', f, f.name); toast('원가 파일을 올리는 중이에요…');
+  fetch('/api/guide', { method: 'POST', headers: { 'x-planner-token': V2_TOKEN }, body: fd })
+    .then(async r => { const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || `서버 오류 (${r.status})`); return d; })
+    .then(d => { costFiles = (d.guides || []).map(g => [g.name, g.modified, g.in_use]); render(); toast('원가 파일을 올렸어요. 데이터 갱신을 누르면 새 원가로 다시 계산해요'); })
+    .catch(e => toast(`올리지 못했어요: ${e.message}`));
+}
+function saveList(L, clean) {
+  const k = Object.keys(LISTS).find(x => LISTS[x] === L), def = LIVE_LISTS[k];
+  v2api(def.save, { items: clean.map(def.to) }).then(r => {
+    toast(`${L.file}에 저장했어요${typeof r.saved === 'number' && r.saved !== clean.length ? ` (${r.saved}줄 저장, 형식이 맞지 않는 줄은 빠졌어요)` : ''}`);
+    return v2api(def.api).then(x => { L.rows = (x.items || []).map(def.from); draft = L.rows.map(rr => rr.slice()); render(); });
+  }).catch(e => toast(`저장하지 못했어요: ${e.message}`));
+}
+async function loadSettings() {
+  const get = u => v2api(u).catch(() => null), keys = Object.keys(LIVE_LISTS);
+  const [mt, sap, sig, ...lists] = await Promise.all([get('/api/meta'), get('/api/sap-sales'), get('/api/signals'), ...keys.map(k => get(LIVE_LISTS[k].api))]);
+  if (mt) {
+    DATA.length = 0; DATA.push(...dataRows(mt, sap, sig));
+    costFiles = (mt.guides || []).map(g => [g.name, g.modified, g.in_use]);
+    refreshed = mt.meta?.built_at ? String(mt.meta.built_at).slice(5, 16) : '-';
+    running = !!mt.rebuild?.running;
+    const r = mt.meta?.rules || {}, pc = v => `${Math.round(v * 100)}%`;
+    if (r.target_cost_ratio != null) RULES[0][1] = pc(r.target_cost_ratio);
+    if (r.wrap_cost != null) RULES[2][1] = `일반 ${fmt(r.wrap_cost)}원 · 한정 ${fmt(r.wrap_cost_limited || 0)}원`;
+    if (r.rate_match_tol != null) RULES[3][1] = `±${Math.round(r.rate_match_tol * 100)}%p 안`;
+    if (r.ship_lag_days != null) RULES[4][1] = `행사 끝난 뒤 ${r.ship_lag_days}일까지`;
+  }
+  keys.forEach((k, i) => { const x = lists[i]; if (!x) return; Object.assign(LISTS[k], { cols: LIVE_LISTS[k].cols, key: LIVE_LISTS[k].key, rows: (x.items || []).map(LIVE_LISTS[k].from), live: true }); });
+  for (const k of ['kind', 'holiday', 'target']) Object.assign(LISTS[k], { off: true, rows: [] });
+  if (openList && LISTS[openList].off) { openList = null; draft = null; }
+  SET_LIVE = !!mt; render();
+  if (running) pollRebuild();
+}
+loadSettings();
+
 let toastT;
 function toast(m) { const el = $('#toast'); el.textContent = m; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2800); }
 render();
