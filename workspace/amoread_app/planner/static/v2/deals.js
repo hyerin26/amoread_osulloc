@@ -1,6 +1,7 @@
 // ================= 예시 데이터 (가상, 구좌 편집 목업과 같은 상품) =================
-const TARGET = 0.45;
-const PERIOD = ['2026-03-02', '2026-03-15'];
+// 기획안을 열면(?id=) loadPlan이 아래 예시 값을 실제 상품·이 기획안의 행으로 바꾼다 (LIVE)
+const TARGET = 0.45;   // 서버 config.TARGET_COST_RATIO 기본값과 같음
+let PERIOD = ['2026-03-02', '2026-03-15'];
 // base = 평소 하루 판매 수량(행사 없는 날, 가상), last = 마지막 행사 (가상)
 const P = {
   P101: { name: '벚꽃 블렌딩 티 10입', price: 18000, cost: 4300, base: 6, days: 210, last: '봄맞이 티 컬렉션 (2025.03) · 20%' },
@@ -26,10 +27,86 @@ let items = [
 ];
 let extras = [{ id: 'x1', name: '얼리버드', calc: 'sale_pct', val: 5, seqs: ['P110', 'P104'], s: PERIOD[0], e: '2026-03-05' }];
 // 하루특가: 날짜 × 자리. 월·화·수 (블프 '월/수 특가' 같은 요일 리듬, 예시)
-const DEAL_DATES = ['2026-03-02', '2026-03-03', '2026-03-04', '2026-03-09', '2026-03-10', '2026-03-11'];
+let DEAL_DATES = ['2026-03-02', '2026-03-03', '2026-03-04', '2026-03-09', '2026-03-10', '2026-03-11'];
 let slotsPerDay = 4;
 let deals = { '2026-03-02': [['P102', 0.35], ['P109', 0.3], ['P101', 0.4]], '2026-03-03': [['P105', 0.4]], '2026-03-04': [['P107', 0.4], ['P108', 0.35], ['P106', 0.3], ['P109', 0.35], ['P102', 0.3]] };
 let pool = [{ seq: 'P102', src: '브리프 키워드 · 보온병' }, { seq: 'P105', src: '리뷰 · 재구매 언급' }];
+let dealCands = [];   // 하루특가 후보로 보낸 상품 (채우기 목록에서 먼저)
+
+// ================= 기획안 잇기 (LIVE): 실제 상품 + 이 기획안의 할인 행·후보 상품 =================
+let LIVE = false, keepRows = [], keepPool = [], keepCands = [], lastSaved = '';
+const realP = p => ({ name: p.name, price: p.price, cost: p.cost || 0, base: p.base_qty ?? (p.qty_28 || 0) / 28, days: p.days_since_promo ?? '-',
+  last: p.last_promo ? `${p.last_promo} (${String(p.last_promo_start || '').slice(0, 7).replace('-', '.')}) · ${Math.round((p.last_promo_rate || 0) * 100)}%` : '지난 행사 없음', real: p });
+function comboOf(list) {   // 행의 items(구성품) → 조합 상품 하나
+  const seqs = list.map(x => String(x.seq)).filter(q => P[q]);
+  if (seqs.length !== list.length || !seqs.length) return null;
+  const id = `C${++comboN}`;
+  P[id] = { name: seqs.map(q => P[q].name).join(' + '), price: seqs.reduce((a, q) => a + P[q].price, 0), cost: seqs.reduce((a, q) => a + P[q].cost, 0),
+    base: Math.min(...seqs.map(q => P[q].base)), days: 0, last: '신규 조합 (SEQ 없음)', combo: seqs, items: list };
+  CAT[id] = '조합';
+  return id;
+}
+function loadPlan(doc, prods) {
+  for (const k of Object.keys(P)) delete P[k];
+  for (const k of Object.keys(CAT)) delete CAT[k];
+  prods.forEach(p => { if (p.seq && p.price) { P[String(p.seq)] = realP(p); CAT[String(p.seq)] = p.category || '기타'; } });
+  const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10), add = (d, n) => new Date(Date.parse(d) + n * 864e5).toISOString().slice(0, 10);
+  PERIOD = doc.brief?.period ? [doc.brief.period.start, doc.brief.period.end] : [today, add(today, 13)];
+  const span = new Set(Array.from({ length: Math.min(31, days(PERIOD[0], PERIOD[1])) }, (_, i) => add(PERIOD[0], i)));
+  items = []; deals = {}; extras = []; keepRows = [];
+  for (const r of doc.promo_rows || []) {
+    const seq = r.items?.length ? comboOf(r.items) : String(r.seq || '');
+    if (!seq || !P[seq]) { keepRows.push(r); continue; }   // 화면에 못 그리는 행도 저장할 때 그대로 돌려놓음
+    if (r.type === '하루특가') { (deals[r.start] ||= []).push([seq, r.rate || 0, r]); span.add(r.start); continue; }
+    items.push({ seq, type: r.type === '큐레이션' ? '할인 없음' : P[seq].combo ? '조합' : '상시', rate: r.type === '큐레이션' ? 0 : r.rate || 0,
+      s: r.start || PERIOD[0], e: r.end || PERIOD[1], appeal: r.appeal || '', clear: !!r.clearance, where: [], row: r });
+  }
+  DEAL_DATES = [...span].sort();
+  pool = (doc.pool || []).filter(x => x.seq && P[x.seq]).map(x => ({ seq: String(x.seq), src: x.source || '후보', memo: x.memo || '' }));
+  keepPool = (doc.pool || []).filter(x => !(x.seq && P[x.seq]));
+  dealCands = (doc.deal_plan?.candidates || []).filter(x => x.seq && P[x.seq]).map(x => String(x.seq));
+  keepCands = (doc.deal_plan?.candidates || []).filter(x => !(x.seq && P[x.seq]));
+  slotsPerDay = doc.deal_plan?.slots || 4;
+  sel = items[0]?.seq || null; tab = 'items'; LIVE = true;
+  document.querySelector('.head h1').textContent = doc.title;
+  document.querySelector('.demo').innerHTML = '<b>이 기획안의 실제 상품이에요.</b> 정가·원가·평소 판매·마지막 행사·이미 잡힌 행사는 실제 값이고, 고치면 이 기획안에 저장돼요. <b>할인 깊이별 반응·예상 매출·리뷰·지난 행사 할인 기준은 아직 예시</b>예요. 추가 혜택은 아직 저장되지 않아요.';
+  lastSaved = snapshot();
+}
+const rowItems = q => P[q].combo ? (P[q].items || P[q].combo.map(s => ({ seq: s, qty: 1 }))) : null;
+function toRows() {
+  const promo = (PLAN.doc.title || '').slice(0, 60), blank = { promo, category_tag: '', memo: '', appeal: '', clearance: false };
+  const rows = items.map(i => ({ ...blank, ...i.row, type: i.type === '할인 없음' ? '큐레이션' : '상시', start: i.s, end: i.e,
+    seq: P[i.seq].combo ? null : i.seq, items: rowItems(i.seq), rate: i.type === '할인 없음' ? 0 : i.rate, appeal: i.appeal.slice(0, 80), clearance: i.clear }));
+  for (const d of Object.keys(deals).sort()) for (const [q, r, row] of deals[d]) rows.push({ ...blank, ...row, type: '하루특가', start: d, end: d, seq: P[q].combo ? null : q, items: rowItems(q), rate: r });
+  return rows.concat(keepRows).slice(0, 500);
+}
+const snapshot = () => JSON.stringify([toRows(), pool, dealCands, slotsPerDay]);
+function persist() {
+  if (!LIVE) return;
+  const s = snapshot(); if (s === lastSaved) return; lastSaved = s;
+  PLAN.save(d => {
+    d.promo_rows = toRows();
+    d.pool = pool.map(x => ({ seq: x.seq, items: null, memo: String(x.memo || '').slice(0, 200), source: String(x.src || '').slice(0, 40) })).concat(keepPool).slice(0, 100);
+    d.deal_plan = { ...(d.deal_plan || {}), slots: slotsPerDay, candidates: dealCands.map(seq => ({ seq, items: null, rate: null, memo: '' })).concat(keepCands).slice(0, 100) };
+  });
+}
+// 상품 찾아 담기 (이름 일부 또는 SEQ). 판매 중인 상품 먼저, 최근 28일 매출순
+function searchDrawer() {
+  return `<div class="dh"><div class="grow"><div class="overline">상품 찾아 담기</div><h2 id="drH">이름이나 SEQ로 찾아요</h2><span class="cap">전체 ${Object.keys(P).filter(q => !P[q].combo).length}개 상품 · 판매 중인 상품 먼저, 최근 28일 매출순 · 30개까지</span></div><button class="btn sm" data-close>닫기</button></div>
+  <div class="db"><input type="search" id="pq" value="${esc(drawer.q)}" maxlength="40" placeholder="예) 녹차, 1461" aria-label="상품 이름 또는 SEQ"><div id="pres" aria-live="polite">${searchResults()}</div></div>`;
+}
+function searchResults() {
+  const qq = drawer.q.replace(/\s/g, '').toLowerCase();
+  if (!qq) return '<p class="hint">상품 이름 일부나 SEQ를 넣어 주세요.</p>';
+  const act = q => (P[q].real?.active ? 1 : 0);
+  const hit = Object.keys(P).filter(q => !P[q].combo && (q.startsWith(qq) || P[q].name.replace(/\s/g, '').toLowerCase().includes(qq)))
+    .sort((a, b) => act(b) - act(a) || (P[b].real?.sales_28 || 0) - (P[a].real?.sales_28 || 0)).slice(0, 30);
+  if (!hit.length) return '<p class="hint">맞는 상품이 없어요.</p>';
+  return `<div class="pool">${hit.map(q => { const p = P[q], has = itemOf(q) ? '할인 상품' : pool.some(x => x.seq === q) ? '후보 상품' : '';
+    return `<div class="pitem"><span><b>${pname(q)}</b> <span class="cap">${q}</span> ${p.real && !p.real.active ? '<span class="tag off">판매 안 함</span>' : ''}</span>
+      <span class="meta">${esc(CAT[q])} · 정가 ${won(p.price)} · ${p.cost ? `기준 안 최대 ${maxRate(q)}%` : '원가 없음'} · 최근 28일 ${man(p.real?.sales_28 || 0)}원</span>
+      <span class="acts">${has ? `<span class="tag">이 기획안 ${has}에 있어요</span>` : `<button class="btn xs primary" data-sadd="${q}|item">할인 상품에</button><button class="btn xs" data-sadd="${q}|pool">후보로 (역할은 나중에)</button>`}</span></div>`; }).join('')}</div>`;
+}
 
 // ================= 계산 (구좌 편집과 같은 규칙) =================
 const r10 = n => Math.round(n / 10) * 10;
@@ -50,6 +127,7 @@ function priceOf(seq, rate = rateOf(seq), ex = extraOf(seq)) {
 const craOf = (seq, fin) => P[seq].cost / (fin / 1.1);
 function judge(seq, pr = priceOf(seq)) {
   if (pr.fin >= pr.list) return { lv: 'none', t: '할인 없음' };
+  if (!P[seq].cost) return { lv: 'none', t: '원가 없음' };   // 원가가 없는 실제 상품: 판정하지 않음
   if (1 - pr.fin / pr.list >= 0.8) return { lv: 'err', t: '확인 필요' };
   return craOf(seq, pr.fin) > TARGET ? { lv: 'warn', t: '주의' } : { lv: 'ok', t: '괜찮음' };
 }
@@ -71,7 +149,7 @@ const FAMS = ['말차', '벚꽃', '녹차', '허브', '과일', '꽃차', '콜�
 const famOf = name => FAMS.filter(f => name.includes(f));
 const floor5 = m => Math.floor(m / 5) * 5;
 const salesOf = q => P[q].base * P[q].price;   // 최근 매출 자리 (가상)
-const realSeqs = () => Object.keys(P).filter(q => !P[q].combo);
+const realSeqs = () => Object.keys(P).filter(q => !P[q].combo && (!LIVE || (P[q].cost && P[q].real.active)));   // 실제 상품: 원가 있고 판매 중인 것만 묶음 후보
 // 묶음 최대 할인(기준 안): 정가 합·원가 합으로 (지금 툴 max_discount와 같은 식)
 function comboMax(seqs) { const pr = seqs.reduce((a, q) => a + P[q].price, 0), co = seqs.reduce((a, q) => a + P[q].cost, 0); return Math.max(0, Math.floor((1 - co * 1.1 / TARGET / pr) * 100)); }
 let bundle = { rate: 25, cat: '', planFirst: true, base: null, calc: [], calcRate: 25 };
@@ -159,7 +237,7 @@ function itemsTab() {
       <div class="filters"><span class="cap">놓인 곳</span>${[['all', '전체'], ['on', '페이지에 있음'], ['off', '페이지에 없음']].map(([k, n]) => `<button class="chip" data-where="${k}" aria-pressed="${where === k}">${n}</button>`).join('')}
         <label class="ck"><input type="checkbox" data-onlywarn ${onlyWarn ? 'checked' : ''}> 주의만</label>
         ${fixable().length ? `<button class="btn xs" data-bulk title="원가율은 참고 지표예요. 필요할 때만 쓰세요">원가율 기준 넘는 ${fixable().length}개 낮추기</button>` : ''}<span class="grow"></span>
-        <button class="btn xs" data-toast="예시예요: 상품을 찾아 할인 상품에 넣어요 (구좌 편집의 상품 고르기와 같은 창)">+ 상품 추가</button></div>
+        ${LIVE ? '<button class="btn xs" data-search>+ 상품 찾아 담기</button>' : '<button class="btn xs" data-toast="예시예요: 상품을 찾아 할인 상품에 넣어요 (구좌 편집의 상품 고르기와 같은 창)">+ 상품 추가</button>'}</div>
       <div class="tbl-wrap"><table class="t"><thead><tr><th>판정</th><th>상품</th><th>놓인 곳</th><th>유형</th><th>기간</th><th class="num">1단 할인율</th><th>추가 혜택</th><th class="num">최종가</th><th class="num">원가율</th><th class="num">반응</th><th class="num">예상 매출(참고)</th></tr></thead>
       <tbody>${rows || '<tr><td colspan="11" class="cap">조건에 맞는 상품이 없어요</td></tr>'}</tbody></table></div>
       <p class="hint">원가율 = 최종가(추가 혜택까지) 기준 할인 후 원가율. 반응 = 지난 실적에서 같은 할인 깊이일 때 평소 대비 판매 배수(관찰값, 인과 아님). 놓인 곳은 구좌 편집에서 자동으로 채워져요.</p>
@@ -169,12 +247,14 @@ function itemsTab() {
 function evidence() {
   const i = itemOf(sel); if (!i) return '<p class="hint">표에서 상품을 누르면 근거가 보여요.</p>';
   const p = P[i.seq], pr = priceOf(i.seq), j = judge(i.seq, pr), cra = pr.fin < pr.list ? craOf(i.seq, pr.fin) : null, m = maxRate(i.seq);
-  const overlap = i.seq === 'P110' ? ['설 선물 얼리버드 재오픈 (3/1~3/7) · 25%'] : i.seq === 'P105' ? ['여름 준비 기획전 (3/9~) · 20%'] : [];
+  const overlap = p.real ? [...(p.real.upcoming || []), ...(p.real.running || [])].filter(o => (o.start || '') <= PERIOD[1] && (o.end || '9') >= PERIOD[0])
+      .map(o => `${o.promo || o.type || '행사'} (${o.start ? md(o.start) : ''}~${o.end ? md(o.end) : ''}) · ${Math.round((o.rate || 0) * 100)}%`)
+    : i.seq === 'P110' ?['설 선물 얼리버드 재오픈 (3/1~3/7) · 25%'] : i.seq === 'P105' ? ['여름 준비 기획전 (3/9~) · 20%'] : [];
   return `<div><div class="overline">근거 · ${i.seq}</div><h3>${esc(p.name)}</h3>${p.combo ? '' : `<button class="btn xs" data-pd="${i.seq}">상품 상세</button>`}</div>
     <div class="kv"><span>정가</span><span>${won(p.price)}</span><span>1단 가격</span><span>${won(pr.first)} (${Math.round(rateOf(i.seq) * 100)}%)</span>
       ${pr.ex ? `<span>추가 혜택</span><span>${esc(pr.ex.name)} → ${won(pr.fin)}</span>` : ''}<span>판정</span><span><span class="judge ${j.lv}">${j.t}</span></span>
       <span>할인 후 원가율</span><span>${cra == null ? '-' : `<b>${Math.round(cra * 100)}%</b> (기준 ${Math.round(TARGET * 100)}%)`}</span>
-      <span>기준 안 최대</span><span>1단 ${m}%${pr.ex ? ` (${esc(pr.ex.name)} 포함)` : ''}</span></div>
+      <span>기준 안 최대</span><span>${p.cost ? `1단 ${m}%${pr.ex ? ` (${esc(pr.ex.name)} 포함)` : ''}` : '원가 없음'}</span></div>
     ${j.lv === 'warn' && !i.clear ? `<div class="chips-row">${floor5(m) >= 5 ? `<button class="btn xs primary" data-lower="${i.seq}">${floor5(m)}%로 낮추기</button>` : ''}${!p.combo ? `<button class="btn xs" data-pair="${i.seq}">이 상품과 묶을 짝 보기</button>` : ''}</div>` : ''}
     ${p.combo ? `<div><h4>구성품</h4><ul class="mini">${p.combo.map(q => `<li>${esc(P[q].name)} · 정가 ${won(P[q].price)}</li>`).join('')}</ul></div>` : ''}
     <div><h4>할인 깊이별 반응 <span class="hint">평소 대비 판매 배수 · 지난 실적 관찰값</span></h4><div class="bars">${LIFT.map(([r, v], k) => `<div class="bar ${pr.pct > 0 && k === bucketOf(pr.pct) ? 'on' : ''}"><span>~${Math.round(r * 100)}%</span><i data-w="${v}"></i><span>${v}배</span></div>`).join('')}</div></div>
@@ -201,7 +281,8 @@ function dealsTab() {
 }
 function candList(d) {
   const used = new Set((deals[d] || []).map(([q]) => q));
-  const c = Object.keys(P).filter(q => !used.has(q)).map(q => ({ q, m: maxRate(q), p: P[q] })).filter(x => x.m >= 20).sort((a, b) => (b.p.days >= 61 && b.p.days <= 120) - (a.p.days >= 61 && a.p.days <= 120) || b.p.base - a.p.base).slice(0, 4);
+  const cand = q => dealCands.includes(q) ? 1 : 0;   // 하루특가 후보로 보낸 상품 먼저
+  const c = (LIVE ? realSeqs() : Object.keys(P)).filter(q => !used.has(q)).map(q => ({ q, m: maxRate(q), p: P[q] })).filter(x => x.m >= 20 || cand(x.q)).sort((a, b) => cand(b.q) - cand(a.q) || (b.p.days >= 61 && b.p.days <= 120) - (a.p.days >= 61 && a.p.days <= 120) || b.p.base - a.p.base).slice(0, 4);
   return `<div class="cands"><span class="cap">${md(d)} 추천 후보 <span class="tag demo-t">예시 규칙</span> · 쉰 기간 61~120일 먼저, 평소 잘 팔리는 순</span>${c.map(x => { const r = Math.min(40, x.m); return `<div class="cand"><span><b>${esc(x.p.name)}</b></span>
       <span class="meta">제안 ${r}% · 기준 안 최대 ${x.m}% · 쉰 기간 ${x.p.days}일 · 예상(참고) ${man(x.p.base * liftOf(r) * priceOf(x.q, r / 100, null).fin * 0.75)}~${man(x.p.base * liftOf(r) * priceOf(x.q, r / 100, null).fin * 1.25)}원</span>
       <button class="btn xs primary" data-dealadd="${d}|${x.q}|${r}">넣기</button></div>`; }).join('')}<button class="btn xs ghost" data-fill="">닫기</button></div>`;
@@ -224,7 +305,7 @@ function extrasTab() {
     <div><button class="btn sm" data-xadd>+ 추가 혜택 (쿠폰·얼리버드·멤버십 등)</button></div></div>`;
 }
 function poolTab() {
-  return `<section class="card"><p class="hint">트렌드·리뷰·상품 화면·브리프 키워드에서 '역할은 나중에'로 담은 상품이에요. 역할을 고르면 그쪽으로 옮겨져요.</p>
+  return `<section class="card"><div class="filters"><p class="hint grow">트렌드·리뷰·상품 화면·브리프 키워드에서 '역할은 나중에'로 담은 상품이에요. 역할을 고르면 그쪽으로 옮겨져요.</p>${LIVE ? '<button class="btn xs" data-search>+ 상품 찾아 담기</button>' : ''}</div>
     <div class="pool">${pool.map((x, k) => { const p = P[x.seq], m = maxRate(x.seq); return `<div class="pitem"><span><b>${pname(x.seq)}</b></span><span class="meta">${esc(x.src)} · 정가 ${won(p.price)} · 기준 안 최대 ${m}% · 쉰 기간 ${p.days}일</span>
       <span class="acts"><button class="btn xs primary" data-role="${k}|item">할인 상품으로</button><button class="btn xs" data-role="${k}|deal">하루특가 후보로</button><button class="btn xs" data-role="${k}|none">할인 없이</button><button class="btn xs" data-pair="${x.seq}">묶어 보기</button><button class="btn xs ghost" data-role="${k}|drop">빼기</button></span></div>`; }).join('') || '<p class="hint">후보 상품이 없어요</p>'}</div></section>`;
 }
@@ -240,32 +321,38 @@ function detailOf(seq) {
   const weeks = Array.from({ length: 13 }, (_, w) => Math.round(p.base * 7 * (0.8 + ((w * 3 + k) % 5) * 0.12) * (w === 4 || w === 5 ? 2.1 : 1)));
   const past = [[p.last.split(' · ')[0], '상시', p.last.split(' · ')[1] || '-', Math.round(p.base * 14 * 1.7), '1.7배', '38%'],
     ['하루특가 (2025.12)', '하루특가', '35%', Math.round(p.base * 3.1), '3.1배', '44%']];
-  return { sales28, prev: [-0.12, 0.08, 0.21, -0.04, 0.15, 0.02, -0.09][k], ly: [0.06, -0.1, 0.18, 0.04, -0.02, 0.11, 0.09][k], weeks, past,
+  const demo = { sales28, prev: [-0.12, 0.08, 0.21, -0.04, 0.15, 0.02, -0.09][k], ly: [0.06, -0.1, 0.18, 0.04, -0.02, 0.11, 0.09][k], weeks, past,
     next: Math.min(40, floor5(maxRate(seq)) || 10), rating: (4.4 + k * 0.07).toFixed(1), gift: 6 + k * 3, again: 4 + k * 2,
     review: ['향이 은은해서 선물했더니 좋아했어요', '아이스로 우려도 맛있어요', '포장이 고급스러워요'][k % 3], stock: 300 + k * 170 };
+  if (!p.real) return demo;
+  // 실제 상품: 매출·작년·90일 판매(daily_qty)·마지막 행사는 실제, 반응·리뷰는 예시 그대로
+  const r = p.real, dq = r.daily_qty || [], n = dq.length;
+  const wk = Array.from({ length: 13 }, (_, w) => dq.slice(Math.max(0, n - 7 * (13 - w)), Math.max(0, n - 7 * (12 - w))).reduce((a, b) => a + b, 0));
+  return { ...demo, live: true, sales28: r.sales_28 || 0, prev: r.sales_prev28 ? (r.sales_28 || 0) / r.sales_prev28 - 1 : null, lyAmt: r.ly_next28 || 0, weeks: wk,
+    past: r.last_promo ? [[r.last_promo, r.last_promo_type || '-', `${Math.round((r.last_promo_rate || 0) * 100)}%`, '-', '-', '-']] : [] };
 }
 function productDrawer(seq) {
   const p = P[seq], dt = detailOf(seq), it = itemOf(seq), m = maxRate(seq), sim = drawer.sim ?? Math.round(rateOf(seq) * 100);
   const sp = priceOf(seq, sim / 100, null), cra = sp.fin < p.price ? craOf(seq, sp.fin) : null, unit = sp.fin / 1.1 - p.cost;
   const pct = n => `${n > 0 ? '+' : ''}${Math.round(n * 100)}%`, inPlan = it ? `이 기획안: ${it.type}${it.rate ? ` ${Math.round(it.rate * 100)}%` : ''}` : pool.some(x => x.seq === seq) ? '이 기획안: 후보 상품' : '이 기획안에 없음';
-  const mx = Math.max(...dt.weeks);
+  const mx = Math.max(1, ...dt.weeks), EX = dt.live ? ' <span class="tag demo-t">예시</span>' : '';
   return `<div class="dh"><div class="grow"><div class="overline">상품 상세 · ${seq}</div><h2 id="drH">${esc(p.name)}</h2><span class="cap">${inPlan}</span></div><button class="btn sm" data-close>닫기</button></div>
   <div class="db">
-    <div class="kv"><span>정가</span><span>${won(p.price)}</span><span>원가율 (정가)</span><span>${Math.round(p.cost / (p.price / 1.1) * 100)}%</span>
-      <span>기준 안 최대 할인</span><span>${m}% <span class="hint">할인 후 원가율 ${Math.round(TARGET * 100)}% 기준</span></span>
-      <span>최근 28일 매출</span><span>${man(dt.sales28)}원 · 직전 28일 대비 ${pct(dt.prev)}</span>
-      <span>작년 이맘때</span><span>앞 4주 매출 작년 대비 ${pct(dt.ly)}</span>
+    <div class="kv"><span>정가</span><span>${won(p.price)}</span><span>원가율 (정가)</span><span>${p.cost ? `${Math.round(p.cost / (p.price / 1.1) * 100)}%` : '원가 없음'}</span>
+      <span>기준 안 최대 할인</span><span>${p.cost ? `${m}%` : '원가 없음'} <span class="hint">할인 후 원가율 ${Math.round(TARGET * 100)}% 기준</span></span>
+      <span>최근 28일 매출</span><span>${man(dt.sales28)}원 · ${dt.prev == null ? '직전 28일 판매 없음' : `직전 28일 대비 ${pct(dt.prev)}`}</span>
+      <span>작년 이맘때</span><span>${!dt.live ? `앞 4주 매출 작년 대비 ${pct(dt.ly)}` : dt.lyAmt ? `${man(dt.lyAmt)}원 <span class="hint">앞으로 4주에 해당하는 작년 4주</span>` : '작년 같은 기간 판매 없음'}</span>
       <span>마지막 행사</span><span>${esc(p.last)} · 특가 쉰 지 ${p.days}일</span>
-      <span>재고 <em class="hint">참고</em></span><span>${dt.stock.toLocaleString('ko-KR')}개 <span class="hint">기획 계산엔 안 써요</span></span></div>
+      <span>재고 <em class="hint">참고</em></span><span>${dt.live ? '아직 못 불러와요' : `${dt.stock.toLocaleString('ko-KR')}개`} <span class="hint">기획 계산엔 안 써요</span></span></div>
     <div class="ps"><h4>할인 시뮬레이션 <span class="hint">추가 혜택 빼고 1단만</span></h4>
       <div class="simrow"><label>할인율 <select data-sim="${seq}" aria-label="할인율">${[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50].map(r => `<option value="${r}" ${r === sim ? 'selected' : ''}>${r}%</option>`).join('')}</select></label>
         <span>할인가 <b>${won(sp.fin)}</b></span><span>할인 후 원가율 <b class="${cra > TARGET ? 'is-over' : ''}">${cra == null ? '-' : Math.round(cra * 100) + '%'}</b></span><span>개당 이익 <b>${won(unit)}</b></span></div>
       <div class="puts"><button class="btn xs primary" data-put="${seq}|item|${sim}">이 할인으로 할인 상품에</button><button class="btn xs" data-put="${seq}|deal|${sim}">하루특가 후보로</button><button class="btn xs" data-put="${seq}|none|0">할인 없이</button><button class="btn xs" data-put="${seq}|pool|0">역할은 나중에</button><button class="btn xs ghost" data-pair="${seq}">묶을 짝 보기</button></div></div>
-    <div class="ps"><h4>최근 90일 주별 판매 <span class="hint">진하게 = 행사 주</span></h4><div class="spark" aria-label="13주 판매 수량">${dt.weeks.map((w, i) => `<i data-h="${Math.round(w / mx * 100)}" class="${i === 4 || i === 5 ? 'ev' : ''}" title="${w}개"></i>`).join('')}</div></div>
-    <div class="ps"><h4>지난 행사 성과</h4><div class="tbl-wrap"><table class="t"><thead><tr><th>행사</th><th>유형</th><th class="num">할인</th><th class="num">하루 수량</th><th class="num">평소 대비</th><th class="num">원가율</th></tr></thead>
-      <tbody>${dt.past.map(r => `<tr><td>${esc(r[0])}</td><td>${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td><td class="num">${r[4]}</td><td class="num">${r[5]}</td></tr>`).join('')}</tbody></table></div></div>
-    <div class="ps"><h4>할인 반응: 다음엔 몇 %?</h4><p class="cap">지난 행사에서 할인을 깊게 할수록 판매가 늘었지만 ${dt.next}%를 넘으면 늘어나는 폭이 줄었어요 → <b>${dt.next}% 안팎</b>을 권해요 (기준 안 최대 ${m}%)</p></div>
-    <div class="ps"><h4>고객 리뷰</h4><ul class="mini"><li>평점 ${dt.rating} · 선물 언급 ${dt.gift}건 · 재구매 언급 ${dt.again}건 <span class="hint">최근 8주</span></li><li>"${esc(dt.review)}"</li></ul></div>
+    <div class="ps"><h4>최근 90일 주별 판매 <span class="hint">${dt.live ? '실제 판매 수량' : '진하게 = 행사 주'}</span></h4><div class="spark" aria-label="13주 판매 수량">${dt.weeks.map((w, i) => `<i data-h="${Math.round(w / mx * 100)}" class="${!dt.live && (i === 4 || i === 5) ? 'ev' : ''}" title="${w}개"></i>`).join('')}</div></div>
+    <div class="ps"><h4>지난 행사 성과${dt.live ? ' <span class="hint">마지막 행사만 · 행사별 수량·반응은 아직 못 불러와요</span>' : ''}</h4><div class="tbl-wrap"><table class="t"><thead><tr><th>행사</th><th>유형</th><th class="num">할인</th><th class="num">하루 수량</th><th class="num">평소 대비</th><th class="num">원가율</th></tr></thead>
+      <tbody>${dt.past.length ? '' : '<tr><td colspan="6" class="cap">지난 행사가 없어요</td></tr>'}${dt.past.map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td><td class="num">${r[4]}</td><td class="num">${r[5]}</td></tr>`).join('')}</tbody></table></div></div>
+    <div class="ps"><h4>할인 반응: 다음엔 몇 %?${EX}</h4><p class="cap">지난 행사에서 할인을 깊게 할수록 판매가 늘었지만 ${dt.next}%를 넘으면 늘어나는 폭이 줄었어요 → <b>${dt.next}% 안팎</b>을 권해요 (기준 안 최대 ${m}%)</p></div>
+    <div class="ps"><h4>고객 리뷰${EX}</h4><ul class="mini"><li>평점 ${dt.rating} · 선물 언급 ${dt.gift}건 · 재구매 언급 ${dt.again}건 <span class="hint">최근 8주</span></li><li>"${esc(dt.review)}"</li></ul></div>
   </div>`;
 }
 // 지난 행사 할인 기준: 예전 '지난 성과' 레버 보드 + 할인 패턴 (지난 실적 관찰값, 예시)
@@ -290,17 +377,18 @@ function leversDrawer() {
 function renderDrawer() {
   const el = $('#drawer'); el.hidden = $('#scrim').hidden = !drawer;
   if (!drawer) return;
-  el.innerHTML = drawer.kind === 'levers' ? leversDrawer() : productDrawer(drawer.seq);
+  el.innerHTML = drawer.kind === 'levers' ? leversDrawer() : drawer.kind === 'search' ? searchDrawer() : productDrawer(drawer.seq);
   el.querySelectorAll('.spark i[data-h]').forEach(i => i.style.setProperty('--h', `${Math.max(4, +i.dataset.h)}%`));
 }
-function putFromDetail(seq, role, r) {
+function putFromDetail(seq, role, r, src = '상품 상세') {
+  if (role === 'deal' && !dealCands.includes(seq)) dealCands.push(seq);
   const it = itemOf(seq);
   if (role === 'item' || role === 'none') {
     if (!it) items.push({ seq, type: role === 'item' ? '상시' : '할인 없음', rate: role === 'item' ? r / 100 : 0, s: PERIOD[0], e: PERIOD[1], appeal: '', clear: false, where: [] });
     else if (role === 'item') { if (r / 100 === it.rate) delete drafts[seq]; else drafts[seq] = r / 100; }
     else { it.type = '할인 없음'; it.rate = 0; delete drafts[seq]; }
   }
-  if (role === 'pool') { if (!it && !pool.some(x => x.seq === seq)) pool.push({ seq, src: '상품 상세' }); }
+  if (role === 'pool') { if (!it && !pool.some(x => x.seq === seq)) pool.push({ seq, src }); }
   else pool = pool.filter(x => x.seq !== seq);
   closeDrawer(); render();
   toast({ item: it ? `${r}%로 바꿈에 넣었어요. [반영]을 눌러야 들어가요` : `${r}%로 할인 상품에 넣었어요`, deal: '하루특가 후보로 넣었어요. 하루특가 탭의 [채우기]에서 먼저 보여요', none: '할인 없이 넣었어요', pool: it ? '이미 이 기획안에 있어요' : '후보 상품에 넣었어요' }[role]);
@@ -313,6 +401,7 @@ function render() {
   // 막대 길이·자리 수는 CSSOM으로 (인라인 style 속성 없이, CSP와 같은 조건)
   document.querySelectorAll('.bar i[data-w]').forEach(el => { el.style.width = `${Math.min(100, el.dataset.w / 3 * 100)}%`; });
   document.querySelectorAll('.slots[data-n]').forEach(el => el.style.setProperty('--n', el.dataset.n));
+  persist();
 }
 
 // ================= 동작 =================
@@ -327,6 +416,10 @@ document.addEventListener('click', e => {
   if (d('put')) { const [q, role, r] = v('put').split('|'); putFromDetail(q, role, +r); return; }
   if (d('tab')) { tab = v('tab'); render(); document.querySelector(`[data-tab="${tab}"]`)?.focus(); return; }
   if (d('toast')) { toast(v('toast')); return; }
+  if (d('search')) { openDrawer({ kind: 'search', q: '' }); $('#pq')?.focus(); return; }
+  if (d('sadd')) { const [q, role] = v('sadd').split('|'), back = drawer.q;
+    putFromDetail(q, role, role === 'item' ? Math.min(20, floor5(maxRate(q))) || 5 : 0, '상품 찾기');
+    openDrawer({ kind: 'search', q: back }); $('#pq')?.focus(); return; }   // 여러 개를 이어서 담게 창을 다시 엶
   if (d('where')) { where = v('where'); render(); return; }
   if (d('bulk')) { const f = fixable(); f.forEach(i => { drafts[i.seq] = floor5(maxRate(i.seq)) / 100; }); render(); toast(`${f.length}개를 기준 안으로 낮췄어요. [반영]을 눌러야 들어가요`); return; }
   if (d('lower')) { const q = v('lower'); drafts[q] = floor5(maxRate(q)) / 100; render(); toast(`${floor5(maxRate(q))}%로 낮췄어요. [반영]을 눌러야 들어가요`); return; }
@@ -348,6 +441,7 @@ document.addEventListener('click', e => {
   if (d('xdel')) { extras = extras.filter(x => x.id !== v('xdel')); render(); return; }
   if (d('role')) { const [k, r] = v('role').split('|'), x = pool[+k];
     if (r === 'item' || r === 'none') { if (!itemOf(x.seq)) items.push({ seq: x.seq, type: r === 'item' ? '상시' : '할인 없음', rate: r === 'item' ? Math.min(20, maxRate(x.seq)) / 100 : 0, s: PERIOD[0], e: PERIOD[1], appeal: '', clear: false, where: [] }); }
+    if (r === 'deal' && !dealCands.includes(x.seq)) dealCands.push(x.seq);
     pool.splice(+k, 1); render(); toast(r === 'drop' ? '후보에서 뺐어요' : r === 'deal' ? '하루특가 후보로 옮겼어요. 하루특가 탭의 [채우기]에서 먼저 보여요' : '할인 상품으로 옮겼어요. 구좌 편집에서 카드에 넣을 수 있어요'); return; }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && drawer) closeDrawer(); });
@@ -367,7 +461,16 @@ document.addEventListener('change', e => {
     if (f === 'period') { const pp = parsePeriod(t.value.trim()); if (!pp) { toast('기간은 3/2~3/8처럼 적어 주세요'); render(); return; } [x.s, x.e] = pp; }
     else x[f] = f === 'val' ? Math.max(0, +t.value || 0) : t.value; render(); return; }
 });
-document.addEventListener('input', e => { const t = e.target; if (t.dataset.appeal) { itemOf(t.dataset.appeal).appeal = t.value; } });
+document.addEventListener('input', e => { const t = e.target; if (t.dataset.appeal) { itemOf(t.dataset.appeal).appeal = t.value; }
+  if (t.id === 'pq') { drawer.q = t.value.slice(0, 40); $('#pres').innerHTML = searchResults(); } });   // 입력칸은 그대로 두고 결과만 바꿈 (커서 유지)
+document.addEventListener('input', persist);    // 소구문구처럼 다시 그리지 않는 고침도 저장
+document.addEventListener('change', persist);   // 재고 털이 체크 등
 let toastT;
 function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2800); }
-render();
+// 기획안이 열려 있으면 실제 상품·이 기획안의 값으로, 아니면 예시로
+if (PLAN.id) $('#body').innerHTML = '<p class="hint">기획안 상품을 불러오는 중이에요…</p>'; else render();
+PLAN.ready.then(async doc => {
+  if (!doc) { render(); return; }
+  try { loadPlan(doc, (await v2api('/api/products')).products || []); } catch (e) { LIVE = false; toast(`상품을 불러오지 못해 예시로 보여요: ${e.message}`); }
+  render();
+});
