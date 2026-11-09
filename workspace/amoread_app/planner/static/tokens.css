@@ -1,8 +1,10 @@
 /* 디자인 토큰: AMOREAD Green UI v2.5.1 (디자이너 yunxeo b8870f4, D-054·D-055)
    출처: 디자이너 패키지 02_DESIGN_SYSTEM/design/tokens_v2.5.1.css (값만 옮김, 코드는 옮기지 않음)
    - 업무 의미색(상시·하루특가·상승·하락)은 v2.5.1 범위 밖이라 기존 값 유지
-   - 서체는 Pretendard 단독 (디자이너와 같은 파일 v1.3.9, 영문·숫자 글리프는 Inter 기반)
-   - 키보드 포커스 2px 외곽선은 접근성을 위해 유지 (디자이너 기준과 다르게 둠)
+   - 서체: 영문·숫자 Inter v4.1 → 한글 Pretendard v1.3.9 (2026-11-09 사내 UI 적용, 디자인시스템 §3)
+   - 키보드 포커스 2px 외곽선은 버튼·링크에만 접근성을 위해 유지 (디자이너 기준과 다르게 둠).
+     입력칸은 디자이너 기준대로 테두리 1px 색만 바뀐다 (2026-11-09)
+   - 2026-11-09 사내 UI 적용: 선택 구좌·목록·카드는 배경 없이 --sel-line 1px, 와이어프레임 행사가 --price, 폰 프레임 모서리 --r
    적용 범위와 역할: plans/09_디자인시스템_v2.5.1_적용범위와_역할분담.md, 되돌리기: workspace/_backup_P0_20261106
    규칙: 화면 CSS는 아래 의미 변수만 쓴다. hex 값을 화면 CSS에 직접 쓰지 않는다.
    기존 변수 이름(--shell, --accent 등)은 기존 화면 호환을 위해 유지하고 값만 새 기준으로 바꾼다. */
@@ -10,11 +12,20 @@
   font-family: 'Pretendard Variable';
   font-weight: 45 920;
   font-style: normal;
-  font-display: swap;
-  src: url('/static/fonts/PretendardVariable.woff2') format('woff2-variations');
+  font-display: block;   /* 2026-11-10: 기본 글꼴로 먼저 그렸다가 바뀌는 깜빡임 방지 (글꼴은 preload + 서버 캐시) */
+  src: url(/static/fonts/PretendardVariable.woff2) format('woff2-variations');
+}
+/* 영문·숫자: Inter v4.1 (Green UI v2.5.1 서체 순서 Inter → Pretendard). 앱 원본은 /static/fonts/InterVariable.woff2 (라이선스 Inter-LICENSE.txt, SIL OFL 1.1) */
+@font-face {
+  font-family: 'Inter';
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+  src: url(/static/fonts/InterVariable.woff2) format('woff2');
+  unicode-range: U+0000-024F, U+2000-206F, U+20A9, U+2190-21FF, U+2212;   /* 영문·숫자·기호만 Inter, 한글은 Pretendard */
 }
 :root {
-  --font: 'Pretendard Variable', 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+  --font: 'Inter', 'Pretendard Variable', 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;   /* 영문·숫자 Inter, 한글 Pretendard */
 
   /* 바탕·면 */
   --shell: #ffffff;        /* 상단 막대: 흰 면 + 아래 선 */
@@ -72,7 +83,8 @@
   --shade2: rgba(20, 20, 20, 0.18);
   --scrim: rgba(20, 20, 20, 0.28);
 
-  /* 글자 크기 (v2.5.1: 페이지 28/36/700, 섹션 20/28/600, 카드 16/24/600, 본문 14/22, 레이블 14/20/600, 캡션 12/18) */
+  /* 글자 크기 (v2.5.1: 페이지 28/36/700, 섹션 20/28/600, 카드 16/24/600, 본문 14/22, 레이블 14/20/600, 캡션 12/18)
+     새 버전(v2) 화면은 static/v2/shell.css에서 한 단계 큰 읽기 크기로 덮어쓴다 (예전 화면은 이 값 그대로) */
   --fs-cap: 12px;
   --fs-sm: 13px;
   --fs-body: 14px;
@@ -83,6 +95,7 @@
   --fs-masthead: 28px;     /* 페이지 제목 */
   --lh-cap: 18px;
   --lh-body: 22px;
+  --lh-sm: 20px;           /* 여러 줄 작은 본문 */
   --lh-masthead: 36px;
   --lh-h1: 28px;
   --lh-h2: 24px;
@@ -97,6 +110,8 @@
   /* 간격 4px 기반 (v0.2) */
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px;
   --s-card: 24px;          /* 디자이너 카드 여백 */
+  --s-panel: 20px;         /* 작업 화면 카드·편집 패널 여백 (v2.5.1 편집 패널 본문 20) */
+  --hit: 32px;             /* 누를 수 있는 가장 작은 크기 (size-xs) */
 
   /* 모서리·컨트롤 (v2.5.1: 컨트롤 8, 컨테이너 12, full도 8) */
   --r: 12px;               /* 카드 */

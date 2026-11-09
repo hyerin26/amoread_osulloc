@@ -51,7 +51,12 @@ class Guard(BaseHTTPMiddleware):
         resp.headers["Content-Security-Policy"] = ("default-src 'self'; img-src 'self' data:; style-src 'self'; "
                                                    "script-src 'self'; object-src 'none'; frame-ancestors 'none'")
         resp.headers["Referrer-Policy"] = "no-referrer"
-        resp.headers["Cache-Control"] = "no-store"
+        # 글꼴(2.4MB)만 캐시: no-store면 화면을 옮길 때마다 다시 받아 기본 글꼴 → 우리 글꼴로 바뀌는 깜빡임이 생김 (2026-11-10)
+        # 글꼴 파일은 이름이 바뀌지 않는 한 내용이 같다. 나머지(화면·데이터)는 예전처럼 저장하지 않음
+        if request.url.path.startswith("/static/fonts/") and resp.status_code == 200:
+            resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        else:
+            resp.headers["Cache-Control"] = "no-store"
         return resp
 
 

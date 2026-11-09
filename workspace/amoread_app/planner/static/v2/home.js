@@ -140,10 +140,20 @@ function renderTimeline() {
   lab(R.m, 1, '명분', '명분 사전'); bg(R.m, 1);
   const sm = selSeason();
   if (sm) { const ln = document.createElement('div'); ln.className = 'lead'; put(ln, add(sm.d, -sm.lead), add(sm.d, -1), R.m); }   // 준비 기간 선은 고른 명분만 (겹치면 읽을 수 없음)
-  SEASONS.forEach((m, i) => {
+  // 명분 이름이 겹치지 않게: 보이는 명분을 날짜순으로 보고, 이름이 들어갈 자리가 빈 가장 위 단(0~2)에 놓는다 (2026-11-10)
+  const DAYPX = parseFloat(getComputedStyle(tl).getPropertyValue('--day')) || 15, CHAR = 13, MAXW = 112, ends = [-1e9, -1e9, -1e9];
+  const lv = {};
+  SEASONS.filter(m => m.d >= start && m.d <= end).sort((a, b) => (a.d < b.d ? -1 : 1)).forEach(m => {
+    const cx = diff(start, m.d) * DAYPX + DAYPX / 2, w = Math.min(MAXW, m.name.length * CHAR + 8);
+    let k = ends.findIndex(e => e + 6 <= cx - w / 2);
+    if (k < 0) k = ends.indexOf(Math.min(...ends));
+    ends[k] = cx + w / 2; lv[m.id] = k;
+  });
+  SEASONS.forEach(m => {
     if (m.d < start || m.d > end) return;
-    const b = document.createElement('button'); b.className = 'mb' + (i % 2 ? ' alt' : ''); b.dataset.type = 'm'; b.dataset.id = m.id;
+    const b = document.createElement('button'); b.className = `mb lv${lv[m.id] || 0}`; b.dataset.type = 'm'; b.dataset.id = m.id;
     b.innerHTML = `<span class="dia" aria-hidden="true"></span><span class="t">${esc(m.name)}</span>`;
+    b.title = `${m.name} · ${md(m.d)}`;
     b.setAttribute('aria-label', `명분 ${m.name}, ${md(m.d)}, 준비 시작 ${md(add(m.d, -m.lead))}`);
     if (isSel('m', m.id)) b.setAttribute('aria-pressed', 'true');
     b.style.gridRow = R.m; b.style.gridColumn = `${diff(start, m.d) + 2} / span 1`; b.style.justifySelf = 'center'; tl.append(b);

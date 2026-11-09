@@ -14,7 +14,7 @@ h1, h2, h3, h4, p { margin: 0; }
 .top .grow { flex: 1; }
 .top .note { color: var(--mute); font-size: var(--fs-cap); }
 .page { max-width: 1440px; margin: 0 auto; padding: var(--s5) var(--s5) 64px; }
-.demo { background: var(--warn-soft); color: var(--warn); border-radius: var(--r); padding: 12px 16px; font-size: var(--fs-sm); line-height: var(--lh-label); margin-bottom: var(--s4); }
+.demo { background: var(--warn-soft); color: var(--ink2); border-radius: var(--r2); padding: 12px 16px; font-size: var(--fs-sm); line-height: var(--lh-sm); margin-bottom: var(--s4); }
 .demo b { font-weight: var(--fw-strong); }
 .head { display: flex; align-items: flex-end; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s3); }
 .head .grow { flex: 1; min-width: 280px; }
@@ -30,28 +30,26 @@ h1, h2, h3, h4, p { margin: 0; }
 .btn.ghost { background: transparent; }
 .btn.ghost:hover { background: var(--hover); }
 .btn.sm { height: var(--control-md); padding: 0 12px; font-size: var(--fs-sm); }
-.btn.xs { height: 28px; padding: 0 8px; font-size: var(--fs-cap); }
-.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid var(--line-sub); border-radius: var(--r2); background: var(--surface);
-  color: var(--ink2); font-size: var(--fs-cap); font-weight: var(--fw-medium); cursor: pointer; }
+.btn.xs { height: var(--hit); padding: 0 10px; font-size: var(--fs-cap); }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--r2); background: var(--surface); color: var(--ink2); font-size: var(--fs-sm); font-weight: var(--fw-medium); cursor: pointer; min-height: var(--control-md); line-height: var(--lh-label); white-space: nowrap; }
 .chip:hover { border-color: var(--line-strong); color: var(--ink); }
 .chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--sel-line); color: var(--accent); font-weight: var(--fw-strong); }
 .chips-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.tag { display: inline-flex; align-items: center; border-radius: var(--r2); padding: 2px 8px; font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); background: var(--sunken); color: var(--ink2); white-space: nowrap; }
+.tag { display: inline-flex; align-items: center; border-radius: 6px; padding: 2px 8px; font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); background: var(--sunken); color: var(--ink2); white-space: nowrap; gap: 4px; }
 .tag.demo-t { background: var(--warn-soft); color: var(--warn); }
 .tag.off { background: transparent; border: 1px dashed var(--line-strong); color: var(--mute); }
 .tag.deal { background: var(--deal-soft); color: var(--deal-ink); }
 .tag.sangsi { background: var(--sangsi-soft); color: var(--sangsi); }
 .seg { display: inline-flex; gap: 4px; padding: 4px; background: var(--sunken); border-radius: var(--r2); max-width: 100%; overflow-x: auto; }
-.seg > button { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; min-height: var(--control-sm); padding: 6px 14px; border-radius: 6px;
-  color: var(--mute); font-size: var(--fs-sm); line-height: var(--lh-label); font-weight: var(--fw-medium); white-space: nowrap; }
+.seg > button { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; min-height: var(--control-md); padding: 6px 14px; border-radius: 6px; color: var(--ink2); font-size: var(--fs-sm); line-height: var(--lh-label); font-weight: var(--fw-medium); white-space: nowrap; justify-content: center; gap: 6px; }
 .seg > button:hover { color: var(--ink); }
 .seg > button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-strong); }
 .seg > button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 input[type=text], input[type=number], input[type=search], select { height: var(--control-md); border: 1px solid var(--line); border-radius: var(--r2); padding: 0 10px; color: var(--ink); background: var(--surface); min-width: 0; }
 input:hover, select:hover { border-color: var(--line-strong); }
-input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
-.ck { display: inline-flex; gap: 6px; align-items: center; font-size: var(--fs-sm); cursor: pointer; }
-.card { background: var(--surface); border: 1px solid var(--line-sub); border-radius: var(--r); padding: var(--s4); min-width: 0; display: grid; gap: var(--s3); align-content: start; }   /* 카드 안 덩어리끼리 늘 간격 (제목·문단 여백을 0으로 둬서 붙어 보이던 것) */
+input:not([type=checkbox]):not([type=radio]):focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }   /* v2.5.1: 입력칸은 테두리 1px 색만 바꿈 (링 없음) */
+.ck { display: inline-flex; gap: 8px; align-items: center; font-size: var(--fs-sm); line-height: var(--lh-label); cursor: pointer; }
+.card { background: var(--surface); border: 1px solid var(--line-sub); border-radius: var(--r); padding: var(--s-panel); min-width: 0; display: grid; gap: var(--s3); align-content: start; }   /* 카드 안 덩어리끼리 늘 간격 (제목·문단 여백을 0으로 둬서 붙어 보이던 것) */
 .card > .filters { margin-bottom: 0; }
 #body { display: grid; gap: var(--s3); }   /* 탭 본문의 덩어리끼리 (묶음 탭: 조건 줄 · 기준 안내 · 추천 · 직접 만들기) */
 #body > .filters { margin-bottom: 0; }
@@ -81,9 +79,9 @@ table.t td.pn { white-space: normal; min-width: 150px; }
 table.t td.pn b { font-weight: var(--fw-medium); display: block; }
 table.t td.where { white-space: normal; min-width: 120px; font-size: var(--fs-cap); }
 table.t td.fin { color: var(--price); font-weight: var(--fw-strong); }
-table.t td.fin small { display: block; font-size: 10px; color: var(--mute); font-weight: var(--fw-medium); }
+table.t td.fin small { display: block; font-size: 12px; color: var(--mute); font-weight: var(--fw-medium); }
 table.t td input[type=number] { width: 56px; height: 28px; text-align: right; padding: 0 4px; }
-table.t td .draft { color: var(--accent); font-size: 10px; font-weight: var(--fw-strong); display: block; }
+table.t td .draft { color: var(--accent); font-size: 12px; font-weight: var(--fw-strong); display: block; }
 .cra.warn { color: var(--warn); font-weight: var(--fw-strong); }
 .judge { font-size: var(--fs-cap); line-height: var(--lh-cap); padding: 2px 8px; border-radius: var(--r2); font-weight: var(--fw-strong); white-space: nowrap; }
 .judge.ok { background: var(--ok-soft); color: var(--ok); }

@@ -1,27 +1,84 @@
 /* AMOREAD 새 버전 공통 틀 (plans/20 §4-11): 윗줄(어디서나) + 기획안 막대(기획안 안에서만). 값은 tokens.css(v2.5.1) */
+
+/* 2026-11-10 읽기 크기: 새 버전 화면만 한 단계 크게 (예전 화면은 tokens.css 값 그대로).
+   v2.5.1 타입 표에 맞춤: 본문 15/24 · 작은 본문 14/22 · 보조 문구 13/20 (캡션 12보다 1px 크게, 작업 화면 가독성) */
+:root {
+  --fs-body: 15px; --lh-body: 24px;
+  --fs-sm: 14px;   --lh-sm: 22px;
+  --fs-cap: 13px;  --lh-cap: 20px;
+}
+body {
+  word-break: keep-all;            /* 한글을 낱말 중간에서 끊지 않음 */
+  overflow-wrap: anywhere;         /* 긴 영문·숫자만 칸을 넘을 때 끊음 */
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection { background: var(--accent-soft); color: var(--ink); }
+
+/* 아이콘 한 벌 (shell.js가 버튼 안 글자 기호를 바꿈): 24 격자, 선 1.75, 둥근 끝, 글자 크기를 따라감 */
+.v2ic { display: inline-block; width: 1.15em; height: 1.15em; flex: none; vertical-align: -0.2em; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.v2ic .fill { fill: currentColor; }
+.v2ic.lead { margin-right: .3em; }
+.v2ic.tail { margin-left: .3em; }
+:is(.btn, .chip, .v2btn, .seg > button) .v2ic.lead, :is(.btn, .chip, .v2btn, .seg > button) .v2ic.tail { margin: 0; }   /* 이미 gap이 있는 버튼 */
+
+/* 데이터 출처 (shell.js): 노란 안내 띠 대신 윗줄의 작은 표시 + 누르면 여는 창 */
+.v2src { display: inline-flex; align-items: center; gap: 8px; min-height: var(--hit); padding: 0 12px; border: 1px solid var(--line); border-radius: var(--r2); background: var(--surface);
+  color: var(--ink2); font: inherit; font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); cursor: pointer; white-space: nowrap; }
+.v2src:hover { border-color: var(--line-strong); color: var(--ink); }
+.v2src[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+.v2src:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.v2src .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.v2src[data-kind="real"] .dot { background: var(--accent); }
+.v2src[data-kind="mix"] .dot { background: linear-gradient(90deg, var(--accent) 50%, var(--line-strong) 50%); }
+.v2src[data-kind="demo"] .dot { background: var(--line-strong); }
+.demo.v2pop { display: none; position: fixed; top: 72px; right: var(--s5); z-index: 40; width: min(440px, calc(100vw - 32px)); margin: 0;
+  padding: var(--s4) var(--s5); background: var(--surface); color: var(--ink2); border: 1px solid var(--line); border-radius: var(--r);
+  box-shadow: 0 16px 40px -12px var(--shade2); font-size: var(--fs-sm); line-height: var(--lh-sm); }
+.demo.v2pop.open { display: block; }
+.demo.v2pop b { color: var(--ink); font-weight: var(--fw-strong); }
+
+/* 길잡이 하나: 앞으로 가는 버튼은 막대의 [다음: …]만. 화면 안의 같은 버튼·뒤로 가는 글자 링크는 숨김 (단계 막대가 대신함) */
+.v2plan ~ main #nextBtn { display: none; }
+.v2plan ~ main .head a.btn.ghost[href^="/v2/"] { display: none; }
 .v2top { position: sticky; top: 0; z-index: 12; height: 64px; display: flex; align-items: center; gap: var(--s5); padding: 0 var(--s5); background: var(--shell); border-bottom: 1px solid var(--line); }
 .v2logo { display: flex; align-items: center; gap: 10px; font-weight: var(--fw-title); font-size: var(--fs-h1); color: var(--ink); text-decoration: none; }
 .v2logo i { width: 30px; height: 30px; border-radius: var(--r2); background: var(--ink); color: var(--surface); display: grid; place-items: center; font-style: normal; }
-.v2nav { display: flex; gap: var(--s4); align-self: stretch; }
-.v2nav a { position: relative; display: flex; align-items: center; color: var(--mute); text-decoration: none; font-weight: var(--fw-medium); }
+/* 윗줄 메뉴: Green UI v2.5.1 상단 탭 묶음 (회색 바탕 + 선택 칸 은은한 그린) */
+.v2nav { display: flex; gap: 4px; padding: 4px; background: var(--sunken); border-radius: var(--r2); }
+.v2nav a { display: flex; align-items: center; min-height: var(--control-sm); padding: 0 14px; border-radius: 6px; color: var(--mute); text-decoration: none; font-size: var(--fs-sm); font-weight: var(--fw-medium); }
 .v2nav a:hover { color: var(--ink); }
-.v2nav a[aria-current="page"] { color: var(--ink); font-weight: var(--fw-strong); }
-.v2nav a[aria-current="page"]::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--accent); }
+.v2nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-strong); }
 .v2grow { flex: 1; }
 .v2date { font-size: var(--fs-cap); color: var(--mute); }
 .v2old { font-size: var(--fs-cap); color: var(--mute); text-decoration: underline; text-underline-offset: 3px; }
 .v2old:hover { color: var(--ink); }
-.v2gear { width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--r2); color: var(--mute); text-decoration: none; }
+.v2gear { width: 36px; height: 36px; display: grid; place-items: center; border-radius: var(--r2); color: var(--mute); text-decoration: none; }
+.v2gear svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
 .v2gear:hover { background: var(--hover); color: var(--ink); }
 .v2gear[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
 .v2top a:focus-visible, .v2plan a:focus-visible, .v2plan button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r2); }
 
 .v2plan { position: sticky; top: 64px; z-index: 11; display: flex; align-items: center; gap: var(--s3) var(--s4); flex-wrap: wrap; padding: 10px var(--s5); background: var(--shell); border-bottom: 1px solid var(--line); }
-.v2ident { font-weight: var(--fw-strong); max-width: 280px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* 기획안 이름 = 홈(기획안 목록)으로 가는 링크. 앞의 꺾쇠가 '여기서 위로' 신호 */
+.v2ident { position: relative; display: inline-flex; align-items: center; min-height: var(--hit); max-width: 300px; padding: 0 10px 0 24px; border-radius: var(--r2);
+  color: var(--ink); font-weight: var(--fw-strong); text-decoration: none; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.v2ident::before { content: ''; position: absolute; left: 10px; top: 50%; width: 7px; height: 7px; border-left: 1.75px solid currentColor; border-bottom: 1.75px solid currentColor; transform: translateY(-50%) rotate(45deg); color: var(--mute); }
+.v2ident:hover { background: var(--hover); }
+.v2ident:hover::before { color: var(--ink); }
 .v2steps { display: flex; gap: 4px; padding: 4px; background: var(--sunken); border-radius: var(--r2); flex-wrap: wrap; }
-.v2steps a { padding: 6px 12px; border-radius: 6px; font-size: var(--fs-sm); color: var(--mute); font-weight: var(--fw-medium); text-decoration: none; }
+.v2steps a { display: inline-flex; align-items: center; min-height: var(--hit); padding: 4px 12px; border-radius: 6px; font-size: var(--fs-sm); color: var(--ink2); font-weight: var(--fw-medium); text-decoration: none; }
 .v2steps a:hover { color: var(--ink); }
 .v2steps a[aria-current="step"] { background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-strong); }
+/* 진행 상황 (plan.js): 끝난 단계 = 그린 체크, 남은 일 = 작은 회색 글자 */
+.v2steps a { gap: 6px; }
+.v2steps a.is-done::before { content: ''; width: 14px; height: 14px; flex: none; background: var(--accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12.5l5 5L20 6.5'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12.5l5 5L20 6.5'/%3E%3C/svg%3E") center / contain no-repeat; }
+.v2stn { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); font-weight: var(--fw-medium); }
+.v2steps a[aria-current="step"] .v2stn { color: var(--accent); }
+.v2sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .v2space { display: inline-flex; align-items: center; height: 36px; padding: 0 12px; border-radius: var(--r2); border: 1px solid var(--line-strong); font-size: var(--fs-sm); font-weight: var(--fw-strong); color: var(--ink); text-decoration: none; }
 .v2space:hover { background: var(--hover); }
 .v2space[aria-current="page"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
@@ -29,4 +86,13 @@
 .v2btn { display: inline-flex; align-items: center; height: var(--control-md); padding: 0 12px; border: 0; border-radius: var(--r2); background: var(--sunken); color: var(--ink); font: inherit; font-size: var(--fs-sm); font-weight: var(--fw-strong); text-decoration: none; cursor: pointer; white-space: nowrap; }
 .v2btn:hover { background: var(--line-sub); }
 .v2btn.primary { background: var(--accent); color: var(--accent-ink); }
-@media (max-width: 720px) { .v2top { gap: var(--s3); padding: 0 var(--s3); } .v2date { display: none; } .v2plan { position: static; } }
+.v2btn { gap: 6px; }
+.v2btn .ic { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.v2next { height: var(--control-lg); padding: 0 16px; font-size: var(--fs-body); }   /* 단계의 단 하나뿐인 주 버튼 */
+
+/* Green UI v2.5.1 공통 상태 (모든 화면이 shell.css를 부름. 화면 CSS가 같은 속성을 쓰면 화면 쪽이 이김) */
+input[type=checkbox], input[type=radio] { width: 18px; height: 18px; margin: 0; flex: 0 0 18px; accent-color: var(--accent); }   /* 체크박스 18px, 그린 */
+.btn.primary:active:not(:disabled), .v2btn.primary:active { filter: brightness(.88); }   /* 같은 그린에서 밝기만 낮춰 눌림 표현 */
+.btn:active:not(:disabled), .v2btn:active, .v2space:active { transform: translateY(1px); }
+.price, .pp, .fin, .sale, .sp, .pct, .op { font-variant-numeric: tabular-nums; }   /* 가격 숫자 비교: 고정폭 숫자 */
+@media (max-width: 720px) { .v2top { gap: var(--s3); padding: 0 var(--s3); } .v2date { display: none; } .v2plan { position: static; } .v2nav a { padding: 0 10px; } }

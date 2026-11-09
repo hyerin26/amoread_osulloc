@@ -782,9 +782,40 @@ PLAN.ready.then(async doc => {
   const want = decodeURIComponent(((location.hash || "").match(/^#s=(.+)$/) || [])[1] || '');   // 미리보기 [구좌 보기]에서 온 구좌
   cur = secs.some(s => s.id === want) ? want : secs[0].id; tab = 'copy'; pickTab = 'plan';
   uidN = Math.max(uidN, ...secs.flatMap(s => [s.id, ...(s.tabs || []).map(t => t.id), ...s.lines.map(l => l.id), ...allCards(s).map(c => c.id)]).map(x => +String(x).replace(/\D/g, '') || 0));
-  await loadReviews([...items.map(i => i.seq), ...secs.flatMap(s => allCards(s).map(c => c.seq).filter(Boolean)), ...secs.flatMap(s => s.rv?.groups.map(g => g.seq) || [])]);
   secs.forEach(s => { if (s.rv) s.rv.groups = s.rv.groups.filter(g => P[g.seq]); });   // 예시 상품(P106 등)이 남아 있으면 뺌
   liveOn = true; lastE = JSON.stringify([secs.map(toSection), items]);
   document.querySelector('.demo').innerHTML = '<b>이 기획안의 실제 내용이에요.</b> 구좌는 구좌 구성에서 정한 것, 상품·가격·원가·후기는 실제 데이터예요. 카드에 넣거나 할인을 고치면 상품·할인과 같은 값으로 저장돼요. 레퍼런스·느낌 이미지와 AI 문구 다듬기는 아직 예시예요.';
   render();
+  // 후기·별점은 그린 뒤에 채운다 (2026-11-10: 후기를 다 받을 때까지 예시 화면이 보이고 고친 것도 저장되지 않던 것). 후기는 저장 값이 아니라 다시 그려도 저장하지 않음
+  loadReviews([...items.map(i => i.seq), ...secs.flatMap(s => allCards(s).map(c => c.seq).filter(Boolean)), ...secs.flatMap(s => s.rv?.groups.map(g => g.seq) || [])])
+    .then(n => { if (n && !document.activeElement?.matches?.('input, textarea, select, [contenteditable]')) render(); });   // 입력 중이면 끊지 않음 (다음 그리기 때 반영)
 });
+
+// 좁은 화면 (v2.5.1 §7, 2026-11-10): 980px 이하 편집 패널, 700px 이하 구좌 목록을 겹쳐 여는 창으로.
+// 와이어프레임 위 [구좌 목록] [편집 패널 열기], 좁은 화면에서 구좌를 누르면 패널이 열림. [닫기]·Esc·바깥 누르기로 닫음
+(() => {
+  const narrow = n => matchMedia(`(max-width: ${n}px)`).matches;
+  const body = document.body, stage = document.querySelector('.stage');
+  if (!stage) return;
+  const bar = document.createElement('div');
+  bar.className = 'ed-bar';
+  bar.innerHTML = '<button type="button" class="btn sm" data-ed="list" aria-controls="secList" aria-expanded="false">구좌 목록</button><button type="button" class="btn sm primary" data-ed="panel" aria-controls="panel" aria-expanded="false">편집 패널 열기</button>';
+  stage.prepend(bar);
+  const scrim = document.createElement('div'); scrim.className = 'ed-scrim'; scrim.hidden = true;
+  const close = document.createElement('button'); close.type = 'button'; close.className = 'btn sm ed-close'; close.textContent = '닫기'; close.hidden = true;
+  body.append(scrim, close);
+  const on = k => body.classList.contains(`ed-${k}`);
+  const sync = () => {
+    const any = on('panel') || on('list');
+    scrim.hidden = !any; close.hidden = !any;
+    bar.querySelector('[data-ed="panel"]').setAttribute('aria-expanded', String(on('panel')));
+    bar.querySelector('[data-ed="list"]').setAttribute('aria-expanded', String(on('list')));
+  };
+  const open = k => { body.classList.remove('ed-panel', 'ed-list'); if (k) body.classList.add(`ed-${k}`); sync(); };
+  bar.addEventListener('click', e => { const b = e.target.closest('[data-ed]'); if (b) open(on(b.dataset.ed) ? null : b.dataset.ed); });
+  scrim.addEventListener('click', () => open(null));
+  close.addEventListener('click', () => open(null));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && (on('panel') || on('list'))) open(null); });
+  document.addEventListener('click', e => { if (narrow(980) && e.target.closest('#secList li > button, .ws')) open('panel'); });
+  addEventListener('resize', () => { if (!narrow(980)) open(null); else if (!narrow(700) && on('list')) open(null); });
+})();

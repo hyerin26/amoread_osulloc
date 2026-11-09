@@ -78,12 +78,29 @@ function checks() {
   });
   return LIVE ? serverChecks().concat(out) : out;
 }
+// 같은 내용의 확인(예: '기존 행사와 기간 겹침: 26블프 상시 11/02~11/16')이 상품마다 반복되면 한 줄로 묶는다 (2026-11-10).
+// '상품명 (유형): 내용 n%' 꼴에서 끝의 n%만 다른 것을 같은 내용으로 보고, 3건 이상일 때만 묶음. 상품 목록은 펼쳐서 봄
+function groupChecks(list) {
+  const out = [], by = {};
+  for (const x of list) {
+    const m = /^(.+) \(([^)]*)\): (.+?)(?: (\d+%))?$/.exec(x.t);
+    if (!m) { out.push(x); continue; }
+    const key = `${x.lv}|${m[3]}`;
+    if (!by[key]) { by[key] = { lv: x.lv, msg: m[3], items: [], i: x.i }; out.push(by[key]); }
+    by[key].items.push({ name: m[1], type: m[2], pct: m[4] || '', i: x.i, t: x.t });
+  }
+  return out.flatMap(g => !g.items ? [g] : g.items.length >= 3 ? [g] : g.items.map(it => ({ lv: g.lv, t: it.t, i: it.i })));
+}
 function renderChecks() {
   const cs = checks(), w = cs.filter(x => x.lv === 'warn'), n = cs.filter(x => x.lv === 'info');
   document.getElementById('chkN').textContent = `주의 ${w.length} · 알림 ${n.length}`;
-  const li = x => `<li class="${x.lv}"><span class="lv">${x.lv === 'warn' ? '주의' : '알림'}</span><span>${esc(x.t)}</span><button class="go" data-go="${x.i}">${x.i < 0 ? '상품·할인 보기' : '구좌 보기'}</button></li>`;
-  document.getElementById('chk').innerHTML = (w.length ? `<h3 class="chk-h">꼭 볼 것</h3><ul class="chk">${w.map(li).join('')}</ul>` : '<ul class="chk"><li class="ok"><span class="lv">✓</span><span>꼭 볼 것이 없어요</span></li></ul>')
-    + (n.length ? `<h3 class="chk-h">알아 두기</h3><ul class="chk">${n.map(li).join('')}</ul>` : '')
+  const lv = x => `<span class="lv">${x.lv === 'warn' ? '주의' : '알림'}</span>`;
+  const li = x => x.items
+    ? `<li class="${x.lv} grp">${lv(x)}<div class="grp-b"><span>${esc(x.msg)}</span><details><summary>상품 ${x.items.length}개</summary><ul>${x.items.map(it => `<li>${esc(it.name)}${it.pct ? ` <span class="cap">${esc(it.pct)}</span>` : ''}</li>`).join('')}</ul></details></div><button class="go" data-go="-1">상품·할인 보기</button></li>`
+    : `<li class="${x.lv}">${lv(x)}<span>${esc(x.t)}</span><button class="go" data-go="${x.i}">${x.i < 0 ? '상품·할인 보기' : '구좌 보기'}</button></li>`;
+  const gw = groupChecks(w), gn = groupChecks(n);
+  document.getElementById('chk').innerHTML = (w.length ? `<h3 class="chk-h">꼭 볼 것</h3><ul class="chk">${gw.map(li).join('')}</ul>` : '<ul class="chk"><li class="ok"><span class="lv">없음</span><span>꼭 볼 것이 없어요</span></li></ul>')
+    + (n.length ? `<h3 class="chk-h">알아 두기</h3><ul class="chk">${gn.map(li).join('')}</ul>` : '')
     + '<p class="cap note-gap">남아 있어도 내보낼 수 있어요. 내보낼 때 한 번 더 알려 드려요.</p>';
 }
 

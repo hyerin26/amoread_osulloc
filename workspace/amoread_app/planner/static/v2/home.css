@@ -24,7 +24,7 @@ h1, h2, h3, p { margin: 0; }
 .top .note { color: var(--mute); font-size: var(--fs-cap); }
 
 .page { max-width: 1280px; margin: 0 auto; padding: var(--s6) var(--s5) 64px; }
-.demo { background: var(--warn-soft); color: var(--warn); border-radius: var(--r); padding: 12px 16px; font-size: var(--fs-sm); line-height: var(--lh-label); margin-bottom: var(--s5); }
+.demo { background: var(--warn-soft); color: var(--ink2); border-radius: var(--r2); padding: 12px 16px; font-size: var(--fs-sm); line-height: var(--lh-sm); margin-bottom: var(--s5); }
 .demo b { font-weight: var(--fw-strong); }
 
 /* 페이지 머리 (overline → 28/36/700 제목 → 설명, 오른쪽 주 버튼) */
@@ -43,13 +43,11 @@ h1, h2, h3, p { margin: 0; }
 .btn.ghost { background: transparent; }
 .btn.ghost:hover { background: var(--hover); }
 .btn.sm { height: var(--control-md); padding: 0 12px; font-size: var(--fs-sm); }
-.chip { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 1px solid var(--line-sub); border-radius: var(--r2); background: var(--surface);
-  color: var(--ink2); font-size: var(--fs-sm); font-weight: var(--fw-medium); cursor: pointer; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--r2); background: var(--surface); color: var(--ink2); font-size: var(--fs-sm); font-weight: var(--fw-medium); cursor: pointer; min-height: var(--control-md); line-height: var(--lh-label); white-space: nowrap; }
 .chip:hover { border-color: var(--line-strong); color: var(--ink); }
 .chip[aria-checked="true"] { background: var(--accent-soft); border-color: var(--sel-line); color: var(--accent); font-weight: var(--fw-strong); }
 .seg { display: inline-flex; gap: 4px; padding: 4px; background: var(--sunken); border-radius: var(--r2); }
-.seg > button { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; min-height: var(--control-sm); padding: 6px 12px; border-radius: 6px;
-  color: var(--mute); font-size: var(--fs-sm); line-height: var(--lh-label); font-weight: var(--fw-medium); white-space: nowrap; }
+.seg > button { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; min-height: var(--control-md); padding: 6px 14px; border-radius: 6px; color: var(--ink2); font-size: var(--fs-sm); line-height: var(--lh-label); font-weight: var(--fw-medium); white-space: nowrap; justify-content: center; gap: 6px; }
 .seg > button:hover { color: var(--ink); }
 .seg > button[aria-pressed="true"], .seg > button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-strong); }
 .seg > button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
@@ -75,7 +73,7 @@ h1, h2, h3, p { margin: 0; }
   font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); white-space: nowrap; overflow: hidden; cursor: pointer; min-width: 0; }
 .bar .nm { overflow: hidden; text-overflow: ellipsis; }
 .bar:hover { filter: brightness(.97); box-shadow: 0 0 0 1px var(--line-strong) inset; }
-.bar[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent) inset; }
+.bar[aria-pressed="true"] { box-shadow: 0 0 0 1px var(--accent) inset; }   /* v2.5.1: 두꺼운 링 대신 1px. 막대 바탕(업무 의미색)은 유지 */
 .bar:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .c-season { background: var(--cls-season); color: var(--cls-season-ink); }
 .c-brand { background: var(--cls-brand); color: var(--cls-brand-ink); }
@@ -103,11 +101,14 @@ h1, h2, h3, p { margin: 0; }
 .pick.past { cursor: default; background: repeating-linear-gradient(135deg, transparent 0 4px, var(--sunken) 4px 5px); }
 .pick.sel { background: var(--accent-soft) !important; }
 .today { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1.5px solid var(--ink); pointer-events: none; z-index: 3; }
-.today span { position: absolute; top: -2px; left: 4px; font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-strong); background: var(--surface); padding: 0 4px; border-radius: 4px; }
-.mb { all: unset; position: relative; z-index: 2; height: 52px; margin: 2px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
-.mb .dia { width: 10px; height: 10px; transform: rotate(45deg); background: var(--ink); border-radius: 2px; }
-.mb.alt .t { margin-top: 19px; }
-.mb .t { margin-top: 3px; font-size: 11px; line-height: 14px; color: var(--ink2); white-space: nowrap; }
+.today span { position: absolute; top: -2px; left: 4px; white-space: nowrap; font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-strong); color: var(--surface); background: var(--ink); padding: 0 6px; border-radius: 4px; }   /* '오늘' 한 줄 표시 (주 이름 위에 겹쳐도 읽히게 진한 바탕) */
+.mb { all: unset; position: relative; z-index: 2; min-height: 72px; margin: 2px 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 10px; cursor: pointer; }
+.mb .dia { width: 10px; height: 10px; transform: rotate(45deg); background: var(--ink); border-radius: 2px; flex: none; }
+/* 이름 단: home.js가 겹치지 않는 단(lv0~2)을 고름. 너무 긴 이름은 줄임표 + 마우스를 올리면 전체(title) */
+.mb .t { margin-top: 4px; max-width: 112px; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-cap); line-height: 18px; color: var(--ink2); white-space: nowrap; background: var(--surface); padding: 0 3px; border-radius: 4px; }
+.mb.lv1 .t { margin-top: 22px; }
+.mb.lv2 .t { margin-top: 40px; }
+.mb:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 .mb:hover .dia, .mb[aria-pressed="true"] .dia { background: var(--accent); }
 .mb[aria-pressed="true"] .t { color: var(--accent); font-weight: var(--fw-strong); }
 .lead { height: 2px; align-self: center; background: var(--accent); margin-top: -12px; pointer-events: none; }
@@ -126,7 +127,7 @@ h1, h2, h3, p { margin: 0; }
 .cd.out .n { color: var(--line-strong); }
 .cd.today .n { color: var(--accent-ink); background: var(--ink); border-radius: 6px; padding: 0 6px; font-weight: var(--fw-strong); }
 .cd.prep { box-shadow: inset 0 -2px 0 var(--accent); }   /* 고른 명분의 준비 기간 */
-.mchip { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 11px; line-height: 16px; color: var(--ink2); border-radius: 4px; padding: 0 4px; margin-left: -4px; max-width: 100%; }
+.mchip { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; line-height: 16px; color: var(--ink2); border-radius: 4px; padding: 0 4px; margin-left: -4px; max-width: 100%; }
 .mchip i { width: 7px; height: 7px; transform: rotate(45deg); background: var(--ink); border-radius: 1px; flex: none; }
 .mchip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mchip:hover, .mchip[aria-pressed="true"] { color: var(--accent); background: var(--accent-soft); }
@@ -175,10 +176,10 @@ dialog h2 { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var
 input[type=text], input[type=date] { height: var(--control-lg); border: 1px solid var(--line); border-radius: var(--r2); padding: 0 12px; font: inherit; color: var(--ink); background: var(--surface); }
 input[type=text] { width: 100%; }
 input:hover { border-color: var(--line-strong); }
-input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+input:not([type=checkbox]):not([type=radio]):focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }   /* v2.5.1: 입력칸은 테두리 1px 색만 바꿈 (링 없음) */
 input:disabled { background: var(--sunken); color: var(--mute); }
 .dates { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; }
-.ck { display: inline-flex; gap: 6px; align-items: center; font-size: var(--fs-sm); margin-top: var(--s2); cursor: pointer; }
+.ck { display: inline-flex; gap: 8px; align-items: center; font-size: var(--fs-sm); line-height: var(--lh-label); margin-top: var(--s2); cursor: pointer; }
 .mlist { display: grid; gap: var(--s2); max-height: 216px; overflow: auto; }
 .mopt { all: unset; box-sizing: border-box; display: flex; gap: var(--s3); align-items: center; padding: 10px 12px; border: 1px solid var(--line-sub); border-radius: var(--r2); cursor: pointer; }
 .mopt:hover { border-color: var(--line-strong); }
@@ -197,7 +198,7 @@ input:disabled { background: var(--sunken); color: var(--mute); }
 .plans { margin-top: var(--s5); }
 .plans input[type=search] { min-width: 220px; }
 .plist { list-style: none; margin: 0; padding: 0; }
-.tag { display: inline-flex; align-items: center; border-radius: var(--r2); padding: 2px 8px; font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); background: var(--sunken); color: var(--ink2); white-space: nowrap; }
+.tag { display: inline-flex; align-items: center; border-radius: 6px; padding: 2px 8px; font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); background: var(--sunken); color: var(--ink2); white-space: nowrap; gap: 4px; }
 .prow { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr) minmax(0, .9fr) minmax(0, 1.4fr) auto; gap: var(--s3); align-items: center; padding: 12px 8px; border-bottom: 1px solid var(--line-sub); }
 .prow.h { color: var(--mute); font-size: var(--fs-cap); padding-top: 0; }
 .prow .nm { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; min-width: 0; }
@@ -217,7 +218,7 @@ input:disabled { background: var(--sunken); color: var(--mute); }
 .search.lg { height: var(--control-lg); padding-left: 12px; gap: 8px; }
 .search.block { display: flex; width: 100%; min-width: 0; }
 .search:hover, .search.is-hover { border-color: var(--line-strong); }
-.search:focus-within, .search.is-focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); color: var(--ink2); }
+.search:focus-within, .search.is-focus { border-color: var(--accent); box-shadow: none; color: var(--ink2); }
 .search .ic { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
 .search input[type=search] { all: unset; flex: 1; min-width: 0; height: 100%; font-size: var(--fs-sm); line-height: var(--lh-label); color: var(--ink); }
 .search.lg input[type=search] { font-size: var(--fs-body); }

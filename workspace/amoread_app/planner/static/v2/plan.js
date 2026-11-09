@@ -25,18 +25,42 @@ const PLAN = (() => {
     }
     st.doc.v2 = { cls: '', seed: '', keywords: [], stage: 'brief', ...(st.doc.v2 || {}) };
     const ident = document.querySelector('.v2ident');
-    if (ident) { ident.textContent = st.doc.title; ident.title = st.doc.title; }
+    if (ident) { ident.textContent = st.doc.title; ident.title = `기획안 목록으로 · ${st.doc.title}`; }
+    document.querySelectorAll('[data-plan-title]').forEach(h => { h.textContent = st.doc.title; });   // 예시 제목 대신 지금 연 기획안 이름
+    st.progress();
     tagLinks();
     say(`저장됨 ${String(st.doc.updated_at || '').slice(5, 16)}`);
     if (STEPS.includes(here) && st.doc.v2.stage !== here) st.save(d => { d.v2.stage = here; }, true);   // 홈 목록의 '지금 단계'
     return st.doc;
   })();
+  // 단계 막대 진행 상황 (2026-11-10): 저장된 기획안 값으로만 판단. 끝난 단계 = .is-done(체크), 남은 일 = 작은 글자
+  //   브리프: 컨셉·메인 카피·고른 키워드 중 하나라도 있으면 끝 / 구좌 구성: 구좌가 있으면 끝(구좌 수) / 구좌 편집: 제목을 아직 안 쓴 구좌 수
+  st.progress = () => {
+    const d = st.doc;
+    if (!d) return;
+    const secs = (d.page && d.page.sections) || [];
+    const b = d.brief || {}, kws = (d.v2 && d.v2.keywords) || [];
+    const left = secs.filter(x => !String(x.headline || '').trim()).length;
+    const S = {
+      brief: (b.concept || b.key_copy || kws.length) ? { done: true } : { note: '시작 전' },
+      compose: secs.length ? { done: true, note: `${secs.length}구좌` } : { note: '고르기 전' },
+      editor: !secs.length ? null : left ? { note: `남은 구좌 ${left}` } : { done: true },
+    };
+    document.querySelectorAll('.v2steps a').forEach(a => {
+      const k = new URL(a.getAttribute('href'), location.origin).pathname.split('/').pop();
+      const s = S[k];
+      a.classList.toggle('is-done', !!(s && s.done));
+      a.querySelectorAll('.v2stn, .v2sr').forEach(x => x.remove());
+      if (s && s.done) a.insertAdjacentHTML('beforeend', '<span class="v2sr"> (끝남)</span>');
+      if (s && s.note) { const n = document.createElement('span'); n.className = 'v2stn'; n.textContent = s.note; a.append(n); }
+    });
+  };
   // 고친 뒤 부른다. 0.7초 모아서 한 번에, 저장은 차례로 (응답이 와도 그 사이 고친 내용을 덮지 않음)
   let timer = null, chain = Promise.resolve();
   const run = () => {
     timer = null;
     chain = chain.then(() => v2api('/api/am/projects', st.doc)
-      .then(d => { st.doc.updated_at = d.updated_at; say(`저장했어요 ${String(d.updated_at).slice(11, 16)}`); })
+      .then(d => { st.doc.updated_at = d.updated_at; say(`저장했어요 ${String(d.updated_at).slice(11, 16)}`); st.progress(); })
       .catch(e => say(`저장 못 했어요: ${e.message}`)));
   };
   st.save = (mutate, now = false) => {

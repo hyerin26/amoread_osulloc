@@ -61,9 +61,21 @@ def _quote(t, n=60):
     return t if len(t) <= n else t[:n] + "…"
 
 
+_seq_cache = {"key": None, "data": None}
+
+
 def by_seq():
-    """SEQ → 리뷰 요약 (수·평점·언급 수·근거 후기 2개)."""
+    """SEQ → 리뷰 요약 (수·평점·언급 수·근거 후기 2개).
+    2026-11-10: 리뷰 파일이 그대로면 요약을 다시 계산하지 않는다 (상품 상세를 부를 때마다 전체 리뷰를 다시 묶느라 요청 하나에 1초 넘게 걸리던 것)."""
     d = _load()
+    if _seq_cache["key"] is not None and _seq_cache["key"] == _cache["key"]:
+        return _seq_cache["data"]
+    res = _by_seq(d)
+    _seq_cache.update(key=_cache["key"], data=res)
+    return res
+
+
+def _by_seq(d):
     df = d["df"]
     out = {}
     if df.empty:
