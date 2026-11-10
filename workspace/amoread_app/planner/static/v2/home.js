@@ -68,7 +68,7 @@ function gaps(from, to) {
 // 기간 기본값 (plans/20 4-1): 시작 = 앞 페이지 종료 다음 날(= 첫 빈 날), 길이 14일
 function defaultPeriod() {
   const g = gaps(TODAY, add(TODAY, 180))[0];
-  return g ? { s: g.s, e: add(g.s, 13), why: `앞 페이지가 끝난 다음 날(${md(g.s)})부터 2주로 넣었어요. 보통 프로모션 길이예요. 바꿔도 돼요.` } : { s: null, e: null, why: '' };
+  return g ? { s: g.s, e: add(g.s, 13), why: `앞 페이지가 끝난 다음 날(${md(g.s)})부터 2주로 넣었어요. 일반적인 프로모션 길이예요. 바꿔도 돼요.` } : { s: null, e: null, why: '' };
 }
 // 겹치는 막대를 줄로 나누기: 시작일 순으로 놓고, 앞 줄에 자리가 있으면 그 줄에
 function pack(items, from, to) {
@@ -375,10 +375,10 @@ document.addEventListener('click', e => {
   const af = e.target.closest('[data-after]');
   if (af) { const x = EVENTS.find(ev => ev.id === af.dataset.after), s = add(x.e, 1); openStart({ s, e: add(s, 13), why: `${x.name}이 끝난 다음 날부터 2주예요.` }); return; }
   const t = e.target.closest('[data-type]'); if (!t) return;
-  // 빈 기간에서 시작: 2주는 규칙이 아니라 '보통 프로모션 길이'라는 기본 제안 (plans/20 §4-1). 더 길면 그 이유와 [빈 기간 전체로]를 같이
+  // 빈 기간에서 시작: 2주는 규칙이 아니라 '일반적인 프로모션 길이'라는 기본 제안 (plans/20 §4-1). 더 길면 그 이유와 [빈 기간 전체로]를 같이
   if (t.dataset.type === 'gap') { const [s, en] = t.dataset.id.split('|'), n = diff(s, en) + 1;
     if (n <= 14) openStart({ s, e: en, why: `빈 기간 ${md(s)}~${md(en)} (${n}일) 전체를 기간으로 넣었어요.` });
-    else openStart({ s, e: add(s, 13), why: `빈 기간이 ${md(s)}~${md(en)} (${n}일)이에요. 보통 프로모션 길이인 2주(${md(s)}~${md(add(s, 13))})로 넣었어요.`, full: [s, en] });
+    else openStart({ s, e: add(s, 13), why: `빈 기간이 ${md(s)}~${md(en)} (${n}일)이에요. 일반적인 프로모션 길이인 2주(${md(s)}~${md(add(s, 13))})로 넣었어요.`, full: [s, en] });
     return; }
   selected = isSel(t.dataset.type, t.dataset.id) ? null : { type: t.dataset.type, id: t.dataset.id };
   render();
@@ -427,7 +427,7 @@ $('#clsChips').addEventListener('click', e => {
 });
 $('#seedBox').addEventListener('click', e => { const o = e.target.closest('[data-m]'); if (o) { dlg.m = o.dataset.m; paintDlg(); } });
 $('#noDate').addEventListener('change', syncDate);
-$('#dStart').addEventListener('change', () => { if ($('#dStart').value) { $('#dEnd').value = add($('#dStart').value, 13); $('#dateHelp').textContent = '끝나는 날을 시작일 2주 뒤로 맞췄어요 (보통 프로모션 길이). 바꿔도 돼요.'; } if (dlg.cls === 'season') paintDlg(); });
+$('#dStart').addEventListener('change', () => { if ($('#dStart').value) { $('#dEnd').value = add($('#dStart').value, 13); $('#dateHelp').textContent = '끝나는 날을 시작일 2주 뒤로 맞췄어요 (일반적인 프로모션 길이). 바꿔도 돼요.'; } if (dlg.cls === 'season') paintDlg(); });
 $('#startForm').addEventListener('submit', e => {
   if (e.submitter?.value !== 'go') return;
   if (!dlg.cls) { e.preventDefault(); toast('어떤 프로모션인지 골라 주세요'); return; }
