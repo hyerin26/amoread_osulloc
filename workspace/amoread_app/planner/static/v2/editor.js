@@ -503,13 +503,18 @@ function openCard(sid, cid) {
   document.querySelector(`[data-slot="${cid}"]`)?.scrollIntoView?.({ block: 'nearest' });
   refocus(`[data-slot="${cid}"] .more input, [data-slot="${cid}"] .more select`) || refocus(`[data-more="${cid}"]`);
 }
-function closePick() { $('#drawer').hidden = true; $('#scrim').hidden = true; pickFor = null; }
+function closePick() {
+  const cardId = pickFor;
+  $('#drawer').hidden = true; $('#scrim').hidden = true; pickFor = null;
+  if (cardId) refocus(`[data-pick="${CSS.escape(cardId)}"]`);
+}
 function choose(seq) {
   const c = allCards(S()).find(x => x.id === pickFor); if (!c) return;
   // 카드 자리의 글(라벨·알약·태그·카드 문구·버튼)은 그대로, 상품을 따라가는 값(상품명·가격·소구문구)만 바뀜
   const kept = c.seq && c.seq !== seq && DIRECT.some(k => c[k]);
   c.seq = seq; c.keep = null; if (!itemOf(seq)) items.push({ seq, rate: 0, source: 'direct', appeal: '' });
-  closePick(); render(); if (liveOn) loadReviews([seq]).then(n => n && render());
+  closePick(); render(); refocus(`[data-pick="${CSS.escape(c.id)}"]`);
+  if (liveOn) loadReviews([seq]).then(n => n && render());
   toast(`${P[seq].name}을 넣었어요${kept ? '. 이 카드에 쓴 라벨·알약 등은 그대로예요' : ''}${itemOf(seq).rate ? '' : '. 할인율은 카드에서 정해요'}`);
 }
 
@@ -654,7 +659,7 @@ document.addEventListener('change', e => {
 document.addEventListener('click', e => { if (e.target.closest('#pqS [data-sclear]')) { q = ''; openPick(pickFor); $('#pq')?.focus(); } });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && e.target.id === 'pq' && e.target.value) { e.preventDefault(); q = ''; openPick(pickFor); $('#pq')?.focus(); return; }
-  if (e.key === 'Escape' && !$('#drawer').hidden) closePick();
+  if (e.key === 'Escape' && !$('#drawer').hidden) { e.preventDefault(); closePick(); return; }
   if ((e.ctrlKey || e.metaKey) && !e.altKey && /^[zZyY]$/.test(e.key)) {   // 실행 취소·다시 실행 (입력칸 안에서는 브라우저 기본 동작)
     if (e.target.closest?.('input, textarea, select, [contenteditable]')) return;
     e.preventDefault(); (e.key.toLowerCase() === 'y' || e.shiftKey) ? redo() : undo(); return;
@@ -918,7 +923,7 @@ PLAN.ready.then(async doc => {
     .then(n => { if (n && !document.activeElement?.matches?.('input, textarea, select, [contenteditable]')) render(); });   // 입력 중이면 끊지 않음 (다음 그리기 때 반영)
 });
 
-// 좁은 화면 (v2.5.1 §7, 2026-11-10): 980px 이하 편집 패널, 700px 이하 구좌 목록을 겹쳐 여는 창으로.
+// 좁은 화면: 1200px 이하 편집 패널, 700px 이하 구좌 목록을 겹쳐 여는 창으로.
 // 와이어프레임 위 [구좌 목록] [편집 패널 열기], 좁은 화면에서 구좌를 누르면 패널이 열림. [닫기]·Esc·바깥 누르기로 닫음
 (() => {
   const narrow = n => matchMedia(`(max-width: ${n}px)`).matches;
@@ -938,13 +943,25 @@ PLAN.ready.then(async doc => {
     bar.querySelector('[data-ed="panel"]').setAttribute('aria-expanded', String(on('panel')));
     bar.querySelector('[data-ed="list"]').setAttribute('aria-expanded', String(on('list')));
   };
-  const open = k => { body.classList.remove('ed-panel', 'ed-list'); if (k) body.classList.add(`ed-${k}`); sync(); };
+  const open = k => {
+    const previous = on('panel') ? 'panel' : on('list') ? 'list' : null;
+    if (previous === k) return;
+    body.classList.remove('ed-panel', 'ed-list');
+    if (k) body.classList.add(`ed-${k}`);
+    sync();
+    if (k) close.focus({ preventScroll: true });
+    else bar.querySelector(`[data-ed="${previous}"]`)?.focus({ preventScroll: true });
+  };
   bar.addEventListener('click', e => { const b = e.target.closest('[data-ed]'); if (b) open(on(b.dataset.ed) ? null : b.dataset.ed); });
   scrim.addEventListener('click', () => open(null));
   close.addEventListener('click', () => open(null));
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && (on('panel') || on('list'))) open(null); });
-  document.addEventListener('click', e => { if (narrow(980) && e.target.closest('#secList li > button, .ws')) open('panel'); });
-  addEventListener('resize', () => { if (!narrow(980)) open(null); else if (!narrow(700) && on('list')) open(null); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !e.defaultPrevented && !$('#dlg').open && (on('panel') || on('list'))) {
+      e.preventDefault(); open(null);
+    }
+  });
+  document.addEventListener('click', e => { if (narrow(1200) && e.target.closest('button[data-sec], [data-secadd]')) open('panel'); });
+  addEventListener('resize', () => { if (!narrow(1200) || (!narrow(700) && on('list'))) open(null); });
 })();
 
 // 편집 이력의 출발점 (예시 화면 또는 기획안을 불러오기 전 상태. 기획안을 불러오면 resetHist로 다시 잡음)

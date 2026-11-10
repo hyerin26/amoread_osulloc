@@ -124,6 +124,7 @@ input[type=checkbox], input[type=radio] { width: 18px; height: 18px; margin: 0; 
 /* ---------- 공통 상세 서랍 (2026-11-10, 브리프 4-4): 화면을 떠나지 않고 레퍼런스 상세를 봄. 레퍼런스 라이브러리 서랍과 같은 모양 ---------- */
 .v2scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 40; }
 .v2drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 100vw); background: var(--surface); border-left: 1px solid var(--line); z-index: 41; display: flex; flex-direction: column; box-shadow: -16px 0 48px -24px rgba(20,20,20,.2); }
+.v2drawer[hidden] { display: none; }
 .v2drawer .dh { padding: var(--s4); border-bottom: 1px solid var(--line-sub); display: flex; gap: var(--s2); align-items: flex-start; }
 .v2drawer .dh > div { flex: 1; min-width: 0; }
 .v2drawer .dh .ov { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); font-weight: var(--fw-medium); }

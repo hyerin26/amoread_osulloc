@@ -20,7 +20,7 @@ h1, h2, h3, p { margin: 0; }
 .demo { background: var(--warn-soft); color: var(--ink2); border-radius: var(--r2); padding: 12px 16px; font-size: var(--fs-sm); line-height: var(--lh-sm); margin-bottom: var(--s4); }
 .demo b { font-weight: var(--fw-strong); }
 .head { display: flex; align-items: flex-end; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s4); }
-.head .grow { flex: 1; min-width: 280px; }
+.head .grow { flex: 1 1 280px; min-width: 0; }
 .overline { font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); color: var(--mute); margin-bottom: 4px; }
 .head h1 { font-size: var(--fs-masthead); line-height: var(--lh-masthead); font-weight: var(--fw-title); letter-spacing: -0.02em; }
 .head .acts { display: flex; gap: var(--s2); flex-wrap: wrap; }
@@ -57,25 +57,32 @@ input:not([type=checkbox]):not([type=radio]):focus, select:focus, textarea:focus
 
 /* ---------- 3열 ---------- */
 .ed { display: grid; grid-template-columns: 260px minmax(340px, 1fr) 440px; gap: var(--s4); align-items: start; }   /* 2026-11-10: 목록·패널 글자가 잘리지 않게 넓힘 */
-@media (max-width: 1200px) { .ed { grid-template-columns: 240px minmax(0, 1fr); } .panel { grid-column: 1 / -1; } }
-/* 좁은 화면 (v2.5.1 §7, 2026-11-10): 980px 이하 편집 패널, 700px 이하 구좌 목록을 겹쳐 여는 창으로. 여닫기는 editor.js 끝 */
+.ed > * { min-width: 0; }
+/* 편집 패널은 3열을 쓰기 어려울 때 서랍으로 열고, 더 좁으면 구좌 목록도 접는다. */
 .ed-bar, .ed-scrim, .ed-close { display: none; }
-@media (max-width: 980px) {
-  .ed-bar { display: flex; gap: var(--s2); justify-content: flex-end; margin-bottom: var(--s3); }
+body:has(.drawer:not([hidden])) { overflow: hidden; }
+@media (max-width: 1200px) {
+  .ed { grid-template-columns: 240px minmax(0, 1fr); }
+  .ed-bar { display: flex; flex-wrap: wrap; gap: var(--s2); justify-content: flex-end; margin-bottom: var(--s3);
+    position: sticky; top: var(--v2-head-h, 64px); z-index: 2; background: var(--sunken); padding-block: var(--s1); }
   .ed-bar [data-ed="list"] { display: none; }
   .panel { position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 100vw); max-height: none; border-radius: 0; border-width: 0 0 0 1px; z-index: 31;
     transform: translateX(100%); visibility: hidden; transition: transform .2s var(--ease), visibility 0s .2s; }
   body.ed-panel .panel { transform: none; visibility: visible; transition: transform .2s var(--ease); }
+  body.ed-panel, body.ed-list { overflow: hidden; }
+  body.ed-panel .panel .ph-h, body.ed-panel .panel .empty-st { padding-right: calc(var(--s-panel) + 64px); }
   .ed-scrim { display: block; position: fixed; inset: 0; background: var(--scrim); z-index: 30; }
   .ed-close { display: inline-flex; position: fixed; top: 12px; right: 12px; z-index: 32; }
   .ed-scrim[hidden], .ed-close[hidden] { display: none; }
 }
 @media (max-width: 700px) {
+  .page { padding-inline: var(--s3); }
   .ed { grid-template-columns: minmax(0, 1fr); }
   .ed-bar [data-ed="list"] { display: inline-flex; }
   .list { position: fixed; top: 0; left: 0; bottom: 0; width: min(320px, 90vw); border-radius: 0; border-width: 0 1px 0 0; z-index: 31; overflow: auto;
     transform: translateX(-100%); visibility: hidden; transition: transform .2s var(--ease), visibility 0s .2s; }
   body.ed-list .list { transform: none; visibility: visible; transition: transform .2s var(--ease); }
+  body.ed-list .ed-close { left: calc(min(320px, 90vw) - 64px); right: auto; }
 }
 @media (prefers-reduced-motion: reduce) { .panel, .list { transition: none !important; } }
 .card { background: var(--surface); border: 1px solid var(--line-sub); border-radius: var(--r); padding: var(--s-panel); display: grid; gap: var(--s3); align-content: start; min-width: 0; }   /* 간격 규칙: 카드 안 덩어리 사이 간격은 카드의 gap으로 (25와 같음) */
@@ -166,7 +173,7 @@ input:not([type=checkbox]):not([type=radio]):focus, select:focus, textarea:focus
 /* 고정 패널은 고정 머리막대(--v2-head-h, shell.js) 아래에 붙음: 전에는 top 16px라 패널 윗부분(제목·탭)이 막대 밑에 가려졌다 */
 .panel { padding: 0; display: flex; flex-direction: column; }
 /* 넓은 화면에서만 붙어 따라오게. (예전엔 이 줄이 980px 이하 '겹쳐 여는 창' 규칙보다 뒤에 있어 덮어써서, 좁은 화면에서 패널이 화면 밖으로 밀렸음) */
-@media (min-width: 981px) { .panel { position: sticky; top: calc(var(--v2-head-h, 128px) + var(--s4)); max-height: calc(100vh - var(--v2-head-h, 128px) - var(--s5)); } }
+@media (width > 1200px) { .panel { position: sticky; top: calc(var(--v2-head-h, 128px) + var(--s4)); max-height: calc(100dvh - var(--v2-head-h, 128px) - var(--s5)); } }
 .panel .ph-title { display: flex; gap: var(--s2); align-items: flex-start; }
 .panel .ph-title h2 { flex: 1; min-width: 0; }
 .panel .ph-acts { display: flex; gap: 2px; flex: none; }
@@ -180,7 +187,7 @@ input:not([type=checkbox]):not([type=radio]):focus, select:focus, textarea:focus
 .panel .ph-h .row { display: flex; gap: var(--s2); align-items: center; margin-top: var(--s2); flex-wrap: wrap; }
 .panel .ph-h .row select { width: auto; max-width: 100%; }
 .panel .ph-tabs { padding: var(--s4) var(--s-panel) 0; }
-.panel .ph-b { padding: var(--s-panel); overflow: auto; display: grid; gap: var(--s5); align-content: start; }   /* 덩어리 사이 24 (v2.5.1 섹션 간격) */
+.panel .ph-b { padding: var(--s-panel); overflow: auto; overscroll-behavior: contain; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s5); align-content: start; }   /* 덩어리 사이 24 (v2.5.1 섹션 간격) */
 .f { display: grid; gap: 6px; }
 .f > span, .f > .l { font-size: var(--fs-sm); line-height: var(--lh-label); font-weight: var(--fw-strong); }
 .f em { font-style: normal; color: var(--mute); font-weight: var(--fw-medium); }
@@ -259,7 +266,7 @@ input:not([type=checkbox]):not([type=radio]):focus, select:focus, textarea:focus
 .rvi .body { color: var(--ink2); }
 
 /* 서랍·창 */
-.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(480px, 100vw); background: var(--surface); border-left: 1px solid var(--line); z-index: 20; display: flex; flex-direction: column; box-shadow: -16px 0 48px -24px rgba(20,20,20,.2); }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(480px, 100vw); background: var(--surface); border-left: 1px solid var(--line); z-index: 34; display: flex; flex-direction: column; box-shadow: -16px 0 48px -24px rgba(20,20,20,.2); }
 .drawer .dh { padding: var(--s4); border-bottom: 1px solid var(--line-sub); display: grid; gap: var(--s3); }
 .drawer .dh .row { display: flex; gap: var(--s2); align-items: center; }
 .drawer .dh h2 { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var(--fw-strong); flex: 1; }
@@ -270,7 +277,7 @@ input:not([type=checkbox]):not([type=radio]):focus, select:focus, textarea:focus
 .pitem .pn { font-size: var(--fs-sm); font-weight: var(--fw-medium); }
 .pitem .pm { grid-column: 1; font-size: var(--fs-cap); color: var(--mute); }
 .pitem .btn { grid-row: 1 / span 2; grid-column: 2; }
-.scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 19; }
+.scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 33; }
 dialog { border: 1px solid var(--line); border-radius: var(--r); padding: 0; width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 64px); color: var(--ink); background: var(--surface); }
 dialog::backdrop { background: var(--scrim); }
 .dlg-h { padding: 20px 24px; border-bottom: 1px solid var(--line-sub); display: flex; gap: var(--s3); align-items: flex-start; }
@@ -316,11 +323,28 @@ table.t tr.chg td { background: var(--accent-soft); }
 
 /* ---------- 2026-11-10 편집 흐름 (구좌 추가·삭제, 실행 취소, 이동, 빈 상태, 더 찾기) ---------- */
 .ws { scroll-margin-top: calc(var(--v2-head-h, 128px) + var(--s4)); }
+@media (max-width: 1200px) {
+  .stage .ws { scroll-margin-top: calc(var(--v2-head-h, 64px) + var(--control-md) + var(--s5)); }
+}
 .list-foot { display: grid; gap: 6px; margin-top: var(--s3); padding-top: var(--s3); border-top: 1px solid var(--line-sub); }
 .list-foot .add-sec { width: 100%; }
 .head .acts { align-items: center; }
 .hist { display: inline-flex; gap: 2px; padding-right: var(--s2); margin-right: var(--s1); border-right: 1px solid var(--line-sub); }
 .hist .btn:disabled { background: transparent; }
+
+@media (max-width: 480px) {
+  .stage { padding: var(--s3); }
+  .panel .ph-h, .panel .ph-b { padding-inline: var(--s3); }
+  .panel .ph-tabs { padding-inline: var(--s3); }
+  .slot .row1 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .slot .row1:has(.rate) { grid-template-columns: 64px minmax(0, 1fr) auto; }
+  .slot .row1 .nm { grid-column: 1 / -1; white-space: normal; }
+  .slot .row1 .nm + span:empty { display: none; }
+  .slot .row1 .fin { white-space: normal; }
+  .slot .row1 .btn { min-height: var(--hit); height: auto; white-space: normal; }
+  .applybar { flex-wrap: wrap; }
+  .applybar .grow { flex-basis: 100%; }
+}
 /* 지우기: 확인창의 진짜 지우기는 빨강, 패널의 [삭제]는 글자만 빨강 (가벼운 진입) */
 .btn.danger { background: var(--err); color: var(--accent-ink); }
 .btn.danger:hover { filter: brightness(.92); background: var(--err); }
