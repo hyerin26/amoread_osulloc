@@ -68,7 +68,7 @@ function demoImg(w, h) {
   return `<img src="data:image/svg+xml,${encodeURIComponent(svg)}" alt="">`;
 }
 const thumb = r => (r.img ? `<img src="${esc(r.img)}" alt="" loading="lazy">` : r.link ? '<span class="cap">링크만 있어요</span>' : demoImg(r.r[0], r.r[1]));
-const pageOf = r => (r.page ? R.find(x => x.id === r.page) : null);
+const pageOf = r => (r.page ? all().find(x => x.id === r.page) : null);
 
 // 서버에 저장된 항목 → 화면용 (출처·이미지 주소를 붙임)
 function view(x) {
@@ -217,7 +217,7 @@ async function savePin(pid) {
 function renderDrawer() {
   const r = byId(cur), d = $('#drawer');
   d.hidden = !r; $('#scrim').hidden = !r; if (!r) return;
-  const p = pageOf(r), kids = r.kind === 'page' ? R.filter(x => x.page === r.id) : [], fav = FAV.has(r.id);
+  const p = pageOf(r), kids = r.kind === 'page' ? all().filter(x => x.page === r.id) : [], fav = FAV.has(r.id);
   const kv = [['종류', kindName(r)], ['출처', r.from + (r.src && r.src !== r.from ? ` · ${r.src.replace(/^Pinterest · /, '')}` : '')], r.cls && ['분류', clsName(r.cls)], r.season && ['명분·시즌', r.season], p && ['페이지', p.name], r.concept && ['컨셉 구성', r.concept],
     r.ben && ['혜택 방식', r.ben.join(', ')], r.stype && ['구좌 종류', `${r.stype} (임시)`], r.mode && ['참여 방식', r.mode], r.pts?.length && ['참고할 것', r.pts.join(', ')], r.tags?.length && ['태그', r.tags.map(t => `#${t}`).join(' ')], r.created_at && ['추가한 날', r.created_at.slice(0, 10)]].filter(Boolean);
   const use = r.ai ? '수집한 원본 페이지·구좌예요. 분류(명분·분류·혜택 방식)는 자동으로 붙인 값이라 틀릴 수 있어요. 구좌 구성 추천에 쓰여요.' : r.demo ? '예시 레퍼런스라 기획안에 붙일 수 없어요. 직접 추가하거나 Pinterest에서 담은 레퍼런스는 구좌 편집 › 레퍼런스 탭 › [느낌 레퍼런스 추가] 목록에 나와요.'
@@ -236,9 +236,9 @@ function renderDrawer() {
     </div>`;
 }
 function wholePage(id, mark) {
-  const p = R.find(x => x.id === id);
-  $('#dlgO').textContent = `원본 프로모션 전체 페이지 · ${p.from} · 예시`; $('#dlgH').textContent = p.name; $('#dlgS').textContent = p.concept ? `컨셉 구성: ${p.concept}` : '실제로 걸렸던 페이지 한 장 전체 자리예요 (예시)';
-  $('#dlgB').innerHTML = p.secs.map((s, i) => { const k = R.find(x => x.page === p.id && x.psec === s); return `<div class="oseg ${s === mark ? 'used' : ''}"><div class="t"><span class="grow">${i + 1}. ${esc(s)}</span>${s === mark ? '<span class="tag real">지금 보는 구좌</span>' : ''}${k ? `<button class="btn xs" data-open="${k.id}" data-fromdlg>이 구좌 보기</button>` : ''}</div><span class="ph"></span></div>`; }).join('');
+  const p = all().find(x => x.id === id);
+  $('#dlgO').textContent = `원본 프로모션 전체 페이지 · ${p.from}${p.demo ? ' · 예시' : ''}`; $('#dlgH').textContent = p.name; $('#dlgS').textContent = p.concept ? `컨셉 구성: ${p.concept}` : '실제로 걸렸던 페이지 한 장 전체 자리예요 (예시)';
+  $('#dlgB').innerHTML = p.secs.map((s, i) => { const k = all().find(x => x.page === p.id && x.psec === s); return `<div class="oseg ${s === mark ? 'used' : ''}"><div class="t"><span class="grow">${i + 1}. ${esc(s)}</span>${s === mark ? '<span class="tag real">지금 보는 구좌</span>' : ''}${k ? `<button class="btn xs" data-open="${k.id}" data-fromdlg>이 구좌 보기</button>` : ''}</div><span class="ph"></span></div>`; }).join('');
   $('#dlgF').innerHTML = '';
   $('#dlg').showModal();
   if (mark) $('#dlgB .used')?.scrollIntoView({ block: 'center' });
@@ -260,25 +260,90 @@ function openAdd(r) {
   const pts = uniq([...PTS, ...all().flatMap(x => x.pts || [])]);
   const on = new Set(r?.pts || []);
   $('#dlgO').textContent = r ? '레퍼런스 고치기' : '레퍼런스 추가';
-  $('#dlgH').textContent = r ? r.name : '링크나 이미지로 모으기';
-  $('#dlgS').textContent = r?.source === 'Pinterest' ? 'Pinterest에서 담은 핀이에요. 이미지는 볼 때 Pinterest에서 받아 와요.' : '이미지는 이 PC의 프로그램 폴더에 저장돼요(5MB까지). 링크는 주소만 저장하고 열어 보지 않아요. Pinterest 보드는 [Pinterest 보드] 탭에서 구독해요.';
-  $('#dlgB').innerHTML = `${r?.source === 'Pinterest' ? '' : `<div class="two"><label class="f"><span>링크</span><input type="url" id="addUrl" placeholder="https://…" value="${esc(r?.link || '')}"></label>
+  $('#dlgH').textContent = r ? r.name : '링크·HTML 파일·이미지로 모으기';
+  $('#dlgS').textContent = r?.source === 'Pinterest' ? 'Pinterest에서 담은 핀이에요. 이미지는 볼 때 Pinterest에서 받아 와요.' : r ? '이미지는 이 PC의 프로그램 폴더에 저장돼요(5MB까지). 링크는 주소만 저장하고 열어 볼 때만 쓰여요.' : '링크나 HTML 파일을 가져오면 이름·분류·구좌를 자동으로 채워 드려요. 확인하고 고친 뒤 [추가]를 눌러 주세요. 이미지는 직접 골라 주세요.';
+  $('#dlgB').innerHTML = `${r?.source === 'Pinterest' ? '' : !r ? importBlock() : `<div class="two"><label class="f"><span>링크</span><input type="url" id="addUrl" placeholder="https://…" value="${esc(r?.link || '')}"></label>
       <label class="f"><span>이미지 파일 ${r?.img_file ? '<em>(바꿀 때만)</em>' : ''}</span><input type="file" id="addFile" accept="image/png,image/jpeg,image/webp,image/gif"></label></div>`}
     <label class="f"><span>이름</span><input type="text" id="addName" maxlength="60" placeholder="예) 노을빛 피크닉 상차림" value="${esc(r?.name || '')}"></label>
     <div class="two">${pickField('addKind', '종류', kinds, kind, kName)}${pickField('addSeason', '명분·시즌 <em>(선택)</em>', seasons, r?.season || '', x => x, '없음')}</div>
     <div class="two">${pickField('addCls', '분류 <em>(선택)</em>', clss, r?.cls || '', clsName, '없음')}
       <label class="f"><span>태그 <em>(선택) 쉼표로 여러 개</em></span><input type="text" id="addTags" maxlength="120" placeholder="예) 피크닉, 보온병" value="${esc((r?.tags || []).join(', '))}"></label></div>
+    ${!r ? `<div class="f" id="benBox"><span>혜택 방식 <em>(선택) 여러 개 · 가져오면 본문에서 찾아 채워요</em></span><div class="chips-row">${BENS.map(b => `<button type="button" class="chip" data-addben="${esc(b)}" aria-pressed="false">${esc(b)}</button>`).join('')}</div></div>` : ''}
     <div class="f" id="ptsBox"><span>참고할 것 <em>여러 개 · 직접 입력은 쉼표로</em></span><div class="chips-row">${pts.map(p => `<button type="button" class="chip" data-addpt="${esc(p)}" aria-pressed="${on.has(p)}">${esc(p)}</button>`).join('')}</div>
       <input type="text" id="addPtsOwn" maxlength="60" placeholder="직접 입력 (예: 조명, 여백)" aria-label="참고할 것 직접 입력"></div>
+    <div id="impSecs"></div>
     <p class="cap err" id="addErr" aria-live="polite"></p>`;
-  $('#dlgF').innerHTML = `<button class="btn sm primary" data-addgo>${r ? '저장' : '추가'}</button>`;
+  draft = null; impMethod = 'url';
+  $('#dlgF').innerHTML = `<button class="btn sm primary" data-addgo ${r ? '' : 'disabled'}>${r ? '저장' : '추가'}</button>`;
   $('#dlg').showModal();
   $('#addName').focus();
 }
+
+// ---------- 새 레퍼런스 가져오기: 링크/HTML 파일 → 서버가 읽고 분류한 초안 → 확인·수정 → 추가 ----------
+const BENS = ['쿠폰', '하루특가', '사은품', '페이백', '포인트', '무료배송', '카드혜택'];
+const ROLE_KO = { hero: '메인 비주얼', product_list: '상품 목록', coupon_offer: '쿠폰', sale_offer: '특가·세일', benefit_overview: '혜택 안내', partner_benefit: '제휴 혜택', brand_story: '브랜드 스토리', editorial_story: '소개·스토리', brand_intro: '브랜드 소개',
+  lookbook: '룩북', visual_gallery: '이미지', participation_event: '참여 이벤트', terms_notice: '유의사항', section_navigation: '바로가기', related_promotions: '관련 기획전', share: '공유', app_promo: '앱 안내', live_commerce: '라이브', content: '기타', image_block: '이미지', ui_noise: '메뉴·안내' };
+let draft = null, impMethod = 'url';
+function importBlock() {
+  return `<div class="f" id="impBox"><span>어떻게 가져올까요? <em>가져오면 이름·분류를 먼저 채워 드려요. 확인하고 고친 뒤 [추가]를 눌러 주세요</em></span>
+    <div class="chips-row" id="impMethods">${[['url', '링크'], ['html', 'HTML 파일'], ['img', '이미지']].map(([k, n]) => `<button type="button" class="chip" data-impm="${k}" aria-pressed="${k === 'url'}">${n}</button>`).join('')}</div>
+    <div id="impIn">${impInput('url')}</div><p class="cap" id="impSt" aria-live="polite"></p></div>`;
+}
+function impInput(m) {
+  if (m === 'url') return '<div class="two"><label class="f"><span>링크 <em>서버가 HTML을 내려받아요</em></span><input type="url" id="addUrl" placeholder="https://…"></label><div class="f"><span>&nbsp;</span><button type="button" class="btn sm" data-impload="url">불러오기</button></div></div>';
+  if (m === 'html') return '<label class="f"><span>HTML 파일 <em>브라우저에서 \'페이지를 HTML로 저장\'한 파일 (5MB까지)</em></span><input type="file" id="impFile" accept=".html,.htm,text/html"></label>';
+  return '<label class="f"><span>이미지 파일 <em>내용은 읽지 않아요 — 아래 항목을 직접 골라 주세요 (5MB까지)</em></span><input type="file" id="addFile" accept="image/png,image/jpeg,image/webp,image/gif"></label>';
+}
+function impSetMethod(m) {
+  impMethod = m; draft = null;
+  document.querySelectorAll('[data-impm]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.impm === m)));
+  $('#impIn').innerHTML = impInput(m); $('#impSt').textContent = ''; $('#impSecs').innerHTML = '';
+  $('[data-addgo]').disabled = true;
+}
+function setPick(id, val) {
+  const sel = $(`#${id}`), own = $(`#${id}Own`);
+  if (!val) { sel.value = ''; if (own) own.hidden = true; return; }
+  if ([...sel.options].some(o => o.value === val)) { sel.value = val; if (own) own.hidden = true; }
+  else { sel.value = OWN_CHOICE; if (own) { own.hidden = false; own.value = val; } }
+}
+function impFill(d) {
+  draft = d;
+  $('#addName').value = d.name || ''; setPick('addKind', d.kind || 'page'); setPick('addSeason', d.season || ''); setPick('addCls', d.cls || '');
+  document.querySelectorAll('[data-addben]').forEach(b => b.setAttribute('aria-pressed', String((d.ben || []).includes(b.dataset.addben))));
+  if (d.link && $('#addUrl') && !$('#addUrl').value) $('#addUrl').value = d.link;
+  const ff = d.fields_from || {};
+  $('#impSt').innerHTML = `불러왔어요 · <b>${esc(d.type_name || '')}</b> 유형으로 보여요 (확신 ${esc({ medium: '중간', 'low-medium': '낮음', low: '낮음' }[d.confidence] || d.confidence)})<br>이름: ${esc(ff.name || '')} · 명분·시즌: ${esc(ff.season || '')} · 분류: ${esc(ff.cls || '')} · 구좌: ${esc(ff.sections || '')}`;
+  const warn = (d.warnings || []).map(w => `<p class="cap warn">${esc(w)}</p>`).join('');
+  $('#impSecs').innerHTML = `${warn}<div class="f"><span>나눈 구좌 ${d.sections.length}개 <em>자동으로 나눈 거라 틀릴 수 있어요. 추가하면 구좌 사례로 검색돼요</em></span><ol class="imp-secs">${d.sections.map(x => `<li><b>${esc(x.title || '(제목 없음)')}</b> <span class="tag">${esc(ROLE_KO[x.role] || x.role)}</span> <span class="cap">${esc((x.text || '').slice(0, 60))}</span></li>`).join('')}</ol></div>`;
+  $('[data-addgo]').disabled = false;
+}
+async function impLoad(body, st) {
+  $('#addErr').textContent = ''; $('#impSt').textContent = st; $('#impSecs').innerHTML = ''; draft = null; $('[data-addgo]').disabled = true;
+  document.querySelectorAll('[data-impload]').forEach(b => { b.disabled = true; });
+  try { impFill(await v2api('/api/am/ai/intake/preview', body)); }
+  catch (e) { $('#impSt').textContent = ''; $('#addErr').textContent = e.message; }
+  document.querySelectorAll('[data-impload]').forEach(b => { b.disabled = false; });
+}
+const readHtml = async file => { const buf = await file.arrayBuffer(); try { return new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch { return new TextDecoder('euc-kr').decode(buf); } };
 const pickVal = id => { const s = $(`#${id}`); return s.value === OWN_CHOICE ? $(`#${id}Own`).value.trim() : s.value; };
 const readFile = file => new Promise((ok, no) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = () => no(new Error('파일을 읽지 못했어요')); fr.readAsDataURL(file); });
 async function saveAdd(btn) {
   const err = m => { $('#addErr').textContent = m; };
+  if (draft) {   // 링크·HTML로 가져온 초안: 담당자가 고친 값으로 추가
+    for (const id of ['addKind', 'addSeason', 'addCls']) if ($(`#${id}`).value === OWN_CHOICE && !$(`#${id}Own`).value.trim()) { err('직접 입력 칸을 채우거나 다른 값을 골라 주세요'); $(`#${id}Own`).focus(); return; }
+    const kv = pickVal('addKind'), base = BASE_TABS.find(t => t[0] === kv || t[1] === kv);
+    const body = { draft_id: draft.draft_id, name: ($('#addName').value.trim() || draft.name).slice(0, 60), kind: base ? base[0] : 'etc', kind_label: base ? '' : kv, season: pickVal('addSeason'), cls: pickVal('addCls'),
+      ben: [...document.querySelectorAll('[data-addben][aria-pressed="true"]')].map(b => b.dataset.addben), mode: draft.mode || [], type: draft.type || '',
+      pts: uniq([...[...document.querySelectorAll('[data-addpt][aria-pressed="true"]')].map(b => b.dataset.addpt), ...$('#addPtsOwn').value.split(',').map(s => s.trim().slice(0, 20))]).filter(Boolean).slice(0, 10),
+      tags: uniq($('#addTags').value.split(',').map(s => s.trim().replace(/^#/, '').slice(0, 20))).filter(Boolean).slice(0, 20) };
+    btn.disabled = true; err('');
+    try {
+      const out = await v2api('/api/am/ai/intake/commit', body);
+      const v = upsert(out); tab = tk(v); f = {}; cur = v.id; $('#dlg').close(); render();
+      toast(`'${tabsList().find(t => t[0] === tab)?.[1] || kv}' 탭에 추가했어요. 구좌 ${draft.sections.length}개는 추천 검색에도 쓰여요`);
+    } catch (e) { err(e.message); btn.disabled = false; }
+    return;
+  }
   const urlEl = $('#addUrl'), fileEl = $('#addFile');
   const raw = urlEl ? urlEl.value.trim() : editing?.link || '', file = fileEl?.files[0];
   let link = raw;
@@ -341,6 +406,13 @@ document.addEventListener('click', e => {
   if (d('del')) { delRef(v('del')); return; }
   if (d('addpt')) { const b = d('addpt'); b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); return; }
   if (d('addgo')) { saveAdd(d('addgo')); return; }
+  if (d('impm')) { impSetMethod(v('impm')); return; }
+  if (d('addben')) { const b = d('addben'); b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); return; }
+  if (d('impload')) {
+    const u = ($('#addUrl')?.value || '').trim();
+    if (!/^https?:\/\//.test(u)) { $('#addErr').textContent = '링크는 http나 https로 시작하는 주소를 넣어 주세요'; $('#addUrl')?.focus(); return; }
+    impLoad({ method: 'url', url: u }, '불러오는 중… 서버가 페이지를 내려받고 있어요 (최대 15초)'); return;
+  }
   if (t.closest('#addBtn')) { openAdd(); return; }
   if (d('unboard')) { const url = v('unboard'); v2api('/api/am/pinterest/boards/delete', { url }).then(r => { BOARDS = r.boards; PINS = PINS.filter(p => p.board !== url); render(); toast('보드 구독을 뺐어요. 이미 담은 핀은 라이브러리에 남아요'); }).catch(er => toast(er.message)); return; }
   if (d('pinsave')) { const b = d('pinsave'); b.disabled = true; savePin(v('pinsave')); return; }
@@ -348,7 +420,18 @@ document.addEventListener('click', e => {
   if (d('reload')) { loadLib(); return; }
 });
 document.addEventListener('submit', e => { if (e.target.id === 'boardForm') { e.preventDefault(); addBoard(); } });
-document.addEventListener('change', e => {
+document.addEventListener('change', async e => {
+  const t0 = e.target;
+  if (t0.id === 'impFile' && t0.files[0]) {
+    const file = t0.files[0];
+    if (file.size > 5 * 1024 * 1024) { $('#addErr').textContent = '5MB가 넘는 파일은 올릴 수 없어요'; return; }
+    impLoad({ method: 'html', html: await readHtml(file), filename: file.name }, '파일을 읽는 중…'); return;
+  }
+  if (t0.id === 'addFile' && !editing && t0.files[0]) {   // 이미지: 내용은 읽지 않고 파일 이름만 채운다
+    const file = t0.files[0]; draft = null;
+    if (!$('#addName').value.trim()) $('#addName').value = file.name.replace(/\.[^.]+$/, '').slice(0, 60);
+    setPick('addKind', 'mood'); $('#impSt').textContent = '이미지는 내용을 읽지 않아요. 종류·명분·분류를 직접 골라 주세요.'; $('[data-addgo]').disabled = false;
+  }
   const t = e.target;
   if (t.dataset.own) { const o = $(`#${t.dataset.own}`); o.hidden = t.value !== OWN_CHOICE; if (!o.hidden) o.focus(); }
 });

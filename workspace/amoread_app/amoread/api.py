@@ -488,7 +488,13 @@ def refs_save(req: RefReq):
 def refs_delete(rid: str):
     if not re.fullmatch(r"own[0-9a-f]{10}", rid):
         return JSONResponse({"error": "잘못된 레퍼런스예요"}, status_code=400)
-    return {"ok": references.delete_item(rid)}
+    ok = references.delete_item(rid)
+    try:   # 직접 가져온 페이지면 AI 검색 색인에서도 뺀다
+        from .ai import intake
+        intake.remove(rid)
+    except Exception:
+        pass
+    return {"ok": ok}
 
 
 @router.post("/references/{rid}/image")

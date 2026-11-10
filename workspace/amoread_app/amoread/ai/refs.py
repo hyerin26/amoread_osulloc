@@ -18,11 +18,12 @@ from pathlib import Path
 from . import feedback, rules
 
 AI_DIR = rules.AI_DIR
+USER_DIR = Path(os.getenv("AMOREAD_AI_USER_DIR") or (AI_DIR.parent / "ai_refs_user"))   # 담당자가 직접 가져온 레퍼런스의 색인 (intake.py가 씀, 수집 색인과 따로 둬서 색인을 다시 만들어도 남는다)
 PREFER_BRANDS = tuple(x for x in (os.getenv("AMOREAD_AI_PREFER_BRANDS") or "osulloc").split(",") if x)   # 결과에서 먼저 보여 줄 브랜드
 BRAND_MARGIN = float(os.getenv("AMOREAD_AI_BRAND_MARGIN") or 3.0)   # 우리 브랜드는 1등과 점수 차가 이 값(표준편차 단위) 안일 때만 앞세운다. 크게 뒤처진 사례(엉뚱한 글)까지 올리지 않으려고
 AFFINITY = float(os.getenv("AMOREAD_AI_AFFINITY") or 0)   # 우리 브랜드 글과 말투·소재가 가까운 사례를 얼마나 앞세울지 (0 = 끔)
 DENSE_MODEL = os.getenv("AMOREAD_AI_DENSE_MODEL") or "intfloat/multilingual-e5-base"
-BRAND_FROM = {"osulloc": "자사몰", "kurly": "외부", "29cm": "외부"}   # 화면의 '출처' 표기(자사몰·외부)
+BRAND_FROM = {"osulloc": "자사몰", "kurly": "외부", "29cm": "외부", "user": "직접 추가"}   # 화면의 '출처' 표기(자사몰·외부)
 
 # 해당 역할의 사례가 모자랄 때(k의 3배 미만) 같은 쓰임으로 볼 수 있는 역할을 덧붙여 찾는다 (예: 카드 제휴 구좌는 사례가 1개뿐이라 일반 혜택 안내에서 '카드' 글을 찾는다)
 ROLE_FALLBACK = {"partner_benefit": ["benefit_overview", "coupon_offer"], "lookbook": ["visual_gallery"], "app_promo": ["coupon_offer"]}
@@ -35,28 +36,40 @@ def _grams(t: str) -> list[str]:
     return [t[i:i + 2] for i in range(len(t) - 1)]
 
 
+def _mt(f: Path):
+    try:
+        return f.stat().st_mtime
+    except OSError:
+        return 0
+
+
 def _load():
-    f = AI_DIR / "sections.jsonl"
-    if not f.exists():
+    f, uf = AI_DIR / "sections.jsonl", USER_DIR / "sections.jsonl"
+    if not f.exists() and not uf.exists():
         _state.update(loaded=False, rows=[])
         return False
-    mt = f.stat().st_mtime
+    mt = (_mt(f), _mt(uf), _mt(USER_DIR / "pages.json"))
     if _state["loaded"] and _state["mtime"] == mt:   # 파일이 바뀌면 다시 읽는다 (서버를 끄지 않아도 됨)
         return True
-    rows = [json.loads(x) for x in f.read_text(encoding="utf-8").splitlines() if x.strip()]
+
+    def read(p):
+        return [json.loads(x) for x in p.read_text(encoding="utf-8").splitlines() if x.strip()] if p.exists() else []
+
+    main_rows = read(f)
+    rows = main_rows + read(uf)   # 담당자가 직접 가져온 레퍼런스(사용자 색인)를 뒤에 붙인다
     docs = [_grams(r["text"]) for r in rows]
     df = Counter(g for d in docs for g in set(d))
     pages = {}
-    pf = AI_DIR / "pages.json"
-    if pf.exists():
-        pages = json.loads(pf.read_text(encoding="utf-8"))
+    for pf in (AI_DIR / "pages.json", USER_DIR / "pages.json"):
+        if pf.exists():
+            pages.update(json.loads(pf.read_text(encoding="utf-8")))
     vec = None
     vf = AI_DIR / "vectors.npy"
     if os.getenv("AMOREAD_AI_DENSE") == "1" and vf.exists():
         try:
             import numpy as np
             vec = np.load(vf)
-            if len(vec) != len(rows):
+            if len(vec) != len(main_rows):   # 벡터는 수집 색인 행만 있다 (사용자 행은 아래에서 평균으로 채움)
                 vec = None
         except Exception:   # numpy가 없거나 파일이 깨졌으면 키워드만 쓴다
             vec = None
@@ -158,7 +171,9 @@ def _dense(q: str):
             from sentence_transformers import SentenceTransformer
             _state["model"] = SentenceTransformer(DENSE_MODEL)
         v = _state["model"].encode(["query: " + q], normalize_embeddings=True)[0]
-        return (_state["vec"] @ v).tolist()
+        d = (_state["vec"] @ v).tolist()
+        extra = len(_state["rows"]) - len(d)   # 사용자 색인 행: 벡터가 없으므로 평균 점수를 줘서 키워드 점수로만 가린다
+        return d + [sum(d) / len(d)] * extra if d else d
     except Exception:   # 모델을 못 받는 PC(사내망)에서도 키워드 검색은 동작해야 한다
         _state["vec"] = None
         return None

@@ -9,10 +9,13 @@ from . import labeling, refs, rules
 
 
 def _page_labels() -> dict:
-    try:
-        return json.loads((refs.AI_DIR / "page_labels.json").read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return {}
+    out = {}
+    for d in (refs.AI_DIR, refs.USER_DIR):   # 수집 색인 + 담당자가 직접 가져온 것
+        try:
+            out.update(json.loads((d / "page_labels.json").read_text(encoding="utf-8")))
+        except (OSError, ValueError):
+            pass
+    return out
 
 
 def items(kinds=("page", "sec", "event")) -> dict:
@@ -27,7 +30,7 @@ def items(kinds=("page", "sec", "event")) -> dict:
         frm = refs.BRAND_FROM.get(pg["brand"], "외부")
         base = {"season": lb["season"], "cls": lb["cls"], "from": frm, "src": pg["brand"], "link": pg.get("url", ""), "r": [9, 16], "ai": True,
                 "label": {"type": lb["type"], "type_name": (rules.TYPES.get(lb["type"]) or rules.GENERIC)["name"], "confidence": lb["confidence"], "by": lb["labeled_by"], "evidence": lb.get("evidence", {})}}
-        if "page" in kinds:
+        if "page" in kinds and pg["brand"] != "user":   # 직접 가져온 페이지는 레퍼런스 화면이 따로 보여 준다 (구좌만 여기서)
             out.append({**base, "id": pid, "kind": "page", "name": pg["name"], "ben": lb["ben"], "concept": "", "secs": pg["secs"]})
     for r in refs._state["rows"]:
         lb = labels.get(r["page_id"])

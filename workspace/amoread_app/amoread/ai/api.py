@@ -10,9 +10,10 @@ AI 추천 API (/api/am/ai/*) — 구좌 구성 추천(1단계)과 구좌별 레�
 from typing import Annotated, Literal
 
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from . import compose, feedback, library, refs, rules
+from . import compose, feedback, intake, library, refs, rules
 
 router = APIRouter(prefix="/ai")
 Txt = Annotated[str, Field(max_length=2000)]
@@ -118,3 +119,45 @@ def ai_references(req: RefsReq):
 def ai_library():
     """레퍼런스 화면용 목록: 수집한 원본 페이지·구좌·참여 이벤트 + 자동 분류 라벨 (사람이 고친 값 우선). 색인이 없으면 mode='demo'."""
     return library.items()
+
+
+class PreviewReq(BaseModel):
+    method: Literal["url", "html"]
+    url: str = Field(default="", max_length=500)
+    html: str = Field(default="", max_length=5_500_000)
+    filename: str = Field(default="", max_length=120)
+
+
+@router.post("/intake/preview")
+def ai_intake_preview(req: PreviewReq):
+    """새 레퍼런스 가져오기 1단계: 링크(서버가 내려받음) 또는 HTML 파일 → 이름·종류·분류·혜택·구좌 나누기 초안. 아직 저장하지 않는다 (24시간 보관)."""
+    try:
+        if req.method == "url":
+            return intake.preview_url(req.url)
+        return intake.preview_html(req.html, req.filename, req.url)
+    except intake.IntakeError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+
+
+class CommitReq(BaseModel):
+    draft_id: str = Field(pattern=r"^[0-9a-f]{16}$")
+    name: str = Field(default="", max_length=60)
+    kind: str = Field(default="page", max_length=20)
+    kind_label: str = Field(default="", max_length=20)
+    season: str = Field(default="", max_length=30)
+    cls: str = Field(default="", max_length=20)
+    type: str = Field(default="", max_length=30)
+    ben: list[Annotated[str, Field(max_length=20)]] = Field(default_factory=list, max_length=10)
+    mode: list[Annotated[str, Field(max_length=20)]] = Field(default_factory=list, max_length=5)
+    pts: list[Annotated[str, Field(max_length=20)]] = Field(default_factory=list, max_length=10)
+    tags: list[Annotated[str, Field(max_length=20)]] = Field(default_factory=list, max_length=20)
+    memo: str = Field(default="", max_length=300)
+
+
+@router.post("/intake/commit")
+def ai_intake_commit(req: CommitReq):
+    """새 레퍼런스 가져오기 2단계: 담당자가 확인·수정한 값으로 라이브러리에 추가하고 AI 검색 색인에도 넣는다."""
+    try:
+        return intake.commit(req.draft_id, req.model_dump(exclude={"draft_id"}))
+    except intake.IntakeError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
