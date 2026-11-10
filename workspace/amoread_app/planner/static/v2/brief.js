@@ -84,15 +84,26 @@ function renderMap() {
       const mx = (n.x + n.parent.x) / 2, my = (n.y + n.parent.y) / 2;
       gE.append(svgEl('path', { class: `edge${on ? ' on' : ''}`, d: `M${n.parent.x},${n.parent.y} Q${mx},${n.parent.y} ${n.x},${n.y}` }));
     }
-    const kids = info(n.k).kids.length, isOpen = onPath.has(n.k) && n.depth > 0 && path.indexOf(n.k) < path.length - 1;
+    const kids = info(n.k).kids.length, isOpen = n.depth > 0 && kids > 0 && path.indexOf(n.k) > 0;   // path = 펼쳐 둔 갈래. 맨 끝 키워드도 가지가 보이므로 펼침
     const cls = ['node', n.depth === 0 ? 'root' : '', isOpen ? 'open' : '', picked.includes(n.k) ? 'picked' : '', focus === n.k ? 'focus' : '',
       n.depth > 0 && !visibleByCh(n.k) && !onPath.has(n.k) ? 'dim' : ''].filter(Boolean).join(' ');
-    const g = svgEl('g', { class: cls, tabindex: 0, role: 'button', 'data-k': n.k,
-      'aria-label': `${n.k}${picked.includes(n.k) ? ', 고름' : ''}${kids && n.depth > 0 && !isOpen ? `, 가지 ${kids}개 더 있음` : ''}` });
-    const t = svgEl('text', { x: n.x, y: n.y }); t.textContent = n.k; g.append(t); gN.append(g);
-    const w = Math.max(48, t.getComputedTextLength() + (n.depth === 0 ? 40 : 28)), h = n.depth === 0 ? 44 : 34;
-    g.insertBefore(svgEl('rect', { x: n.x - w / 2, y: n.y - h / 2, width: w, height: h, rx: 8 }), t);
-    if (n.depth > 0 && kids && !isOpen) { const m = svgEl('text', { class: 'more', x: n.x + w / 2 + 10, y: n.y }); m.textContent = `+${kids}`; g.append(m); }
+    // 노드 = [고르기 동그라미] [키워드] [펼침 표시]. 누르면 펼치기·접기, 동그라미를 누르면 고르기·빼기 (2026-11-10: 전에는 Space로만 고를 수 있었음)
+    const isPicked = picked.includes(n.k), canOpen = n.depth === 0 ? path.length > 1 : kids > 0;
+    const g = svgEl('g', { class: cls, tabindex: 0, role: 'button', 'data-k': n.k, 'aria-expanded': canOpen ? String(n.depth === 0 ? path.length > 1 : isOpen) : null,
+      'aria-label': `${n.k}${isPicked ? ', 고름' : ''}${canOpen ? (isOpen || (n.depth === 0 && path.length > 1) ? ', 펼침 · 누르면 접어요' : `, 가지 ${kids}개 · 누르면 펼쳐요`) : ''}. Space로 고르기` });
+    if (!canOpen) g.removeAttribute('aria-expanded');
+    const t = svgEl('text', { x: n.x + 10, y: n.y }); t.textContent = n.k; g.append(t); gN.append(g);
+    const w = Math.max(64, t.getComputedTextLength() + (n.depth === 0 ? 60 : 48)), h = n.depth === 0 ? 44 : 36, x0 = n.x - w / 2;
+    g.insertBefore(svgEl('rect', { x: x0, y: n.y - h / 2, width: w, height: h, rx: 8 }), t);
+    // 고르기 동그라미 (누르는 자리 24px)
+    const ck = svgEl('g', { class: `ck${isPicked ? ' on' : ''}`, 'data-pickk': n.k });
+    ck.append(svgEl('rect', { class: 'hit', x: x0 + 2, y: n.y - 14, width: 28, height: 28, rx: 6 }));
+    ck.append(svgEl('circle', { cx: x0 + 16, cy: n.y, r: 8 }));
+    if (isPicked) ck.append(svgEl('path', { d: `M${x0 + 12} ${n.y}l3 3 5-6` }));
+    g.append(ck);
+    // 펼침 표시: 접힘 = +가지 수, 펼침 = 접기 표시(가로선)
+    if (n.depth > 0 && kids && !isOpen) { const m = svgEl('text', { class: 'more', x: n.x + w / 2 + 12, y: n.y }); m.textContent = `+${kids}`; g.append(m); }
+    if ((n.depth > 0 && isOpen) || (n.depth === 0 && path.length > 1)) g.append(svgEl('path', { class: 'fold', d: `M${n.x + w / 2 + 8} ${n.y}h10` }));
   });
 }
 
@@ -115,7 +126,7 @@ function renderSide() {
       <div class="acts"><button class="btn" data-pick="${esc(k)}">${picked.includes(k) ? '고른 키워드에서 빼기' : '이 키워드 그대로 쓰기'}</button></div>`;
     return;
   }
-  const canOpen = d.kids.length > 0, isOpen = path.includes(k) && path.indexOf(k) < path.length - 1;
+  const canOpen = d.kids.length > 0, isOpen = canOpen && path.indexOf(k) > 0;
   const deep = path.indexOf(k) >= 0 ? path.indexOf(k) - center : parentOf(k) - center + 1;
   const rec = live(k);
   const ours = oursOf(k);
@@ -126,13 +137,13 @@ function renderSide() {
     <h3>영상</h3><p class="cap">유튜브는 아직 연결 전이에요</p>
     <h3>우리 데이터${ours ? ' <span class="tag ok-t">실제</span>' : ''}</h3>${(ours || d.ours).length ? `<ul>${(ours || d.ours).map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : `<p class="cap">${ours === null && OURS.state === 'loading' ? '불러오는 중…' : '연결된 내용이 없어요'}</p>`}
     <div class="acts">
-      <button class="btn primary" data-pick="${esc(k)}">${picked.includes(k) ? '고른 키워드에서 빼기' : '이 키워드 고르기'}</button>
-      <button class="btn" data-open-k="${esc(k)}" ${canOpen && !isOpen ? '' : 'disabled'}>${!canOpen ? '더 펼칠 키워드가 없어요' : isOpen ? '펼쳐 둔 갈래예요' : deep >= MAX_DEPTH ? '가운데로 옮겨서 펼치기' : `더 펼치기 (${d.kids.length})`}</button>
+      <button class="btn ${picked.includes(k) ? '' : 'primary'}" data-pick="${esc(k)}" aria-pressed="${picked.includes(k)}">${picked.includes(k) ? '고른 키워드에서 빼기' : '이 키워드 고르기'}</button>
+      <p class="cap">${!canOpen ? '이 키워드에서 더 뻗은 말이 없어요.' : isOpen ? '펼쳐 둔 키워드예요. 마인드맵에서 한 번 더 누르면 접혀요.' : `마인드맵에서 이 키워드를 누르면 가지 ${d.kids.length}개가 펼쳐져요${deep >= MAX_DEPTH ? ' (화면이 넘치면 한 단계 위를 가운데로 옮겨요)' : ''}.`} 키워드는 여러 개 고를 수 있어요.</p>
     </div>`;
 }
 function renderDock() {
-  $('#picked').innerHTML = '<span class="l">고른 키워드</span>' + (picked.length ? picked.map(k => `<span class="pk">${esc(k)}<button data-unpick="${esc(k)}" aria-label="${esc(k)} 빼기">✕</button></span>`).join('')
-    : '<span class="cap">마인드맵에서 키워드를 골라 주세요. 여러 개 골라도 돼요.</span>');
+  $('#picked').innerHTML = (picked.length ? `<span class="cap">${picked.length}개 · 여러 개 고를 수 있어요</span>` + picked.map(k => `<span class="pk">${esc(k)}<button data-unpick="${esc(k)}" aria-label="${esc(k)} 빼기">✕</button></span>`).join('')
+    : '<span class="cap">마인드맵에서 키워드 왼쪽 동그라미를 눌러 고르세요. 여러 개 고를 수 있어요.</span>');
   renderSugs();
   if (typeof renderMoods === 'function') renderMoods();   // 고른 키워드가 바뀌면 느낌 레퍼런스 순서도 다시
 }
@@ -180,20 +191,32 @@ function openK(k) {
 function pick(k) { picked = picked.includes(k) ? picked.filter(x => x !== k) : picked.concat(k); autoTitle(); render(); saveBrief(); }
 let titleTouched = false;
 function autoTitle() { if (titleTouched) return; const c = $('#concept').value.trim(); $('#title').value = c ? `${ROOT} · ${c}` : `${ROOT}${picked.length ? ` · ${picked.join(', ')}` : ''} 기획안`; }
-let clickT = null;
+// 펼치기·접기 (2026-11-10): 한 번 누르면 펼침(+근거 보기), 다시 누르면 그 갈래를 접음. 가운데(명분)를 누르면 처음 모양으로
+function closeK(k) {
+  const i = path.indexOf(k);
+  if (i < 0) return;
+  if (i === 0) { path = [ROOT]; center = 0; return; }
+  path = path.slice(0, i);   // k와 그 아래 갈래를 접음 (k는 부모 밑에 그대로 보임)
+  if (center > path.length - 1) center = Math.max(0, path.length - 2);
+}
+function toggleK(k) {
+  const i = path.indexOf(k), open = i > 0 || (i === 0 && path.length > 1);
+  focus = k;
+  if (open) { closeK(k); render(); return; }
+  if (info(k).kids.length) openK(k); else render();
+}
 $('#map').addEventListener('click', e => {
+  const ck = e.target.closest('[data-pickk]'); if (ck) { pick(ck.dataset.pickk); return; }
   const g = e.target.closest('.node'); if (!g) return;
-  const k = g.dataset.k;
-  if (clickT && clickT.k === k) { clearTimeout(clickT.t); clickT = null; openK(k); return; }   // 두 번 누르면 펼치기
-  focus = k; render();
-  clickT = { k, t: setTimeout(() => { clickT = null; }, 320) };
+  toggleK(g.dataset.k);
 });
 $('#map').addEventListener('keydown', e => {
   const g = e.target.closest('.node'); if (!g) return;
   keepFocus = g.dataset.k;
-  if (e.key === 'Enter') { e.preventDefault(); focus = g.dataset.k; render(); }
+  if (e.key === 'Enter') { e.preventDefault(); toggleK(g.dataset.k); }
   else if (e.key === ' ') { e.preventDefault(); pick(g.dataset.k); }
   else if (e.key === 'ArrowRight') { e.preventDefault(); openK(g.dataset.k); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); closeK(g.dataset.k); render(); }
   else keepFocus = null;
 });
 document.addEventListener('click', e => {
@@ -204,11 +227,11 @@ document.addEventListener('click', e => {
   const pa = t.closest('[data-path]');
   if (pa) { const i = +pa.dataset.path; path = path.slice(0, i + 1); center = Math.min(center, Math.max(0, i - 1)); if (i === 0) center = 0; focus = path[i]; render(); return; }
   const c = t.closest('[data-ch]'); if (c) { chOn.has(c.dataset.ch) ? chOn.delete(c.dataset.ch) : chOn.add(c.dataset.ch); render(); return; }
-  const ed = t.closest('[data-edit]'); if (ed) { toast(`예시예요: ${ed.dataset.edit}을 여기서 바로 고칠 수 있어요`); return; }
+  const ed = t.closest('[data-edit]'); if (ed) { toast(`${ed.dataset.edit}은(는) 기획안을 시작할 때 정한 값이에요. 여기서 바로 고치는 기능은 준비 중이에요`); return; }
 });
 $('#chClear').addEventListener('click', () => { chOn.clear(); render(); });
 // AI는 필요한 자리에 버튼으로만 (찻잎이 대화창 없음). 보내는 것: 고른 키워드·컨셉·명분뿐
-$('#aiSug').addEventListener('click', () => toast('예시예요: 고른 키워드·컨셉으로 AI가 메인 카피 3개를 더 제안해요. 매출·원가·고객 정보는 보내지 않아요'));
+// AI 카피 제안은 아직 연결 전 → 버튼은 '준비 중'으로 꺼 둠 (동작하는 척하지 않음)
 $('#connBtn').addEventListener('click', () => { location.href = '/v2/settings#conn'; });
 // ================= 실제 데이터 (새 버전) =================
 // 근거 패널의 '검색'·'글'은 네이버(NAVER API HUB)에서 받아요. 키워드를 눌러 근거를 볼 때만 부르고(지나가기만 해선 안 부름),
@@ -281,35 +304,78 @@ $('#copy').addEventListener('input', renderSugs);
 $('#sugs').addEventListener('click', e => { const s = e.target.closest('[data-copy]'); if (!s) return; $('#copy').value = s.dataset.copy; renderSugs(); $('#copy').focus(); });
 $('#moreSug').addEventListener('click', () => { sugPage++; renderSugs(); });
 
-// ---------------- 느낌 레퍼런스 (예시) ----------------
-// 수집 예정: 핀터레스트 공개 보드 등(엔지니어 검증) + 담당자가 붙여 넣기. tags로 브리프(명분·고른 키워드)에 맞는 것을 먼저
+// ---------------- 느낌 레퍼런스 ----------------
+// 2026-11-10: 레퍼런스 라이브러리에 저장된 것(직접 추가·Pinterest에서 담은 것)을 먼저, 그다음 예시. tags로 브리프(명분·고른 키워드)에 맞는 것을 앞으로
 const MOODS = [
-  { id: 'm1', name: '돗자리 위 티타임', src: '핀터레스트 보드 · 봄 피크닉', tags: ['봄', '피크닉', '돗자리'], r: [2, 3] },
-  { id: 'm2', name: '연둣빛 봄 색감', src: '외부 캠페인 일부', tags: ['봄', '벚꽃'], r: [4, 5] },
-  { id: 'm3', name: '보온병 들고 산책', src: '핀터레스트 보드 · 아웃도어', tags: ['보온병', '산책', '피크닉'], r: [9, 16] },
-  { id: 'm4', name: '벚꽃 아래 찻잔', src: '자사몰 지난 행사 일부', tags: ['벚꽃', '봄'], r: [3, 4] },
-  { id: 'm5', name: '손글씨 봄 타이포', src: '핀터레스트 보드 · 시즌 타이포', tags: ['봄'], r: [1, 1] },
-  { id: 'm6', name: '한강 노을 피크닉', src: '외부 캠페인 일부', tags: ['한강', '피크닉'], r: [3, 4] },
+  { id: 'm1', name: '돗자리 위 티타임', src: '외부 사례 · 봄 피크닉', tags: ['봄', '피크닉', '돗자리'], pts: ['색감', '소품'], r: [2, 3], demo: true },
+  { id: 'm2', name: '연둣빛 봄 색감', src: '외부 캠페인 일부', tags: ['봄', '벚꽃'], pts: ['색감'], r: [4, 5], demo: true },
+  { id: 'm3', name: '보온병 들고 산책', src: '외부 사례 · 아웃도어', tags: ['보온병', '산책', '피크닉'], pts: ['구도'], r: [9, 16], demo: true },
+  { id: 'm4', name: '벚꽃 아래 찻잔', src: '자사몰 지난 행사 일부', tags: ['벚꽃', '봄'], pts: ['색감', '구도'], r: [3, 4], demo: true },
+  { id: 'm5', name: '손글씨 봄 타이포', src: '외부 사례 · 시즌 타이포', tags: ['봄'], pts: ['글씨체'], r: [1, 1], demo: true },
+  { id: 'm6', name: '한강 노을 피크닉', src: '외부 캠페인 일부', tags: ['한강', '피크닉'], pts: ['색감'], r: [3, 4], demo: true },
 ];
-const POINTS = ['색감', '구도', '소품', '글씨', '카피 톤'];
+const POINTS = ['색감', '구도', '소품', '글씨체', '카피 톤'];
+const CLSN_B = { season: '시즌', brand: '브랜드기획전', launch: '런칭', collab: '콜라보', clear: '클리어런스' };
 const moodSel = new Map();   // 고른 느낌 레퍼런스 → 참고할 점
+var libState = '';           // '' 불러오는 중 / ok / err (var: 이 줄보다 먼저 renderMoods가 불려도 오류 없게)
 function moodImg(w, h) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w * 40}" height="${h * 40}"><defs><pattern id="p" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="16" fill="#eef5ef"/></pattern></defs><rect width="100%" height="100%" fill="#ffffff"/><rect width="100%" height="100%" fill="url(#p)"/><rect x="0.5" y="0.5" width="${w * 40 - 1}" height="${h * 40 - 1}" fill="none" stroke="#dedede"/></svg>`;
   return `<img src="data:image/svg+xml,${encodeURIComponent(svg)}" alt="">`;
 }
-function renderMoods() {
-  const keys = [ROOT, ...picked], score = m => m.tags.filter(t => keys.includes(t)).length;
-  const own = MOODS.filter(m => m.own), list = own.concat([...MOODS].filter(m => !m.own).sort((a, b) => score(b) - score(a)).slice(0, 5));   // 직접 붙인 것은 늘 앞에
-  $('#moodBasis').textContent = `명분 '${ROOT}'${picked.length ? ` · 고른 키워드(${picked.join(', ')})` : ''}로 먼저 거른 이미지예요`;
-  $('#moods').innerHTML = list.map(m => `<button class="mood" data-mood="${m.id}" aria-pressed="${moodSel.has(m.id)}" title="${esc(m.src)}"><span class="fr">${m.img ? `<img src="${m.img}" alt="">` : m.kind ? `<span class="cap">${m.kind}</span>` : moodImg(m.r[0], m.r[1])}</span><span class="mn">${esc(m.name)}</span><span class="cap">${esc(m.src)}</span></button>`).join('');
-  $('#moodPicked').innerHTML = [...moodSel].map(([id, pts]) => { const m = MOODS.find(x => x.id === id); return `<div class="mpick"><b>${esc(m.name)}</b><span class="cap">참고할 점</span>
-    ${POINTS.map(p => `<button class="pt" data-pt="${id}|${p}" aria-pressed="${pts.has(p)}">${p}</button>`).join('')}</div>`; }).join('');
+const moodPic = m => (m.img ? `<img src="${esc(m.img)}" alt="" loading="lazy">` : m.kind ? `<span class="cap">${esc(m.kind)}</span>` : moodImg(m.r[0], m.r[1]));
+async function loadLibMoods() {
+  try {
+    const d = await v2api('/api/am/references'), fav = new Set(d.favorites || []);
+    for (const x of d.items || []) {
+      if (MOODS.some(m => m.id === x.id)) continue;
+      const img = x.img_file ? `/refimg/own/${x.img_file}` : x.pin_img ? `/refimg/pin?u=${encodeURIComponent(x.pin_img)}` : '';
+      MOODS.push({ id: x.id, lib: true, fav: fav.has(x.id), name: x.name, src: x.source === 'Pinterest' ? 'Pinterest' : '라이브러리 · 직접 추가', img, kind: img ? '' : '링크', url: x.link,
+        kindName: x.kind === 'etc' ? x.kind_label : { page: '전체 프로모션', sec: '구좌 사례', mood: '느낌', event: '이벤트 아이디어' }[x.kind] || '', season: x.season, cls: x.cls, pts: x.pts || [], tags: [x.season, ...(x.tags || []), ...(x.name || '').split(/\s+/)].filter(Boolean), memo: x.memo, r: [3, 4] });
+    }
+    libState = 'ok';
+  } catch { libState = 'err'; }
+  renderMoods();
 }
-$('#moods').addEventListener('click', e => { const b = e.target.closest('[data-mood]'); if (!b) return; const id = b.dataset.mood; moodSel.has(id) ? moodSel.delete(id) : moodSel.set(id, new Set()); renderMoods(); $(`[data-mood="${id}"]`)?.focus(); });
+function renderMoods() {
+  const keys = [ROOT, ...picked], score = m => m.tags.filter(t => keys.includes(t)).length + (m.fav ? 0.5 : 0);
+  const own = MOODS.filter(m => m.own), lib = MOODS.filter(m => m.lib).sort((a, b) => score(b) - score(a)).slice(0, 8), demo = MOODS.filter(m => m.demo).sort((a, b) => score(b) - score(a)).slice(0, lib.length ? 3 : 5);
+  const list = own.concat(lib, demo);   // 직접 붙인 것 → 라이브러리 → 예시
+  $('#moodBasis').textContent = `명분 '${ROOT}'${picked.length ? ` · 고른 키워드(${picked.join(', ')})` : ''}에 맞는 것을 앞에 두었어요${libState === 'err' ? ' · 라이브러리를 불러오지 못해 예시만 보여요' : ''}`;
+  const tag = $('#moodSrcTag'); if (tag) { tag.textContent = lib.length ? `라이브러리 ${lib.length} · 예시 ${demo.length}` : '예시'; tag.className = `tag ${lib.length ? 'real' : 'demo-t'}`; }
+  $('#moods').innerHTML = list.map(m => `<div class="mwrap"><button class="mood" data-mood="${m.id}" aria-pressed="${moodSel.has(m.id)}" title="${esc(m.src)}"><span class="fr">${moodPic(m)}</span><span class="mn">${m.fav ? '★ ' : ''}${esc(m.name)}</span><span class="cap">${esc(m.src)}${m.demo ? ' · 예시' : ''}</span></button>
+    <button class="mdet" type="button" data-mdet="${m.id}" aria-label="${esc(m.name)} 자세히 보기">자세히</button></div>`).join('');
+  $('#moodPicked').innerHTML = [...moodSel].map(([id, pts]) => { const m = MOODS.find(x => x.id === id); return `<div class="mpick" role="group" aria-label="${esc(m.name)}에서 참고할 것"><b>${esc(m.name)}</b><span class="cap">이 이미지에서 참고할 것 <em>여러 개 고를 수 있어요</em></span>
+    ${POINTS.map(p => `<button class="pt" data-pt="${id}|${p}" aria-pressed="${pts.has(p)}">${p}</button>`).join('')}</div>`; }).join('');
+  if (drawerId) renderMoodDrawer();
+}
+// 4-4: 상세는 브리프 위에 옆 서랍으로 (목록 페이지로 가지 않음). 고르기·빼기도 서랍에서
+var drawerId = null, drawerFrom = null;
+function renderMoodDrawer() {
+  const m = MOODS.find(x => x.id === drawerId), d = $('#refDrawer');
+  d.hidden = !m; $('#refScrim').hidden = !m; if (!m) return;
+  const on = moodSel.has(m.id);
+  const kv = [['출처', m.src + (m.demo ? ' (예시)' : '')], m.kindName && ['종류', m.kindName], m.cls && ['분류', CLSN_B[m.cls] || m.cls], m.season && ['명분·시즌', m.season], m.pts?.length && ['참고할 것', m.pts.join(', ')], m.memo && ['메모', m.memo]].filter(Boolean);
+  d.innerHTML = `<div class="dh"><div><div class="ov">느낌 레퍼런스${m.demo ? ' · 예시' : m.lib ? ' · 라이브러리' : ' · 직접 붙임'}</div><h2 id="rdH">${esc(m.name)}</h2></div><button class="btn sm" data-mclose>닫기</button></div>
+    <div class="db"><figure class="dfig">${moodPic(m)}</figure>
+      <dl class="kv">${kv.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}${m.url ? `<dt>링크</dt><dd><a class="lnk" href="${esc(m.url)}" target="_blank" rel="noopener noreferrer">${esc(m.url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 60))}</a></dd>` : ''}</dl>
+      <div class="row"><button class="btn sm ${on ? '' : 'primary'}" data-mtoggle="${m.id}">${on ? '이 브리프에서 빼기' : '이 브리프에 고르기'}</button>${m.lib ? '<a class="btn sm ghost" href="/v2/library#mood" target="_blank" rel="noopener">라이브러리에서 열기</a>' : ''}</div>
+      ${m.demo ? '<p class="cap">예시 이미지예요. 레퍼런스 라이브러리에 직접 추가하거나 Pinterest에서 담은 것은 여기에 실제 이미지로 보여요.</p>' : ''}</div>`;
+}
+function openMoodDrawer(id, from) { drawerId = id; drawerFrom = from; renderMoodDrawer(); $('#refDrawer [data-mclose]')?.focus(); }
+function closeMoodDrawer() { drawerId = null; renderMoodDrawer(); drawerFrom?.isConnected ? drawerFrom.focus() : $(`[data-mdet]`)?.focus(); drawerFrom = null; }
+document.addEventListener('click', e => {
+  const t = e.target;
+  if (t.closest('[data-mclose]') || t.id === 'refScrim') { closeMoodDrawer(); return; }
+  const tg = t.closest('[data-mtoggle]'); if (tg) { const id = tg.dataset.mtoggle; moodSel.has(id) ? moodSel.delete(id) : moodSel.set(id, new Set()); renderMoods(); $('#refDrawer [data-mtoggle]')?.focus(); }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && drawerId) { e.preventDefault(); closeMoodDrawer(); } });
+$('#moods').addEventListener('click', e => {
+  const dt = e.target.closest('[data-mdet]'); if (dt) { openMoodDrawer(dt.dataset.mdet, dt); return; }
+  const b = e.target.closest('[data-mood]'); if (!b) return; const id = b.dataset.mood; moodSel.has(id) ? moodSel.delete(id) : moodSel.set(id, new Set()); renderMoods(); $(`[data-mood="${id}"]`)?.focus(); });
 $('#moodPicked').addEventListener('click', e => { const b = e.target.closest('[data-pt]'); if (!b) return; const [id, p] = b.dataset.pt.split('|'), s = moodSel.get(id); s.has(p) ? s.delete(p) : s.add(p); renderMoods(); $(`[data-pt="${id}|${p}"]`)?.focus(); });
-// 직접 붙이기: 이미지는 이 PC에서 미리보기만, PDF·링크는 종류 표시. 붙이면 바로 고른 상태
+// 직접 붙이기: 이미지는 이 PC에서 미리보기만, PDF·링크는 종류 표시. 붙이면 바로 고른 상태 (라이브러리에 남기려면 라이브러리에서 추가)
 let ownN = 0;
-function addOwn(m) { const id = `own${++ownN}`; MOODS.push({ id, own: true, tags: [], r: [3, 4], ...m }); moodSel.set(id, new Set()); renderMoods(); toast('느낌 레퍼런스로 붙였어요. 참고할 점을 골라 주세요'); }
+function addOwn(m) { const id = `att${++ownN}`; MOODS.push({ id, own: true, tags: [], r: [3, 4], ...m }); moodSel.set(id, new Set()); renderMoods(); toast('느낌 레퍼런스로 붙였어요. 이 이미지에서 참고할 것을 골라 주세요'); }
 $('#moodFile').addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; const isImg = f.type.startsWith('image/');
   if (!isImg && f.type !== 'application/pdf') { toast('이미지나 PDF 파일만 붙일 수 있어요'); return; }
   addOwn({ name: f.name.length > 16 ? f.name.slice(0, 16) + '…' : f.name, src: '직접 첨부 · 파일', kind: isImg ? '' : 'PDF', img: isImg ? URL.createObjectURL(f) : '' }); e.target.value = ''; });
@@ -317,7 +383,10 @@ $('#moodLinkBtn').addEventListener('click', e => { const row = $('#moodLinkRow')
 $('#moodUrlAdd').addEventListener('click', () => { const raw = $('#moodUrl').value.trim(); let u; try { u = new URL(raw); } catch { u = null; }
   if (!u || !/^https?:$/.test(u.protocol)) { toast('http나 https로 시작하는 주소를 넣어 주세요'); return; }
   addOwn({ name: u.hostname.replace(/^www\./, ''), src: '직접 첨부 · 링크', kind: '링크', url: raw }); $('#moodUrl').value = ''; $('#moodLinkRow').hidden = true; });
-$('#moodLib').addEventListener('click', () => toast('예시예요: 레퍼런스 라이브러리의 느낌 레퍼런스 탭을 열어요'));
+// 라이브러리는 새 탭으로 (쓰던 브리프는 그대로). 거기서 담은 것은 이 화면을 다시 열면 목록에 나옴
+$('#moodLib').addEventListener('click', () => { window.open('/v2/library#mood', '_blank', 'noopener'); });
+addEventListener('focus', () => { if (libState) loadLibMoods(); });   // 라이브러리 탭에서 돌아오면 새로 담은 것 반영
+loadLibMoods();
 $('#nextBtn').addEventListener('click', () => {
   if (!picked.length && !$('#concept').value.trim()) { toast('키워드를 하나 이상 고르거나 컨셉을 적어 주세요'); return; }
   const empty = !$('#copy').value.trim();
@@ -353,7 +422,7 @@ function loadOurs() {
   OURS.state = 'loading';
   const get = u => v2api(u).catch(() => null);
   Promise.all([get('/api/seasons'), get('/api/am/concepts?limit=200'), get('/api/products')]).then(([sea, con, pr]) => {
-    const dm = document.querySelector('.demo'); if (dm) dm.innerHTML = dm.innerHTML.replace('우리 데이터, 메인 카피 제안은 아직 예시예요.', '우리 데이터는 실제(명분 사전·지난 컨셉·상품)예요. 메인 카피 제안은 규칙으로 만든 문장, 느낌 레퍼런스는 아직 예시예요.');
+    const dm = document.querySelector('.demo'); if (dm) dm.innerHTML = dm.innerHTML.replace('우리 데이터, 메인 카피 제안은 아직 예시예요.', '우리 데이터는 실제(명분 사전·지난 컨셉·상품)예요. 메인 카피 제안은 고른 키워드를 넣은 카피 틀, 느낌 레퍼런스는 라이브러리에서 모은 것과 예시예요.');
     Object.assign(OURS, { state: 'ok', seasons: sea?.items || [], concepts: con?.items || [], prods: (pr?.products || []).filter(x => x.active) });
     renderSide();
   });
@@ -371,7 +440,7 @@ function oursOf(k) {
   return out;
 }
 PLAN.ready.then(doc => {
-  if (doc) loadOurs();
+  if (doc) { loadOurs(); const md0 = document.getElementById('mapDemo'); if (md0) md0.hidden = true; }   // 기획안을 열면 가지·근거는 실제 → '예시 데이터' 태그 숨김
   if (!doc) return;
   const b = doc.brief || {};
   setRoot((b.myeongbun || doc.v2.seed || ROOT).slice(0, 20));

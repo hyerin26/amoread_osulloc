@@ -102,6 +102,30 @@ def v2_page(page: str = "home"):
     return HTMLResponse(html.replace("__PLANNER_TOKEN__", TOKEN))
 
 
+# 레퍼런스 이미지 (2026-11-10): <img>가 토큰 머리를 보낼 수 없어 /api 밖에 둔다 (서버는 127.0.0.1 + Host 검사만 통과)
+# - /refimg/own/{파일}: 담당자가 올린 이미지 (planner/data/references/img)
+# - /refimg/pin?u=…: 핀 이미지를 볼 때만 받아서 그대로 전달 (i.pinimg.com만, 저장하지 않음 · plans/21 §4)
+from amoread import references as _refs  # noqa: E402
+from fastapi.responses import Response  # noqa: E402
+
+
+@app.get("/refimg/own/{name}")
+def refimg_own(name: str):
+    p = _refs.image_path(name)
+    if not p:
+        raise HTTPException(404, "이미지가 없어요")
+    return FileResponse(p)
+
+
+@app.get("/refimg/pin")
+def refimg_pin(u: str):
+    try:
+        body, ctype = _refs.pin_image(u)
+    except Exception:
+        raise HTTPException(404, "이미지를 받지 못했어요")
+    return Response(body, media_type=ctype)
+
+
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # AMOREAD 통합 기획 API (/api/am/*) — 같은 Guard(토큰·보안 헤더)가 적용된다

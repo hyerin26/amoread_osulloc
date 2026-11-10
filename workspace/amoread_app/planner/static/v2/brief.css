@@ -117,7 +117,12 @@ h1, h2, h3, p { margin: 0; }
 .moods { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s2); }
 .mood { all: unset; box-sizing: border-box; cursor: pointer; width: 96px; display: grid; gap: 4px; }
 .mood .fr { width: 96px; height: 128px; border-radius: var(--r2); border: 1px solid var(--line-sub); background: var(--bg); display: grid; place-items: center; padding: 4px; overflow: hidden; }
-.mood .fr img { display: block; max-width: 100%; max-height: 100%; }
+.mood .fr { position: relative; }
+.mood .fr img { position: absolute; inset: 4px; width: calc(100% - 8px); height: calc(100% - 8px); object-fit: contain; display: block; }   /* 어떤 비율이든 틀 안에 (라이브러리 1-1과 같은 방식) */
+.mwrap { display: grid; gap: 2px; width: 96px; align-content: start; }
+.mdet { all: unset; box-sizing: border-box; cursor: pointer; justify-self: start; min-height: 24px; padding: 0 6px; margin-left: -6px; border-radius: 6px; font-size: 12px; line-height: 17px; color: var(--mute); text-decoration: underline; text-underline-offset: 2px; }
+.mdet:hover { color: var(--ink); background: var(--hover); }
+.mdet:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
 .mood .mn { font-size: 12px; line-height: 17px; color: var(--ink2); }
 .mood:hover .fr { border-color: var(--line-strong); }
 .mood[aria-pressed="true"] .fr { border: 2px solid var(--accent); }
@@ -138,3 +143,22 @@ input:not([type=checkbox]):not([type=radio]):focus, select:focus, textarea:focus
 .toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: var(--ink); color: var(--surface); border-radius: var(--r); padding: 14px 18px; font-size: var(--fs-sm);
   box-shadow: 0 16px 48px -12px rgba(33, 33, 33, .15); opacity: 0; pointer-events: none; transition: opacity .2s var(--ease); z-index: 9; }
 .toast.on { opacity: 1; }
+
+/* ---------- 2026-11-10 브리프: 마인드맵 펼치기·접기와 고르기 분리, 메인 카피 줄바꿈, 연결 링크 ---------- */
+/* 이름표 칸: 44px 줄 높이로 두 줄이 되면 크게 벌어지고 잘리던 것 → 보통 줄 높이 + 입력칸 가운데에 맞춘 위 여백 */
+.sum .rl { line-height: var(--lh-label); padding-top: 12px; }
+@media (max-width: 800px) { .sum .rl { padding-top: 0; } }
+.map .node text { pointer-events: none; }
+.map .node .ck { cursor: pointer; }
+.map .node .ck .hit { fill: transparent; stroke: none; }
+.map .node .ck circle { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1.5; }
+.map .node .ck:hover circle { stroke: var(--accent); }
+.map .node .ck.on circle { fill: var(--accent); stroke: var(--accent); }
+.map .node .ck path { fill: none; stroke: var(--accent-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.map .node.root .ck circle { fill: var(--ink); stroke: var(--surface); }
+.map .node.root .ck.on circle { fill: var(--accent); stroke: var(--surface); }
+.map .node .fold { stroke: var(--mute); stroke-width: 2; stroke-linecap: round; }
+.map .node.picked rect { fill: var(--surface); stroke: var(--sel-line); }   /* 고름 = 동그라미 체크 + 얇은 테두리 (덧칠 없이) */
+.filters .conn { display: inline-flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.side .acts { display: grid; gap: var(--s2); }
+.mpick .cap em { font-style: normal; color: var(--mute); }

@@ -72,6 +72,17 @@ const PLAN = (() => {
   };
   // 기다리는 저장을 바로 보내고, 끝날 때까지 기다림 (화면을 옮기기 전에)
   st.flush = () => { if (timer) { clearTimeout(timer); run(); } return chain; };
+  // 탭 닫기·새로고침·주소 이동처럼 링크가 아닌 길로 떠날 때도 고친 내용을 잃지 않게 (2026-11-10)
+  // 기다리는 저장이 있으면 keepalive 요청으로 마지막 상태를 보낸다. 너무 크면(64KB 제한) 브라우저의 '떠날까요?' 확인을 띄움
+  addEventListener('beforeunload', e => {
+    if (!timer || !st.doc) return;
+    clearTimeout(timer); timer = null;
+    const body = JSON.stringify(st.doc);
+    if (body.length < 60000) {
+      try { fetch('/api/am/projects', { method: 'POST', keepalive: true, headers: { 'x-planner-token': V2_TOKEN, 'Content-Type': 'application/json' }, body }); return; } catch { /* 아래 확인으로 */ }
+    }
+    e.preventDefault(); e.returnValue = '';
+  });
   // 저장이 기다리는 중에 다른 화면 링크를 누르면, 저장을 마친 뒤 이동 (고친 내용이 사라지지 않게)
   document.addEventListener('click', e => {
     const a = e.target.closest('a[href^="/v2/"]');

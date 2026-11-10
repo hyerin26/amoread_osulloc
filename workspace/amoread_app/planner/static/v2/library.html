@@ -21,7 +21,7 @@
   <a class="v2gear" href="/v2/settings" aria-label="설정·데이터"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
 </header>
 <main class="page">
-  <p class="demo"><b>예시 화면이에요.</b> 이미지와 페이지는 모두 가상의 자리예요(이름 일부만 자사몰 보관 페이지에서 빌림). 외부 레퍼런스 수집·핀터레스트 연결은 엔지니어 검증 뒤에 붙어요.</p>
+  <p class="demo"><b>직접 추가한 레퍼런스, Pinterest 보드, 즐겨찾기는 실제로 저장돼요</b> (이 PC의 프로그램 폴더). '예시' 표시가 붙은 카드는 가상의 자리예요(이름 일부만 자사몰 보관 페이지에서 빌림). Pinterest 핀 이미지는 저장하지 않고 볼 때 받아 와요.</p>
   <div class="head"><div class="grow"><h1>레퍼런스 라이브러리</h1>
     <p>지난 자사몰 페이지와 외부 사례를 모아 둔 곳이에요. 추천 없이도 둘러볼 수 있고, 필터를 안 고르면 전체가 보여요.</p></div>
     <button class="btn" id="addBtn">＋ 레퍼런스 추가</button></div>
@@ -29,7 +29,7 @@
   <section class="card findbar" aria-label="찾기">
     <label class="search lg block" id="qS"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input type="search" id="q" placeholder="명분·키워드·페이지 이름으로 찾기 (예: 봄, 피크닉, 보자기)" aria-label="레퍼런스 찾기" aria-describedby="resN" autocomplete="off"><button class="clear" type="button" data-sclear aria-label="검색어 지우기"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button></label>
     <div class="tabsrow"><div class="seg" role="tablist" aria-label="레퍼런스 종류" id="tabs"></div><span class="grow"></span>
-      <label class="ck"><input type="checkbox" id="savedOnly"> ★ 저장한 것만</label></div>
+      <button type="button" class="chip fav" id="favOnly" aria-pressed="false">★ 즐겨찾기만<span class="n" id="favN"></span></button></div>
     <div class="filters" id="filters" aria-label="필터 (안 고르면 전체)"></div>
   </section>
   <div class="result"><span class="search-meta" id="resN" aria-live="polite"></span><span class="grow"></span><button class="btn xs ghost" id="clearAll" hidden>필터·검색 지우기</button></div>
@@ -43,6 +43,7 @@
 <div class="toast" id="toast" role="status"></div>
 
 <script src="/static/v2/shell.js"></script>
+<script src="/static/v2/api.js"></script>
 <script src="/static/v2/library.js"></script>
 </body>
 </html>

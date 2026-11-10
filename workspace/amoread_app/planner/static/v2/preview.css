@@ -218,3 +218,13 @@ table.cc td.empty { color: var(--line-strong); }
 .toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: var(--ink); color: var(--surface); border-radius: var(--r); padding: 14px 18px; font-size: var(--fs-sm);
   box-shadow: 0 16px 48px -12px rgba(33, 33, 33, .15); opacity: 0; pointer-events: none; transition: opacity .2s var(--ease); z-index: 30; max-width: calc(100vw - 32px); }
 .toast.on { opacity: 1; }
+
+/* 2026-11-10 미리보기·내보내기: 내보내기를 위로, '주의' 대신 구체적인 이름 + 이유, 참고는 경고처럼 안 보이게 */
+.exp-card { border-color: var(--line); }
+.exp-card:target { border-color: var(--accent); }
+.chk li .grp-b { display: grid; gap: 4px; min-width: 0; }
+.chk .why { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--ink2); }
+.chk li.warn .lv { color: var(--ink); }
+.chk li.info { background: transparent; border: 1px solid var(--line-sub); }
+.chk li.info .lv { color: var(--mute); font-weight: var(--fw-medium); }
+.chk-h .cap { font-weight: var(--fw-medium); margin-left: 4px; }

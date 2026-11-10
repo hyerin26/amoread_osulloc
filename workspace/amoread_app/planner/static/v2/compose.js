@@ -89,7 +89,7 @@ function visual(c) {
     const s = srcList(c), show = s.slice(0, s.length > 4 ? 3 : 4), more = s.length - show.length;
     return `<button class="vis mosaic" data-src="${c.id}" aria-label="출처 ${s.length}개 보기">${show.map((x, i) => { const r = SEC_R[x[1]] || [3, 4]; return `<span class="cell">${demoImg(r[0], r[1], '')}<b>${NUM[i]}</b></span>`; }).join('')}${more ? `<span class="cell more">+${more}</span>` : ''}</button>`;
   }
-  return `<div class="vis none"><span>원본 없음</span><span class="cap">${esc(c.basis)} 규칙으로 만든 구성이에요</span></div>`;
+  return `<div class="vis none"><span>원본 없음</span><span class="cap">${esc(c.basis)} 기준으로 자동으로 짠 구성이에요</span></div>`;
 }
 function headTag(c) {
   if (c.type === 'single') { const p = PAGES[c.page]; return `<span class="tag ${p.from === '자사몰' ? 'real' : ''}">${p.from === '자사몰' ? '지난 행사' : '외부'}</span>`; }

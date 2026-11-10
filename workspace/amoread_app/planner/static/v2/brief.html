@@ -29,7 +29,7 @@
 </div>
 
 <main class="page">
-  <p class="demo"><b>새 버전 시험 중이에요.</b> 키워드를 누르면 오른쪽 근거의 <b>검색·글은 네이버 실제 데이터</b>예요 (키워드만 보내요). <b>가지는 그 말이 나온 블로그 글 여러 개에 함께 나온 말</b>이에요 (뉴스는 덜 셈) (규칙으로 뽑아서 엉뚱한 말이 섞일 수 있어요. 검색광고 키를 넣으면 연관 키워드가 먼저 와요). 우리 데이터, 메인 카피 제안은 아직 예시예요.</p>
+  <p class="demo"><b>새 버전 시험 중이에요.</b> 키워드를 누르면 오른쪽 근거의 <b>검색·글은 네이버 실제 데이터</b>예요 (키워드만 보내요). <b>가지는 그 말이 나온 블로그 글 여러 개에 함께 나온 말</b>이에요 (뉴스는 덜 셈) (자동으로 뽑아서 엉뚱한 말이 섞일 수 있어요. 검색광고 키를 넣으면 연관 키워드가 먼저 와요). 우리 데이터, 메인 카피 제안은 아직 예시예요.</p>
 
   <div class="masthead">
     <div class="grow">
@@ -47,7 +47,7 @@
     <section class="card" aria-labelledby="mapH">
       <div class="sec-head">
         <h2 id="mapH">키워드 펼치기</h2>
-        <span class="tag demo-t">예시 데이터</span>
+        <span class="tag demo-t" id="mapDemo">예시 데이터</span>
         <span class="grow"></span>
         <button class="btn sm" id="resetBtn">처음 모양으로</button>
       </div>
@@ -55,11 +55,11 @@
         <span class="cap">종류</span>
         <span id="chFilters"></span>
         <button class="btn sm" id="chClear" hidden>전체 보기</button>
-        <span class="cap conn"><span id="connTxt">연결 상태 확인 중…</span> <button class="btn xs ghost" id="connBtn">설정에서 보기</button></span>
+        <span class="cap conn"><span id="connTxt">연결 상태 확인 중…</span> <button class="lnk" id="connBtn">연결 설정 보기</button></span>
       </div>
       <nav class="path" id="path" aria-label="지나온 길"></nav>
       <svg class="map" id="map" viewBox="0 0 1100 640" role="group" aria-label="키워드 마인드맵"></svg>
-      <p class="cap maphint">키워드를 누르면 오른쪽에 근거가 나와요. 두 번 누르거나 [더 펼치기]를 누르면 그 키워드에서 다시 뻗어요. 한 번에 한 갈래만 펼쳐 보여요. 키보드: Tab으로 이동, Enter 근거 보기, Space 고르기, → 펼치기</p>
+      <p class="cap maphint">키워드를 누르면 가지가 펼쳐지고 오른쪽에 근거가 나와요. 다시 누르면 접혀요. 키워드 왼쪽 <b>동그라미</b>를 누르면 고른 키워드에 담겨요 (여러 개 가능). 키보드: Enter 펼치기·접기, Space 고르기</p>
     </section>
 
     <aside class="card side" id="side" aria-live="polite"></aside>
@@ -74,20 +74,20 @@
       <input type="text" id="concept" maxlength="120" placeholder="예) 피크닉에서 누리는 차 한 잔의 여유">
       <label class="rl" for="who">누구에게, 어떤 때 <em>(선택)</em></label>
       <input type="text" id="who" maxlength="120" placeholder="예) 주말 한강 피크닉을 준비하는 20~30대">
-      <label class="rl" for="copy">메인 카피 <em>(나중에 써도 돼요)</em></label>
+      <label class="rl" for="copy">메인 카피 <em>(선택)</em></label>
       <div>
-        <input type="text" id="copy" maxlength="60" placeholder="페이지 첫 화면의 한 줄">
-        <div class="sugbar"><span class="cap">제안</span><span class="tag demo-t">예시 · 규칙으로 만든 문장</span><span class="cap" id="sugBasis"></span></div>
+        <input type="text" id="copy" maxlength="60" placeholder="페이지 첫 화면의 한 줄 · 나중에 써도 돼요">
+        <div class="sugbar"><span class="cap">제안</span><span class="tag" title="고른 키워드를 장면형·질문형 같은 카피 틀에 넣어 만든 문장이에요. 골라서 다듬어 쓰세요.">키워드로 만든 카피 틀</span><span class="cap" id="sugBasis"></span></div>
         <div class="sugs" id="sugs" role="group" aria-label="메인 카피 제안"></div>
-        <div class="sugbar"><button class="btn sm" id="moreSug">다른 제안 보기</button><button class="btn sm" id="aiSug">✦ AI로 더 받기</button>
+        <div class="sugbar"><button class="btn sm" id="moreSug">다른 제안 보기</button><button class="btn sm" id="aiSug" disabled title="AI 카피 제안은 아직 연결 전이에요">AI 제안 · 준비 중</button>
           <span class="cap">누르면 메인 카피 칸에 들어가요. 가격·쿠폰·효능 표현은 넣지 않아요.</span></div>
       </div>
       <span class="rl" id="moodL">느낌 레퍼런스 <em>(선택)</em></span>
       <div aria-labelledby="moodL">
-        <div class="sugbar"><span class="tag demo-t">예시</span><span class="cap" id="moodBasis"></span></div>
+        <div class="sugbar"><span class="tag demo-t" id="moodSrcTag">예시</span><span class="cap" id="moodBasis"></span></div>
         <div class="moods" id="moods"></div>
         <div id="moodPicked"></div>
-        <div class="sugbar"><label class="btn sm">파일 첨부<input type="file" id="moodFile" accept="image/*,.pdf" hidden></label><button class="btn sm" id="moodLinkBtn" aria-expanded="false">링크 붙이기</button><button class="btn sm ghost" id="moodLib">라이브러리에서 더 보기</button>
+        <div class="sugbar"><label class="btn sm">파일 첨부<input type="file" id="moodFile" accept="image/*,.pdf" hidden></label><button class="btn sm" id="moodLinkBtn" aria-expanded="false">링크 붙이기</button><button class="btn sm ghost" id="moodLib">라이브러리에서 더 보기 (새 탭)</button>
           <span class="cap">고른 이미지는 기획안 전체의 느낌으로 디자이너 전달에 들어가요.</span></div>
         <div class="sugbar" id="moodLinkRow" hidden><input type="text" id="moodUrl" placeholder="https://… (핀터레스트·외부 페이지 등)" aria-label="참고한 링크"><button class="btn sm primary" id="moodUrlAdd">붙이기</button></div>
         <p class="cap">라이브러리에 없어도 그때 참고한 파일이나 링크를 붙일 수 있어요. 파일은 이 PC에서 미리보기만 하고, 링크는 주소만 저장해요 (열어 보지 않아요).</p>
@@ -98,6 +98,8 @@
 </main>
 <div class="toast" id="toast" role="status"></div>
 
+<div class="v2scrim" id="refScrim" hidden></div>
+<aside class="v2drawer" id="refDrawer" hidden role="dialog" aria-modal="false" aria-labelledby="rdH"></aside>
 <script src="/static/v2/shell.js"></script>
 <script src="/static/v2/api.js"></script>
 <script src="/static/v2/plan.js"></script>

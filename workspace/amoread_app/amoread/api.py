@@ -7,6 +7,7 @@ AMOREAD 통합 기획 API (/api/am/*).
 원천(PROMO_WORK 등)에는 쓰지 않는다. 쓰는 곳: planner/data/projects/*.json, settings/명분사전.csv(사용자가 명시적으로 추가할 때만).
 """
 import json
+import re
 from datetime import date, datetime
 from typing import Annotated, Any, Literal
 
@@ -423,3 +424,101 @@ def production_schedule(open: str, kind: str = "이벤트"):
     return {"open": open_d.isoformat(), "kind": kind, "lead": lead, "wd_left": rem,
             "mode": timeline._mode(rem, du) if open_d > today else "지남", "steps": steps,
             "rule": f"{kind} {lead}업무일 = 틀 기획 {du['plan']} + 디자인 {du['design']} + 퍼블·개발 {du['dev']} (주말·공휴일 제외)"}
+
+
+# ----------------------------------------------------------------------
+# 레퍼런스 라이브러리 (2026-11-10): 직접 추가·즐겨찾기·핀터레스트 공개 보드 구독. 저장 = planner/data/references/
+# ----------------------------------------------------------------------
+from . import references   # noqa: E402
+
+Txt = Annotated[str, Field(max_length=60)]
+
+
+class RefReq(BaseModel):
+    id: str | None = Field(default=None, pattern=r"^own[0-9a-f]{10}$")
+    kind: str = Field(default="mood", min_length=1, max_length=20)       # page/sec/mood/event 또는 직접 입력한 종류
+    kind_label: str = Field(default="", max_length=20)                     # 직접 입력한 종류 이름
+    name: str = Field(min_length=1, max_length=60)
+    season: str = Field(default="", max_length=30)                         # 명분·시즌 (목록 밖 값도 가능)
+    cls: str = Field(default="", max_length=20)                            # 분류 (목록 밖 값도 가능)
+    source: str = Field(default="직접 추가", max_length=30)               # 직접 추가 / 핀터레스트
+    link: str = Field(default="", max_length=500)
+    pin_id: str = Field(default="", pattern=r"^\d{0,25}$")
+    pin_img: str = Field(default="", max_length=500)                       # i.pinimg.com 주소 (볼 때 받아 옴, 저장 안 함)
+    board: str = Field(default="", max_length=300)
+    pts: list[Txt] = Field(default_factory=list, max_length=10)            # 참고할 것
+    tags: list[Txt] = Field(default_factory=list, max_length=20)
+    memo: str = Field(default="", max_length=300)
+
+    @model_validator(mode="after")
+    def _urls(self):
+        for u in (self.link, self.board):
+            if u and not re.match(r"^https?://", u):
+                raise ValueError("링크는 http나 https로 시작해야 해요")
+        if self.pin_img and not re.match(r"^https://i\.pinimg\.com/", self.pin_img):
+            raise ValueError("핀 이미지 주소가 올바르지 않아요")
+        return self
+
+
+class FavReq(BaseModel):
+    id: str = Field(min_length=1, max_length=40)
+    on: bool = True
+
+
+class ImgReq(BaseModel):
+    data_url: str = Field(max_length=7_500_000)
+
+
+class BoardReq(BaseModel):
+    url: str = Field(min_length=10, max_length=300)
+
+
+@router.get("/references")
+def refs_list():
+    d = references.load()
+    return {"items": d["items"], "favorites": d["favorites"], "boards": d["boards"]}
+
+
+@router.post("/references")
+def refs_save(req: RefReq):
+    return references.save_item(req.model_dump())
+
+
+@router.post("/references/{rid}/delete")
+def refs_delete(rid: str):
+    if not re.fullmatch(r"own[0-9a-f]{10}", rid):
+        return JSONResponse({"error": "잘못된 레퍼런스예요"}, status_code=400)
+    return {"ok": references.delete_item(rid)}
+
+
+@router.post("/references/{rid}/image")
+def refs_image(rid: str, req: ImgReq):
+    if not re.fullmatch(r"own[0-9a-f]{10}", rid):
+        return JSONResponse({"error": "잘못된 레퍼런스예요"}, status_code=400)
+    try:
+        return {"img_file": references.save_image(rid, req.data_url)}
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+
+
+@router.post("/references/favorite")
+def refs_favorite(req: FavReq):
+    return {"favorites": references.set_favorite(req.id, req.on)}
+
+
+@router.post("/pinterest/boards")
+def pin_board_add(req: BoardReq):
+    try:
+        return references.add_board(req.url)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+
+
+@router.post("/pinterest/boards/delete")
+def pin_board_delete(req: BoardReq):
+    return {"boards": references.remove_board(req.url)}
+
+
+@router.get("/pinterest/pins")
+def pin_list():
+    return references.all_pins()

@@ -91,16 +91,28 @@ function groupChecks(list) {
   }
   return out.flatMap(g => !g.items ? [g] : g.items.length >= 3 ? [g] : g.items.map(it => ({ lv: g.lv, t: it.t, i: it.i })));
 }
+// '주의' 대신 무엇을 확인하라는지 짧은 이름 + 왜 보는지 한 줄 (2026-11-10). 참고(알림)는 경고처럼 보이지 않게
+const CHK_KIND = [
+  [/겹침/, '기간 겹침', 'PROMO_WORK에 같은 상품의 행사가 이미 잡혀 있어요. 그대로 붙이면 할인이 겹칠 수 있어 기간이나 상품을 확인해 주세요.'],
+  [/원가율/, '원가율', '할인 후 원가율이 기준(45%)을 넘어요. 할인율을 낮추거나, 그대로 갈지 정해 주세요.'],
+  [/80%|50%|할인율/, '할인 폭', '할인 폭이 커서 한 번 더 확인이 필요해요.'],
+  [/SEQ|찾을 수 없|상품 목록/, '상품 확인', '상품 코드를 찾지 못했어요. 상품·할인에서 상품을 다시 골라 주세요.'],
+  [/판매 중지|중지/, '판매 중지', '판매가 멈춘 상품이에요. 빼거나 바꿔 주세요.'],
+  [/유의사항/, '유의사항', '이벤트 유의사항이 비어 있어요. 운영·법무 기준을 확인해 채워 주세요.'],
+  [/가격 오름/, '알약 문구', '가격 오름 예고를 계산하지 못했어요. 카드 문구에서 알약을 바꾸거나 직접 써 주세요.'],
+];
+const chkKind = t => CHK_KIND.find(([re]) => re.test(t)) || [null, '확인', ''];
 function renderChecks() {
   const cs = checks(), w = cs.filter(x => x.lv === 'warn'), n = cs.filter(x => x.lv === 'info');
-  document.getElementById('chkN').textContent = `주의 ${w.length} · 알림 ${n.length}`;
-  const lv = x => `<span class="lv">${x.lv === 'warn' ? '주의' : '알림'}</span>`;
+  const lv = x => `<span class="lv">${x.lv === 'warn' ? esc(chkKind(x.msg || x.t)[1]) : '참고'}</span>`;
+  const why = x => { const k = chkKind(x.msg || x.t); return x.lv === 'warn' && k[2] ? `<span class="why">${esc(k[2])}</span>` : ''; };
   const li = x => x.items
-    ? `<li class="${x.lv} grp">${lv(x)}<div class="grp-b"><span>${esc(x.msg)}</span><details><summary>상품 ${x.items.length}개</summary><ul>${x.items.map(it => `<li>${esc(it.name)}${it.pct ? ` <span class="cap">${esc(it.pct)}</span>` : ''}</li>`).join('')}</ul></details></div><button class="go" data-go="-1">상품·할인 보기</button></li>`
-    : `<li class="${x.lv}">${lv(x)}<span>${esc(x.t)}</span><button class="go" data-go="${x.i}">${x.i < 0 ? '상품·할인 보기' : '구좌 보기'}</button></li>`;
+    ? `<li class="${x.lv} grp">${lv(x)}<div class="grp-b"><span>${esc(x.msg)}</span>${why(x)}<details><summary>상품 ${x.items.length}개</summary><ul>${x.items.map(it => `<li>${esc(it.name)}${it.pct ? ` <span class="cap">${esc(it.pct)}</span>` : ''}</li>`).join('')}</ul></details></div><button class="go" data-go="-1">상품·할인 보기</button></li>`
+    : `<li class="${x.lv}">${lv(x)}<div class="grp-b"><span>${esc(x.t)}</span>${why(x)}</div><button class="go" data-go="${x.i}">${x.i < 0 ? '상품·할인 보기' : '구좌 보기'}</button></li>`;
   const gw = groupChecks(w), gn = groupChecks(n);
-  document.getElementById('chk').innerHTML = (w.length ? `<h3 class="chk-h">꼭 볼 것</h3><ul class="chk">${gw.map(li).join('')}</ul>` : '<ul class="chk"><li class="ok"><span class="lv">없음</span><span>꼭 볼 것이 없어요</span></li></ul>')
-    + (n.length ? `<h3 class="chk-h">알아 두기</h3><ul class="chk">${gn.map(li).join('')}</ul>` : '')
+  document.getElementById('chkN').textContent = w.length ? `확인 ${gw.length}건 · 참고 ${gn.length}건` : `참고 ${gn.length}건`;
+  document.getElementById('chk').innerHTML = (w.length ? `<h3 class="chk-h">확인하면 좋은 것 <span class="cap">고치지 않아도 내보낼 수 있어요</span></h3><ul class="chk">${gw.map(li).join('')}</ul>` : '<ul class="chk"><li class="ok"><span class="lv">없음</span><span>확인할 것이 없어요</span></li></ul>')
+    + (n.length ? `<h3 class="chk-h">참고 <span class="cap">알아 두면 좋은 것</span></h3><ul class="chk">${gn.map(li).join('')}</ul>` : '')
     + '<p class="cap note-gap">남아 있어도 내보낼 수 있어요. 내보낼 때 한 번 더 알려 드려요.</p>';
 }
 
@@ -214,7 +226,7 @@ document.addEventListener('click', e => {
     (navigator.clipboard?.writeText(tsv) || Promise.reject()).then(() => toast('표를 복사했어요. 엑셀이나 피그마에 붙여 넣을 수 있어요'), () => toast('이 브라우저에서는 복사가 막혀 있어요. 엑셀로 내려받아 주세요')); return; }
   const ex = t.closest('[data-exp]'); if (ex) {
     const w = checks().filter(x => x.lv === 'warn').length, k = ex.dataset.exp;
-    if (k !== 'pdf' && w && !confirm(`꼭 볼 것이 ${w}건 남아 있어요. 그래도 내보낼까요?`)) return;
+    if (k !== 'pdf' && w && !confirm(`확인하면 좋은 것이 ${w}건 있어요 (기간 겹침·원가율 등). 그래도 내보낼까요?`)) return;
     const files = [...document.querySelectorAll('[data-zf]:checked')].map(x => ({ doc: '기획안.html', page: '페이지_와이어프레임.html', cards: '카드_문구표.csv' })[x.dataset.zf]);
     if (k === 'zip' && !files.length) { toast('묶음에 넣을 파일을 하나 이상 골라 주세요'); return; }
     const name = { zip: `디자이너 전달 묶음 (ZIP: ${files.join(', ')})`, promo: 'PROMO_WORK 붙여넣기 (엑셀)', pdf: 'PDF 인쇄 화면' }[k];

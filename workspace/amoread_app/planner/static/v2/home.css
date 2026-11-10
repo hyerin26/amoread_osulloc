@@ -195,8 +195,10 @@ input:disabled { background: var(--sunken); color: var(--mute); }
 .gear { all: unset; cursor: pointer; width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--r2); color: var(--mute); }
 .gear:hover { background: var(--hover); color: var(--ink); }
 .gear:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.plans { margin-top: var(--s5); }
-.plans input[type=search] { min-width: 220px; }
+.plans { margin-top: var(--s5); grid-template-columns: minmax(0, 1fr); }   /* 열을 카드 폭에 묶음 (폰 폭에서 가로로 밀리던 것) */
+.plans input[type=search] { min-width: 0; }
+@media (max-width: 480px) { .plans .search { min-width: 0; flex: 1 1 100%; } }
+.sec-head .seg { max-width: 100%; min-width: 0; overflow-x: auto; }   /* 상태 거르기 칩이 길면 그 줄 안에서 가로로 넘김 */
 .plist { list-style: none; margin: 0; padding: 0; }
 .tag { display: inline-flex; align-items: center; border-radius: 6px; padding: 2px 8px; font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); background: var(--sunken); color: var(--ink2); white-space: nowrap; gap: 4px; }
 .prow { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr) minmax(0, .9fr) minmax(0, 1.4fr) auto; gap: var(--s3); align-items: center; padding: 12px 8px; border-bottom: 1px solid var(--line-sub); }
@@ -235,3 +237,43 @@ input:disabled { background: var(--sunken); color: var(--mute); }
 .search-meta { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); }
 .search-meta.none { color: var(--ink2); }
 .c-mall { background: var(--sunken); color: var(--ink2); border: 1px solid var(--line); }   /* PROMO_WORK 행사 (분류 없음) */
+
+/* ---------- 2026-11-10 홈: 기간 이동 · 기간 고르기 · 잘린 글 · 명분 노드 · 시작 창 상품 고르기 ---------- */
+.pager { display: inline-flex; gap: 2px; }
+.pickhint { margin: 0 0 var(--s2); font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); }
+.pickhint.on { color: var(--accent); font-weight: var(--fw-strong); }
+/* 기간 고르기: 누를 수 있는 칸은 손가락 모양, 고르는 중 = 점선 테두리 + 은은한 바탕, 확정(시작 창 열림) = 실선 */
+.tl .pick, .cd { cursor: pointer; }
+.pick.past { cursor: default; }
+.pick.sel, .cd.sel { background: var(--accent-soft) !important; box-shadow: inset 0 1px 0 var(--sel-line), inset 0 -1px 0 var(--sel-line); }
+.cd.sel { box-shadow: inset 0 0 0 1px var(--sel-line); }
+.pick.anchor, .cd.anchor { outline: 1.5px dashed var(--accent); outline-offset: -2px; }
+.pick.done, .cd.done { background: var(--accent-soft) !important; box-shadow: inset 0 0 0 1px var(--accent); }
+/* 일정 막대: 좁아서 이름이 잘리면 마우스를 올리거나 키보드로 고를 때 이름 길이만큼 펼쳐 보여 줌 (막대 자리는 그대로) */
+.bar { overflow: hidden; }
+.bar:hover, .bar:focus-visible, .bar[aria-pressed="true"] { overflow: visible; z-index: 6; }
+.bar:hover .nm, .bar:focus-visible .nm, .bar[aria-pressed="true"] .nm { overflow: visible; text-overflow: clip; white-space: nowrap; position: relative; z-index: 1;
+  background: inherit; padding-right: 6px; border-radius: 0 var(--r2) var(--r2) 0; }
+.bar.plan:hover .nm, .bar.plan:focus-visible .nm, .bar.plan[aria-pressed="true"] .nm { background: var(--surface); box-shadow: 0 0 0 1px var(--plan); padding: 0 6px; border-radius: 4px; }
+.bar.gap:hover .nm, .bar.gap:focus-visible .nm { background: var(--warn-soft); box-shadow: 0 0 0 1px var(--line-strong); padding: 0 6px; border-radius: 4px; }
+/* 명분 노드: 누르는 자리를 이름까지 넓히고, 아래 단 이름은 노드와 가는 선으로 이음 (어느 노드의 이름인지 보이게) */
+.mb { min-width: 28px; }
+.mb .t { position: relative; }
+.mb.lv1 .t::before, .mb.lv2 .t::before { content: ''; position: absolute; left: 50%; bottom: 100%; border-left: 1px solid var(--line-strong); }
+.mb.lv1 .t::before { height: 18px; }
+.mb.lv2 .t::before { height: 36px; }
+.mb[aria-pressed="true"] .t::before { border-left-color: var(--accent); }
+.mb:hover { z-index: 7; }
+.mb:hover .t { max-width: none; box-shadow: 0 0 0 1px var(--line); }
+/* 시작 창의 상품 고르기 */
+.prod-hits { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 2px; max-height: 220px; overflow: auto; }
+.prod-hits .hit { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; display: flex; gap: var(--s2); align-items: center; min-height: var(--hit); padding: 4px 8px; border-radius: 6px; font-size: var(--fs-sm); }
+.prod-hits .hit:hover { background: var(--hover); }
+.prod-hits .hit[aria-selected="true"] { color: var(--accent); font-weight: var(--fw-strong); }
+.prod-hits .hit:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.prod-hits .grow { flex: 1; min-width: 0; }
+.picked-prods { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+.picked-prods:empty { display: none; }
+.picked-prods .pk { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; padding: 0 4px 0 10px; border-radius: var(--r2); background: var(--accent-soft); color: var(--accent); font-size: var(--fs-cap); font-weight: var(--fw-strong); }
+.picked-prods .pk button { all: unset; cursor: pointer; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 4px; }
+.picked-prods .pk button:hover { background: var(--hover); }

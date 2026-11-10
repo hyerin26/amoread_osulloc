@@ -68,7 +68,7 @@ function gaps(from, to) {
 // 기간 기본값 (plans/20 4-1): 시작 = 앞 페이지 종료 다음 날(= 첫 빈 날), 길이 14일
 function defaultPeriod() {
   const g = gaps(TODAY, add(TODAY, 180))[0];
-  return g ? { s: g.s, e: add(g.s, 13), why: `앞 페이지가 끝난 다음 날(${md(g.s)})부터 2주로 제안했어요.` } : { s: null, e: null, why: '' };
+  return g ? { s: g.s, e: add(g.s, 13), why: `앞 페이지가 끝난 다음 날(${md(g.s)})부터 2주로 넣었어요. 보통 프로모션 길이예요. 바꿔도 돼요.` } : { s: null, e: null, why: '' };
 }
 // 겹치는 막대를 줄로 나누기: 시작일 순으로 놓고, 앞 줄에 자리가 있으면 그 줄에
 function pack(items, from, to) {
@@ -100,7 +100,8 @@ const evName = x => CLS[x.cls]?.name || 'PROMO_WORK 행사';
 const evBar = x => bar(`c-${x.cls}`, `<span class="nm">${esc(x.name)}</span>`, `${x.name}, ${evName(x)}, ${md(x.s)}~${md(x.e)}`, { type: 'ev', id: x.id });
 const planBar = (p, dl = true) => bar('plan', `<span class="nm">${esc(p.name)}</span>${dl && p.next ? `<span class="dl">${esc(p.next[0])} ${md(p.next[1])}</span>` : ''}`,
   `${p.name}, 준비 중, ${md(p.s)}~${md(p.e)}${p.next ? `, 다음 마감 ${p.next[0]} ${md(p.next[1])}` : ''}`, { type: 'plan', id: p.id });
-const gapBar = (g, long) => { const n = diff(g.s, g.e) + 1; return bar('gap', long && n >= 5 ? `${n}일 비어요 · 기획 시작` : `${n}일 비어요`, `빈 구간 ${md(g.s)}~${md(g.e)}, ${n}일. 눌러서 이 기간으로 새 기획안`, { type: 'gap', id: `${g.s}|${g.e}` }); };
+// 빈 기간 막대: '11일 비어요'는 11일(날짜)인지 11일 동안인지 모호해서 '11일간 빈 기간'으로 (2026-11-10)
+const gapBar = (g, long) => { const n = diff(g.s, g.e) + 1; return bar('gap', `<span class="nm">${long && n >= 5 ? `${n}일간 빈 기간 · 새 기획안` : `${n}일간 빈 기간`}</span>`, `빈 기간 ${md(g.s)}~${md(g.e)} (${n}일간 걸린 페이지 없음). 눌러서 이 기간으로 새 기획안`, { type: 'gap', id: `${g.s}|${g.e}` }); };
 
 // ---------------- 타임라인 ----------------
 function renderTimeline() {
@@ -124,7 +125,7 @@ function renderTimeline() {
     d.style.gridRow = R.wk; d.style.gridColumn = `${w * 7 + 2} / span 7`; d.textContent = `${md(s).replace(/\(.\)/, '')} 주`;
     tl.append(d);
   }
-  lab(R.pick, 1, '기간 고르기', '끌어서 새 기획안');
+  lab(R.pick, 1, '기간 고르기', '시작일·끝나는 날 누르기');
   for (let i = 0; i < days; i++) {
     const d = add(start, i), c = document.createElement('div');
     c.className = 'pick' + (D(d).getDay() === 1 ? ' mon' : '') + (d < TODAY ? ' past' : '');
@@ -135,7 +136,7 @@ function renderTimeline() {
   evs.forEach(({ x, r }) => put(evBar(x), x.s, x.e, R.ev + r));
   lab(R.plan, plN, '내 기획안', '준비 중'); bg(R.plan, plN);
   pls.forEach(({ x, r }) => put(planBar(x), x.s, x.e, R.plan + r));
-  lab(R.gap, 1, '빈 구간', '걸린 페이지 없음'); bg(R.gap, 1);
+  lab(R.gap, 1, '빈 기간', '걸린 페이지 없음'); bg(R.gap, 1);
   gaps(start, end).forEach(g => put(gapBar(g, true), g.s, g.e, R.gap));
   lab(R.m, 1, '명분', '명분 사전'); bg(R.m, 1);
   const sm = selSeason();
@@ -209,9 +210,13 @@ function renderCalendar() {
 function render() {
   $$('.seg [data-view]').forEach(b => b.setAttribute('aria-selected', b.dataset.view === view));
   $('#tlWrap').classList.toggle('hidden', view !== 'tl'); $('#calWrap').classList.toggle('hidden', view !== 'cal');
-  $('#prevBtn').textContent = view === 'tl' ? '← 4주 전' : '← 이전 달';
-  $('#nextBtn').textContent = view === 'tl' ? '4주 뒤 →' : '다음 달 →';
+  // 이동 단위: 타임라인은 10주를 한 번에 보여 주므로 4주씩(앞뒤 문맥이 남게), 캘린더는 한 달 화면이라 한 달씩. 버튼 모양·자리는 같게
+  $('#prevTxt').textContent = view === 'tl' ? '이전 4주' : '이전 달';
+  $('#nextTxt').textContent = view === 'tl' ? '다음 4주' : '다음 달';
+  $('#prevBtn').setAttribute('aria-label', view === 'tl' ? '이전 4주 보기' : '이전 달 보기');
+  $('#nextBtn').setAttribute('aria-label', view === 'tl' ? '다음 4주 보기' : '다음 달 보기');
   if (view === 'tl') renderTimeline(); else renderCalendar();
+  paintPick();
   const und = PLANS.filter(p => !p.s);
   $('#undated').innerHTML = und.length ? `<span class="cap">날짜 미정 기획안</span>${und.map(p => `<button class="chip" data-type="plan" data-id="${p.id}">${esc(p.name)} · ${esc(clsName(p.cls))}</button>`).join('')}` : '';
   renderSide();
@@ -285,20 +290,20 @@ function renderSide() {
     <h3>가까운 마감</h3><ul>${dl.map(p => { const n = diff(TODAY, p.next[1]); return `<li><button class="item" data-type="plan" data-id="${p.id}">
       <span class="t"><span class="grow">${esc(p.name)}</span><span class="dd ${n > 7 ? 'calm' : ''}">D-${n}</span></span>
       <span class="cap">${esc(p.next[0])} ${md(p.next[1])} · ${esc(p.step)}</span></button></li>`; }).join('')}</ul>
-    ${g ? `<h3>다음 빈 구간</h3><button class="item" data-type="gap" data-id="${g.s}|${g.e}"><span class="t"><span class="grow">${md(g.s)} ~ ${md(g.e)}</span><span class="dd calm">${diff(g.s, g.e) + 1}일</span></span>
-      <span class="cap">걸린 페이지가 없어요. 눌러서 이 기간으로 시작</span></button>` : ''}
+    ${g ? `<h3>다음 빈 기간</h3><button class="item" data-type="gap" data-id="${g.s}|${g.e}"><span class="t"><span class="grow">${md(g.s)} ~ ${md(g.e)}</span><span class="dd calm">${diff(g.s, g.e) + 1}일간</span></span>
+      <span class="cap">걸린 페이지가 없어요. 눌러서 이 기간으로 새 기획안</span></button>` : ''}
     <h3>날짜 미정</h3><p class="cap">${PLANS.filter(p => !p.s).length}개 · 일정표 아래에 있어요</p>`;
 }
 
 // ---------------- 시작 창 ----------------
 // cls 없이 열면(새 기획안·빈 구간·기간 고르기) 분류를 먼저 고르게 한다. 명분에서 열 때만 시즌이 골라져 있다
 let dlg = { cls: null, m: null };
-function openStart({ cls = null, s, e, m = null, why } = {}) {
-  dlg = { cls, m };
+function openStart({ cls = null, s, e, m = null, why, full = null } = {}) {
+  dlg = { cls, m, prods: [] };
   const p = s ? { s, e, why: why || '고른 기간을 넣었어요.' } : defaultPeriod();
   $('#dStart').value = p.s || ''; $('#dEnd').value = p.e || '';
   $('#noDate').checked = !p.s; syncDate();
-  $('#dateHelp').textContent = p.why;
+  $('#dateHelp').innerHTML = `${esc(p.why)}${full ? ` <button type="button" class="lnk" data-fullgap="${full[0]}|${full[1]}">빈 기간 전체로 바꾸기</button>` : ''} 날짜는 위에서 바꿀 수 있어요.`;
   paintDlg();
   $('#startDlg').showModal();
 }
@@ -313,11 +318,47 @@ function paintDlg() {
       <span class="grow"><b>${esc(m.name)}</b> <span class="cap">${esc(m.kind)}</span></span><span class="cap">${md(m.d)} · 준비 ${md(add(m.d, -m.lead))}</span></button>`).join('')}</div>
       <span class="h">${s ? '기간에 가까운 명분부터 보여줘요.' : '다가오는 순서예요.'} 고른 명분이 다음 화면의 중심 키워드가 돼요.</span>`;
   } else {
-    const [l, ph] = CLS[dlg.cls].seed;
-    box.innerHTML = `<label><span class="l">${l}</span><input type="text" id="seed" placeholder="${esc(ph)}" maxlength="40"></label>
+    const [l, ph] = CLS[dlg.cls].seed, withProd = dlg.cls !== 'collab';   // 콜라보(협업 상대)는 상품이 아니라 이름만
+    const keep = $('#seed')?.value || '';
+    box.innerHTML = `<label><span class="l">${l}</span><input type="text" id="seed" placeholder="${esc(withProd ? `${ph} · 상품명으로 찾아 고를 수 있어요` : ph)}" maxlength="40" autocomplete="off" ${withProd ? 'aria-describedby="seedHelp" aria-controls="prodHits"' : ''}></label>
+      ${withProd ? `<div class="picked-prods" id="pickedProds"></div><ul class="prod-hits" id="prodHits" role="listbox" aria-label="상품 찾기 결과"></ul>
+      <span class="h" id="seedHelp">상품을 고르면 이 기획안의 후보 상품으로 함께 담겨요 (상품·할인에서 보여요). 목록에 없으면 이름만 적어도 돼요.</span>` : ''}
       <span class="h">이 말이 다음 화면(키워드 확장)의 중심 키워드가 돼요.</span>`;
+    $('#seed').value = keep;
+    if (withProd) { paintProds(); loadProds(); }
   }
 }
+// 시작 창의 상품 고르기 (4-3): 상품 목록은 처음 필요할 때 한 번만 받음. 판매 중 먼저, 최근 28일 매출순
+let PRODS = null, prodsErr = '';
+function loadProds() {
+  if (PRODS || prodsErr) { paintHits(); return; }
+  v2api('/api/products').then(d => { PRODS = (d.products || []).filter(p => p.seq && p.name); paintHits(); })
+    .catch(e => { prodsErr = e.message; paintHits(); });
+}
+function paintHits() {
+  const ul = $('#prodHits'); if (!ul) return;
+  const qq = ($('#seed')?.value || '').replace(/\s/g, '').toLowerCase();
+  if (prodsErr) { ul.innerHTML = '<li class="h">상품 목록을 불러오지 못했어요. 이름만 적어 주세요.</li>'; return; }
+  if (!PRODS) { ul.innerHTML = '<li class="h">상품 목록을 불러오는 중…</li>'; return; }
+  if (!qq) { ul.innerHTML = ''; return; }
+  const hits = PRODS.filter(p => p.name.replace(/\s/g, '').toLowerCase().includes(qq) || String(p.seq).startsWith(qq))
+    .sort((a, b) => (b.active ? 1 : 0) - (a.active ? 1 : 0) || (b.sales_28 || 0) - (a.sales_28 || 0)).slice(0, 8);
+  ul.innerHTML = hits.length ? hits.map(p => { const on = dlg.prods.some(x => x.seq === String(p.seq));
+    return `<li><button type="button" class="hit" role="option" aria-selected="${on}" data-prod="${esc(String(p.seq))}"><span class="grow">${esc(p.name)}</span><span class="h">${esc(String(p.seq))}${p.active ? '' : ' · 판매 중 아님'}</span><span class="h">${on ? '골랐어요' : '고르기'}</span></button></li>`; }).join('')
+    : `<li class="h">'${esc($('#seed').value.trim())}'와 이름이 맞는 상품이 없어요. 이 이름 그대로 써도 돼요.</li>`;
+}
+function paintProds() {
+  const el = $('#pickedProds'); if (!el) return;
+  el.innerHTML = dlg.prods.length ? `<span class="h">고른 상품 ${dlg.prods.length}개</span>${dlg.prods.map(p => `<span class="pk">${esc(p.name)}<button type="button" data-unprod="${esc(p.seq)}" aria-label="${esc(p.name)} 빼기">✕</button></span>`).join('')}` : '';
+}
+$('#seedBox').addEventListener('input', e => { if (e.target.id === 'seed') paintHits(); });
+$('#seedBox').addEventListener('click', e => {
+  const h = e.target.closest('[data-prod]');
+  if (h) { const seq = h.dataset.prod, p = PRODS.find(x => String(x.seq) === seq), i = dlg.prods.findIndex(x => x.seq === seq);
+    if (i >= 0) dlg.prods.splice(i, 1); else if (dlg.prods.length < 10) { dlg.prods.push({ seq, name: p.name }); if (!$('#seed').value.trim() || dlg.prods.length === 1) $('#seed').value = p.name.slice(0, 40); }
+    paintProds(); paintHits(); return; }
+  const u = e.target.closest('[data-unprod]'); if (u) { dlg.prods = dlg.prods.filter(x => x.seq !== u.dataset.unprod); paintProds(); paintHits(); }
+});
 function syncDate() { const off = $('#noDate').checked; $('#dStart').disabled = off; $('#dEnd').disabled = off; }
 
 // ---------------- 이벤트 ----------------
@@ -334,7 +375,11 @@ document.addEventListener('click', e => {
   const af = e.target.closest('[data-after]');
   if (af) { const x = EVENTS.find(ev => ev.id === af.dataset.after), s = add(x.e, 1); openStart({ s, e: add(s, 13), why: `${x.name}이 끝난 다음 날부터 2주예요.` }); return; }
   const t = e.target.closest('[data-type]'); if (!t) return;
-  if (t.dataset.type === 'gap') { const [s, en] = t.dataset.id.split('|'); openStart({ s, e: diff(s, en) > 13 ? add(s, 13) : en, why: `빈 구간(${md(s)}~${md(en)})에서 시작해요. 2주를 넘으면 2주까지만 넣었어요.` }); return; }
+  // 빈 기간에서 시작: 2주는 규칙이 아니라 '보통 프로모션 길이'라는 기본 제안 (plans/20 §4-1). 더 길면 그 이유와 [빈 기간 전체로]를 같이
+  if (t.dataset.type === 'gap') { const [s, en] = t.dataset.id.split('|'), n = diff(s, en) + 1;
+    if (n <= 14) openStart({ s, e: en, why: `빈 기간 ${md(s)}~${md(en)} (${n}일) 전체를 기간으로 넣었어요.` });
+    else openStart({ s, e: add(s, 13), why: `빈 기간이 ${md(s)}~${md(en)} (${n}일)이에요. 보통 프로모션 길이인 2주(${md(s)}~${md(add(s, 13))})로 넣었어요.`, full: [s, en] });
+    return; }
   selected = isSel(t.dataset.type, t.dataset.id) ? null : { type: t.dataset.type, id: t.dataset.id };
   render();
 });
@@ -344,24 +389,36 @@ $('#prevBtn').addEventListener('click', () => { if (view === 'tl') start = add(s
 $('#nextBtn').addEventListener('click', () => { if (view === 'tl') start = add(start, 28); else shiftMonth(1); render(); });
 $('#todayBtn').addEventListener('click', () => { start = add(mondayOf(TODAY), -7); month = TODAY.slice(0, 7) + '-01'; render(); });
 
-// 기간 고르기: 타임라인의 '기간 고르기' 줄, 캘린더의 날짜 칸을 끌어서 범위 선택 → 시작 창
-let drag = null;
-const pickAt = e => document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-pick]');
-function paintDrag() { $$('[data-pick]').forEach(c => c.classList.toggle('sel', !!drag && c.dataset.pick >= drag.a && c.dataset.pick <= drag.b)); }
-document.addEventListener('pointerdown', e => {
+// 기간 고르기 (2026-11-10): 끌기 대신 시작일 누르기 → 끝나는 날 누르기. 고르는 중(점선)과 확정(실선, 시작 창이 열린 동안)을 구분.
+// 타임라인의 '기간 고르기' 줄과 캘린더의 날짜 칸 모두. 마우스를 올리면 고를 범위를 미리 보여 주고, Esc로 취소
+let pickA = null, pickHover = null, pickDone = null;
+function paintPick() {
+  const a = pickA, b = pickHover || pickA;
+  const lo = a && (a < b ? a : b), hi = a && (a < b ? b : a);
+  $$('[data-pick]').forEach(c => {
+    const d = c.dataset.pick;
+    c.classList.toggle('sel', !!a && d >= lo && d <= hi);
+    c.classList.toggle('anchor', d === a);
+    c.classList.toggle('done', !!pickDone && d >= pickDone[0] && d <= pickDone[1]);
+  });
+  const h = $('#pickHint'); if (!h) return;
+  h.classList.toggle('on', !!a);
+  h.textContent = a ? `시작일 ${md(a)}을 골랐어요. 끝나는 날을 눌러 주세요. 같은 날을 한 번 더 누르면 하루짜리예요 (Esc: 취소)`
+    : '빈 날짜를 눌러 시작일을 고르고, 한 번 더 눌러 끝나는 날을 고르면 새 기획안을 시작해요.';
+}
+document.addEventListener('click', e => {
   if (e.target.closest('button, dialog')) return;
   const c = e.target.closest('[data-pick]'); if (!c) return;
-  e.preventDefault(); drag = { o: c.dataset.pick, a: c.dataset.pick, b: c.dataset.pick }; paintDrag();
+  const d = c.dataset.pick;
+  if (!pickA) { pickA = d; pickHover = null; paintPick(); return; }
+  const a = pickA < d ? pickA : d, b = pickA < d ? d : pickA;
+  pickA = pickHover = null; pickDone = [a, b]; paintPick();
+  openStart({ s: a, e: b, why: `고른 기간 ${md(a)}~${md(b)} (${diff(a, b) + 1}일)을 넣었어요.` });
 });
-document.addEventListener('pointermove', e => {
-  if (!drag) return; const c = pickAt(e); if (!c) return;
-  const d = c.dataset.pick; drag.a = d < drag.o ? d : drag.o; drag.b = d < drag.o ? drag.o : d; paintDrag();
-});
-document.addEventListener('pointerup', () => {
-  if (!drag) return; const { a, b } = drag; drag = null; paintDrag();
-  const single = a === b;
-  openStart({ s: a, e: single ? add(a, 13) : b, why: single ? `${md(a)}부터 2주로 넣었어요. 끌면 원하는 기간을 고를 수 있어요.` : '고른 기간을 넣었어요.' });
-});
+document.addEventListener('pointerover', e => { if (!pickA) return; const c = e.target.closest('[data-pick]'); if (c && c.dataset.pick !== pickHover) { pickHover = c.dataset.pick; paintPick(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && pickA) { pickA = pickHover = null; paintPick(); } });
+$('#startDlg').addEventListener('close', () => { pickDone = null; paintPick(); });
+$('#startDlg').addEventListener('click', e => { const f = e.target.closest('[data-fullgap]'); if (!f) return; const [s, en] = f.dataset.fullgap.split('|'); $('#dStart').value = s; $('#dEnd').value = en; $('#dateHelp').textContent = `빈 기간 전체(${md(s)}~${md(en)}, ${diff(s, en) + 1}일)로 바꿨어요.`; });
 
 // 시작 창 안
 $('#clsChips').addEventListener('click', e => {
@@ -370,7 +427,7 @@ $('#clsChips').addEventListener('click', e => {
 });
 $('#seedBox').addEventListener('click', e => { const o = e.target.closest('[data-m]'); if (o) { dlg.m = o.dataset.m; paintDlg(); } });
 $('#noDate').addEventListener('change', syncDate);
-$('#dStart').addEventListener('change', () => { if ($('#dStart').value) { $('#dEnd').value = add($('#dStart').value, 13); $('#dateHelp').textContent = '시작일에서 2주로 맞췄어요.'; } if (dlg.cls === 'season') paintDlg(); });
+$('#dStart').addEventListener('change', () => { if ($('#dStart').value) { $('#dEnd').value = add($('#dStart').value, 13); $('#dateHelp').textContent = '끝나는 날을 시작일 2주 뒤로 맞췄어요 (보통 프로모션 길이). 바꿔도 돼요.'; } if (dlg.cls === 'season') paintDlg(); });
 $('#startForm').addEventListener('submit', e => {
   if (e.submitter?.value !== 'go') return;
   if (!dlg.cls) { e.preventDefault(); toast('어떤 프로모션인지 골라 주세요'); return; }
@@ -383,7 +440,9 @@ $('#startForm').addEventListener('submit', e => {
   const m = dlg.cls === 'season' ? SEASONS.find(x => x.id === dlg.m) : null, sd = seed.slice(0, 20);
   const doc = { title: `${sd} 기획안`, origin: { type: m ? 'calendar' : 'brief', ref: m ? m.name.slice(0, 120) : '' },
     brief: { myeongbun: m ? m.name : '', period: noDate ? null : { start: s, end: en }, season_ref: m ? { name: m.name.slice(0, 30), date: m.d } : null },
-    v2: { cls: dlg.cls, seed: sd, keywords: [], stage: 'brief' } };
+    v2: { cls: dlg.cls, seed: sd, keywords: [], stage: 'brief' },
+    // 시작 창에서 고른 주인공 상품 → 후보 상품(pool). 상품·할인 화면의 '후보 상품'에 보이고, 브리프 '우리 데이터'에도 이름으로 연결
+    pool: (['brand', 'launch', 'clear'].includes(dlg.cls) ? dlg.prods : []).map(p => ({ seq: p.seq, items: null, memo: `${CLS[dlg.cls].seed[0]} (시작 창에서 고름)`.slice(0, 200), source: '시작 창' })) };
   const btn = e.submitter; if (btn) btn.disabled = true;
   v2api('/api/am/projects', doc).then(d => location.assign(`/v2/brief?id=${d.id}`))
     .catch(err => { if (btn) btn.disabled = false; toast(`기획안을 만들지 못했어요: ${err.message}`); });

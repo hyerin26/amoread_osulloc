@@ -5,6 +5,18 @@ document.addEventListener('click', e => {
   else location.assign('/v2/editor');
 });
 
+// 고정 머리막대(윗줄 + 기획안 막대) 높이 → CSS 변수 --v2-head-h (2026-11-10)
+// 고정 패널·'그 구좌로 이동'이 막대 밑에 가리지 않게. 좁은 화면에서 기획안 막대가 고정이 아니면 윗줄만 셈
+(() => {
+  const top = document.querySelector('.v2top'), plan = document.querySelector('.v2plan');
+  const set = () => {
+    const h = (top?.offsetHeight || 0) + (plan && getComputedStyle(plan).position === 'sticky' ? plan.offsetHeight : 0);
+    document.documentElement.style.setProperty('--v2-head-h', `${h}px`);
+  };
+  set(); addEventListener('resize', set);
+  if (window.ResizeObserver) { const ro = new ResizeObserver(set); [top, plan].forEach(el => el && ro.observe(el)); }
+})();
+
 // 기획안 막대의 [다음: …] 하나로 앞으로 간다 (2026-11-10 길잡이 정리).
 // 화면마다 원래 있던 다음 버튼(#nextBtn: 저장 마치기·반영 안 한 할인 확인 등)을 대신 눌러 같은 동작을 쓴다. 화면 안의 그 버튼은 CSS로 숨김.
 // plan.js의 '저장 기다렸다 이동' 처리보다 먼저 받아서 두 번 이동하지 않게 한다.
@@ -31,7 +43,7 @@ document.addEventListener('click', e => {
     '✦': '<path d="M12 3.5l1.9 5.6 5.6 1.9-5.6 1.9L12 18.5l-1.9-5.6L4.5 11l5.6-1.9z"/>',
     '▾': '<path d="M6 9l6 6 6-6"/>', '▸': '<path d="M9 6l6 6-6 6"/>', '›': '<path d="M9 6l6 6-6 6"/>',
   };
-  const NAME = { '↑': '위로', '↓': '아래로', '✕': '닫기', '★': '저장함', '☆': '저장하기', '+': '추가' };
+  const NAME = { '↑': '위로', '↓': '아래로', '✕': '닫기', '★': '즐겨찾기 해제', '☆': '즐겨찾기', '+': '추가' };
   const LEAD = /^(\s*)([↑↓←✕★☆✦+])(?=\s|$)\s*/, TAIL = /\s*([→▾▸›])(\s*)$/;
   const svg = (g, kind) => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); s.setAttribute('focusable', 'false'); s.setAttribute('class', `v2ic ${kind}`); s.innerHTML = P[g]; return s; };
   const fix = tn => {
@@ -43,11 +55,11 @@ document.addEventListener('click', e => {
     if ((m = LEAD.exec(t)) && P[m[2]]) {
       const g = m[2]; tn.nodeValue = t.slice(m[0].length);
       const solo = !host.textContent.trim();
-      el.insertBefore(svg(g, solo ? 'solo' : 'lead'), tn);
+      el.insertBefore(svg(g, solo ? 'v2ic-solo' : 'v2ic-l'), tn);
       if (solo && !host.getAttribute('aria-label')) host.setAttribute('aria-label', host.title || NAME[g] || '');
       t = tn.nodeValue;
     }
-    if ((m = TAIL.exec(t)) && P[m[1]]) { tn.nodeValue = t.slice(0, m.index); el.insertBefore(svg(m[1], 'tail'), tn.nextSibling); }
+    if ((m = TAIL.exec(t)) && P[m[1]]) { tn.nodeValue = t.slice(0, m.index); el.insertBefore(svg(m[1], 'v2ic-r'), tn.nextSibling); }
   };
   const scan = root => {
     if (root.nodeType === 3) { fix(root); return; }
@@ -85,6 +97,7 @@ document.addEventListener('click', e => {
     btn.dataset.kind = kind;
     btn.innerHTML = `<span class="dot" aria-hidden="true"></span>${{ real: '실제 데이터', mix: '실제 데이터 · 일부 예시', demo: '예시 데이터' }[kind]}`;
     btn.title = '이 화면의 숫자가 어디서 왔는지 보기';
+    btn.setAttribute('aria-label', `데이터 출처: ${{ real: '실제 데이터', mix: '실제 데이터 · 일부 예시', demo: '예시 데이터' }[kind]}`);   // 폰 폭에서는 글자를 숨기고 점만 보여서
   };
   const set = open => { demo.classList.toggle('open', open); btn.setAttribute('aria-expanded', String(open)); };
   btn.addEventListener('click', () => set(!demo.classList.contains('open')));

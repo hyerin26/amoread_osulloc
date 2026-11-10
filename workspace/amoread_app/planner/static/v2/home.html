@@ -51,16 +51,19 @@
         </div>
         <span class="cap" id="rangeCap"></span>
         <span class="grow"></span>
-        <button class="btn sm ghost" id="prevBtn"></button>
-        <button class="btn sm ghost" id="todayBtn">오늘</button>
-        <button class="btn sm ghost" id="nextBtn"></button>
+        <div class="pager" role="group" aria-label="기간 이동">
+          <button class="btn sm ghost" id="prevBtn"><svg class="v2ic v2ic-l" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 6-6 6 6 6"/></svg><span id="prevTxt">이전 4주</span></button>
+          <button class="btn sm ghost" id="todayBtn">오늘</button>
+          <button class="btn sm ghost" id="nextBtn"><span id="nextTxt">다음 4주</span><svg class="v2ic v2ic-r" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg></button>
+        </div>
       </div>
+      <p class="pickhint" id="pickHint" aria-live="polite">빈 날짜를 눌러 시작일을 고르고, 한 번 더 눌러 끝나는 날을 고르면 새 기획안을 시작해요.</p>
       <div class="tl-scroll" id="tlWrap"><div class="tl" id="tl" aria-label="프로모션 일정 타임라인"></div></div>
       <div id="calWrap" class="hidden" aria-label="프로모션 일정 캘린더"></div>
       <div class="legend" aria-label="범례">
         <span><i class="c-season"></i>시즌</span><span><i class="c-brand"></i>브랜드기획전</span><span><i class="c-launch"></i>런칭</span>
         <span><i class="c-collab"></i>콜라보</span><span><i class="c-clear"></i>클리어런스</span>
-        <span><i class="plan"></i>내 기획안 (준비 중)</span><span><i class="gap"></i>빈 구간</span><span><i class="dia"></i>명분 (누르면 준비 기간 표시)</span>
+        <span><i class="plan"></i>내 기획안 (준비 중)</span><span><i class="gap"></i>빈 기간 (걸린 페이지 없음)</span><span><i class="dia"></i>명분 (누르면 준비 기간 표시)</span>
       </div>
       <div class="undated" id="undated"></div>
     </section>
@@ -90,7 +93,7 @@
       <div class="dates"><input type="date" id="dStart" aria-label="시작일"> <span>~</span> <input type="date" id="dEnd" aria-label="종료일"></div>
       <label class="ck"><input type="checkbox" id="noDate"> 날짜는 나중에 정할게요</label>
       <span class="h" id="dateHelp"></span>
-      <span class="h">다른 페이지와 기간이 겹쳐도 돼요.</span>
+      <span class="h">몰에 걸린 다른 페이지와 기간이 겹쳐도 만들 수 있어요.</span>
     </div>
     <div class="foot">
       <button class="btn" value="cancel" formnovalidate>취소</button>

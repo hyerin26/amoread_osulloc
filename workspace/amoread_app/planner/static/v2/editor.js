@@ -47,7 +47,7 @@ const MOODS = {
   m3: { name: '보온병 들고 산책', src: '핀터레스트 보드 · 아웃도어', r: [9, 16] }, m4: { name: '벚꽃 아래 찻잔', src: '자사몰 지난 행사 일부', r: [3, 4] },
 };
 const BRIEF_MOODS = [['m1', ['색감', '소품']], ['m2', ['색감']]];
-const POINTS = ['색감', '구도', '소품', '글씨', '카피 톤'];
+const POINTS = ['색감', '구도', '소품', '글씨체', '카피 톤'];
 
 // 구좌 종류: 묶음(상품 / 안내·이야기 / 이벤트 / 후기). kind = 패널에서 어떤 탭을 보일지
 const LAYOUTS = [
@@ -82,7 +82,10 @@ const PILLS = [['', '없음'], ['up', '가격 오름 예고 (특가 종료 시 n
 const EFFICACY = ['면역', '다이어트', '치료', '개선', '예방', '해독'];   // 지금 툴 engine.efficacy_flags와 같은 쪽의 검사 (예시 단어)
 let END = '2026-03-15';
 
-let uidN = 0; const uid = p => `${p}${++uidN}`;
+// 아이디: 화면을 열 때마다 다른 앞머리(시간·난수)를 붙여 저장된 기획안의 아이디와 겹치지 않게 (2026-11-10)
+// 전에는 c1, c2…처럼 번호만 써서, 예시 데이터가 먼저 쓴 번호와 저장된 다른 구좌의 카드 번호가 겹쳐 한 카드를 고르면 다른 카드도 같이 골라졌다
+let uidN = 0; const UID_SALT = Date.now().toString(36).slice(-4) + Math.random().toString(36).slice(2, 5);
+const uid = p => `${p}${UID_SALT}${(++uidN).toString(36)}`;
 const slot = (seq = null, x = {}) => ({ id: uid('c'), seq, copy: '', label: '', tag: '', pill: '', pillText: '', btn: '', off: [], ...x });
 const cardShape = preset => ({ order: [...ORDER], on: { ...PRESETS[preset] }, def: { ...DEF0 } });
 let secs = [
@@ -107,7 +110,9 @@ secs.forEach(s => { s.name = s.headline || s.name; s.role = s.role || s.subhead 
 secs.find(s => s.id === 's2').lines = [{ id: 'l1', text: '오늘 돗자리 위에 처음 따를 차를 골라 보세요' }];
 // ================= 상태 =================
 let moodLink = false;   // 느낌 레퍼런스 '링크 붙이기' 칸 펼침
-let cur = 's2', tab = 'shape', drafts = {}, saved = new Set(), openJudge = null, openMore = null, pickFor = null, pickTab = 'plan', q = '', moodAdd = false;
+// openMore = 카드 문구를 펼쳐 둔 카드들 (여러 장 동시에, 2026-11-10). 카드 아이디가 겹치지 않아 구좌를 옮겨도 각자 상태를 지킴
+let cur = 's2', tab = 'shape', drafts = {}, saved = new Set(), openJudge = null, openMore = new Set(), pickFor = null, pickTab = 'plan', q = '', moodAdd = false, refMore = false;
+const cardOfEl = (s, el) => { const id = el?.closest?.('[data-slot]')?.dataset.slot; return id ? allCards(s).find(x => x.id === id) : null; };
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const won = n => n == null ? '' : `${Math.round(n).toLocaleString('ko-KR')}원`;
@@ -201,7 +206,7 @@ function wCard(c, s) {
     copy: () => { const t = valOf(c, s, 'copy'); return t ? `<span>${esc(t)}</span>` : gap('카드 문구 비어 있음'); },
     btn: () => { const t = valOf(c, s, 'btn'); return t ? `<span class="bt">${esc(t)}</span>` : gap('버튼 문구 비어 있음'); } };
   // 가격 줄: 정가·1단은 위 줄, 할인율·가격 이름·판매가는 한 줄 (판매가를 끄면 줄 전체를 그리지 않음)
-  return `<div class="w-card ${has ? 'f' : 'ph'}${c.id === openMore ? ' sel' : ''}" data-card="${c.id}">${s.card.order.filter(k => on(k) || (k === 'sale' && (on('pct') || on('pname')))).map(k => parts[k]()).join('')}${has ? '' : '<span class="hint">상품 고르기</span>'}</div>`;
+  return `<div class="w-card ${has ? 'f' : 'ph'}${openMore.has(c.id) ? ' sel' : ''}" data-card="${c.id}">${s.card.order.filter(k => on(k) || (k === 'sale' && (on('pct') || on('pname')))).map(k => parts[k]()).join('')}${has ? '' : '<span class="hint">상품 고르기</span>'}</div>`;
 }
 function wBody(s) {
   const k = kindOf(s.layout);
@@ -228,6 +233,7 @@ function wBody(s) {
   return '<div class="w-lines"><span></span><span></span></div>';
 }
 function renderPhone() {
+  if (!secs.length) { $('#phone').innerHTML = '<div class="w-empty"><b>빈 페이지</b><span class="cap">구좌를 추가하면 여기에 페이지 모양이 그려져요</span><button class="btn sm primary" data-secaddopen>첫 구좌 추가</button></div>'; return; }
   $('#phone').innerHTML = secs.map((s, i) => {
     const lines = s.lines.filter(l => l.text).map(l => `<span class="role">${esc(l.text)}</span>`).join('');
     const head = s.layout === 'hero' ? '' : `${s.num ? `<span class="num">${String(numOf(s)).padStart(2, '0')}</span>` : ''}<h4>${esc(s.name)}</h4>${s.role ? `<span class="role">${esc(s.role)}</span>` : ''}${lines}`;
@@ -242,10 +248,18 @@ function tabsFor(s) {
   return [['copy', '문구'], ...mid, ['refs', '레퍼런스'], ['notes', '디자인 요청']];
 }
 function renderPanel() {
-  const s = S(), i = secs.indexOf(s), tabs = tabsFor(s);
+  const s = S();
+  if (!s) {   // 구좌가 하나도 없을 때: 추천 구성에서 시작하거나 빈 페이지에서 직접 (2026-11-10)
+    $('#panel').innerHTML = `<div class="ph-b empty-st"><h2>아직 구좌가 없어요</h2><p class="hint">구좌 구성 추천에서 고르거나, 빈 페이지에서 필요한 구좌를 하나씩 추가해 만들 수 있어요. 추가한 구좌는 종류·순서를 언제든 바꿀 수 있어요.</p>
+      <div class="chips-row"><button class="btn sm primary" data-secaddopen>첫 구좌 추가</button>${PLAN.id ? `<a class="btn sm" href="/v2/compose?id=${PLAN.id}">구좌 구성 추천 받기</a>` : ''}</div></div>`;
+    return;
+  }
+  const i = secs.indexOf(s), tabs = tabsFor(s);
   if (!tabs.some(t => t[0] === tab)) tab = tabs[1]?.[0] === 'refs' ? 'copy' : tabs[1][0];
-  $('#panel').innerHTML = `<div class="ph-h"><div class="overline">${String(i + 1).padStart(2, '0')} 구좌 · ${esc(LNAME[s.layout])}</div><h2>${esc(s.name)}</h2>
-      <div class="row"><span class="cap">구좌 종류</span><select data-layout aria-label="구좌 종류 바꾸기 (문구·메모는 그대로)">${LAYOUTS.map(([g, ls]) => `<optgroup label="${g}">${ls.map(([k, n]) => `<option value="${k}" ${s.layout === k ? 'selected' : ''}>${n}</option>`).join('')}</optgroup>`).join('')}</select></div></div>
+  $('#panel').innerHTML = `<div class="ph-h"><div class="ph-title"><h2>${esc(s.name || '제목 없는 구좌')}</h2>
+        <span class="ph-acts"><button class="btn xs ghost" data-secdup title="이 구좌를 바로 아래에 복제">복제</button><button class="btn xs ghost danger" data-secdel title="이 구좌 지우기">삭제</button></span></div>
+      <div class="overline">${String(i + 1).padStart(2, '0')}번째 구좌 · ${esc(LNAME[s.layout])}</div>
+      <label class="row"><span class="cap">구좌 종류</span><select data-layout aria-label="구좌 종류 바꾸기 (문구·메모는 그대로)">${LAYOUTS.map(([g, ls]) => `<optgroup label="${g}">${ls.map(([k, n]) => `<option value="${k}" ${s.layout === k ? 'selected' : ''}>${n}</option>`).join('')}</optgroup>`).join('')}</select></label></div>
     <div class="ph-tabs"><div class="seg" role="tablist" aria-label="편집 패널">${tabs.map(([k, n]) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}">${n}${k === 'refs' && (s.att.length + s.moods.length) ? ` ${s.att.length + s.moods.length}` : ''}</button>`).join('')}</div></div>
     <div class="ph-b" id="pbody">${({ copy: copyTab, shape: shapeTab, products: productsTab, event: eventTab, review: reviewTab, refs: refsTab, notes: notesTab })[tab](s)}</div>`;
 }
@@ -259,7 +273,7 @@ function copyTab(s) {
     <label class="f"><span>설명 <em>(선택) 제목 아래 한두 줄</em></span><textarea data-sf="role" maxlength="200" rows="2" placeholder="예) 첫 인사를 건네며 입맛을 돋궈줄 차">${esc(s.role)}</textarea></label>
     ${s.lines.map((l, j) => `<div class="f"><span class="l">추가 문구 ${j + 1}</span><div class="lnrow"><input type="text" data-line="${j}" maxlength="120" value="${esc(l.text)}" aria-label="추가 문구 ${j + 1}">
       <span class="tools"><button class="ib" data-linemv="${j}:-1" ${j ? '' : 'disabled'} aria-label="위로">↑</button><button class="ib" data-linemv="${j}:1" ${j < s.lines.length - 1 ? '' : 'disabled'} aria-label="아래로">↓</button><button class="ib" data-linedel="${j}" aria-label="추가 문구 ${j + 1} 삭제">✕</button></span></div></div>`).join('')}
-    <div class="chips-row"><button class="btn xs" data-lineadd>+ 문구 한 줄 추가</button><button class="btn xs" data-toast="예시예요: 제목·설명·추가 문구를 AI가 다듬은 안을 옆에 보여 주고, 고르면 바뀌어요. 보내는 것: 이 구좌 문구와 담긴 상품 이름뿐">✦ AI로 문구 다듬기</button></div>
+    <div class="chips-row"><button class="btn xs" data-lineadd>+ 문구 한 줄 추가</button><button class="btn xs" disabled title="AI 문구 다듬기는 아직 연결 전이에요">AI로 문구 다듬기 · 준비 중</button></div>
     <div class="f"><span class="l">버튼</span><label class="ck"><input type="checkbox" data-ctaon ${s.ctaOn ? 'checked' : ''}> 이 구좌에 버튼 넣기</label>
       ${s.ctaOn ? `<div class="two"><label class="f"><span class="hint">버튼 문구</span><input type="text" data-sf="cta" maxlength="30" value="${esc(s.cta)}" placeholder="${k === 'product' ? '예) 티백 더보기' : k === 'event' ? '예) 참여하기' : '예) 혜택 받기'}"></label>
         <label class="f"><span class="hint">어디로 <em>(선택)</em></span><input type="text" data-sf="ctaTo" maxlength="60" value="${esc(s.ctaTo)}" placeholder="예) 티백 카테고리, 쿠폰 받기"></label></div>` : '<span class="hint">버튼 없이 둬요. 언제든 다시 켤 수 있어요.</span>'}</div>
@@ -306,12 +320,13 @@ function productsTab(s) {
   return `    ${tabsEd}
     <p class="hint">카드에 무엇을 보일지는 '카드 모양' 탭에서 정해요. 여기서는 상품·할인과 카드마다의 글(▸ 카드 문구)을 다뤄요. 와이어프레임의 카드를 눌러도 열려요.</p>
     <div class="f"><span class="l">카드${s.tabs ? ` · '${esc(s.tabs[s.tab].name)}' 탭` : ''} <em>${cards.filter(c => c.seq).length}/${cards.length}칸 · 할인율은 1단(할인 행), 금액은 최종가</em></span>
+      ${cards.length > 1 ? `<div class="chips-row"><span class="hint">카드 문구는 여러 장을 함께 펼쳐 고칠 수 있어요</span><span class="grow"></span><button class="btn xs ghost" data-moreall="open">모두 펼치기</button><button class="btn xs ghost" data-moreall="close">모두 접기</button></div>` : ''}
       <ul class="slots">${cards.map((c, k) => slotHTML(c, k, s)).join('')}</ul>
       <div><button class="btn xs" data-addcard>+ 빈 카드</button></div></div>
     ${nDraft ? `<div class="applybar" role="status"><span class="grow">할인 ${nDraft}건을 바꿨어요. 반영하면 상품·할인에도 같은 값이 들어가요</span><button class="btn xs" data-undo>되돌리기</button><button class="btn xs primary" data-apply>반영</button></div>` : ''}`;
 }
 function slotHTML(c, k, s) {
-  const open = openMore === c.id, g = gapsOf(s, c).length, more = `<button class="btn xs" data-more="${c.id}" aria-expanded="${open}">${open ? '▾' : '▸'} 카드 문구${g ? ` · 빈 칸 ${g}` : ''}</button>`;
+  const open = openMore.has(c.id), g = gapsOf(s, c).length, more = `<button class="btn xs" data-more="${c.id}" aria-expanded="${open}">${open ? '▾' : '▸'} 카드 문구${g ? ` · 빈 칸 ${g}` : ''}</button>`;
   if (!c.seq) return `<li class="slot" data-slot="${c.id}"><div class="row1"><span class="nm none">카드 ${k + 1} · 상품 미정</span><span></span>${more}<button class="btn xs primary" data-pick="${c.id}">상품 고르기</button></div>${open ? cardMore(c, s) : ''}</li>`;
   const p = P[c.seq], pr = priceOf(c.seq), j = judge(c.seq), it = itemOf(c.seq);
   return `<li class="slot" data-slot="${c.id}"><div class="row1"><span class="nm" title="${esc(p.name)}">${esc(p.name)}</span>
@@ -374,7 +389,7 @@ function reviewTab(s) {
           <button class="btn xs ${pk ? '' : 'primary'}" data-rvpick="${gi}|${v.id}">${pk ? '빼기' : '고르기'}</button></span>
         <span class="body">${esc(v.text)}</span>
         ${pk ? `<label class="f"><span>한 줄 제목 <em>(선택) ${esc(pk.titleSrc)}</em></span><input type="text" data-rvtitle="${gi}|${v.id}" maxlength="40" value="${esc(pk.title)}" placeholder="예) 작고 간편해서 매일 손이 가요">
-          <span class="chips-row"><button class="chip" data-toast="예시예요: AI가 후기로 한 줄 제목을 제안해요 (검토 필요 표시와 함께)">AI 제목 제안 (연결 예정)</button></span></label>` : ''}</div>`; }).join('') || '<p class="hint">이 상품 후기가 아직 없어요</p>'}</div></div>`;
+          <span class="chips-row"><button class="chip" disabled title="AI 제목 제안은 아직 연결 전이에요">AI 제목 제안 · 준비 중</button></span></label>` : ''}</div>`; }).join('') || '<p class="hint">이 상품 후기가 아직 없어요</p>'}</div></div>`;
   };
   return `<div class="f"><span class="l">모양</span><div class="chips-row">${[['per', '상품별 후기 묶음'], ['mix', '후기 모음 (여러 상품)']].map(([v, n]) => `<button class="chip" data-rvshape="${v}" aria-pressed="${rv.shape === v}">${n}</button>`).join('')}</div>
       <span class="hint">상품 카드 안에 후기 한 줄을 넣으려면 상품 구좌의 카드 모양에서 '고객 후기 한 줄'을 켜요.</span></div>
@@ -393,41 +408,65 @@ function demoImg(w, h) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w * 40}" height="${h * 40}"><defs><pattern id="p" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="16" fill="#f3f3f3"/></pattern></defs><rect width="100%" height="100%" fill="#ffffff"/><rect width="100%" height="100%" fill="url(#p)"/><rect x="0.5" y="0.5" width="${w * 40 - 1}" height="${h * 40 - 1}" fill="none" stroke="#dedede"/></svg>`;
   return `<img src="data:image/svg+xml,${encodeURIComponent(svg)}" alt="">`;
 }
-function refsTab(s) {
-  const cand = s.refs.concat(Object.keys(REFS).filter(k => !s.refs.includes(k) && REFS[k].layout === s.layout).slice(0, 1));
-  return `<p class="hint">이 구좌에 참고할 <b>원본 구좌 레퍼런스</b>예요. 자사몰과 외부 페이지에서 잘라 낸 구좌예요.</p>
-    <div class="refs">${cand.map(k => { const r = REFS[k], att = s.att.some(a => a.ref === k), canLay = r.layout && r.layout !== s.layout;
-      return `<div class="ref ${att ? 'att' : ''}"><span class="thumb">${demoImg(r.r[0], r.r[1])}</span><div>
-        <div class="rn">${esc(r.name)}</div><div class="cap"><span class="tag ${r.from === '자사몰' ? 'real' : ''}">${r.from}</span> ${esc(r.page)}</div><div class="why">${esc(r.why)}</div>
+function refCard(s, k) {
+  const r = REFS[k], att = s.att.some(a => a.ref === k), canLay = r.layout && r.layout !== s.layout;
+  return `<div class="ref ${att ? 'att' : ''}"><span class="thumb">${r.img ? `<img src="${esc(r.img)}" alt="">` : demoImg(r.r[0], r.r[1])}</span><div>
+        <div class="rn">${esc(r.name)}</div><div class="cap"><span class="tag ${r.from === '자사몰' ? 'real' : ''}">${esc(r.from)}</span> ${esc(r.page || '')}</div><div class="why">${esc(r.why || '')}</div>
         <div class="ra"><button class="btn xs" data-refview="${k}">미리보기</button>
           <button class="btn xs ${att ? '' : 'primary'}" data-refatt="${k}" aria-pressed="${att}">${att ? '참고에서 빼기' : '참고로 붙이기'}</button>
-          <button class="btn xs" data-reflay="${k}" ${canLay ? '' : 'disabled'} title="${!canLay ? '지금과 같은 레이아웃이에요' : `${LNAME[r.layout]}로 바꿔요 · 문구·메모는 그대로`}">레이아웃 가져오기</button>
-          <button class="btn xs ghost" data-refsave="${k}" aria-pressed="${saved.has(k)}">${saved.has(k) ? '★ 저장됨' : '☆ 저장'}</button></div></div></div>`; }).join('') || '<p class="hint">이 구좌 종류의 예시가 아직 없어요</p>'}</div>
-    <button class="btn sm" data-toast="예시예요: 레퍼런스 라이브러리(전체 프로모션·구좌별·느낌·이벤트 아이디어)를 열어요">라이브러리에서 더 찾기</button>
+          ${r.layout ? `<button class="btn xs" data-reflay="${k}" ${canLay ? '' : 'disabled'} title="${!canLay ? '지금과 같은 레이아웃이에요' : `${LNAME[r.layout]}로 바꿔요 · 문구·메모는 그대로`}">레이아웃 가져오기</button>` : ''}
+          <button class="btn xs ghost" data-refsave="${k}" aria-pressed="${saved.has(k)}">${saved.has(k) ? '★ 즐겨찾기 해제' : '☆ 즐겨찾기'}</button></div></div></div>`;
+}
+function refsTab(s) {
+  const cand = s.refs.concat(Object.keys(REFS).filter(k => !s.refs.includes(k) && REFS[k].layout === s.layout).slice(0, 1));
+  // 더 찾기: 위에 없는 레퍼런스 전부 (같은 구좌 종류 먼저). 라이브러리에 사진·핀터레스트로 모은 것도 여기 나와요
+  const more = Object.keys(REFS).filter(k => !cand.includes(k)).sort((a, b) => (REFS[b].layout === s.layout) - (REFS[a].layout === s.layout));
+  const moreBox = !refMore ? '' : `<div class="refmore" role="region" aria-label="레퍼런스 더 찾기">
+      ${more.length ? `<p class="hint">${more.length}개 · 같은 구좌 종류(${esc(LNAME[s.layout])}) 먼저</p><div class="refs">${more.map(k => refCard(s, k)).join('')}</div>`
+        : '<div class="empty-st"><b>더 보여 드릴 레퍼런스가 없어요</b><p class="hint">레퍼런스 라이브러리에서 핀터레스트 보드를 연결하거나 이미지·링크를 직접 추가하면 여기에서도 고를 수 있어요.</p></div>'}
+      <a class="btn xs" href="/v2/library" target="_blank" rel="noopener">레퍼런스 라이브러리 새 탭으로 열기</a></div>`;
+  return `<p class="hint">이 구좌에 참고할 <b>원본 구좌 레퍼런스</b>예요. 자사몰과 외부 페이지에서 잘라 낸 구좌예요.</p>
+    <div class="refs">${cand.map(k => refCard(s, k)).join('') || '<p class="hint">이 구좌 종류의 예시가 아직 없어요</p>'}</div>
+    <button class="btn sm" data-refmore aria-expanded="${refMore}">${refMore ? '더 찾기 닫기' : `레퍼런스 더 찾기 (${more.length})`}</button>
+    ${moreBox}
     ${moodBlock(s)}`;
 }
 function moodBlock(s) {
-  const ms = s.moods, left = Object.keys(MOODS).filter(k => !ms.some(m => m.id === k));
+  const ms = s.moods, left = Object.keys(MOODS).filter(k => !ms.some(m => m.id === k)).sort((a, b) => (MOODS[b].lib ? 2 + (MOODS[b].fav ? 1 : 0) : 0) - (MOODS[a].lib ? 2 + (MOODS[a].fav ? 1 : 0) : 0));
   return `<div class="f"><span class="sub">느낌 레퍼런스 <span class="hint">이 구좌의 색감·연출 참고 · 구조가 없어 레이아웃은 가져오지 않아요</span></span>
-    ${ms.map(m => { const r = MOODS[m.id]; return `<div class="ref att"><span class="thumb">${moodThumb(r)}</span><div>
-      <div class="rn">${esc(r.name)}</div><div class="cap">${esc(r.src)} <span class="tag demo-t">예시</span></div>
-      <div class="ra"><span class="cap">참고할 점</span>${POINTS.map(p => `<button class="pt" data-mpt="${m.id}|${p}" aria-pressed="${m.pts.has(p)}">${p}</button>`).join('')}</div>
+    ${ms.map(m => { const r = moodOf(m.id); return `<div class="ref att"><span class="thumb">${moodThumb(r)}</span><div>
+      <div class="rn">${esc(r.name)}</div><div class="cap">${esc(r.src)} ${r.lib ? '<span class="tag real">라이브러리</span>' : r.gone ? '' : '<span class="tag demo-t">예시</span>'}</div>
+      <div class="ra" role="group" aria-label="이 이미지에서 참고할 것"><span class="cap">참고할 것 <em>여러 개</em></span>${POINTS.map(p => `<button class="pt" data-mpt="${m.id}|${p}" aria-pressed="${m.pts.has(p)}">${p}</button>`).join('')}</div>
       <div class="ra"><button class="btn xs" data-mrm="${m.id}">빼기</button></div></div></div>`; }).join('')}
     <div><button class="btn xs" data-moodadd aria-expanded="${moodAdd}">+ 느낌 레퍼런스 추가</button> <label class="btn xs ghost">파일 첨부<input type="file" data-moodfile accept="image/*,.pdf" hidden></label> <button class="btn xs ghost" data-moodlink aria-expanded="${moodLink}">링크 붙이기</button></div>
     ${moodLink ? `<div class="two"><input type="text" id="moodUrl" placeholder="https://… (핀터레스트·외부 페이지 등)" aria-label="참고한 링크"><button class="btn xs primary" data-moodurl>붙이기</button></div>` : ''}
     <span class="hint">라이브러리에 없어도 그때 참고한 파일이나 링크를 붙일 수 있어요. 파일은 이 PC에서 미리보기만 하고, 링크는 주소만 저장해요 (열어 보지 않아요).</span>
-    ${moodAdd ? `<div class="moods">${left.map(k => { const r = MOODS[k]; return `<button class="mood" data-madd="${k}" title="${esc(r.src)}"><span class="thumb">${moodThumb(r)}</span><span class="cap">${esc(r.name)}</span></button>`; }).join('') || '<span class="hint">더 고를 예시가 없어요</span>'}</div>` : ''}</div>`;
+    ${moodAdd ? `<p class="hint">${libMoods === 'err' ? '라이브러리를 불러오지 못해 예시만 보여요.' : '레퍼런스 라이브러리에 담은 것(즐겨찾기 먼저) → 예시 순서예요.'} <a class="lnk" href="/v2/library" target="_blank" rel="noopener">라이브러리 열기</a></p><div class="moods">${left.map(k => { const r = MOODS[k]; return `<button class="mood" data-madd="${k}" title="${esc(r.src)}"><span class="thumb">${moodThumb(r)}</span><span class="cap">${r.fav ? '★ ' : ''}${esc(r.name)}${r.lib ? '' : ' · 예시'}</span></button>`; }).join('') || '<span class="hint">더 고를 레퍼런스가 없어요</span>'}</div>` : ''}</div>`;
 }
 // 직접 붙인 느낌 레퍼런스: 이미지 파일은 미리보기, PDF·링크는 종류 표시 (서버로 보내지 않는 목업)
+// 라이브러리(서버)에 저장된 레퍼런스를 느낌 목록에 더함 (2026-11-10). 기획안에는 id만 저장 → 불러오기 전·지운 뒤에도 깨지지 않게 moodOf
+var libMoods;   // var: 첫 그리기가 이 줄보다 먼저 돌아도 오류 없게 (undefined = 불러오는 중)
+function moodOf(id) { return MOODS[id] || { name: id.startsWith('own') ? (!libMoods ? '라이브러리 레퍼런스 (불러오는 중)' : '라이브러리에서 지운 레퍼런스') : '붙였던 파일·링크 (다시 붙여 주세요)', src: '', r: [3, 4], gone: true }; }
+async function loadLibMoods() {
+  try {
+    const d = await v2api('/api/am/references'), fav = new Set(d.favorites || []);
+    for (const x of d.items || []) {
+      const img = x.img_file ? `/refimg/own/${x.img_file}` : x.pin_img ? `/refimg/pin?u=${encodeURIComponent(x.pin_img)}` : '';
+      MOODS[x.id] = { name: x.name, src: x.source === 'Pinterest' ? 'Pinterest' : '라이브러리 · 직접 추가', img, kind: img ? undefined : '링크', url: x.link, r: [3, 4], lib: true, fav: fav.has(x.id) };
+    }
+    libMoods = 'ok';
+  } catch { libMoods = 'err'; }
+  if (tab === 'refs') renderPanel();
+}
 function moodThumb(r) { return r.img ? `<img src="${r.img}" alt="">` : r.kind ? `<span class="cap">${r.kind}</span>` : demoImg(r.r[0], r.r[1]); }
-function addMood(s, m) { const id = uid('u'); MOODS[id] = m; s.moods.push({ id, pts: new Set() }); moodLink = false; render(); toast('느낌 레퍼런스로 붙였어요. 참고할 점을 골라 주세요'); }
+function addMood(s, m) { const id = uid('u'); MOODS[id] = m; s.moods.push({ id, pts: new Set() }); moodLink = false; render(); toast('느낌 레퍼런스로 붙였어요. 이 이미지에서 참고할 것을 골라 주세요'); }
 function notesTab(s) {
   return `<label class="f"><span>디자이너에게 부탁할 것 <em>(선택)</em></span><textarea data-sf="notes" rows="5" maxlength="2000" placeholder="예) 피크닉 돗자리 위 연출 컷이 있으면 좋겠어요">${esc(s.notes)}</textarea></label>
     <div class="f"><span class="l">붙인 레퍼런스 <em>${s.att.length}개</em></span>${s.att.length ? s.att.map(a => { const r = REFS[a.ref]; return `<div class="ref att"><span class="thumb">${demoImg(r.r[0], r.r[1])}</span><div>
         <div class="rn">${esc(r.name)}</div><div class="cap">${r.from} · ${esc(r.page)}</div>
-        <input type="text" data-attnote="${a.ref}" value="${esc(a.note)}" maxlength="120" placeholder="이 레퍼런스에서 참고할 점" aria-label="${esc(r.name)} 참고할 점"></div></div>`; }).join('')
+        <input type="text" data-attnote="${a.ref}" value="${esc(a.note)}" maxlength="120" placeholder="예) 탭 모양과 가격 위치" aria-label="${esc(r.name)}에서 참고할 것"></div></div>`; }).join('')
       : '<p class="hint">레퍼런스 탭에서 [참고로 붙이기]를 누르면 여기 모여요.</p>'}</div>
-    <div class="f"><span class="l">이 구좌의 느낌 레퍼런스 <em>${s.moods.length}개</em></span><p class="hint">${s.moods.map(m => `${esc(MOODS[m.id].name)}${m.pts.size ? ` (${[...m.pts].join('·')})` : ''}`).join(' / ') || '레퍼런스 탭 아래에서 추가할 수 있어요.'}</p></div>
+    <div class="f"><span class="l">이 구좌의 느낌 레퍼런스 <em>${s.moods.length}개</em></span><p class="hint">${s.moods.map(m => `${esc(moodOf(m.id).name)}${m.pts.size ? ` (${[...m.pts].join('·')})` : ''}`).join(' / ') || '레퍼런스 탭 아래에서 추가할 수 있어요.'}</p></div>
     <div class="f"><span class="l">기획안 전체 느낌 <em>브리프에서 고름 · 모든 구좌 공통</em></span><p class="hint">${BRIEF_MOODS.map(([id, pts]) => `${esc(MOODS[id].name)} (${pts.join('·')})`).join(' / ')}</p></div>
     <p class="hint">미리보기·내보내기의 디자이너 기획안에 그대로 들어가요. 원가와 판정은 넣지 않아요.</p>`;
 }
@@ -460,7 +499,7 @@ function openPick(cardId) {
 // 와이어프레임에서 카드를 누르면: 그 구좌의 상품 탭에서 그 카드의 '카드 문구'를 펼침 (키보드는 상품 탭의 [▸ 카드 문구])
 function openCard(sid, cid) {
   cur = sid; const s = S(); if (s.tabs) s.tab = Math.max(0, s.tabs.findIndex(t => t.cards.some(c => c.id === cid)));
-  tab = 'products'; openMore = cid; openJudge = null; render();
+  tab = 'products'; openMore.add(cid); openJudge = null; render();
   document.querySelector(`[data-slot="${cid}"]`)?.scrollIntoView?.({ block: 'nearest' });
   refocus(`[data-slot="${cid}"] .more input, [data-slot="${cid}"] .more select`) || refocus(`[data-more="${cid}"]`);
 }
@@ -514,12 +553,21 @@ function dlg(o, h, sub, body, foot) { $('#dlgO').textContent = o; $('#dlgH').tex
 const refocus = sel => { const el = document.querySelector(sel); el?.focus(); return !!el; };
 document.addEventListener('click', e => {
   const t = e.target, s = S(), d = k => t.closest(`[data-${k}]`), v = k => d(k)?.dataset[k.replace(/-(.)/g, (_, c) => c.toUpperCase())];
+  // 구좌 추가·삭제·실행 취소 (구좌가 하나도 없어도 동작)
+  if (d('secaddopen') || t.closest('#secAdd')) { openAddSec(); return; }
+  if (d('secadd')) { addSec(v('secadd')); return; }
+  if (d('secdelgo')) { delSec(v('secdelgo')); return; }
+  if (d('dlgclose')) { $('#dlg').close(); return; }
+  if (d('toastundo') || t.closest('#undoBtn')) { undo(); return; }
+  if (t.closest('#redoBtn')) { redo(); return; }
+  if (d('refmore')) { refMore = !refMore; renderPanel(); refocus('[data-refmore]'); return; }
+  if (!s) return;
   if (d('lineadd')) { s.lines.push({ id: uid('l'), text: '' }); render(); refocus(`[data-line="${s.lines.length - 1}"]`); return; }
   if (d('linedel')) { s.lines.splice(+v('linedel'), 1); render(); return; }
   if (d('linemv')) { const [j, dd] = v('linemv').split(':').map(Number); [s.lines[j], s.lines[j + dd]] = [s.lines[j + dd], s.lines[j]]; render(); refocus(`[data-linemv="${j + dd}:${dd}"]`); return; }
   if (d('secmv')) { const [id, dd] = v('secmv').split(':'); if (moveSec(id, +dd)) { render(); refocus(`[data-secmv="${id}:${dd}"]:not([disabled])`) || refocus(`[data-sec="${id}"]`); } return; }
   if (t.closest('#phone [data-card]')) { openCard(t.closest('[data-sec]').dataset.sec, t.closest('[data-card]').dataset.card); return; }
-  if (d('sec')) { cur = v('sec'); openJudge = openMore = null; render(); return; }
+  if (d('sec')) { const fromList = !!t.closest('#secList'); cur = v('sec'); openJudge = null; render(); showSec(cur, fromList); return; }
   if (d('tab')) { tab = v('tab'); renderPanel(); refocus(`[data-tab="${tab}"]`); return; }
   if (d('close') || t.id === 'scrim') { closePick(); return; }
   if (d('ptab')) { pickTab = v('ptab'); openPick(pickFor); return; }
@@ -530,13 +578,17 @@ document.addEventListener('click', e => {
   if (d('upapply')) { liveOn ? applyCsv() : applyUpload(); return; }
   if (!s) return;
   if (d('judge')) { openJudge = openJudge === v('judge') ? null : v('judge'); renderPanel(); refocus(`[data-judge="${v('judge')}"]`); return; }
-  if (d('more')) { openMore = openMore === v('more') ? null : v('more'); renderPanel(); refocus(`[data-more="${v('more')}"]`); return; }
-  if (d('rmcard')) { const l = cardsOf(s); l.splice(l.findIndex(c => c.id === v('rmcard')), 1); render(); return; }
-  if (d('addcard')) { cardsOf(s).push(slot()); render(); return; }
+  if (d('more')) { const id = v('more'); openMore.has(id) ? openMore.delete(id) : openMore.add(id); renderPanel(); renderPhone(); refocus(`[data-more="${id}"]`); return; }
+  if (d('moreall')) { const all = cardsOf(s).map(c => c.id), open = v('moreall') === 'open'; all.forEach(id => open ? openMore.add(id) : openMore.delete(id)); renderPanel(); renderPhone(); refocus(`[data-moreall="${open ? 'close' : 'open'}"]`); return; }
+  // 카드 삭제: 상품이 든 카드도 확인창 없이 바로 지우고 [되돌리기]를 준다 (가벼운 편집). 구좌 삭제만 확인창
+  if (d('rmcard')) { const l = cardsOf(s), i = l.findIndex(c => c.id === v('rmcard')), c = l[i]; l.splice(i, 1); openMore.delete(c.id); render(); toast(c.seq ? `'${P[c.seq]?.name || c.seq}' 카드를 지웠어요` : '빈 카드를 지웠어요', true); return; }
+  if (d('addcard')) { const c = slot(); cardsOf(s).push(c); render(); refocus(`[data-pick="${c.id}"]`); return; }
+  if (d('secdel')) { askDelSec(s); return; }
+  if (d('secdup')) { dupSec(s); return; }
   if (d('preset')) { s.card.on = { ...PRESETS[v('preset')] }; render(); toast(`'${v('preset')}'로 맞췄어요. 요소마다 다시 켜고 끌 수 있어요`); return; }
   if (d('elmv')) { const [j, dd] = v('elmv').split(':').map(Number), o = s.card.order; [o[j], o[j + dd]] = [o[j + dd], o[j]]; render(); refocus(`[data-elmv="${j + dd}:${dd}"]`); return; }
   if (d('off')) { const [cid, k] = v('off').split('|'), c = allCards(s).find(x => x.id === cid); c.off = c.off.includes(k) ? c.off.filter(x => x !== k) : c.off.concat(k); render(); refocus(`[data-off="${cid}|${k}"]`); return; }
-  if (d('cfreset')) { const k = v('cfreset'), c = allCards(s).find(x => x.id === openMore); if (c) { c[k] = ''; if (k === 'pill') c.pillText = ''; render(); refocus(`[data-cf="${k}"]`); } return; }
+  if (d('cfreset')) { const k = v('cfreset'), c = cardOfEl(s, d('cfreset')); if (c) { c[k] = ''; if (k === 'pill') c.pillText = ''; render(); refocus(`[data-slot="${c.id}"] [data-cf="${k}"]`); } return; }
   if (d('apply')) { Object.entries(drafts).forEach(([seq, r]) => { const it = itemOf(seq); if (it) it.rate = r; }); const n = Object.keys(drafts).length; drafts = {}; render(); toast(`할인 ${n}건을 반영했어요. 상품·할인에도 같은 값이에요`); return; }
   if (d('undo')) { drafts = {}; render(); toast('바꾼 할인을 되돌렸어요'); return; }
   if (d('tabpick')) { s.tab = +v('tabpick'); render(); return; }
@@ -550,8 +602,8 @@ document.addEventListener('click', e => {
   if (d('rvshow')) { const k = v('rvshow'); s.rv.show[k] = s.rv.show[k] ? 0 : 1; render(); refocus(`[data-rvshow="${k}"]`); return; }
   if (d('rvmv')) { const [j, dd] = v('rvmv').split(':').map(Number), o = s.rv.order; [o[j], o[j + dd]] = [o[j + dd], o[j]]; render(); refocus(`[data-rvmv="${j + dd}:${dd}"]`); return; }
   if (d('rvadd')) { const used = s.rv.groups.map(g => g.seq), next = [...new Set(REVIEWS.map(r => r.seq))].find(x => !used.includes(x)); if (next) { s.rv.groups.push({ seq: next, picks: [] }); render(); } else toast(liveOn ? '후기가 있는 이 기획안 상품을 모두 넣었어요 (상품을 카드에 넣으면 그 후기도 여기 나와요)' : '예시 후기가 있는 상품을 모두 넣었어요'); return; }
-  if (d('refview')) { const r = REFS[v('refview')]; dlg('원본 구좌 레퍼런스 · 미리보기', r.name, `${r.from} · ${r.page} — 미리보기만 해요. 이 구좌는 바뀌지 않아요.`, `<div class="thumb big">${demoImg(r.r[0], r.r[1])}</div><p class="hint">원본 비율 ${r.r[0]}:${r.r[1]} (예시). 캡처를 연결하면 실제 이미지가 보여요.</p>`, '<button class="btn sm" data-toast="예시예요: 원본 프로모션 전체 페이지를 열어요">전체 페이지 보기</button>'); return; }
-  if (d('refatt')) { const k = v('refatt'), i = s.att.findIndex(a => a.ref === k); if (i >= 0) s.att.splice(i, 1); else s.att.push({ ref: k, note: '' }); render(); toast(i >= 0 ? '참고에서 뺐어요' : '참고로 붙였어요. 디자인 요청 탭에서 참고할 점을 적을 수 있어요'); return; }
+  if (d('refview')) { const r = REFS[v('refview')]; dlg('원본 구좌 레퍼런스 · 미리보기', r.name, `${r.from} · ${r.page} — 미리보기만 해요. 이 구좌는 바뀌지 않아요.`, `<div class="thumb big">${demoImg(r.r[0], r.r[1])}</div><p class="hint">원본 비율 ${r.r[0]}:${r.r[1]} (예시). 원본 페이지 캡처가 아직 연결 전이라 전체 페이지는 볼 수 없어요.</p>`, ''); return; }
+  if (d('refatt')) { const k = v('refatt'), i = s.att.findIndex(a => a.ref === k); if (i >= 0) s.att.splice(i, 1); else s.att.push({ ref: k, note: '' }); render(); toast(i >= 0 ? '참고에서 뺐어요' : '참고로 붙였어요. 디자인 요청 탭에서 참고할 것을 적을 수 있어요'); return; }
   if (d('reflay') && !d('reflay').disabled) { const r = REFS[v('reflay')]; setLayout(s, r.layout); render(); toast(`레이아웃을 '${LNAME[r.layout]}'로 가져왔어요. 문구·메모는 그대로예요`); return; }
   if (d('refsave')) { const k = v('refsave'); saved.has(k) ? saved.delete(k) : saved.add(k); renderPanel(); return; }
   if (d('moodlink')) { moodLink = !moodLink; renderPanel(); refocus(moodLink ? '#moodUrl' : '[data-moodlink]'); return; }
@@ -575,7 +627,7 @@ document.addEventListener('input', e => {
   if (t.id === 'pq') { t.closest('.search')?.classList.toggle('has-value', !!t.value); q = t.value; const tmp = document.createElement('div'); tmp.innerHTML = pickList(); $('#phits').outerHTML = tmp.querySelector('#phits').outerHTML; return; }
   if (!s) return;
   if (t.dataset.sf) { s[t.dataset.sf] = t.value; renderPhone(); renderList(); if (t.dataset.sf === 'name') $('#panel h2').textContent = s.name; return; }
-  if (t.dataset.cf && t.tagName !== 'SELECT') { const c = allCards(s).find(x => x.id === openMore); if (c) { c[t.dataset.cf] = t.value; renderPhone(); renderList(); } return; }
+  if (t.dataset.cf && t.tagName !== 'SELECT') { const c = cardOfEl(s, t); if (c) { c[t.dataset.cf] = t.value; renderPhone(); renderList(); } return; }
   if (t.dataset.df && t.tagName !== 'SELECT') { s.card.def[t.dataset.df] = t.value; renderPhone(); renderList(); const sm = $('#pbody .sample'); if (sm) sm.innerHTML = wCard(sampleOf(s), s); return; }
   if (t.dataset.appeal) { const it = itemOf(t.dataset.appeal); if (it) it.appeal = t.value; renderPhone(); return; }
   if (t.dataset.line != null) { s.lines[+t.dataset.line].text = t.value; renderPhone(); return; }
@@ -589,7 +641,7 @@ document.addEventListener('change', e => {
   if (t.dataset.rate) { const seq = t.dataset.rate, val = Math.min(90, Math.max(0, Math.round(+t.value || 0))) / 100; if (val === (itemOf(seq)?.rate ?? 0)) delete drafts[seq]; else drafts[seq] = val; renderPanel(); renderPhone(); refocus(`[data-rate="${seq}"]`); return; }
   if (t.matches('[data-layout]')) { setLayout(s, t.value); render(); toast(`구좌 종류를 '${LNAME[t.value]}'로 바꿨어요. 문구·메모는 그대로예요`); return; }
   if (t.dataset.elon) { s.card.on[t.dataset.elon] = t.checked ? 1 : 0; render(); refocus(`[data-elon="${t.dataset.elon}"]`); return; }
-  if (t.dataset.cf === 'pill') { const c = allCards(s).find(x => x.id === openMore); if (c) c.pill = t.value; render(); refocus('[data-cf="pill"]'); return; }
+  if (t.dataset.cf === 'pill') { const c = cardOfEl(s, t); if (c) { c.pill = t.value; render(); refocus(`[data-slot="${c.id}"] [data-cf="pill"]`); } return; }
   if (t.dataset.df === 'pill') { s.card.def.pill = t.value; render(); refocus('[data-df="pill"]'); return; }
   if (t.matches('[data-num]')) { s.num = t.checked; render(); return; }
   if (t.matches('[data-ctaon]')) { s.ctaOn = t.checked; if (s.ctaOn && !s.cta) s.cta = kindOf(s.layout) === 'product' ? `${s.scope || s.name} 더보기` : kindOf(s.layout) === 'event' ? '참여하기' : '자세히 보기'; render(); refocus('[data-ctaon]'); return; }
@@ -603,6 +655,10 @@ document.addEventListener('click', e => { if (e.target.closest('#pqS [data-sclea
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && e.target.id === 'pq' && e.target.value) { e.preventDefault(); q = ''; openPick(pickFor); $('#pq')?.focus(); return; }
   if (e.key === 'Escape' && !$('#drawer').hidden) closePick();
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && /^[zZyY]$/.test(e.key)) {   // 실행 취소·다시 실행 (입력칸 안에서는 브라우저 기본 동작)
+    if (e.target.closest?.('input, textarea, select, [contenteditable]')) return;
+    e.preventDefault(); (e.key.toLowerCase() === 'y' || e.shiftKey) ? redo() : undo(); return;
+  }
   const b = e.target.closest?.('#secList [data-sec]');
   if (b && e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) { e.preventDefault(); const id = b.dataset.sec; if (moveSec(id, e.key === 'ArrowUp' ? -1 : 1)) { render(); refocus(`#secList [data-sec="${id}"]`); } }
 });
@@ -617,9 +673,77 @@ $('#xlsDown').addEventListener('click', openTemplate);
 $('#xlsUp').addEventListener('click', openUpload);
 $('#nextBtn').addEventListener('click', () => { if (Object.keys(drafts).length) { toast('반영하지 않은 할인이 있어요. 상품 탭에서 반영하거나 되돌려 주세요'); return; } if (!PLAN.id) { toast('예시예요: 미리보기·내보내기로 넘어가요'); return; } PLAN.flush().then(() => location.assign(`/v2/preview?id=${PLAN.id}`)); });
 let toastT;
-function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2800); }
+// undoable = 지우기·넣기처럼 되돌릴 수 있는 동작이면 알림에 [되돌리기]를 붙임 (6초)
+function toast(t, undoable) {
+  const el = $('#toast'), act = !!undoable && hist.past.length > 0;
+  el.innerHTML = `<span>${esc(t)}</span>${act ? '<button type="button" class="tact" data-toastundo>되돌리기</button>' : ''}`;
+  el.classList.toggle('act', act); el.classList.add('on'); clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove('on', 'act'), act ? 6000 : 2800);
+}
 let liveOn = false, lastE = null, KWS = [], PERIOD = ['', ''];
-render();
+
+// ================= 실행 취소 · 다시 실행 (2026-11-10) =================
+// 구좌·카드·문구·할인 상태가 바뀔 때마다 앞 상태를 기억 (최대 60번). 글자를 칠 때는 0.6초 모아서 한 번.
+// 화면 이동(뒤로 가기)과는 따로: 이건 이 화면 안의 편집 이력만. 버튼 + Ctrl+Z / Ctrl+Shift+Z(또는 Ctrl+Y). 입력칸 안에서는 브라우저 기본 되돌리기
+const hist = { past: [], future: [], cur: null, key: null };
+const histKey = () => JSON.stringify([secs.map(toSection), items]);
+const histSnap = () => ({ secs: structuredClone(secs), items: structuredClone(items), cur });
+function syncHist() { const u = $('#undoBtn'), r = $('#redoBtn'); if (u) u.disabled = !hist.past.length; if (r) r.disabled = !hist.future.length; }
+function track() {
+  const k = histKey();
+  if (hist.key === null) { hist.key = k; hist.cur = histSnap(); syncHist(); return; }
+  if (k === hist.key) return;
+  hist.past.push(hist.cur); if (hist.past.length > 60) hist.past.shift();
+  hist.future = []; hist.cur = histSnap(); hist.key = k; syncHist();
+}
+let trackT = null; const trackSoon = () => { clearTimeout(trackT); trackT = setTimeout(track, 600); };
+function resetHist() { hist.past = []; hist.future = []; hist.key = null; hist.cur = null; track(); }
+function restoreHist(st) {
+  secs = structuredClone(st.secs); items = structuredClone(st.items);
+  cur = secs.some(x => x.id === st.cur) ? st.cur : secs.some(x => x.id === cur) ? cur : secs[0]?.id ?? null;
+  hist.cur = st; hist.key = histKey(); renderBase(); saveEditor(); syncHist();
+}
+function undo() { clearTimeout(trackT); track(); if (!hist.past.length) { toast('되돌릴 편집이 없어요'); return; } hist.future.push(hist.cur); restoreHist(hist.past.pop()); toast('한 단계 되돌렸어요'); }
+function redo() { if (!hist.future.length) { toast('다시 할 편집이 없어요'); return; } hist.past.push(hist.cur); restoreHist(hist.future.pop()); toast('다시 했어요'); }
+
+// ================= 구좌 넣기 · 복제 · 지우기 (2026-11-10) =================
+function newSec(ly) { const s = { id: uid('s'), name: LNAME[ly] || '새 구좌', layout: ly, role: '', scope: '', num: false, cta: '', ctaOn: false, ctaTo: '', refs: [], att: [], notes: '', moods: [], lines: [], cat: '' }; setLayout(s, ly); return s; }
+function openAddSec() {
+  const s = S();
+  dlg('구좌 추가', '어떤 구좌를 추가할까요?', s ? `'${s.name}' 아래에 추가해요. 추가한 뒤에도 종류·순서를 바꿀 수 있어요.` : '첫 구좌를 추가해요. 추가한 뒤에도 종류·순서를 바꿀 수 있어요.',
+    `<div class="addsec">${LAYOUTS.map(([g, ls]) => `<div class="f"><span class="l">${g}</span><div class="chips-row">${ls.map(([k, n]) => `<button type="button" class="chip" data-secadd="${k}">${n}</button>`).join('')}</div></div>`).join('')}</div>`, '');
+}
+function addSec(ly) {
+  const s = newSec(ly), i = secs.findIndex(x => x.id === cur);
+  secs.splice(i < 0 ? secs.length : i + 1, 0, s); cur = s.id; tab = 'copy'; $('#dlg').close();
+  render(); showSec(s.id, true); toast(`'${s.name}' 구좌를 추가했어요`, true); refocus('[data-sf="name"]');
+}
+function dupSec(s) {
+  const c = structuredClone(s); c.id = uid('s'); c.name = `${s.name} (복사)`.slice(0, 60);
+  c.lines.forEach(l => { l.id = uid('l'); }); (c.tabs || []).forEach(x => { x.id = uid('t'); }); allCards(c).forEach(x => { x.id = uid('c'); });
+  secs.splice(secs.indexOf(s) + 1, 0, c); cur = c.id; render(); showSec(c.id, true); toast(`'${s.name}' 구좌를 바로 아래에 복제했어요`, true);
+}
+function askDelSec(s) {
+  const n = allCards(s).filter(c => c.seq).length;
+  const what = [n && `카드 상품 ${n}개`, s.rv?.order.length && `고른 후기 ${s.rv.order.length}개`, s.ev?.how && '이벤트 운영 조건', (s.lines.length || s.role) && '설명·추가 문구', s.notes && '디자인 요청'].filter(Boolean);
+  dlg('구좌 삭제', `'${s.name || '제목 없는 구좌'}' 구좌를 지울까요?`, what.length ? `이 구좌에 넣은 것(${what.join(', ')})도 함께 지워져요.` : '이 구좌는 아직 비어 있어요.',
+    '<p class="hint">상품·할인의 할인 행(할인율·소구문구)은 지우지 않아요. 다른 구좌나 하루특가에서 계속 쓸 수 있어요. 지운 뒤에도 [실행 취소]로 되돌릴 수 있어요.</p>',
+    `<button class="btn sm" data-dlgclose>취소</button><button class="btn sm danger" data-secdelgo="${s.id}">구좌 지우기</button>`);
+}
+function delSec(id) {
+  const i = secs.findIndex(x => x.id === id); if (i < 0) return;
+  const s = secs[i]; secs.splice(i, 1); allCards(s).forEach(c => openMore.delete(c.id));
+  cur = secs[Math.min(i, secs.length - 1)]?.id ?? null; $('#dlg').close(); render(); toast(`'${s.name || '제목 없는 구좌'}' 구좌를 지웠어요`, true);
+}
+// 구좌를 고르면: 목록에서 골랐으면 와이어프레임의 그 구좌로 이동, 와이어프레임에서 골랐으면 목록에서 보이게. 고정 막대에 가리지 않게 scroll-margin
+function showSec(id, fromList) {
+  if (!id) return;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (fromList) document.querySelector(`#phone [data-sec="${CSS.escape(id)}"]`)?.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+  else document.querySelector(`#secList [data-sec="${CSS.escape(id)}"]`)?.scrollIntoView({ block: 'nearest' });
+  const pb = $('#pbody'); if (pb) pb.scrollTop = 0;
+}
+render();   // 이력의 출발점은 파일 맨 끝에서 (toSection이 쓰는 함수가 다 준비된 뒤)
 // ================= 기획안 잇기 (새 버전) =================
 // 구좌 목록 = 기획안의 page.sections (구좌 구성에서 정한 것). 제목·설명·버튼·엑셀 카테고리명·디자인 요청·카드 상품(slots)은 원래 칸에,
 // 추가 문구·번호·버튼 켜기·카드 모양·카드별 라벨·태그·알약·후기·이벤트 조건·레퍼런스는 구좌의 v2에 저장해요.
@@ -630,7 +754,8 @@ function fromSection(x) {
   const v = x.v2 || {}, layout = x.layoutId || 'hero', k = kindOf(layout);
   const s = { id: x.sectionId, name: x.headline || x.name || '', layout, role: x.subhead || '', scope: v.scope || '', num: !!v.num,
     cta: x.cta || '', ctaOn: v.ctaOn ?? !!x.cta, ctaTo: v.ctaTo || '', refs: v.refs || [], att: [], notes: x.designNotes || '',
-    moods: (v.moods || []).map(m => ({ id: m.id, pts: new Set(m.pts || []) })), lines: (v.lines || []).map(l => ({ id: l.id, text: l.text || '' })), cat: x.zone_tag || '' };
+    // 느낌 레퍼런스의 참고할 것: 예전 이름 '글씨' → '글씨체'
+    moods: (v.moods || []).map(m => ({ id: m.id, pts: new Set((m.pts || []).map(p => (p === '글씨' ? '글씨체' : p))) })), lines: (v.lines || []).map(l => ({ id: l.id, text: l.text || '' })), cat: x.zone_tag || '' };
   // 카드 = 저장된 slots (상품 목록에 없는 SEQ는 비워 보이되 저장할 때 그대로 돌려놓음)
   const ex = v.cards || {}, slots = x.slots || [];
   const mk = sl => { const e = ex[sl.slotId] || {}, ok = sl.seq && P[sl.seq];
@@ -762,13 +887,12 @@ document.addEventListener('click', e => { if (e.target.closest('[data-csvdown]')
 document.addEventListener('change', e => { if (e.target.matches?.('[data-csvup]') && e.target.files[0]) readCsv(e.target.files[0]); });
 
 const renderBase = render;
-render = function () { renderBase(); saveEditor(); };
-document.addEventListener('input', () => setTimeout(saveEditor));
-document.addEventListener('change', () => setTimeout(saveEditor));
+render = function () { renderBase(); saveEditor(); track(); };
+document.addEventListener('input', () => { setTimeout(saveEditor); trackSoon(); });
+document.addEventListener('change', () => { setTimeout(saveEditor); setTimeout(track); });
 PLAN.ready.then(async doc => {
   if (!doc) return;
-  const list = (doc.page?.sections || []).slice().sort((a, b) => a.order - b.order);
-  if (!list.length) { toast('이 기획안은 아직 구좌 구성을 정하지 않았어요. 02 구좌 구성에서 고르면 여기에 나와요 (지금은 예시)'); return; }
+  const list = (doc.page?.sections || []).slice().sort((a, b) => a.order - b.order);   // 비어 있으면 빈 페이지로 열고 '첫 구좌 넣기' (예시를 보여 주지 않음)
   let prods;
   try { prods = await PRODUCTS_API.all(); } catch (e) { toast(`상품을 불러오지 못해 예시로 보여요: ${e.message}`); return; }
   for (const k of Object.keys(P)) delete P[k];
@@ -780,12 +904,15 @@ PLAN.ready.then(async doc => {
   items = items.filter((it, i) => items.findIndex(x => x.seq === it.seq) === i);
   secs = list.map(fromSection);
   const want = decodeURIComponent(((location.hash || "").match(/^#s=(.+)$/) || [])[1] || '');   // 미리보기 [구좌 보기]에서 온 구좌
-  cur = secs.some(s => s.id === want) ? want : secs[0].id; tab = 'copy'; pickTab = 'plan';
-  uidN = Math.max(uidN, ...secs.flatMap(s => [s.id, ...(s.tabs || []).map(t => t.id), ...s.lines.map(l => l.id), ...allCards(s).map(c => c.id)]).map(x => +String(x).replace(/\D/g, '') || 0));
+  cur = secs.some(s => s.id === want) ? want : secs[0]?.id ?? null; tab = 'copy'; pickTab = 'plan'; openMore = new Set();
+  // 이미 겹쳐 저장된 카드·탭 아이디가 있으면 새 아이디로 (카드마다 상품·문구가 따로 가게)
+  const seenId = new Set();
+  secs.forEach(s => { (s.tabs || []).forEach(t => { if (seenId.has(t.id)) t.id = uid('t'); seenId.add(t.id); }); allCards(s).forEach(c => { if (seenId.has(c.id)) c.id = uid('c'); seenId.add(c.id); }); });
   secs.forEach(s => { if (s.rv) s.rv.groups = s.rv.groups.filter(g => P[g.seq]); });   // 예시 상품(P106 등)이 남아 있으면 뺌
   liveOn = true; lastE = JSON.stringify([secs.map(toSection), items]);
   document.querySelector('.demo').innerHTML = '<b>이 기획안의 실제 내용이에요.</b> 구좌는 구좌 구성에서 정한 것, 상품·가격·원가·후기는 실제 데이터예요. 카드에 넣거나 할인을 고치면 상품·할인과 같은 값으로 저장돼요. 레퍼런스·느낌 이미지와 AI 문구 다듬기는 아직 예시예요.';
-  render();
+  renderBase(); resetHist();   // 불러온 상태가 이력의 출발점 (예시 화면으로 되돌아가지 않게)
+  if (want) showSec(cur, true);
   // 후기·별점은 그린 뒤에 채운다 (2026-11-10: 후기를 다 받을 때까지 예시 화면이 보이고 고친 것도 저장되지 않던 것). 후기는 저장 값이 아니라 다시 그려도 저장하지 않음
   loadReviews([...items.map(i => i.seq), ...secs.flatMap(s => allCards(s).map(c => c.seq).filter(Boolean)), ...secs.flatMap(s => s.rv?.groups.map(g => g.seq) || [])])
     .then(n => { if (n && !document.activeElement?.matches?.('input, textarea, select, [contenteditable]')) render(); });   // 입력 중이면 끊지 않음 (다음 그리기 때 반영)
@@ -819,3 +946,7 @@ PLAN.ready.then(async doc => {
   document.addEventListener('click', e => { if (narrow(980) && e.target.closest('#secList li > button, .ws')) open('panel'); });
   addEventListener('resize', () => { if (!narrow(980)) open(null); else if (!narrow(700) && on('list')) open(null); });
 })();
+
+// 편집 이력의 출발점 (예시 화면 또는 기획안을 불러오기 전 상태. 기획안을 불러오면 resetHist로 다시 잡음)
+track();
+loadLibMoods();
