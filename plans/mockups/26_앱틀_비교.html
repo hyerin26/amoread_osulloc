@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>앱 틀 비교 목업</title>
+<!-- 디자인 기준: AMOREAD Green UI v2.5.1. 색·글자·간격은 앱의 tokens.css를 그대로 읽는다 -->
+<link rel="stylesheet" href="../../workspace/amoread_app/planner/static/tokens.css">
+<style>
+@font-face { font-family: 'Pretendard Variable'; font-weight: 45 920; font-display: swap;
+  src: url('../../workspace/amoread_app/planner/static/fonts/PretendardVariable.woff2') format('woff2-variations'); }
+:root { --cls-season: #e2f0ee; --cls-season-ink: #1f5f57; --cls-brand: #ececf6; --cls-brand-ink: #3d3f8f; --cls-launch: #fdf0e1; --cls-launch-ink: #8a4b0f; --cls-collab: #f6e8f1; --cls-collab-ink: #7d2f63; --cls-clear: #eeeeee; --cls-clear-ink: #484848; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--font); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); background: var(--bg); }
+button, input { font: inherit; }
+h1, h2, h3, p { margin: 0; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.cap { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); }
+[hidden] { display: none !important; }
+.linkbtn { all: unset; cursor: pointer; } .linkbtn:hover { text-decoration: underline; } .linkbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.demo { max-width: 1280px; margin: var(--s4) auto 0; padding: 0 var(--s5); }
+.demo .in { background: var(--warn-soft); color: var(--warn); border-radius: var(--r); padding: 12px 16px; font-size: var(--fs-sm); display: flex; gap: var(--s3); align-items: center; flex-wrap: wrap; }
+.demo .in .grow { flex: 1; min-width: 240px; }
+.seg { display: inline-flex; gap: 4px; padding: 4px; background: var(--sunken); border-radius: var(--r2); }
+.seg > button { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; min-height: var(--control-sm); padding: 6px 12px; border-radius: 6px; color: var(--mute); font-size: var(--fs-sm); font-weight: var(--fw-medium); white-space: nowrap; }
+.seg > button:hover { color: var(--ink); }
+.seg > button[aria-selected="true"], .seg > button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-strong); }
+.seg > button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.demo .seg { background: var(--surface); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: var(--control-lg); padding: 0 16px; border: 0; border-radius: var(--r2); background: var(--sunken); color: var(--ink); font-weight: var(--fw-strong); cursor: pointer; white-space: nowrap; }
+.btn:hover { background: var(--line-sub); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.sm { height: var(--control-md); padding: 0 12px; font-size: var(--fs-sm); }
+.btn.xs { height: 28px; padding: 0 8px; font-size: var(--fs-cap); }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid var(--line-sub); border-radius: var(--r2); background: var(--surface); color: var(--ink2); font-size: var(--fs-cap); font-weight: var(--fw-medium); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--sel-line); color: var(--accent); font-weight: var(--fw-strong); }
+.tag { display: inline-flex; align-items: center; border-radius: var(--r2); padding: 2px 8px; font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-medium); background: var(--sunken); color: var(--ink2); white-space: nowrap; }
+.c-season { background: var(--cls-season); color: var(--cls-season-ink); } .c-brand { background: var(--cls-brand); color: var(--cls-brand-ink); } .c-launch { background: var(--cls-launch); color: var(--cls-launch-ink); } .c-collab { background: var(--cls-collab); color: var(--cls-collab-ink); } .c-clear { background: var(--cls-clear); color: var(--cls-clear-ink); }
+.card { background: var(--surface); border: 1px solid var(--line-sub); border-radius: var(--r); padding: var(--s4); display: grid; gap: var(--s3); align-content: start; min-width: 0; }
+
+/* 윗줄: 어디서나 */
+.top { position: sticky; top: 0; z-index: 10; height: 64px; display: flex; align-items: center; gap: var(--s5); padding: 0 var(--s5); background: var(--shell); border-bottom: 1px solid var(--line); margin-top: var(--s4); }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: var(--fw-title); font-size: var(--fs-h1); }
+.logo i { width: 30px; height: 30px; border-radius: var(--r2); background: var(--ink); color: var(--surface); display: grid; place-items: center; font-style: normal; }
+.nav { display: flex; gap: var(--s4); height: 100%; }
+.nav button { all: unset; cursor: pointer; position: relative; display: flex; align-items: center; gap: 6px; color: var(--mute); font-weight: var(--fw-medium); }
+.nav button:hover { color: var(--ink); }
+.nav button[aria-current="page"] { color: var(--ink); font-weight: var(--fw-strong); }
+.nav button[aria-current="page"]::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--accent); }
+.nav button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.nav .n { font-size: 11px; background: var(--sunken); color: var(--ink2); border-radius: 6px; padding: 0 6px; }
+.top .grow { flex: 1; }
+.top .ds { font-size: var(--fs-cap); color: var(--mute); }
+.gear { all: unset; cursor: pointer; width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--r2); color: var(--mute); }
+.gear:hover { background: var(--hover); color: var(--ink); }
+
+/* 아랫줄: 기획안 안에서만 */
+.planbar { position: sticky; top: 64px; z-index: 9; display: flex; align-items: center; gap: var(--s4); padding: 10px var(--s5); background: var(--shell); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.ident { all: unset; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: var(--fw-strong); max-width: 260px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.steps { display: flex; gap: 4px; padding: 4px; background: var(--sunken); border-radius: var(--r2); }
+.steps button { all: unset; cursor: pointer; display: grid; padding: 4px 12px; border-radius: 6px; font-size: var(--fs-sm); color: var(--mute); font-weight: var(--fw-medium); line-height: 18px; }
+.steps button small { font-size: 10px; font-weight: var(--fw-medium); color: var(--mute); }
+.steps button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-strong); }
+.steps button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.space { all: unset; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; height: 36px; padding: 0 12px; border-radius: var(--r2); border: 1px solid var(--line-strong); font-size: var(--fs-sm); font-weight: var(--fw-strong); }
+.space:hover { background: var(--hover); }
+.space[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.space .w { font-size: 11px; background: var(--warn-soft); color: var(--warn); border-radius: 6px; padding: 0 6px; }
+.space:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.planbar .grow { flex: 1; }
+.todo { font-size: var(--fs-sm); color: var(--ink2); } .todo b { color: var(--accent); }
+.saved { font-size: var(--fs-cap); color: var(--mute); }
+
+.page { max-width: 1280px; margin: 0 auto; padding: var(--s5) var(--s5) 64px; display: grid; gap: var(--s4); }
+.head { display: flex; align-items: flex-end; gap: var(--s4); flex-wrap: wrap; }
+.head .grow { flex: 1; min-width: 260px; }
+.overline { font-size: var(--fs-cap); color: var(--mute); font-weight: var(--fw-medium); margin-bottom: 4px; }
+.head h1 { font-size: var(--fs-masthead); line-height: var(--lh-masthead); font-weight: var(--fw-title); letter-spacing: -0.02em; }
+.head p { margin-top: 6px; color: var(--mute); }
+.bar { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; }
+.bar .grow { flex: 1; }
+input[type=search] { height: var(--control-md); border: 1px solid var(--line); border-radius: var(--r2); padding: 0 10px; min-width: 240px; }
+input[type=search]:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+.tl-ph { height: 240px; border-radius: var(--r2); background: repeating-linear-gradient(135deg, var(--sunken) 0 10px, var(--surface) 10px 20px); display: grid; place-items: center; color: var(--mute); font-size: var(--fs-sm); text-align: center; padding: 0 16px; }
+/* 기획안 목록 */
+.plist { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.prow { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.4fr) auto; gap: var(--s3); align-items: center; padding: 12px 8px; border-bottom: 1px solid var(--line-sub); }
+.prow.h { color: var(--mute); font-size: var(--fs-cap); padding-top: 0; }
+.prow .nm b { display: block; font-weight: var(--fw-strong); }
+.prow .stp { display: flex; gap: 3px; } .prow .stp i { width: 22px; height: 6px; border-radius: 3px; background: var(--line-sub); } .prow .stp i.on { background: var(--accent); }
+.dd { font-size: var(--fs-cap); font-weight: var(--fw-strong); color: var(--err); } .dd.calm { color: var(--mute); font-weight: var(--fw-medium); }
+@media (max-width: 900px) { .prow { grid-template-columns: minmax(0, 1fr) auto; } .prow > :nth-child(2), .prow > :nth-child(3), .prow > :nth-child(4) { display: none; } }
+.grp-h { font-size: var(--fs-sm); font-weight: var(--fw-strong); padding: var(--s3) 8px 4px; }
+.pc { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4); }
+@media (max-width: 900px) { .pc { grid-template-columns: minmax(0, 1fr); } }
+.pc .card h3 { font-size: var(--fs-h2); font-weight: var(--fw-strong); }
+.pc ul { margin: 0; padding-left: 18px; font-size: var(--fs-sm); display: grid; gap: 4px; }
+.stepview { min-height: 160px; display: grid; place-items: center; color: var(--mute); text-align: center; }
+.toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: var(--ink); color: var(--surface); border-radius: var(--r); padding: 14px 18px; font-size: var(--fs-sm); opacity: 0; pointer-events: none; transition: opacity .2s var(--ease); z-index: 30; }
+.toast.on { opacity: 1; }
+/* ---------- 검색창 컴포넌트 (AMOREAD Green UI v2.5.1 값으로, 목업 27이 기준) ----------
+   상태: 기본 / 마우스 올림(테두리 진하게) / 누름·입력 중(브랜드 2px 링) / 입력됨(지우기 ✕) / 비활성(회색 면)
+   크기: 기본 36px(--control-md) · 큰 44px(.lg, --control-lg). 모서리 8px. 아이콘 16px, 획 1.75 */
+.search { position: relative; display: inline-flex; align-items: center; gap: 6px; height: var(--control-md); min-width: 240px; padding: 0 4px 0 10px;
+  border: 1px solid var(--line); border-radius: var(--r2); background: var(--surface); color: var(--mute); cursor: text;
+  transition: border-color .15s var(--ease), box-shadow .15s var(--ease); }
+.search.lg { height: var(--control-lg); padding-left: 12px; gap: 8px; }
+.search.block { display: flex; width: 100%; min-width: 0; }
+.search:hover, .search.is-hover { border-color: var(--line-strong); }
+.search:focus-within, .search.is-focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); color: var(--ink2); }
+.search .ic { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.search input[type=search] { all: unset; flex: 1; min-width: 0; height: 100%; font-size: var(--fs-sm); line-height: var(--lh-label); color: var(--ink); }
+.search.lg input[type=search] { font-size: var(--fs-body); }
+.search input[type=search]::placeholder { color: var(--mute); opacity: 1; }
+.search input[type=search]::-webkit-search-cancel-button { display: none; }
+.search input[type=search]:focus, .search input[type=search]:focus-visible { outline: none; }
+.search .clear { all: unset; box-sizing: border-box; display: none; width: 28px; height: 28px; place-items: center; border-radius: 6px; color: var(--mute); cursor: pointer; flex: none; }
+.search .clear .ic { width: 14px; height: 14px; }
+.search.has-value .clear { display: grid; }
+.search .clear:hover { background: var(--hover); color: var(--ink); }
+.search .clear:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.search.is-disabled, .search:has(input:disabled) { background: var(--sunken); border-color: var(--line-sub); color: var(--line-strong); cursor: not-allowed; box-shadow: none; }
+.search:has(input:disabled) input[type=search] { color: var(--mute); cursor: not-allowed; }
+.search-meta { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); }
+.search-meta.none { color: var(--ink2); }
+</style>
+</head>
+<body>
+<div class="demo"><div class="in">
+  <p class="grow"><b>결정(11/7): C — 메뉴는 홈·레퍼런스·⚙, 홈의 일정표 아래에 기획안 섹션을 따로 둬요 (목업 20에 반영).</b> 아래는 그 전에 비교한 A·B예요. 기획안 목록을 어디에 둘지 두 경우를 바꿔 가며 보세요. 데이터는 가상의 값이에요. 기획안 이름을 누르면 '기획안 안' 막대(두 경우 모두 같음)가 보여요.</p>
+  <div class="seg" role="group" aria-label="비교할 경우"><button data-case="A" aria-pressed="true">A · 홈 안의 '목록' 보기</button><button data-case="B" aria-pressed="false">B · '기획안' 메뉴 따로</button></div>
+</div></div>
+
+<header class="top" aria-label="윗줄 (어디서나)">
+  <div class="logo"><i aria-hidden="true">a</i>AMOREAD</div>
+  <nav class="nav" id="nav" aria-label="메뉴"></nav>
+  <span class="grow"></span>
+  <span class="ds">데이터 11/6 갱신</span>
+  <a class="gear" href="29_설정_데이터.html" aria-label="설정·데이터">⚙</a>
+</header>
+<div class="planbar" id="planbar" hidden aria-label="기획안 막대"></div>
+<main class="page" id="page"></main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+// ================= 예시 기획안 (가상) =================
+const TODAY = '2026-11-06';
+const PLANS = [
+  { id: 'p1', name: '블프 말차 묶음전', cls: 'season', clsN: '시즌', s: '11/23', e: '12/6', state: '준비 중', step: 2, next: ['디자인 착수', '11/12', 6] },
+  { id: 'p4', name: '홈카페 말차 기획전', cls: 'brand', clsN: '브랜드기획전', s: '12/1', e: '12/14', state: '준비 중', step: 1, next: ['틀 기획 완료', '11/17', 11] },
+  { id: 'p2', name: '연말 선물 기획전', cls: 'season', clsN: '시즌', s: '12/21', e: '1/3', state: '준비 중', step: 1, next: ['기획 착수', '11/30', 24] },
+  { id: 'p3', name: '티백 대용량 정리', cls: 'clear', clsN: '클리어런스', s: '', e: '', state: '날짜 미정', step: 1, next: null },
+  { id: 'p5', name: '봄 · 피크닉에서 누리는 차 한 잔의 여유', cls: 'season', clsN: '시즌', s: '3/2', e: '3/15', state: '준비 중', step: 3, next: ['기획 착수', '2/9', 95] },
+  { id: 'p0', name: '가을 티타임 기획전', cls: 'season', clsN: '시즌', s: '10/19', e: '11/8', state: '진행 중', step: 4, next: null },
+  { id: 'q1', name: '말차 라인 기획전', cls: 'brand', clsN: '브랜드기획전', s: '11/9', e: '11/22', state: '내보냄', step: 4, next: null },
+  { id: 'q2', name: '설 선물 얼리버드', cls: 'season', clsN: '시즌', s: '2026 1/6', e: '1/21', state: '지난 기획안', step: 4, next: null },
+  { id: 'q3', name: '감사선물전 얼리버드', cls: 'season', clsN: '시즌', s: '2026 4/8', e: '4/29', state: '지난 기획안', step: 4, next: null },
+  { id: 'q4', name: '헬로키티 콜라보', cls: 'collab', clsN: '콜라보', s: '2025 7/10', e: '7/31', state: '지난 기획안', step: 4, next: null },
+];
+const STEPS = ['01 브리프', '02 구좌 구성', '03 구좌 편집', '04 미리보기·내보내기'];
+const STATES = ['전체', '준비 중', '진행 중', '날짜 미정', '지난 기획안'];
+
+// ================= 상태 =================
+let mode = 'A', where = 'home', homeView = 'list', filt = '전체', q = '', open = null, step = 2, inSpace = false;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+const hit = p => (filt === '전체' || p.state === filt || (filt === '진행 중' && p.state === '내보냄')) && (!q || p.name.includes(q));
+
+// 기획안 목록 (두 경우 모두 같은 줄 모양). 지난 기획안은 아래 묶음으로
+function planList() {
+  const row = p => `<li class="prow"><span class="nm"><b><button class="linkbtn" data-open="${p.id}">${esc(p.name)}</button></b><span class="tag c-${p.cls}">${p.clsN}</span></span>
+      <span>${p.s ? `${p.s} ~ ${p.e}` : '<span class="cap">날짜 미정</span>'}</span>
+      <span><span class="tag">${p.state}</span></span>
+      <span>${p.next ? `${esc(p.next[0])} ${p.next[1]} <span class="dd ${p.next[2] > 7 ? 'calm' : ''}">D-${p.next[2]}</span>` : `<span class="stp" aria-label="${p.step}단계">${STEPS.map((_, k) => `<i class="${k < p.step ? 'on' : ''}"></i>`).join('')}</span>`}</span>
+      <span><button class="btn xs" data-open="${p.id}">${p.state === '지난 기획안' ? '다시 쓰기' : '열기'}</button></span></li>`;
+  const now = PLANS.filter(p => p.state !== '지난 기획안' && hit(p)), past = PLANS.filter(p => p.state === '지난 기획안' && hit(p));
+  return `<div class="bar"><div class="seg" role="group" aria-label="상태">${STATES.map(s => `<button data-filt="${s}" aria-pressed="${filt === s}">${s}</button>`).join('')}</div><span class="grow"></span>
+      <label class="search ${q ? 'has-value' : ''}" id="qS"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input type="search" id="q" value="${esc(q)}" placeholder="이름·명분·기간으로 찾기" aria-label="기획안 찾기" autocomplete="off"><button class="clear" type="button" data-sclear aria-label="검색어 지우기"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button></label></div>
+    <ul class="plist"><li class="prow h"><span>기획안</span><span>기간</span><span>상태</span><span>다음 마감 / 진행</span><span></span></li>
+      ${now.map(row).join('') || (past.length ? '' : `<li class="search-meta none">${q ? `'${esc(q)}'와 맞는 기획안이 없어요. 다른 말로 찾거나 ✕로 지워 주세요.` : '이 상태의 기획안이 없어요.'}</li>`)}
+      ${past.length ? `<li class="grp-h">지난 기획안 <span class="cap">다시 쓰면 상품·할인·구성을 올해 날짜로 가져와요</span></li>${past.map(row).join('')}` : ''}</ul>`;
+}
+
+function renderNav() {
+  const items = mode === 'A' ? [['home', '홈'], ['refs', '레퍼런스']] : [['home', '홈'], ['plans', '기획안', PLANS.filter(p => p.state !== '지난 기획안').length], ['refs', '레퍼런스']];
+  $('#nav').innerHTML = items.map(([k, n, c]) => `<button data-go="${k}" ${where === k && !open ? 'aria-current="page"' : ''}>${n}${c ? `<span class="n">${c}</span>` : ''}</button>`).join('');
+}
+function renderPlanbar() {
+  const pb = $('#planbar'); pb.hidden = !open; if (!open) return;
+  const p = PLANS.find(x => x.id === open);
+  pb.innerHTML = `<button class="ident" data-toast="예시예요: 기간·분류·페이지 유형·상태·제작 일정(마감)이 나와요" title="${esc(p.name)}">${esc(p.name)} ▾</button>
+    <nav class="steps" role="tablist" aria-label="단계">${STEPS.map((s, k) => `<button role="tab" data-step="${k}" aria-selected="${!inSpace && step === k}">${s}<small>${['컨셉·메인 카피 있음', '구좌 8개', '카피 6/8 · 상품 미정 2', '주의 2'][k]}</small></button>`).join('')}</nav>
+    <button class="space" data-space aria-pressed="${inSpace}">상품·할인 <span class="w">주의 1</span></button>
+    <span class="grow"></span><span class="todo">할 일 <b>3</b></span><span class="saved">저장했어요</span>
+    ${inSpace ? `<button class="btn sm" data-back>← ${STEPS[step]}으로</button>` : step < 3 ? `<button class="btn sm primary" data-step="${step + 1}">다음 →</button>` : ''}
+    <button class="btn sm" data-close>목록으로</button>`;
+}
+function renderPage() {
+  const el = $('#page');
+  if (open) {
+    const p = PLANS.find(x => x.id === open);
+    el.innerHTML = `<div class="card stepview"><div><b>${inSpace ? '상품·할인 공간 (목업 25)' : STEPS[step] + ' 화면 (목업 ' + (21 + step) + ')'}</b><p class="cap">${esc(p.name)} 기획안 안이에요. 위 막대는 A·B 모두 같아요.${inSpace ? ' 상품·할인은 단계가 아니라서 탭과 모양이 다른 버튼이고, 원래 단계로 돌아가는 버튼이 생겨요.' : ''}</p></div></div>`;
+    return;
+  }
+  if (where === 'refs') { el.innerHTML = '<div class="card stepview"><div><b>레퍼런스 라이브러리</b><p class="cap">3번에서 만들 화면이에요.</p></div></div>'; return; }
+  if (where === 'plans') {   // B: 기획안 메뉴
+    el.innerHTML = `<div class="head"><div class="grow"><div class="overline">기획안</div><h1>내 기획안</h1><p>준비 중·진행 중·날짜 미정·지난 기획안을 한곳에서 찾고 열어요.</p></div><button class="btn primary" data-toast="예시예요: 홈과 같은 시작 창이 열려요">＋ 새 기획안</button></div>
+      <section class="card">${planList()}</section>${pros()}`;
+    return;
+  }
+  // 홈
+  const views = mode === 'A' ? [['tl', '타임라인'], ['cal', '캘린더'], ['list', '목록']] : [['tl', '타임라인'], ['cal', '캘린더']];
+  if (mode === 'B' && homeView === 'list') homeView = 'tl';
+  el.innerHTML = `<div class="head"><div class="grow"><div class="overline">AMOREAD · 홈</div><h1>프로모션 일정</h1><p>몰에 걸린 페이지와 준비 중인 기획안을 한눈에 보고, 비는 기간을 명분으로 채워요.</p></div><button class="btn primary" data-toast="예시예요: 시작 창이 열려요">＋ 새 기획안</button></div>
+    <section class="card"><div class="bar"><b>일정표</b><div class="seg" role="group" aria-label="보기">${views.map(([k, n]) => `<button data-view="${k}" aria-pressed="${homeView === k}">${n}</button>`).join('')}</div>
+      ${mode === 'B' ? `<span class="cap">기획안 목록은 위 '기획안' 메뉴에 있어요</span>` : ''}</div>
+      ${homeView === 'list' ? planList() : `<div class="tl-ph">${homeView === 'tl' ? '타임라인 (목업 20)' : '캘린더 (목업 20)'}<br>걸린 페이지 · 내 기획안 · 빈 구간 · 명분</div>`}</section>${pros()}`;
+}
+function pros() {
+  return `<div class="pc"><section class="card" ${mode === 'A' ? '' : 'hidden'}><h3>A · 홈 안의 '목록' 보기</h3><ul>
+      <li>메뉴가 2개(홈·레퍼런스)로 가장 단순해요</li><li>일정표와 목록이 같은 데이터라, 보기만 바꾸면 돼요</li><li>새 기획을 시작하는 곳(홈)과 기획안을 찾는 곳이 같아요</li>
+      <li class="cap">아쉬운 점: 지난 기획안을 찾으려면 홈 → 목록 보기로 한 번 더 들어가요. 홈을 열 때마다 일정표가 먼저 보여요</li></ul></section>
+    <section class="card" ${mode === 'B' ? '' : 'hidden'}><h3>B · '기획안' 메뉴 따로</h3><ul>
+      <li>어디서든 메뉴 한 번이면 기획안 전체(지난 것 포함)로 가요</li><li>메뉴에 준비 중인 기획안 수가 보여요</li><li>홈은 일정과 새 기획에, 기획안 메뉴는 찾고 이어 하기에 집중해요</li>
+      <li class="cap">아쉬운 점: 홈 일정표의 '내 기획안' 줄과 기획안 메뉴가 같은 내용을 두 곳에서 보여줘요</li></ul></section></div>`;
+}
+function render() { renderNav(); renderPlanbar(); renderPage(); document.querySelectorAll('[data-case]').forEach(b => b.setAttribute('aria-pressed', b.dataset.case === mode)); }
+
+document.addEventListener('click', e => {
+  const t = e.target, d = k => t.closest(`[data-${k}]`), v = k => d(k)?.dataset[k];
+  if (d('case')) { mode = v('case'); where = 'home'; open = null; inSpace = false; homeView = mode === 'A' ? 'list' : 'tl'; render(); return; }
+  if (d('go')) { where = v('go'); open = null; inSpace = false; render(); return; }
+  if (d('view')) { homeView = v('view'); render(); return; }
+  if (d('filt')) { filt = v('filt'); render(); return; }
+  if (d('open')) { const p = PLANS.find(x => x.id === v('open')); if (p.state === '지난 기획안') { toast('예시예요: 지난 기획안을 올해 날짜로 가져와 새 기획안을 만들어요'); return; } open = p.id; step = Math.min(3, p.step - 1); inSpace = false; render(); return; }
+  if (d('step')) { step = +v('step'); inSpace = false; render(); return; }
+  if (d('space')) { inSpace = !inSpace; render(); return; }
+  if (d('back')) { inSpace = false; render(); return; }
+  if (d('close')) { open = null; inSpace = false; render(); return; }
+  if (d('sclear')) { q = ''; render(); $('#q')?.focus(); return; }
+  if (d('toast')) { toast(v('toast')); }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && e.target.id === 'q' && e.target.value) { e.preventDefault(); q = ''; render(); $('#q')?.focus(); } });
+document.addEventListener('input', e => { if (e.target.id === 'q') { q = e.target.value; const pos = e.target.selectionStart; render(); const i = $('#q'); i?.focus(); i?.setSelectionRange(pos, pos); } });
+let toastT;
+function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600); }
+render();
+</script>
+</body>
+</html>

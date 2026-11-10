@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="planner-token" content="__PLANNER_TOKEN__">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>구좌 구성 · AMOREAD 새 버전</title>
+<!-- 디자인 기준: AMOREAD Green UI v2.5.1. 색·글자·간격은 앱의 tokens.css를 그대로 읽는다 -->
+<link rel="preload" href="/static/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/tokens.css">
+<link rel="stylesheet" href="/static/v2/shell.css">
+<link rel="stylesheet" href="/static/v2/compose.css">
+</head>
+<body>
+<header class="v2top">
+  <a class="v2logo" href="/v2/home"><i aria-hidden="true">a</i>AMOREAD</a>
+  <nav class="v2nav" aria-label="메뉴"><a href="/v2/home">홈</a><a href="/v2/library">레퍼런스</a></nav>
+  <span class="v2grow"></span><span class="v2date" id="v2date">새 버전 · 시험 중</span>
+  <a class="v2old" href="/">예전 화면</a>
+  <a class="v2gear" href="/v2/settings" aria-label="설정·데이터"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
+</header>
+<div class="v2plan" aria-label="기획안 막대">
+  <a class="v2ident" href="/v2/home" title="기획안 목록으로">봄 · 피크닉에서 누리는 차 한 잔의 여유</a>
+  <nav class="v2steps" aria-label="단계"><a href="/v2/brief">01 브리프</a><a href="/v2/compose" aria-current="step">02 구좌 구성</a><a href="/v2/editor">03 구좌 편집</a><a href="/v2/preview">04 미리보기·내보내기</a></nav>
+  <a class="v2space" href="/v2/deals">상품·할인</a>
+  <span class="v2saved" id="v2saved" aria-live="polite"></span>
+  <span class="v2grow"></span><a class="v2btn v2prev" href="/v2/brief"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>이전: 브리프</a><a class="v2btn primary v2next" href="/v2/editor">다음: 구좌 편집<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+</div>
+
+<main class="page">
+  <div class="demo">
+    <p class="grow"><b>예시 화면이에요.</b> 구성안, 지난 행사, 원본 페이지는 모두 가상의 값이에요. 원본 페이지 캡처는 아직 연결하지 않았어요.</p>
+    <span class="cap">목업 보기용: 추천 구성안 개수</span>
+    <div class="seg" role="group" aria-label="추천 구성안 개수 (목업 보기용)"><button data-n="2" aria-pressed="false">2개</button><button data-n="3" aria-pressed="true">3개</button></div>
+    <div class="seg" id="pairSeg" role="group" aria-label="2개일 때 보여줄 안 (목업 보기용)" hidden><button data-pair="AB">A+B</button><button data-pair="AC">A+C</button><button data-pair="BC">B+C</button></div>
+  </div>
+
+  <div class="masthead">
+    <h1 data-plan-title>봄 · 피크닉에서 누리는 차 한 잔의 여유</h1>
+    <div class="brief">
+      <span class="fact cls">시즌</span>
+      <span class="fact"><span class="k">기간</span>3/2(월) ~ 3/15(일)</span>
+      <span class="fact"><span class="k">키워드</span>피크닉 · 보온병</span>
+      <span class="fact"><span class="k">메인 카피</span>피크닉 가방에 차 한 병</span>
+      <a class="link" href="/v2/brief">브리프 고치기</a>
+    </div>
+  </div>
+
+  <section class="card" aria-labelledby="candH">
+    <div class="sec-head">
+      <h2 id="candH">추천 구성안</h2>
+      <span class="cap" id="candCap"></span>
+      <span class="grow"></span>
+      <button class="btn sm ghost" id="blankBtn">빈 페이지에서 시작</button>
+    </div>
+    <div class="cands" id="cands"></div>
+
+    <div class="edit">
+      <div>
+        <div class="sec-head"><h2 id="editH">고른 구성</h2><span class="cap" id="editCap">구성안을 고르면 여기서 순서와 이름을 고쳐요</span></div>
+        <div id="editBody"></div>
+      </div>
+      <aside class="preview" aria-labelledby="pvH">
+        <h3 id="pvH">기획안 전체 와이어프레임</h3>
+        <p class="cap">고른 구성을 위에서부터 쌓은 모양이에요. 자세한 문구와 상품은 다음 화면에서 채워요.</p>
+        <div id="pv"></div>
+      </aside>
+    </div>
+
+    <div class="foot">
+      <span class="cap grow">상품 엑셀 양식은 다음 화면에서 구좌를 확정한 뒤 받을 수 있어요.</span>
+      <a class="btn ghost" href="/v2/brief">← 브리프로</a>
+      <button class="btn primary" id="nextBtn">이 구성으로 구좌 편집 →</button>
+    </div>
+  </section>
+</main>
+
+<dialog id="origDlg" aria-labelledby="origH">
+  <div class="dlg-h"><div class="grow"><div class="overline">원본 프로모션 전체 페이지 <span class="tag demo-t">예시</span></div><h2 id="origH"></h2><p class="cap" id="origSub"></p></div>
+    <form method="dialog"><button class="btn sm">닫기</button></form></div>
+  <div class="dlg-b"><div class="orig" id="origBody"></div>
+    <p class="cap note-gap" id="origNote"></p></div>
+</dialog>
+<dialog id="srcDlg" class="wide" aria-labelledby="srcH">
+  <div class="dlg-h"><div class="grow"><div class="overline">출처 보기 <span class="tag demo-t">예시</span></div><h2 id="srcH"></h2>
+    <p class="cap">구좌마다 어느 페이지의 어떤 구좌를 가져왔는지 보여줘요. 전체 페이지 보기를 누르면 그 페이지에서 어디에 있던 구좌인지 표시돼요.</p></div>
+    <form method="dialog"><button class="btn sm">닫기</button></form></div>
+  <div class="dlg-b" id="srcBody"></div>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="/static/v2/shell.js"></script>
+<script src="/static/v2/api.js"></script>
+<script src="/static/v2/plan.js"></script>
+<script src="/static/v2/compose.js"></script>
+</body>
+</html>

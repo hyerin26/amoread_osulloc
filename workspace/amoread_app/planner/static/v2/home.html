@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="planner-token" content="__PLANNER_TOKEN__">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>홈 · AMOREAD 새 버전</title>
+<!-- 디자인 기준: AMOREAD Green UI v2.5.1. 색·글자·간격은 앱의 tokens.css를 그대로 읽는다 (값을 새로 만들지 않음) -->
+<link rel="preload" href="/static/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/tokens.css">
+<link rel="stylesheet" href="/static/v2/shell.css">
+<link rel="stylesheet" href="/static/v2/home.css">
+</head>
+<body>
+<header class="v2top">
+  <a class="v2logo" href="/v2/home"><i aria-hidden="true">a</i>AMOREAD</a>
+  <nav class="v2nav" aria-label="메뉴"><a href="/v2/home" aria-current="page">홈</a><a href="/v2/library">레퍼런스</a></nav>
+  <span class="v2grow"></span><span class="v2date" id="v2date">새 버전 · 시험 중</span>
+  <a class="v2old" href="/">예전 화면</a>
+  <a class="v2gear" href="/v2/settings" aria-label="설정·데이터"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
+</header>
+
+<main class="page">
+  <p class="demo"><b>예시 화면이에요.</b> 이벤트, 기획안, 명분, 마감은 모두 가상의 값이에요. 실제 이벤트 목록과 매출은 넣지 않았어요. 오늘은 2026-11-06(금)으로 두었어요.</p>
+
+  <div class="masthead">
+    <div class="grow">
+      <h1>프로모션 일정</h1>
+      <p>몰에 걸린 페이지와 준비 중인 기획안을 한눈에 보고, 비는 기간을 명분으로 채워요.</p>
+    </div>
+    <button class="btn primary" id="newBtn">＋ 새 기획안</button>
+  </div>
+
+  <section class="sales" aria-label="오설록닷컴 실적 (예시)">
+    <span class="cap">오설록닷컴 실적 · 11/5 기준 · 순매출 백만원 · <span class="tag demo-t">예시</span></span>
+    <span><span class="k">11/5 순매출</span><b>6.8</b></span>
+    <span><span class="k">11월 누적</span><b>30.9</b> / 목표 180 (<b>17%</b>)</span>
+    <span><span class="k">이대로면 11월</span><b>목표의 103%</b></span>
+    <span><span class="k">작년 11월 대비</span><b class="up">+8%</b></span>
+    <span><span class="k">올해 누적 달성</span><b>82%</b></span>
+  </section>
+
+  <div class="layout">
+    <section class="card" aria-labelledby="tlH">
+      <div class="sec-head">
+        <h2 id="tlH">일정표</h2>
+        <div class="seg" role="tablist" aria-label="보기 방식">
+          <button role="tab" data-view="tl" aria-selected="true">타임라인</button>
+          <button role="tab" data-view="cal" aria-selected="false">캘린더</button>
+        </div>
+        <span class="cap" id="rangeCap"></span>
+        <span class="grow"></span>
+        <div class="pager" role="group" aria-label="기간 이동">
+          <button class="btn sm ghost" id="prevBtn"><svg class="v2ic v2ic-l" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 6-6 6 6 6"/></svg><span id="prevTxt">이전 4주</span></button>
+          <button class="btn sm ghost" id="todayBtn">오늘</button>
+          <button class="btn sm ghost" id="nextBtn"><span id="nextTxt">다음 4주</span><svg class="v2ic v2ic-r" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg></button>
+        </div>
+      </div>
+      <p class="pickhint" id="pickHint" aria-live="polite">빈 날짜를 눌러 시작일을 고르고, 한 번 더 눌러 끝나는 날을 고르면 새 기획안을 시작해요.</p>
+      <div class="tl-scroll" id="tlWrap"><div class="tl" id="tl" aria-label="프로모션 일정 타임라인"></div></div>
+      <div id="calWrap" class="hidden" aria-label="프로모션 일정 캘린더"></div>
+      <div class="legend" aria-label="범례">
+        <span><i class="c-season"></i>시즌</span><span><i class="c-brand"></i>브랜드기획전</span><span><i class="c-launch"></i>런칭</span>
+        <span><i class="c-collab"></i>콜라보</span><span><i class="c-clear"></i>클리어런스</span>
+        <span><i class="plan"></i>내 기획안 (준비 중)</span><span><i class="gap"></i>빈 기간 (걸린 페이지 없음)</span><span><i class="dia"></i>명분 (누르면 준비 기간 표시)</span>
+      </div>
+      <div class="undated" id="undated"></div>
+    </section>
+
+    <aside class="card side" id="side" aria-live="polite"></aside>
+  </div>
+
+  <section class="card plans" aria-labelledby="plH">
+    <div class="sec-head"><h2 id="plH">기획안</h2><span class="cap" id="plN"></span><span class="grow"></span>
+      <div class="seg" role="group" aria-label="상태로 거르기" id="plF"></div>
+      <label class="search" id="plS"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input type="search" id="plq" placeholder="이름·명분·기간으로 찾기" aria-label="기획안 찾기" aria-describedby="plMeta" autocomplete="off"><button class="clear" type="button" data-sclear aria-label="검색어 지우기"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button></label></div>
+    <span class="search-meta" id="plMeta" aria-live="polite"></span>
+    <div id="plList"></div>
+  </section>
+</main>
+
+<dialog id="startDlg" aria-labelledby="dlgH">
+  <form method="dialog" id="startForm">
+    <h2 id="dlgH">새 기획안</h2>
+    <div class="f" role="radiogroup" aria-labelledby="clsL">
+      <span class="l" id="clsL">어떤 프로모션인가요?</span>
+      <div class="chips" id="clsChips"></div>
+    </div>
+    <div class="f" id="seedBox"></div>
+    <div class="f">
+      <span class="l">기간</span>
+      <div class="dates"><input type="date" id="dStart" aria-label="시작일"> <span>~</span> <input type="date" id="dEnd" aria-label="종료일"></div>
+      <label class="ck"><input type="checkbox" id="noDate"> 날짜는 나중에 정할게요</label>
+      <span class="h" id="dateHelp"></span>
+      <span class="h">몰에 걸린 다른 페이지와 기간이 겹쳐도 만들 수 있어요.</span>
+    </div>
+    <div class="foot">
+      <button class="btn" value="cancel" formnovalidate>취소</button>
+      <button class="btn primary" value="go">시작하기 →</button>
+    </div>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="/static/v2/shell.js"></script>
+<script src="/static/v2/api.js"></script>
+<script src="/static/v2/home.js"></script>
+</body>
+</html>

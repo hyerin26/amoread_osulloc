@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AMOREAD 예시 화면 · 계획 A안</title>
+<style>
+:root{
+  --accent:#007A46;--accent-soft:#EEF5EF;--move:#00C070;--ink:#141414;--ink2:#484848;--mute:#666666;--subtle:#707070;
+  --bg:#FAFAFA;--surface:#FFFFFF;--sunken:#F3F3F3;--line:#DEDEDE;--line-weak:#EBEBEB;--line-strong:#ADADAD;
+  --price:#B52E10;--err-line:#FF5A36;--err-soft:#FFF0EC;--warn-soft:#FFF8E0;--sel-line:rgba(0,122,70,.32);
+  --deal:#b8561a;--deal-soft:#fbeadb;--deal-ink:#8a3f12;--plan:#165b91;--plan-soft:#eaf3fb;
+  --r:12px;--r2:8px;
+  --font:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#E9E9E9;color:var(--ink);font:400 14px/22px var(--font)}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3,p{margin:0}
+.cap{font-size:12px;line-height:18px;color:var(--mute)}
+.overline{font-size:12px;line-height:18px;font-weight:500;color:var(--mute);margin-bottom:4px}
+
+/* ---------- 예시 화면 조작 막대 (실제 앱 아님) ---------- */
+.mock-ctl{position:sticky;top:0;z-index:50;background:#262626;color:#fff;padding:10px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mock-ctl b{font-size:13px;margin-right:8px}
+.mock-ctl button{border:1px solid #555;background:#333;color:#ddd;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer}
+.mock-ctl button.on{background:#fff;color:#141414;border-color:#fff}
+.mock-ctl label{margin-left:auto;font-size:12px;display:flex;gap:6px;align-items:center;color:#ccc}
+.frame{max-width:1440px;margin:16px auto;background:var(--bg);border-radius:12px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.12)}
+
+/* ---------- 앱 막대 (디자이너 v2.5.1) ---------- */
+.appbar{height:64px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 20px}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:18px}
+.brand i{width:28px;height:28px;border-radius:8px;background:#141414;color:#fff;display:grid;place-items:center;font-style:normal;font-size:16px}
+.back{font-size:13px;color:var(--mute);border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:#fff}
+.seg{display:inline-flex;gap:4px;padding:4px;background:var(--sunken);border-radius:8px}
+.seg span{padding:6px 12px;border-radius:6px;font-size:13px;color:var(--mute);white-space:nowrap}
+.seg span.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.seg span em{font-style:normal;font-size:11px;color:var(--subtle);margin-left:4px}
+.grow{flex:1}
+.save{font-size:12px;color:var(--mute)}
+.ibtn{width:36px;height:36px;border-radius:8px;background:var(--sunken);display:grid;place-items:center;color:var(--ink2);font-size:15px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border-radius:8px;border:1px solid transparent;background:var(--sunken);font-weight:600;font-size:14px;white-space:nowrap}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.sm{height:30px;padding:0 10px;font-size:13px}
+.btn.ghost{background:transparent}
+.btn.line{background:#fff;border-color:var(--line)}
+.todo{background:#fff;border-bottom:1px solid var(--line);padding:6px 20px;font-size:13px;color:var(--ink2);display:flex;gap:10px;align-items:center}
+.todo b{color:var(--ink)}
+.todo .pill{background:var(--warn-soft);border-radius:6px;padding:2px 8px;font-size:12px}
+
+/* ---------- 공통 ---------- */
+.page{padding:32px 40px 48px}
+.head{display:flex;align-items:flex-end;gap:16px;margin-bottom:24px}
+.head h1{font-size:28px;line-height:36px;font-weight:700}
+.head p{color:var(--mute);margin-top:6px}
+.notice{background:var(--sunken);border-radius:12px;padding:12px 16px;font-size:13px;line-height:20px;color:var(--ink2);margin-bottom:20px}
+.card{background:#fff;border:1px solid var(--line-weak);border-radius:12px;padding:20px}
+.card h2{font-size:20px;line-height:28px;font-weight:600;margin-bottom:16px}
+.card h3{font-size:16px;line-height:24px;font-weight:600;margin-bottom:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.f{display:grid;gap:6px;margin-bottom:16px}
+.f > span{font-size:14px;line-height:20px;font-weight:600}
+.f > span em{font-style:normal;font-weight:400;color:var(--mute);font-size:12px;margin-left:6px}
+.in{height:44px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 12px;display:flex;align-items:center}
+.ta{min-height:76px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{height:32px;padding:0 12px;border:1px solid var(--line);border-radius:8px;font-size:12px;display:inline-flex;align-items:center;gap:6px;background:#fff}
+.chip.on{background:var(--accent-soft);border-color:var(--sel-line);color:var(--accent);font-weight:600}
+.chip i{font-style:normal;color:var(--subtle)}
+.tag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:8px;font-size:12px;background:var(--sunken);color:var(--ink2);white-space:nowrap}
+.tag.ok{background:var(--accent-soft);color:var(--accent)}
+.tag.warn{background:var(--warn-soft);color:var(--ink2)}
+.tag.plan{background:var(--plan-soft);color:var(--plan)}
+.tag.price{background:var(--err-soft);color:var(--price)}
+.sale{color:var(--price);font-weight:600}
+s{color:var(--mute);font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--mute);font-weight:600;font-size:12px;padding:10px 8px;background:var(--sunken);white-space:nowrap}
+td{padding:10px 8px;border-bottom:1px solid var(--line-weak);vertical-align:middle}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+tr.sel td{background:#FAFCFA}
+
+/* ---------- 주석 (바뀌는 점) ---------- */
+.note{position:fixed;right:24px;bottom:24px;width:340px;max-height:60vh;overflow:auto;background:#141414;color:#eee;border-radius:12px;padding:16px 18px;font-size:13px;line-height:20px;z-index:60;box-shadow:0 12px 30px rgba(0,0,0,.3)}
+.note h4{margin:0 0 8px;font-size:14px;color:#fff}
+.note ul{margin:0;padding-left:18px}
+.note li+li{margin-top:6px}
+.note b{color:#8FE3B8;font-weight:600}
+body.no-note .note{display:none}
+.scr{display:none}.scr.on{display:block}
+
+/* ---------- 홈 ---------- */
+.plans{border-top:1px solid var(--line)}
+.prow{display:flex;align-items:center;gap:16px;padding:16px 8px;border-bottom:1px solid var(--line)}
+.pic{width:48px;height:48px;border:1px solid var(--line);border-radius:8px;display:grid;place-items:center;color:var(--mute);background:#fff}
+.go{color:var(--accent);font-size:13px;font-weight:500}
+
+/* ---------- 구좌 편집 ---------- */
+.editor{display:grid;grid-template-columns:230px minmax(0,1fr) 360px;height:calc(100vh - 160px);min-height:760px}
+.editor.drawer{grid-template-columns:230px minmax(0,1fr) 500px}
+.list{background:#fff;border-right:1px solid var(--line);padding:20px 12px;display:flex;flex-direction:column}
+.list h2{font-size:16px;font-weight:600;padding:0 8px}
+.sec{display:grid;grid-template-columns:16px 22px 1fr 20px;gap:6px;align-items:center;padding:12px 8px;border:1px solid transparent;border-radius:8px;margin:4px 0;font-size:13px}
+.sec.on{border-color:var(--sel-line);color:var(--accent);font-weight:600}
+.sec .g{color:var(--line-strong);letter-spacing:-2px}
+.sec .n{color:var(--mute);font-size:12px}
+.sec .m{color:var(--line-strong)}
+.canvas{background:var(--sunken);overflow:auto;padding:20px}
+.ctool{display:flex;align-items:center;gap:8px;margin:0 auto 16px;max-width:560px}
+.ctool h2{font-size:16px;font-weight:600}
+.phone{width:390px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ptop{display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);font-size:13px}
+.ws{position:relative;border:1px solid transparent}
+.ws+.ws{border-top-color:var(--line)}
+.ws.on{border-color:var(--sel-line)}
+.wn{position:absolute;top:10px;left:14px;background:#fff;border-radius:6px;padding:0 6px;font-size:11px;color:var(--ink2)}
+.wt{position:absolute;top:8px;right:8px;display:flex;gap:2px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:2px;font-size:11px;color:var(--ink2)}
+.wt span{padding:2px 6px}
+.hero{background:#ECECEC;min-height:210px;padding:56px 20px 22px;display:flex;flex-direction:column;justify-content:flex-end}
+.hero b{font-size:26px;line-height:34px;font-weight:600}
+.pad{padding:44px 18px 18px}
+.wtitle{font-size:20px;line-height:28px;font-weight:600}
+.wsub{color:var(--ink2);font-size:13px;margin-top:2px}
+.cta{margin:14px 18px 18px;height:44px;border-radius:8px;background:#141414;color:#fff;display:grid;place-items:center;font-weight:600;font-size:14px}
+.pad .cta{margin:14px 0 0}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.cards.g3{grid-template-columns:1fr 1fr 1fr}
+.wc{font-size:12px;line-height:18px}
+.wc .img{aspect-ratio:1;border-radius:8px;background:linear-gradient(135deg,#eee,#d9d9d9);display:grid;place-items:center;color:#999;font-size:11px;margin-bottom:6px}
+.wc.pick .img{outline:2px solid var(--accent);outline-offset:2px}
+.wc.gap .img{background:transparent;border:1px dashed var(--line-strong)}
+.wc b{font-weight:600}
+.benefit{background:var(--sunken);border-radius:12px;padding:20px;text-align:center}
+.edit-hint{outline:1px dashed var(--line-strong);outline-offset:3px;border-radius:4px}
+.panel{background:#fff;border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.phd{padding:18px 18px 10px}
+.phd h3{font-size:16px;font-weight:600}
+.ptabs{margin:0 18px;display:flex}
+.ptabs span{flex:1;text-align:center}
+.pbody{padding:18px;overflow:auto;flex:1}
+.slot{border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:10px}
+.slot.on{border-color:var(--sel-line)}
+.pricebox{background:var(--err-soft);border-radius:8px;padding:12px;margin-top:10px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.crumbs{font-size:12px;color:var(--mute);padding:14px 18px 0}
+.plist .pi{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line-weak)}
+.pi .th{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,#eee,#d9d9d9);flex:none}
+.dfoot{border-top:1px solid var(--line);padding:12px 18px;display:flex;gap:8px;justify-content:flex-end;align-items:center}
+
+/* ---------- 미리보기 ---------- */
+.paper{background:#fff;border:1px solid var(--line-weak);border-radius:12px;padding:40px;max-width:1120px;margin:0 auto}
+.drow{display:grid;grid-template-columns:390px 1fr;gap:32px;padding:24px 0;border-top:1px dashed var(--line)}
+.dwire{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.dnote h3{color:var(--price);font-size:13px;margin-bottom:8px}
+.deliver{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--line-weak);border-radius:12px;padding:12px 16px;margin-bottom:16px}
+
+/* ---------- 레퍼런스 ---------- */
+.gal{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.rc{background:var(--sunken);border-radius:12px;padding:16px}
+.rc .rw{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px;min-height:220px}
+.rc .rw .bar{height:8px;background:#e6e6e6;border-radius:4px;margin:6px 0}
+.rc .rw .bx{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.rc .rw .bx i{display:block;aspect-ratio:1;background:#ececec;border-radius:6px}
+.tabsline{display:flex;gap:8px;margin-bottom:16px}
+</style>
+</head>
+<body>
+
+<div class="mock-ctl">
+  <b>예시 화면 · 계획 A안 (실제 앱 아님, 예시 데이터)</b>
+  <button data-s="home">홈</button>
+  <button data-s="brief" class="on">01 브리프</button>
+  <button data-s="dir">02 기획 방향</button>
+  <button data-s="prod">03 상품·혜택</button>
+  <button data-s="edit">04 구좌 편집</button>
+  <button data-s="drawer">04 상품 찾기 드로어</button>
+  <button data-s="prev">05 미리보기·전달</button>
+  <button data-s="lib">레퍼런스</button>
+  <label><input type="checkbox" id="noteT" checked> 바뀌는 점 설명</label>
+</div>
+
+<!-- ======================= 홈 ======================= -->
+<div class="frame scr" id="s-home">
+  <div class="appbar"><div class="brand"><i>a</i>AMOREAD</div><span class="cap">기획안</span><span class="grow"></span><span class="btn line sm">캘린더</span><span class="btn line sm">참고 자료 ▾</span></div>
+  <div class="page" style="max-width:1160px;margin:0 auto">
+    <div class="head"><div class="grow"><div class="overline">AMOREAD · 기획안</div><h1>기획안을 이어서 만들어 보세요</h1><p>명분과 브리프부터 할인, 페이지 기획까지 하나의 기획안으로 관리해요.</p></div><span class="btn primary">＋ 새 기획안</span></div>
+    <div class="row" style="justify-content:space-between;align-items:flex-end;margin-bottom:12px">
+      <div><h2 style="font-size:20px;line-height:28px;font-weight:600">내 기획안 <span class="cap" style="font-size:14px">3</span></h2><p class="cap">이 PC의 기획 도우미에 자동으로 저장해요.</p></div>
+      <div class="in" style="width:340px;color:var(--mute)">기획안 이름·명분·기간으로 검색</div>
+    </div>
+    <div class="row" style="margin-bottom:8px"><span class="cap">다른 곳에서 가져오기</span><span class="btn sm line">지난 행사 상품·할인 가져오기</span><span class="btn sm line">기존 작업대 기획안 가져오기 ▾</span></div>
+    <div class="plans">
+      <div class="prow"><div class="pic">☰</div><div class="grow"><b style="font-size:16px">입동, 따뜻한 차 한 잔</b> <span class="tag">작업 중</span> <span class="tag">기획 중</span><div class="cap">2026-11-07 ~ 2026-11-20 · 명분 입동 · 이벤트 페이지</div></div><span class="cap">상품 12 · 구좌 4</span><span class="cap">11/06 10:12 수정</span><span class="go">04 구좌 편집에서 이어서 →</span></div>
+      <div class="prow"><div class="pic">☰</div><div class="grow"><b style="font-size:16px">연말 선물 기획전</b> <span class="tag ok">확정</span><div class="cap">2026-12-01 ~ 2026-12-25 · 명분 연말 선물 · GNB 기획전</div></div><span class="cap">상품 28 · 구좌 6</span><span class="cap">11/05 18:40 수정</span><span class="go">05 미리보기에서 이어서 →</span></div>
+      <div class="prow"><div class="pic">☰</div><div class="grow"><b style="font-size:16px">11월 하루특가</b> <span class="tag">기획 중</span><div class="cap">2026-11-10 ~ 2026-11-30 · 명분 없음 · 페이지 없음</div></div><span class="cap">상품 20 · 구좌 0</span><span class="cap">11/04 09:02 수정</span><span class="go">03 상품·혜택에서 이어서 →</span></div>
+    </div>
+  </div>
+  <div class="note"><h4>홈 · 바뀌는 점</h4><ul>
+    <li>디자이너 홈 모양 그대로. <b>다시 열면 마지막에 보던 단계로</b> 이어서 열려요(오른쪽 '…에서 이어서').</li>
+    <li>캘린더·참고 자료(상품, 지난 성과, 트렌드)는 멘토님 툴 메뉴로 오른쪽 위에 남아요.</li>
+    <li>지금: 기획안 목록은 비슷하지만 '마지막 단계로 열기'가 없어요.</li></ul></div>
+</div>
+
+<!-- 공통 앱 막대 (기획안을 연 화면) -->
+<template id="bar">
+  <div class="appbar">
+    <div class="brand"><i>a</i>AMOREAD</div>
+    <span class="back">‹ 기획안 · 캘린더</span>
+    <div class="seg">__TABS__</div>
+    <span class="grow"></span>
+    <span class="save">● 저장했어요</span><span class="ibtn">↶</span><span class="ibtn">↷</span>
+    <span class="btn primary">__CTA__ →</span>
+  </div>
+  <div class="todo"><b>입동, 따뜻한 차 한 잔</b><span class="cap">11/07~11/20 · D-1 · 이벤트 페이지</span><span class="grow"></span><span class="pill">다음에 할 일 2</span><span class="cap">하루특가 빈 자리 3개 · 가격이 정해지지 않은 상품 1개 ▾</span></div>
+</template>
+
+<!-- ======================= 01 브리프 ======================= -->
+<div class="frame scr on" id="s-brief" data-tab="0" data-cta="기획 방향으로">
+  <div class="page">
+    <div class="head"><div class="grow"><div class="overline">01 · 브리프</div><h1>프로모션 브리프</h1><p>기획의 배경과 목적을 적어 보세요. 상품은 나중에 골라도 괜찮아요.</p></div></div>
+    <div class="grid2">
+      <div class="card">
+        <div class="f"><span>프로모션명</span><div class="in">입동, 따뜻한 차 한 잔</div></div>
+        <div class="f"><span>진행 기간 <em>캘린더 '내 기획안'에 이 기간으로 보여요</em></span><div class="row"><div class="in grow">2026-11-07</div><span class="cap">~</span><div class="in grow">2026-11-20</div></div></div>
+        <div class="f"><span>주요 목적</span><div class="chips"><span class="chip on">전환·매출</span><span class="chip">선물 수요</span><span class="chip">신규 유입</span><span class="chip">객단가 상승</span><span class="chip">브랜드·신제품</span><span class="chip">재고 소진</span></div></div>
+        <div class="f" style="margin:0"><span>타깃 상황</span><div class="in">첫 추위에 따뜻한 걸 찾는 30~40대 직장인</div></div>
+      </div>
+      <div class="card">
+        <div class="f"><span>지금 기획하는 이유 <em>명분</em></span><div class="ta">입동, 첫 추위가 오는 때. 따뜻한 차를 찾기 시작하는 시기</div><div class="row"><span class="tag plan">캘린더 명분 '입동 11/07'과 연결됨</span><span class="cap">D-1 · 준비 시작 10/17</span></div></div>
+        <div class="f"><span>기획 콘셉트</span><div class="in">첫 추위의 블렌디드 티 바</div></div>
+        <div class="notice" style="margin:0">목표와 콘셉트를 바탕으로 02 기획 방향에서 대표 카피와 페이지 구성안을 만들어요. 직접 작성한 문구는 그대로 유지해요.</div>
+      </div>
+    </div>
+    <details class="card" style="margin-top:16px" open><summary style="font-weight:600;cursor:pointer">더 적기 <span class="cap">페이지 유형, 목표, 배경, 운영 조건, 할인 외 혜택</span></summary>
+      <div class="grid2" style="margin-top:16px">
+        <div><div class="f"><span>페이지 유형 <em>제작 일정 계산에 쓰여요</em></span><div class="chips"><span class="chip on">이벤트 페이지</span><span class="chip">GNB 기획전</span><span class="chip">페이지 없음 (할인만)</span></div></div>
+        <div class="f"><span>목표</span><div class="in">2주 행사 매출 5,000만 원</div></div></div>
+        <div><div class="f"><span>기획 배경</span><div class="ta" style="min-height:44px">작년 입동 기획 반응이 좋았던 블렌디드 티 중심</div></div>
+        <div class="f"><span>할인 외 혜택</span><div class="ta" style="min-height:44px">3만 원 이상 구매 시 티 코스터 증정</div></div></div>
+      </div></details>
+  </div>
+  <div class="note"><h4>01 브리프 · 바뀌는 점</h4><ul>
+    <li>맨 위가 <b>디자이너 앱 막대</b>로 바뀌어요: 로고 · 단계 탭 · 저장 · 실행 취소 · 다음 행동 버튼. 멘토님 툴 메뉴는 '‹ 기획안 · 캘린더'로 들어가요.</li>
+    <li>단계는 디자이너 이름으로: <b>01 브리프 · 02 기획 방향 · 03 상품·혜택 · 04 구좌 편집 · 05 미리보기·전달 · 레퍼런스</b>. 순서는 잠그지 않아요.</li>
+    <li>'다음에 할 일'은 오른쪽 패널 대신 앱 막대 아래 한 줄로.</li>
+    <li>브리프는 디자이너 2열 카드. 디자이너에 없던 우리 칸(페이지 유형, 목표, 배경, 혜택)은 '더 적기'로.</li>
+    <li>지금: 멘토님 툴 상단 메뉴 + 단계 막대 두 줄, 카드 4개.</li></ul></div>
+</div>
+
+<!-- ======================= 02 기획 방향 ======================= -->
+<div class="frame scr" id="s-dir" data-tab="1" data-cta="상품·혜택으로">
+  <div class="page">
+    <div class="head"><div class="grow"><div class="overline">02 · 기획 방향</div><h1>기획 방향과 카피</h1><p>기획 방향을 살펴보고 필요한 부분만 다듬어 보세요.</p></div></div>
+    <div class="notice"><b>규칙으로 만든 예시예요.</b> AI를 쓰지 않고 명분 사전 씨앗, 콘셉트, 목적으로 만들어요. ‘다른 카피 예시 보기’를 누르면 대표 카피만 바꿔요.</div>
+    <div class="grid2">
+      <div class="card"><div class="cap">기본 기획 방향 · 1안</div><h2>지금 이 기획을 하는 이유</h2>
+        <div class="f"><span>기획하는 이유</span><div class="ta">첫 추위가 오는 입동, 따뜻한 차를 찾기 시작하는 시기</div></div>
+        <div class="f"><span>프로모션 콘셉트</span><div class="in">첫 추위의 블렌디드 티 바</div></div>
+        <div class="f"><span>대표 카피 <em>새 칸 · 05 문서 표지에 들어가요</em></span><div class="ta">오늘부터 한 잔은 따뜻하게</div></div>
+        <div class="row"><span class="btn line sm">↻ 다른 카피 예시 보기</span><span class="cap">대표 카피만 바꿔요. 기획 이유와 콘셉트는 유지해요.</span></div>
+      </div>
+      <div class="card"><div class="cap">제안 이유와 참고자료</div><h2>제안 근거 확인</h2>
+        <p style="margin-bottom:12px">입동을 앞두고 따뜻한 블렌디드 티를 '첫 추위의 한 잔'으로 제안해요.</p>
+        <h3>이 제안은 어떤 근거로 만들었나요?</h3>
+        <table><tbody>
+          <tr><td class="cap">명분일</td><td>11/07 입동 <span class="cap">D-1</span></td></tr>
+          <tr><td class="cap">작년 같은 명분 행사</td><td>입동 상시 11/08~11/21 · 14품목 · 행사 매출 3,120만 원</td></tr>
+          <tr><td class="cap">같은 시기 잡힌 행사</td><td>11월 하루특가 20품목</td></tr>
+          <tr><td class="cap">컨셉 겹침</td><td><span class="tag warn">작년 '첫 추위 티타임'과 비슷해요</span></td></tr>
+        </tbody></table>
+        <h3 style="margin-top:16px">기획에 참고할 섹션</h3>
+        <div class="grid2"><div class="rc" style="padding:10px"><div class="rw" style="min-height:120px"><b style="font-size:12px">선물 대상별 카드 큐레이션</b><div class="bar"></div><div class="bx"><i></i><i></i></div></div><p class="cap" style="margin-top:6px">상품 큐레이션 · 예시</p></div>
+        <div class="rc" style="padding:10px"><div class="rw" style="min-height:120px;background:#ececec"><b style="font-size:12px">시즌 히어로 비주얼</b></div><p class="cap" style="margin-top:6px">메인·비주얼 · 예시</p></div></div>
+        <div class="row" style="margin-top:12px"><span class="btn line sm">레퍼런스 라이브러리 보기</span></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px"><div class="row" style="margin-bottom:12px"><h2 style="margin:0">페이지 구성안</h2><span class="cap">지금 ③ 페이지 구성의 '시작 방법'이 여기로 와요</span></div>
+      <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
+        <div class="slot on"><b>할인 기획에서 가져오기</b><p class="cap">03 상품·혜택의 Zone 3개와 하루특가로 구좌 초안을 만들어요. 상품도 연결돼요.</p></div>
+        <div class="slot"><b>목적별 기본 구성</b><p class="cap">목적 '전환·매출'에 맞는 순서를 넣어요. 규칙 기반 예시예요.</p></div>
+        <div class="slot"><b>빈 페이지</b><p class="cap">구좌를 하나씩 직접 추가해요.</p></div>
+      </div>
+      <div class="row" style="margin-top:12px"><span class="cap">만들어질 구좌</span><span class="chip">01 메인 비주얼</span><span class="chip">02 블렌디드 티 (Zone)</span><span class="chip">03 하루특가</span><span class="chip">04 혜택 안내</span><span class="grow"></span><span class="btn primary sm">이 구성으로 만들고 구좌 편집으로 →</span></div>
+    </div>
+  </div>
+  <div class="note"><h4>02 기획 방향 · 새 화면</h4><ul>
+    <li>디자이너 'AI 기획' 화면 구성 그대로. 단, <b>AI 대신 규칙으로 만든 예시</b>임을 띠에 밝혀요(디자이너도 '미리 준비한 예시'라고 밝힘).</li>
+    <li><b>대표 카피</b>는 새로 생기는 칸(저장 형식 추가 필요).</li>
+    <li>제안 근거는 우리 실데이터(명분 D-day, 작년 같은 명분 행사, 잡힌 행사, 컨셉 겹침). 지금은 ① 옆 패널에 흩어져 있어요.</li>
+    <li>지금 ③ 페이지 구성의 '시작 방법 3가지'를 아래 '페이지 구성안'으로 옮겨요. ③ 화면은 없어지고 구좌 편집이 이어받아요.</li></ul></div>
+</div>
+
+<!-- ======================= 03 상품·혜택 ======================= -->
+<div class="frame scr" id="s-prod" data-tab="2" data-cta="구좌 편집으로">
+  <div class="page">
+    <div class="head"><div class="grow"><div class="overline">03 · 상품·혜택</div><h1>상품·혜택 검토</h1><p>어떤 상품을 얼마에, 언제 할인할지 정해요. 구좌를 편집하면서 상품을 고를 수도 있어요.</p></div><span class="tag warn">아직 기획안에 저장하지 않았어요</span><span class="btn line">저장 전으로 되돌리기</span><span class="btn primary">저장하기</span></div>
+    <div class="notice"><b>기획안의 할인만 바꿔요.</b> 실제 판매 가격과 PROMO_WORK는 바뀌지 않아요. 05에서 내보낸 엑셀을 붙여 넣어야 반영돼요.</div>
+    <div class="row" style="margin-bottom:12px"><div class="seg"><span class="on">구좌 상품 <em>12</em></span><span>하루특가 편성 <em>28</em></span><span>후보 상품 <em>5</em></span></div><span class="grow"></span><span class="btn line sm">＋ 상품 추가</span><span class="btn line sm">지난 행사 상품·할인 가져오기</span><span class="btn line sm">자세히 편집 (작업대 18열)</span></div>
+    <div style="display:grid;grid-template-columns:1fr 300px;gap:16px">
+      <div class="card" style="padding:8px 0 0"><h2 style="padding:8px 20px 0">구좌 상품</h2>
+        <table><thead><tr><th>상품</th><th>SEQ</th><th>Zone</th><th class="num">정가</th><th class="num">할인율</th><th class="num">기획안 행사 판매가</th><th class="num">원가율 <span style="font-weight:400">(내부)</span></th><th>확인</th><th>배치된 구좌</th></tr></thead><tbody>
+          <tr class="sel"><td><b>시그니처 블렌디드 티</b></td><td class="cap">10021</td><td>블렌디드 티</td><td class="num">22,000</td><td class="num">20%</td><td class="num"><span class="sale">17,600원</span> <span class="tag price">수정됨</span></td><td class="num">38%</td><td><span class="tag ok">정상</span></td><td>02 블렌디드 티</td></tr>
+          <tr><td>프리미엄 티 세트</td><td class="cap">10044</td><td>블렌디드 티</td><td class="num">30,000</td><td class="num">15%</td><td class="num"><span class="sale">25,500원</span></td><td class="num">44%</td><td><span class="tag warn">주의: 원가율 높음</span></td><td>02 블렌디드 티</td></tr>
+          <tr><td>녹차 밀크 스프레드</td><td class="cap">10107</td><td>디저트</td><td class="num">12,000</td><td class="num">-</td><td class="num">12,000원 <span class="cap">할인 없음</span></td><td class="num">31%</td><td><span class="tag ok">정상</span></td><td><span class="cap">아직 배치하지 않았어요</span></td></tr>
+          <tr><td>티 컬렉션 선물 상자</td><td class="cap">10230</td><td>선물</td><td class="num">45,000</td><td class="num">10%</td><td class="num"><span class="sale">40,500원</span></td><td class="num">40%</td><td><span class="tag ok">정상</span></td><td>04 혜택 안내</td></tr>
+        </tbody></table>
+        <p class="cap" style="padding:12px 20px">원가와 원가율은 이 화면에서만 보여요. 디자이너 기획안과 팀 공유 요약에는 넣지 않아요.</p>
+      </div>
+      <div class="card"><h3>근거 · 시그니처 블렌디드 티</h3><table><tbody>
+        <tr><td class="cap">지난 행사</td><td>입동 상시 20% · 평소 대비 1.8배</td></tr>
+        <tr><td class="cap">할인 구간 반응</td><td>16~20%에서 가장 높음</td></tr>
+        <tr><td class="cap">쉰 기간</td><td>하루특가 42일 전</td></tr></tbody></table>
+        <p class="cap" style="margin-top:8px">관찰값이에요. 인과를 뜻하지 않아요.</p></div>
+    </div>
+  </div>
+  <div class="note"><h4>03 상품·혜택 · 바뀌는 점</h4><ul>
+    <li>디자이너 '상품·혜택' 구성: 머리 → 안내 띠 → 카드 → 표 → 표 아래 원가 안내.</li>
+    <li>첫 화면은 <b>요약 표</b>(상품, SEQ, 정가, 할인율, 행사 판매가 빨강, '수정됨', 원가율, 확인, 배치된 구좌). 멘토님 작업대 18열은 '자세히 편집'으로 그대로 열어요.</li>
+    <li>'배치된 구좌' 열로 할인 상품이 페이지 어디에 있는지 바로 보여요.</li>
+    <li>하루특가 편성·후보 상품은 묶음 탭 그대로. 근거는 오른쪽 카드.</li>
+    <li>지금: 작업대 18열 표가 바로 나오고, 배치 여부는 '다음에 할 일'에서만 보여요.</li></ul></div>
+</div>
+
+<!-- ======================= 04 구좌 편집 ======================= -->
+<div class="frame scr" id="s-edit" data-tab="3" data-cta="기획안 미리보기">
+  <div class="editor">
+    <aside class="list"><h2>구좌 목록</h2><p class="cap" style="padding:0 8px 8px">구좌를 끌어 순서를 바꿔 보세요.</p>
+      <div class="sec"><span class="g">⋮⋮</span><span class="n">01</span><span>메인 비주얼</span><span class="m">…</span></div>
+      <div class="sec on"><span class="g">⋮⋮</span><span class="n">02</span><span>블렌디드 티</span><span class="m">…</span></div>
+      <div class="sec"><span class="g">⋮⋮</span><span class="n">03</span><span>하루특가</span><span class="m">…</span></div>
+      <div class="sec"><span class="g">⋮⋮</span><span class="n">04</span><span>혜택 안내</span><span class="m">…</span></div>
+      <span class="grow"></span><span class="btn primary" style="width:100%">＋ 구좌 추가</span><p class="cap" style="padding:6px 4px 0">선택한 구좌 아래에 추가해요.</p>
+    </aside>
+    <section class="canvas">
+      <div class="ctool"><div><h2>모바일 와이어프레임</h2><p class="cap">문구를 눌러 바로 수정하고, 이동 손잡이로 구좌 순서를 바꿔 보세요.</p></div><span class="grow"></span><span class="btn line sm">모바일 390px</span><span class="btn line sm">편집 패널 닫기</span></div>
+      <div class="phone"><div class="ptop"><b>OSULLOC</b><span class="cap">모바일 구성 예시</span></div>
+        <div class="ws"><span class="wn">01 구좌</span><div class="wt"><span>⋮⋮ 이동</span><span>↑</span><span>↓</span></div><div class="hero"><b>오늘부터 한 잔은 따뜻하게</b><span style="font-size:13px;color:var(--ink2)">첫 추위의 블렌디드 티 바</span></div><div class="cta">블렌디드 티 보러 가기</div></div>
+        <div class="ws on"><span class="wn">02 구좌</span><div class="wt"><span>⋮⋮ 이동</span><span>↑</span><span>↓</span></div><div class="pad"><div class="wtitle edit-hint">첫 추위에 어울리는 블렌디드 티</div><div class="wsub">따뜻하게 우려 마시기 좋은 차를 골랐어요</div>
+          <div class="cards"><div class="wc pick"><div class="img">이미지</div><div>시그니처 블렌디드 티</div><b class="sale">20% 17,600원</b><div><s>22,000원</s></div></div><div class="wc"><div class="img">이미지</div><div>프리미엄 티 세트</div><b class="sale">15% 25,500원</b><div><s>30,000원</s></div></div></div>
+          <div class="cta">블렌디드 티 더 보기</div></div></div>
+        <div class="ws"><span class="wn">03 구좌</span><div class="pad"><div class="wtitle">오늘의 하루특가</div><div class="cap" style="color:var(--deal-ink)">11/07 하루특가 · 하루 4자리</div>
+          <div class="cards g3"><div class="wc"><div class="img"></div><div>말차 라떼</div><b class="sale">30%</b></div><div class="wc"><div class="img"></div><div>현미 녹차</div><b class="sale">25%</b></div><div class="wc gap"><div class="img"></div><span class="cap">빈 자리</span></div></div></div></div>
+        <div class="ws"><span class="wn">04 구좌</span><div class="pad"><div class="benefit"><div class="wtitle" style="font-size:18px">3만 원 이상 구매 시</div><b>티 코스터 증정</b><div class="cap">프로모션 혜택</div></div></div></div>
+      </div>
+    </section>
+    <aside class="panel">
+      <div class="phd"><h3>블렌디드 티</h3><p class="cap">02 구좌 · 2열 상품 그리드</p></div>
+      <div class="ptabs seg"><span>콘텐츠</span><span class="on">상품·가격</span><span>디자인 요청</span></div>
+      <div class="pbody">
+        <div class="f"><span>페이지에 보여줄 상품 정보</span><div class="chips"><span class="chip on">상품명</span><span class="chip on">정가</span><span class="chip on">행사 판매가</span><span class="chip on">할인율</span></div><p class="cap">선택한 항목을 상품 카드에 보여줘요.</p></div>
+        <div class="slot on"><div class="row"><b class="grow">시그니처 블렌디드 티</b><span class="btn sm line">상품 찾기</span></div>
+          <div class="f" style="margin:10px 0 0"><span>상품을 소개하는 문구 <em>선택</em></span><div class="in">이 카드에만 보여줄 문구</div></div>
+          <div class="pricebox"><div class="row"><span class="cap grow">행사 할인율 미리보기</span><div class="in" style="height:36px;width:80px">20%</div></div>
+            <div class="row" style="margin-top:8px"><span class="cap grow">적용할 행사 판매가</span><b class="sale">17,600원</b> <s>22,000원</s></div>
+            <p class="cap" style="margin-top:8px;color:var(--price)">아직 기획안에 적용하지 않았어요.</p>
+            <div class="row" style="margin-top:8px"><span class="btn sm line">가격 되돌리기</span><span class="btn sm primary">가격 적용하기</span></div>
+            <p class="cap" style="margin-top:8px"><b>기획안의 할인만</b> 바꿔요. 03 상품·할인 표의 이 상품 상시 행(11/07~11/20)에 들어가요. 실제 판매 가격은 바뀌지 않아요.</p></div>
+          <div class="row" style="margin-top:10px"><span class="btn sm ghost">상품 연결 해제하기</span><span class="btn sm ghost">카드 삭제하기</span></div></div>
+        <div class="slot"><div class="row"><b class="grow">프리미엄 티 세트</b><span class="cap">15% · 25,500원</span></div></div>
+        <span class="btn sm line">＋ 빈 상품 카드 추가</span>
+      </div>
+    </aside>
+  </div>
+  <div class="note"><h4>04 구좌 편집 · 바뀌는 점</h4><ul>
+    <li>디자이너 편집 화면 그대로: 왼쪽 구좌 목록(… 메뉴에 복제·삭제), 가운데 모바일 화면과 툴바, 오른쪽 패널 3탭.</li>
+    <li><b>③ 페이지 구성 화면이 없어지고</b> 여기로 합쳐요. Zone 연결, 구좌 목표는 콘텐츠 탭으로.</li>
+    <li><b>가격을 여기서 바꿀 수 있어요</b>(결정 3 '가'): 할인율 미리보기 → [가격 적용하기]해야 기획안 할인 행이 바뀌고, 적용 전에 떠나면 확인창이 떠요.</li>
+    <li>'페이지에 보여줄 상품 정보' 체크가 지금의 '가격 노출 방식'을 대신해요.</li>
+    <li>지금: ③에서 구조를, ④에서 문구를 따로 고치고, 가격은 읽기만 해요.</li></ul></div>
+</div>
+
+<!-- ======================= 04 상품 찾기 드로어 ======================= -->
+<div class="frame scr" id="s-drawer" data-tab="3" data-cta="기획안 미리보기">
+  <div class="editor drawer">
+    <aside class="list"><h2>구좌 목록</h2><p class="cap" style="padding:0 8px 8px">구좌를 끌어 순서를 바꿔 보세요.</p>
+      <div class="sec"><span class="g">⋮⋮</span><span class="n">01</span><span>메인 비주얼</span><span class="m">…</span></div>
+      <div class="sec on"><span class="g">⋮⋮</span><span class="n">02</span><span>블렌디드 티</span><span class="m">…</span></div>
+      <div class="sec"><span class="g">⋮⋮</span><span class="n">03</span><span>하루특가</span><span class="m">…</span></div>
+      <div class="sec"><span class="g">⋮⋮</span><span class="n">04</span><span>혜택 안내</span><span class="m">…</span></div></aside>
+    <section class="canvas"><div class="phone"><div class="ptop"><b>OSULLOC</b><span class="cap">모바일 구성 예시</span></div>
+      <div class="ws on"><span class="wn">02 구좌</span><div class="pad"><div class="wtitle">첫 추위에 어울리는 블렌디드 티</div>
+        <div class="cards"><div class="wc pick"><div class="img">바꿀 카드</div><div>시그니처 블렌디드 티</div><b class="sale">20% 17,600원</b></div><div class="wc"><div class="img">이미지</div><div>프리미엄 티 세트</div><b class="sale">15% 25,500원</b></div></div></div></div></div></section>
+    <aside class="panel">
+      <div class="crumbs">구좌 편집 › 상품 찾기 › 상품 상세</div>
+      <div class="phd"><div class="row"><h3 class="grow">상품 검색·변경</h3><span class="ibtn">✕</span></div></div>
+      <div class="pbody">
+        <span class="btn sm ghost">‹ 상품 검색 결과로</span>
+        <div class="row" style="margin:12px 0"><div class="pi"><div class="th" style="width:88px;height:88px"></div></div><div><h3 style="margin:0">유자 블렌디드 티</h3><p class="cap">SEQ 10318 · 블렌디드 티 · 상품 정보 예시</p></div></div>
+        <table><tbody>
+          <tr><td class="cap">정가</td><td class="num">24,000원</td></tr>
+          <tr><td class="cap">이 기획안의 할인</td><td class="num"><span class="cap">아직 할인 행이 없어요</span></td></tr>
+          <tr><td class="cap">지난 행사</td><td class="num">추석 상시 15% · 38일 전</td></tr>
+          <tr><td class="cap">최근 28일 매출</td><td class="num">410만 원</td></tr>
+          <tr><td class="cap">원가율 · 내부용</td><td class="num">36%</td></tr></tbody></table>
+        <div class="notice" style="margin-top:12px">변경 대상 · 02 블렌디드 티의 첫 번째 카드 (지금: 시그니처 블렌디드 티)<br>아래 연결 버튼을 누르면 선택한 카드의 상품만 바꿔요. 할인이 없는 상품이면 03 상품·혜택에 '할인 미정' 행을 함께 만들어요.</div>
+      </div>
+      <div class="dfoot"><span class="cap grow">선택한 상품: 유자 블렌디드 티</span><span class="btn line">상품 목록으로</span><span class="btn primary">이 카드에 연결하기</span></div>
+    </aside>
+  </div>
+  <div class="note"><h4>04 상품 찾기 드로어 · 새로 생김</h4><ul>
+    <li>디자이너 드로어: 패널 자리가 넓어지며 <b>상품 찾기 → 상품 상세 → 이 카드에 연결하기</b>.</li>
+    <li>목록과 상세는 멘토님 상품 데이터(정가, 지난 행사, 매출, 원가율). 원가율은 '내부용'으로 표시하고 공유 문서에는 안 들어가요.</li>
+    <li>같은 자리에 <b>레이아웃 탐색</b>(후보를 가운데에 미리 보고 [적용]), <b>참고 레퍼런스 탐색</b>(참고자료로 추가) 드로어도 생겨요.</li>
+    <li>지금: 패널 안의 작은 검색창으로 바로 바뀌고, 상세를 볼 수 없어요.</li></ul></div>
+</div>
+
+<!-- ======================= 05 미리보기·전달 ======================= -->
+<div class="frame scr" id="s-prev" data-tab="4" data-cta="편집 화면으로">
+  <div class="page">
+    <div class="head"><div class="grow"><div class="overline">05 · 미리보기·전달</div><h1>기획안 미리보기</h1><p>각 구좌 옆에서 요청사항을 바로 수정하고 참고자료를 확인해 보세요.</p></div>
+      <label class="row cap"><input type="checkbox" checked> 요청사항·레퍼런스 표시</label><span class="btn line">PDF로 저장</span><span class="btn line">HTML 내보내기</span></div>
+    <div class="deliver"><b>전달하기</b><span class="tag warn">확인할 것 2</span><span class="cap">하루특가 빈 자리 3개 · 가격이 정해지지 않은 상품 1개. 현재 상태로도 내보낼 수 있어요.</span><span class="grow"></span><span class="btn line sm">확정하기</span><span class="btn line sm">PROMO_WORK 엑셀</span><span class="btn line sm">팀 공유 요약</span></div>
+    <div class="paper">
+      <div class="cap">AMOREAD · 프로모션 기획안</div><h1 style="font-size:28px;line-height:36px;margin:4px 0">입동, 따뜻한 차 한 잔</h1>
+      <p class="cap">2026.11.07 ~ 2026.11.20 · 목적: 전환·매출 · 콘셉트: 첫 추위의 블렌디드 티 바</p><p class="cap">기획 카피: 오늘부터 한 잔은 따뜻하게</p>
+      <div class="drow"><div class="dwire"><div class="hero" style="min-height:160px"><b style="font-size:22px">오늘부터 한 잔은 따뜻하게</b></div><div class="cta">블렌디드 티 보러 가기</div></div>
+        <div class="dnote"><h3>01 메인 비주얼 · 디자인 요청사항</h3><div class="ta">따뜻한 김이 오르는 찻잔 이미지, 여백을 넉넉하게 잡아 주세요.</div><p class="cap" style="margin-top:6px">여기에서 바로 수정할 수 있어요. 자동으로 저장해요.</p><p class="cap" style="margin-top:6px"><b>기획 의도</b> · 첫 추위와 차 한 잔을 연결</p></div></div>
+      <div class="drow"><div class="dwire"><div class="pad"><div class="wtitle">첫 추위에 어울리는 블렌디드 티</div><div class="cards"><div class="wc"><div class="img">이미지</div><div>시그니처 블렌디드 티</div><b class="sale">20% 17,600원</b></div><div class="wc"><div class="img">이미지</div><div>프리미엄 티 세트</div><b class="sale">15% 25,500원</b></div></div></div></div>
+        <div class="dnote"><h3>02 블렌디드 티 · 디자인 요청사항</h3><div class="ta">따뜻한 톤의 카드 배경을 써 주세요.</div><p class="cap" style="margin-top:6px">참고 레퍼런스 · 선물 대상별 카드 큐레이션 (예시)</p></div></div>
+    </div>
+  </div>
+  <div class="note"><h4>05 미리보기·전달 · 바뀌는 점</h4><ul>
+    <li>디자이너 미리보기 문서 그대로: 표지(기획 카피 포함) + 구좌마다 <b>와이어프레임 | 요청사항 바로 수정 · 기획 의도 · 참고 레퍼런스</b>.</li>
+    <li>와이어프레임은 04와 같은 그림이에요.</li>
+    <li>디자이너에 없는 우리 것(확인할 것, 확정, PROMO_WORK 엑셀, 팀 공유 요약)은 위 '전달하기' 한 줄로.</li>
+    <li>지금: ⑤ 안에 '확인할 것 → 확정 → 내보내기' 카드가 먼저 있고 미리보기는 그 아래 카드 하나.</li></ul></div>
+</div>
+
+<!-- ======================= 레퍼런스 ======================= -->
+<div class="frame scr" id="s-lib" data-tab="5" data-cta="구좌 편집으로">
+  <div class="page">
+    <div class="head"><div class="grow"><div class="overline">레퍼런스</div><h1>프로모션 레퍼런스</h1><p>섹션의 배치와 프로모션 전체 흐름을 나누어 살펴보세요.</p></div></div>
+    <div class="row tabsline"><div class="seg"><span class="on">섹션별 사례 <em>8</em></span><span>전체 프로모션 <em>5</em></span></div><span class="grow"></span><div class="in" style="width:320px;color:var(--mute)">구좌명이나 프로모션명을 입력해 주세요</div></div>
+    <p class="cap" style="margin-bottom:12px">카드 하나는 프로모션의 구좌 하나예요. 종류를 고르면 같은 역할의 사례를 모아 볼 수 있어요.</p>
+    <div class="row" style="margin-bottom:20px"><b style="font-size:14px">섹션 종류</b><span class="chip on">전체 <i>8</i></span><span class="chip">메인·비주얼 <i>1</i></span><span class="chip">상품 큐레이션 <i>2</i></span><span class="chip">혜택·프로모션 <i>2</i></span><span class="chip">스토리 <i>3</i></span><span class="grow"></span><span class="cap">구성 예시 · 실제 캠페인 이미지 연결 전</span></div>
+    <div class="gal">
+      <div class="rc"><div class="rw"><b>선물 대상별 카드 큐레이션</b><div class="bar" style="width:80%"></div><div class="bar" style="width:50%"></div><div class="bx"><i></i><i></i></div></div><p style="margin-top:10px"><b>선물 대상별 카드 큐레이션</b></p><p class="cap">연말 선물 큐레이션 · 상품 큐레이션 · <span class="tag ok">배치 복사 가능</span></p></div>
+      <div class="rc"><div class="rw" style="background:#ececec;display:flex;align-items:flex-end"><b>티 컬렉션 히어로 비주얼</b></div><p style="margin-top:10px"><b>티 컬렉션 히어로 비주얼</b></p><p class="cap">겨울의 차 한 잔 · 메인·비주얼 · <span class="tag ok">배치 복사 가능</span></p></div>
+      <div class="rc"><div class="rw"><b>단계형 혜택 강조</b><div class="benefit" style="margin-top:12px">3만 원 이상<br><b>코스터 증정</b></div></div><p style="margin-top:10px"><b>단계형 혜택 강조</b></p><p class="cap">스페셜 위크 · 혜택·프로모션 · <span class="tag">참고자료만 첨부</span></p></div>
+    </div>
+  </div>
+  <div class="note"><h4>레퍼런스 · 새 화면</h4><ul>
+    <li>디자이너 레퍼런스 라이브러리 그대로: 섹션별 사례 / 전체 프로모션 탭, 섹션 종류 칩(개수), 검색, 세로 카드.</li>
+    <li>필터는 선택이에요. 처음엔 전체가 보이고 조건을 지우면 전체로 돌아가요.</li>
+    <li>카드를 누르면 큰 보기, 원본 캠페인, 참고할 포인트, '전체 프로모션 보기'.</li>
+    <li>04에서 '레이아웃 적용'(배치 복사 가능만) 또는 '참고자료로 추가'.</li>
+    <li>데이터는 결정 4: 디자이너 예시를 '예시' 표시와 함께 먼저 / 직접 등록 / 지난 기획안 구성.</li></ul></div>
+</div>
+
+<script>
+// 예시 화면 전환 (실제 앱 코드 아님)
+const TABS = ['01 브리프', '02 기획 방향', '03 상품·혜택', '04 구좌 편집', '05 미리보기·전달', '레퍼런스'];
+const bar = document.getElementById('bar').innerHTML;
+document.querySelectorAll('.scr[data-tab]').forEach(s => {
+  const i = +s.dataset.tab;
+  const tabs = TABS.map((t, k) => `<span class="${k === i ? 'on' : ''}">${t}</span>`).join('');
+  s.insertAdjacentHTML('afterbegin', bar.replace('__TABS__', tabs).replace('__CTA__', s.dataset.cta));
+});
+document.querySelectorAll('.mock-ctl [data-s]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.mock-ctl [data-s]').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.scr').forEach(x => x.classList.toggle('on', x.id === 's-' + b.dataset.s));
+  window.scrollTo(0, 0);
+}));
+document.getElementById('noteT').addEventListener('change', e => document.body.classList.toggle('no-note', !e.target.checked));
+</script>
+</body>
+</html>
