@@ -1,0 +1,6 @@
+# 외부 사이트에서 모은 자료에서 만든 중간 파일·검수표는 기록에 남기지 않는다
+unified/
+label_review.csv
+unlabeled_new.json
+eval_history.jsonl
+__pycache__/

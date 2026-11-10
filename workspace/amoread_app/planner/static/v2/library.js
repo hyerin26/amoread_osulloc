@@ -220,7 +220,7 @@ function renderDrawer() {
   const p = pageOf(r), kids = r.kind === 'page' ? R.filter(x => x.page === r.id) : [], fav = FAV.has(r.id);
   const kv = [['종류', kindName(r)], ['출처', r.from + (r.src && r.src !== r.from ? ` · ${r.src.replace(/^Pinterest · /, '')}` : '')], r.cls && ['분류', clsName(r.cls)], r.season && ['명분·시즌', r.season], p && ['페이지', p.name], r.concept && ['컨셉 구성', r.concept],
     r.ben && ['혜택 방식', r.ben.join(', ')], r.stype && ['구좌 종류', `${r.stype} (임시)`], r.mode && ['참여 방식', r.mode], r.pts?.length && ['참고할 것', r.pts.join(', ')], r.tags?.length && ['태그', r.tags.map(t => `#${t}`).join(' ')], r.created_at && ['추가한 날', r.created_at.slice(0, 10)]].filter(Boolean);
-  const use = r.demo ? '예시 레퍼런스라 기획안에 붙일 수 없어요. 직접 추가하거나 Pinterest에서 담은 레퍼런스는 구좌 편집 › 레퍼런스 탭 › [느낌 레퍼런스 추가] 목록에 나와요.'
+  const use = r.ai ? '수집한 원본 페이지·구좌예요. 분류(명분·분류·혜택 방식)는 자동으로 붙인 값이라 틀릴 수 있어요. 구좌 구성 추천에 쓰여요.' : r.demo ? '예시 레퍼런스라 기획안에 붙일 수 없어요. 직접 추가하거나 Pinterest에서 담은 레퍼런스는 구좌 편집 › 레퍼런스 탭 › [느낌 레퍼런스 추가] 목록에 나와요.'
     : '이 레퍼런스는 구좌 편집 › 레퍼런스 탭 › [느낌 레퍼런스 추가] 목록에 나와요. 즐겨찾기한 것이 먼저 보여요.';
   d.innerHTML = `<div class="dh"><div class="grow"><div class="overline">${esc(kindName(r))}${r.demo ? ' · 예시' : ''}</div><h2 id="drH">${esc(r.name)}</h2></div><button class="btn sm" data-close>닫기</button></div>
     <div class="db"><figure class="dfig">${thumb(r)}</figure>
@@ -370,6 +370,10 @@ async function loadLib() {
     const d = await v2api('/api/am/references');
     BOARDS = d.boards || []; OWN = (d.items || []).map(view); FAV = new Set(d.favorites || []); libState = 'ok'; libErr = '';
   } catch (e) { libState = 'err'; libErr = e.message; }
+  try {   // 수집한 원본 페이지·구좌가 준비돼 있으면 예시 대신 그것을 보여 준다 (서버 /api/am/ai/library). 실패하면 예시 그대로
+    const ai = await v2api('/api/am/ai/library');
+    if (ai.mode === 'ai' && ai.items.length) { R.length = 0; R.push(...ai.items); }
+  } catch (e) { /* 예시 유지 */ }
   render();
   if (tab === 'pin') loadPins();
 }

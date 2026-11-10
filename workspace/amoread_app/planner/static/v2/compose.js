@@ -178,6 +178,7 @@ function render() {
 let dirty = false;   // 고른 구성을 고쳤는지 (다른 안을 고를 때 덮어쓰기 확인)
 function choose(id) {
   if (chosen && chosen !== id && dirty && !confirm('고친 구성이 있어요. 다른 구성안으로 바꿀까요? (고친 내용은 사라져요)')) return;
+  if (AI_LIVE && id !== 'blank') v2api('/api/am/ai/feedback', { event: 'pick_cand', doc_id: PLAN.id || '', cand_id: id }).catch(() => {});   // 어떤 추천안을 골랐는지 기록 (화면 변화 없음)
   chosen = id; rows = id === 'blank' ? [{ id: uid(), name: '메인 비주얼', layout: 'hero', why: '' }] : toRows(CANDS.find(c => c.id === id));
   sel = null; dirty = false; render();
   $('#editH').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -303,7 +304,17 @@ async function pastCand(doc) {
   }
   return null;
 }
-let COMP_LIVE = false;
+let COMP_LIVE = false, AI_LIVE = false;
+// 구좌 구성 AI (서버 /api/am/ai/compose): 브리프 → A 규칙형, C 레퍼런스 조합 + 원본 페이지(PAGES). 실패·색인 없음(mode≠ai)이면 false를 돌려 지금 로직을 그대로 쓴다
+async function applyAi(doc) {
+  try {
+    const r = await v2api('/api/am/ai/compose', { doc: { id: doc.id || '', title: doc.title || '', brief: doc.brief || {}, v2: { cls: doc.v2?.cls || '', seed: doc.v2?.seed || '', keywords: doc.v2?.keywords || [] } }, per_section: 1 });
+    if (r.mode !== 'ai') return false;
+    Object.assign(PAGES, r.pages || {});
+    for (const c of r.candidates || []) { const i = CANDS.findIndex(x => x.id === c.id); if (i >= 0) CANDS[i] = c; else CANDS.push(c); }
+    return true;
+  } catch (e) { return false; }
+}
 async function buildLive(doc) {
   const kw = (doc.v2?.keywords || [])[0] || doc.v2?.seed || doc.brief?.myeongbun || '', cls = CLS_N[doc.v2?.cls] || '분류 미정', base = CANDS.find(c => c.id === 'A');
   COPY = doc.brief?.key_copy || doc.brief?.myeongbun || doc.title || '';
@@ -315,6 +326,7 @@ async function buildLive(doc) {
   if (past) CANDS[bi] = past; else CANDS.splice(bi, 1);
   const mix = CANDS.find(c => c.id === 'C');
   if (mix) Object.assign(mix, { title: '레퍼런스 조합 추천 (예시)', why: '레퍼런스 라이브러리가 아직 예시예요. 연결되면 실제 페이지의 구좌를 골라 이어요. 지금은 구성 모양만 참고하세요' });
+  AI_LIVE = await applyAi(doc);   // 서버 AI가 준비돼 있으면 A·C를 그 결과로 바꾼다. 아니면 위 예시 그대로
   COMP_LIVE = true; n = 3;
   document.querySelectorAll('.demo .seg, .demo > .cap').forEach(x => { x.hidden = true; });   // 목업 보기용 개수 고르기는 숨김
   const dp = document.querySelector('.demo p'); if (dp) dp.innerHTML = '<b>이 기획안으로 만든 추천이에요.</b> A는 분류·키워드 규칙, B는 PROMO_WORK 지난 행사의 진열 칸 순서예요. C(레퍼런스 조합)와 원본 페이지 캡처는 아직 예시예요.';

@@ -522,3 +522,7 @@ def pin_board_delete(req: BoardReq):
 @router.get("/pinterest/pins")
 def pin_list():
     return references.all_pins()
+
+# ---------- AI 추천 (구좌 구성·레퍼런스): /api/am/ai/*  — 화면은 바꾸지 않고 서버로만 붙는다 (amoread/ai/README.md) ----------
+from .ai.api import router as _ai_router  # noqa: E402
+router.include_router(_ai_router)

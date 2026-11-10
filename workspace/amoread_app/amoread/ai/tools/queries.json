@@ -1,0 +1,152 @@
+[
+{
+"qid": "q01",
+"role": "hero",
+"text": "겨울 연말 선물 시즌 메인 비주얼, 따뜻하고 감성적인 분위기"
+},
+{
+"qid": "q02",
+"role": "hero",
+"text": "뷰티 신제품 론칭 메인 비주얼과 헤드라인"
+},
+{
+"qid": "q03",
+"role": "hero",
+"text": "블랙프라이데이 대형 세일 메인 배너, 기간과 최대 혜택 강조"
+},
+{
+"qid": "q04",
+"role": "hero",
+"text": "차 선물세트 출시를 알리는 감성 메인 비주얼"
+},
+{
+"qid": "q05",
+"role": "benefit_overview",
+"text": "구매 금액별 사은품 증정 혜택 안내"
+},
+{
+"qid": "q06",
+"role": "benefit_overview",
+"text": "최대 할인율과 단독 혜택을 한눈에 요약"
+},
+{
+"qid": "q07",
+"role": "benefit_overview",
+"text": "멤버십 회원 등급별 혜택 안내"
+},
+{
+"qid": "q08",
+"role": "coupon_offer",
+"text": "신규 가입 고객 대상 할인 쿠폰 발급"
+},
+{
+"qid": "q09",
+"role": "coupon_offer",
+"text": "첫 구매 앱 전용 할인 쿠폰 받기"
+},
+{
+"qid": "q10",
+"role": "sale_offer",
+"text": "타임어택 한정 시간 특가"
+},
+{
+"qid": "q11",
+"role": "sale_offer",
+"text": "시즌 세일 최대 50% 할인 상품 모음"
+},
+{
+"qid": "q12",
+"role": "product_list",
+"text": "받는 사람별 선물 추천 상품 카드"
+},
+{
+"qid": "q13",
+"role": "product_list",
+"text": "베스트셀러 TOP 상품 랭킹"
+},
+{
+"qid": "q14",
+"role": "product_list",
+"text": "신상품 컬렉션 상품 모음"
+},
+{
+"qid": "q15",
+"role": "product_list",
+"text": "차 티백과 선물 세트 상품 진열"
+},
+{
+"qid": "q16",
+"role": "lookbook",
+"text": "컬렉션 룩북 이미지로 보여주는 제품 연출"
+},
+{
+"qid": "q17",
+"role": "brand_intro",
+"text": "브랜드 소개와 철학, 브랜드 홈으로 이동"
+},
+{
+"qid": "q18",
+"role": "editorial_story",
+"text": "제품이 만들어진 이야기를 전하는 감성 소개글"
+},
+{
+"qid": "q19",
+"role": "brand_story",
+"text": "브랜드 협업 스토리와 에디터 노트"
+},
+{
+"qid": "q20",
+"role": "participation_event",
+"text": "리뷰 작성 이벤트 참여 방법"
+},
+{
+"qid": "q21",
+"role": "participation_event",
+"text": "경품 응모 이벤트와 당첨 안내"
+},
+{
+"qid": "q22",
+"role": "terms_notice",
+"text": "이벤트 유의사항과 약관"
+},
+{
+"qid": "q23",
+"role": "share",
+"text": "친구에게 공유하고 혜택 받기"
+},
+{
+"qid": "q24",
+"role": "app_promo",
+"text": "앱 설치 유도와 QR 코드 안내"
+},
+{
+"qid": "q25",
+"role": "live_commerce",
+"text": "라이브 방송과 연계한 단독 혜택"
+},
+{
+"qid": "q26",
+"role": "partner_benefit",
+"text": "카드사 제휴 결제 혜택"
+},
+{
+"qid": "q27",
+"role": "section_navigation",
+"text": "기획전 안에서 이동하는 탭 바로가기"
+},
+{
+"qid": "q28",
+"role": "related_promotions",
+"text": "함께 보면 좋은 관련 기획전"
+},
+{
+"qid": "q29",
+"role": "product_list",
+"text": "선물 포장 패키지 세트 상품 소개"
+},
+{
+"qid": "q30",
+"role": "hero",
+"text": "쿠폰과 사은품 혜택을 앞세운 뷰티 프로모션 메인"
+}
+]
