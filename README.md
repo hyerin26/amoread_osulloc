@@ -1,9 +1,9 @@
-# AMOREAD — 오설록몰 프로모션 페이지 기획 도구 (`sub` 브랜치)
+# AMOREAD — 오설록몰 프로모션 페이지 기획 도구 (`design` 브랜치)
 
 프로모션 기획안 하나를 **홈(일정·명분) → 브리프 → 구좌 구성 추천 → 구좌 편집 → 미리보기·내보내기** 순서로 만드는 로컬 웹앱입니다.
 새로 설계한 화면은 `/v2/`, 예전 화면은 `/`에 있습니다.
 
-> **`design` 브랜치:** 기획자 프로토타입(`sub`)에서 화면 UX/UI가 바뀐 내용과 변경 이력은 [README_UXUI_변경사항.md](README_UXUI_변경사항.md)에 있습니다.
+기획자 프로토타입(`sub`)을 바탕으로 브리프의 레퍼런스 상세 패널, 구좌 편집과 미리보기의 좁은 화면 배치, 디자이너 전달 ZIP의 파일 선택 항목을 다듬었습니다. 변경 이력은 [README_UXUI_변경사항.md](README_UXUI_변경사항.md)에서 확인할 수 있습니다.
 
 > 이 문서는 각자 PC에서 처음 받아 실행하는 방법입니다. 서버는 **자기 PC(127.0.0.1)에서만** 열리므로, 다른 사람 PC의 화면에는 접속할 수 없습니다. 각자 실행하세요.
 
@@ -13,7 +13,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| OS | Windows 10/11 (아래 명령은 PowerShell 기준) |
+| OS | Windows 10/11 또는 macOS |
 | Git | `git --version`으로 확인 |
 | Python | **3.11 이상** (`python --version`). 담당자 PC는 3.15.2에서 동작 확인 |
 | GitLab 권한 | 이 저장소는 비공개입니다. 접근 권한이 없으면 담당자에게 요청 |
@@ -23,15 +23,15 @@
 ## 2. 받기
 
 ```powershell
-git clone -b sub https://gitlab.com/amoread2/osulloc.git
+git clone -b design https://gitlab.com/amoread2/osulloc.git
 cd osulloc\workspace\amoread_app
 ```
 
-이후 명령은 모두 **`workspace\amoread_app` 폴더 안에서** 실행합니다.
+이미 저장소를 받았다면 `osulloc` 폴더에서 `git fetch origin`으로 최신 브랜치를 확인한 뒤 `git switch design`으로 이동합니다. 이후 앱 실행 명령은 `workspace/amoread_app` 폴더에서 실행합니다.
 
 ---
 
-## 3. Python 환경 만들기 (처음 한 번)
+## 3. Python 환경 만들기 (Windows, 처음 한 번)
 
 ```powershell
 python -m venv .venv
@@ -45,7 +45,7 @@ python -m venv .venv
 
 ---
 
-## 4. 실행
+## 4. Windows에서 실행
 
 ```powershell
 $env:PYTHONUTF8 = "1"
@@ -58,6 +58,19 @@ $env:PLANNER_PORT = "9751"
 - 끄려면 PowerShell 창에서 `Ctrl + C` 또는 창 닫기.
 - `PLANNER_PORT`를 안 정하면 9731번을 씁니다. 이미 쓰는 번호라 실패하면 다른 번호(예: 9761)로 바꾸세요.
 - 두 번째부터는 **4번만** 하면 됩니다.
+
+### macOS에서 실행
+
+`osulloc` 폴더에서 다음 명령을 실행합니다.
+
+```sh
+cd workspace/amoread_app
+python3 -m venv .venv
+.venv/bin/python -m pip install -r planner/requirements.txt
+PYTHONUTF8=1 PLANNER_PORT=9751 .venv/bin/python -m planner.server --no-browser
+```
+
+브라우저에서 [v2 화면](http://127.0.0.1:9751/v2/)을 엽니다. 가상 환경과 패키지 설치는 처음 한 번만 하면 됩니다.
 
 ### 실행 파일(.bat)에 대해
 
@@ -127,12 +140,12 @@ $env:PLANNER_PORT = "9751"
 
 ## 8. 같이 작업할 때
 
-- `sub`에서 각자 브랜치를 만들어 작업하고, Merge Request로 `sub`에 합칩니다.
+- 화면 UX/UI 작업은 `design`을 기준으로 브랜치를 만들고, `design`을 대상으로 Merge Request를 엽니다.
   ```powershell
   git switch -c 이름/작업내용
   ```
 - **올리면 안 되는 것**: `data\`, `planner\data\`, `.env`, `.venv\` (모두 `.gitignore`에 있음). `git status`에 이런 파일이 보이면 커밋하지 마세요.
-- 참고: `sub`는 원격 `main`과 이력이 이어져 있지 않습니다. `main`에 합치는 방법은 따로 정합니다.
+- `design`과 `main`은 커밋 이력이 별개입니다. `main` 반영 방식은 팀과 협의합니다.
 
 ---
 
