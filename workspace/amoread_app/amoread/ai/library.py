@@ -22,6 +22,9 @@ def items(kinds=("page", "sec", "event")) -> dict:
     if not refs._load():
         return {"mode": "demo", "items": [], "counts": {}, "note": "레퍼런스 색인이 없어요 (planner/data/ai_refs)"}
     labels = _page_labels()
+    shape: dict[str, list[str]] = {}   # 페이지 윤곽 썸네일용: 페이지별 구좌 역할을 순서대로
+    for r in sorted(refs._state["rows"], key=lambda r: (r["page_id"], int(r.get("order") or 0))):
+        shape.setdefault(r["page_id"], []).append(r["role"])
     out = []
     for pid, pg in refs._state["pages"].items():
         lb = labels.get(pid)
@@ -31,7 +34,7 @@ def items(kinds=("page", "sec", "event")) -> dict:
         base = {"season": lb["season"], "cls": lb["cls"], "from": frm, "src": pg["brand"], "link": pg.get("url", ""), "r": [9, 16], "ai": True,
                 "label": {"type": lb["type"], "type_name": (rules.TYPES.get(lb["type"]) or rules.GENERIC)["name"], "confidence": lb["confidence"], "by": lb["labeled_by"], "evidence": lb.get("evidence", {})}}
         if "page" in kinds and pg["brand"] != "user":   # 직접 가져온 페이지는 레퍼런스 화면이 따로 보여 준다 (구좌만 여기서)
-            out.append({**base, "id": pid, "kind": "page", "name": pg["name"], "ben": lb["ben"], "concept": "", "secs": pg["secs"]})
+            out.append({**base, "id": pid, "kind": "page", "name": pg["name"], "ben": lb["ben"], "concept": "", "secs": pg["secs"], "shape": shape.get(pid, [])})
     for r in refs._state["rows"]:
         lb = labels.get(r["page_id"])
         pg = refs._state["pages"].get(r["page_id"])
@@ -41,7 +44,7 @@ def items(kinds=("page", "sec", "event")) -> dict:
         if not sec["stype"]:
             continue
         base = {"season": lb["season"], "cls": lb["cls"], "from": refs.BRAND_FROM.get(pg["brand"], "외부"), "src": pg["brand"], "page": r["page_id"], "psec": r["title"],
-                "link": pg.get("url", ""), "r": [9, 16], "ai": True, "label": {"by": lb["labeled_by"], "confidence": lb["confidence"]}, "summary": r["text"][:120]}
+                "link": pg.get("url", ""), "r": [9, 16], "ai": True, "label": {"by": lb["labeled_by"], "confidence": lb["confidence"]}, "summary": r["text"][:120], "role": r["role"]}
         if "event" in kinds and r["role"] == "participation_event":
             out.append({**base, "id": r["id"], "kind": "event", "name": r["title"], "mode": (sec["mode"] or [""])[0]})
         elif "sec" in kinds:
