@@ -379,7 +379,7 @@ def commit(draft_id: str, edits: dict) -> dict:
     ben = [x for x in (edits.get("ben") if edits.get("ben") is not None else draft["ben"])][:10]
     item = {"kind": edits.get("kind") or "page", "kind_label": edits.get("kind_label", ""), "name": name, "season": edits.get("season", draft["season"]), "cls": edits.get("cls", draft["cls"]),
             "source": "직접 추가", "link": draft.get("link", ""), "pts": edits.get("pts", [])[:10], "tags": edits.get("tags", [])[:20], "memo": edits.get("memo", "")[:300],
-            "ben": ben, "secs": [x["title"] for x in draft["sections"]], "shape": [x["role"] for x in draft["sections"] if x["role"] not in ("ui_noise", "empty")][:40], "mode": (edits.get("mode") or draft["mode"] or [""])[0] if isinstance(edits.get("mode") or draft["mode"], list) else edits.get("mode", ""), "ai_type": draft["type"], "from_intake": True}
+            "ben": ben, "secs": [x["title"] for x in draft["sections"]], "shape": [x["role"] for x in draft["sections"] if x["role"] not in ("ui_noise", "empty")][:40], "shape_x": [{"r": x["role"], "l": len(x.get("text") or ""), "i": int(x.get("n_images") or 0), "t": (x.get("title") or "")[:20]} for x in draft["sections"] if x["role"] not in ("ui_noise", "empty")][:40], "mode": (edits.get("mode") or draft["mode"] or [""])[0] if isinstance(edits.get("mode") or draft["mode"], list) else edits.get("mode", ""), "ai_type": draft["type"], "from_intake": True}
     out = references.save_item(item)
     rid = out["id"]
     # AI 검색용 사용자 색인

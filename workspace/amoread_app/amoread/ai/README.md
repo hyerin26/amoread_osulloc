@@ -110,3 +110,10 @@ $env:PYTHONUTF8 = "1"
 | `build_index.py` | 색인·유형 통계·분류 라벨 만들기 |
 | `labeling.py` · `library.py` · `cases.py` · `feedback.py` | 분류 라벨 · 레퍼런스 화면용 목록 · 저장한 기획안 사례 · 선택 기록 |
 | `tools/` | 새 데이터 갱신·평가 스크립트 (`tools/README.md`) |
+
+## 썸네일(윤곽) 규격
+레퍼런스 카드 썸네일은 이미지 없이 구좌 구성에서 자동으로 그려진다 (`library.js` `shapeThumb`).
+- 입력: 페이지별 `shape_x` = `[{r: 역할, l: 글 길이, i: 이미지 수, t: 제목}]` (없으면 `shape` 역할 목록만으로도 그려짐)
+- 색: 역할 계열(비주얼·상품·혜택·스토리·참여·안내)별, `FAM` 표 한 곳에서 관리
+- 새 레퍼런스: 색인(`build_index`·크롤링 갱신)·가져오기(`intake` commit) 모두 같은 필드를 채우므로 추가 즉시 썸네일이 생긴다
+- 새 역할이 생기면 `FAM`, `SH`, `shapeBlock0`에 한 줄씩 추가 (없으면 기본 줄무늬로 표시)

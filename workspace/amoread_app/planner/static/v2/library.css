@@ -215,3 +215,9 @@ dialog::backdrop { background: var(--scrim); }
 .shp .wh { fill: var(--surface); opacity: .92; } .shp .bt { fill: var(--bn, var(--a)); font-size: 3.8px; font-weight: 700; } .shp .nm { fill: var(--ink); font-size: 4.4px; font-weight: 700; } .shp .tx { fill: var(--ink2); font-size: 3.6px; font-weight: 600; } .shp .txw { fill: #fff; font-size: 4px; font-weight: 700; } .shp text { fill: var(--mute); font-size: 5.2px; font-family: inherit; }
 .fr .shp { position: absolute; inset: 6px; width: calc(100% - 12px); height: calc(100% - 12px); }
 .dfig .shp { width: min(100%, 260px); height: auto; aspect-ratio: 3 / 4; }
+
+/* 구좌 역할 계열별 색: 블록마다 제 색을 입혀 배치가 한눈에 읽히게 */
+.shp .f-vis { --c: hsl(335 58% 58%); } .shp .f-prod { --c: hsl(152 46% 42%); } .shp .f-ben { --c: hsl(28 86% 55%); }
+.shp .f-story { --c: hsl(214 62% 56%); } .shp .f-act { --c: hsl(268 50% 60%); } .shp .f-info { --c: hsl(215 10% 62%); }
+.shp g .ac { fill: var(--c); } .shp g .ac2 { fill: var(--c); opacity: .5; } .shp g .bk { fill: var(--c); opacity: .3; } .shp g .ol { stroke: var(--c); }
+.shp g .ln { fill: var(--c); opacity: .45; }

@@ -29,7 +29,7 @@ def items(kinds=("page", "sec", "event")) -> dict:
         shape.setdefault(r["page_id"], []).append(r["role"])
         im = r.get("images")
         shape_x.setdefault(r["page_id"], []).append({"r": r["role"], "l": len(r.get("text") or ""), "i": len(im) if isinstance(im, list) else int(im or 0),
-                                                     "t": re.sub(r"^[A-Z][A-Za-z ]{2,14}\s+(?=\S)", "", (r.get("title") or "").strip())[:14]})
+                                                     "t": re.sub(r"^[A-Z][A-Za-z ]{2,14}\s+(?=\S)", "", (r.get("title") or "").strip())[:20]})
     out = []
     for pid, pg in refs._state["pages"].items():
         lb = labels.get(pid)

@@ -70,7 +70,10 @@ function demoImg(w, h) {
 // 윤곽 썸네일: 이미지가 없어도 구좌 역할(메인 비주얼·상품·쿠폰…)을 순서대로 쌓은 간략 화면으로 '이런 구성의 프로모션'을 보인다
 const SH = { hero: 24, product_list: 22, coupon_offer: 10, sale_offer: 11, benefit_overview: 13, partner_benefit: 11, brand_story: 15, editorial_story: 14, brand_intro: 13, lookbook: 19, visual_gallery: 19, image_block: 15,
   participation_event: 13, terms_notice: 8, section_navigation: 6, related_promotions: 11, share: 6, app_promo: 7, live_commerce: 15, content: 9 };
-function shapeBlock(role, x, y, w, h, o = {}) {
+const FAM = { hero: 'vis', visual_gallery: 'vis', lookbook: 'vis', image_block: 'vis', product_list: 'prod', coupon_offer: 'ben', sale_offer: 'ben', benefit_overview: 'ben', partner_benefit: 'ben',
+  brand_story: 'story', editorial_story: 'story', brand_intro: 'story', participation_event: 'act', live_commerce: 'act', share: 'act', app_promo: 'act', terms_notice: 'info', section_navigation: 'info', related_promotions: 'info', content: 'info' };
+const shapeBlock = (role, x, y, w, h, o = {}) => `<g class="f-${FAM[role] || 'info'}">${shapeBlock0(role, x, y, w, h, o)}</g>`;
+function shapeBlock0(role, x, y, w, h, o = {}) {
   const R = (a, b, c, d, k, rx = 1) => `<rect class="${k}" x="${(a).toFixed(1)}" y="${(b).toFixed(1)}" width="${Math.max(c, .5).toFixed(1)}" height="${Math.max(d, .5).toFixed(1)}" rx="${rx}"/>`;
   const lines = (a, b, c, n, g = 2.4) => Array.from({ length: n }, (_, i) => R(a, b + i * g, i === n - 1 ? c * .6 : c, 1, 'ln', .5)).join('');
   const cap = (a, b, c, k = 'tx') => (o.t && o.cap ? `<text class="${k}" x="${a.toFixed(1)}" y="${b.toFixed(1)}">${esc(o.t.slice(0, c))}</text>` : '');
@@ -101,23 +104,22 @@ function shapeThumb(r) {
   // 같은 역할이 이어지면 묶되, 묶음마다 글 길이·이미지 수를 합쳐 높이와 모양에 반영
   let g = []; X.forEach(x => { const l = g[g.length - 1]; if (l && l.r === x.r) { l.n++; l.l += x.l || 0; l.i += x.i || 0; } else g.push({ r: x.r, n: 1, l: x.l || 0, i: x.i || 0, t: x.t || '' }); });
   if (one) g = [{ ...g[0], n: 1, big: true }];
-  const few = r.kind === 'page' && X.length <= 2, nm = few ? String(r.name || '').replace(/^\d{6}\s*/, '').replace(/\[[^\]]*\]/g, '').trim() : '', nl = nm ? [nm.slice(0, 12), nm.slice(12, 24), nm.slice(24, 35)].filter(Boolean) : [], TOP = r.kind === 'page' ? 9 + nl.length * 5 : 0;
-  const room = H - PAD * 2 - 8 - TOP;
+  const TOP = 0;
+  const room = H - PAD * 2 - 8;
   const TEXTY = new Set(['product_list', 'brand_story', 'editorial_story', 'brand_intro', 'terms_notice', 'content', 'benefit_overview']);
   const hOf = it => { const base = SH[it.r] || 9, k = TEXTY.has(it.r) && it.l ? .75 + Math.min(it.l / it.n, 700) / 700 * .85 : 1; return base * k * (1 + .55 * (Math.min(it.n, 3) - 1)); };
   const total = g.reduce((a, it) => a + hOf(it) + 3, 0);
   const sc = one ? Math.min(2.6, room / hOf(g[0])) : Math.max(.55, Math.min(1, room / total));
-  let used = one ? (room - hOf(g[0]) * sc) / 2 : 0, out = r.kind === 'page' ? `<text class="bt" x="${PAD}" y="${PAD + 1}">${esc(String(r.src || '').slice(0, 14))}</text>` + nl.map((t, i) => `<text class="nm" x="${PAD}" y="${PAD + 9 + i * 5}">${esc(t)}</text>`).join('') : '', shown = 0;
+  let used = one ? (room - hOf(g[0]) * sc) / 2 : 0, out = '', shown = 0;
   for (const it of g) {
     const h = hOf(it) * sc, gap = 3 * sc;
     if (used + h > room && shown) { out += `<circle class="ln" cx="${W / 2 - 4}" cy="${PAD + TOP + used + 2}" r="1"/><circle class="ln" cx="${W / 2}" cy="${PAD + TOP + used + 2}" r="1"/><circle class="ln" cx="${W / 2 + 4}" cy="${PAD + TOP + used + 2}" r="1"/>`; break; }
     const each = h / Math.min(it.n, 3);
-    for (let k = 0; k < Math.min(it.n, 3); k++) out += shapeBlock(it.r, PAD, PAD + TOP + used + k * each, w, each - (it.n > 1 ? 1.5 : 0), { t: it.t, l: it.l / it.n, i: Math.round(it.i / it.n), cap: !one && sc >= .8 && each >= 11 && k === 0 });
+    for (let k = 0; k < Math.min(it.n, 3); k++) out += shapeBlock(it.r, PAD, PAD + TOP + used + k * each, w, each - (it.n > 1 ? 1.5 : 0), { t: it.t, l: it.l / it.n, i: Math.round(it.i / it.n) });
     used += h + gap; shown++;
   }
   const label = one ? esc(r.stype || ROLE_KO[X[0].r] || '') : `구좌 ${X.length}개`;
-  const hue = hueOf(r.src || r.brand || r.name);
-  return `<svg class="shp ${r.cls ? `c-${esc(r.cls)}` : ''}" style="--bn:hsl(${hue} 42% 40%)" viewBox="0 0 ${W} ${H}" role="img" aria-label="구좌 구성 윤곽: ${esc(g.map(x => ROLE_KO[x.r] || x.r).join(' → ')).slice(0, 200)}"><rect class="pg" x=".3" y=".3" width="${W - .6}" height="${H - .6}" rx="2"/>${out}<rect class="cl" x="${W - PAD - 7}" y="2.2" width="7" height="2.4" rx="1.2"/><text x="${W - PAD}" y="${H - 3}" text-anchor="end">${label}</text></svg>`;
+  return `<svg class="shp ${r.cls ? `c-${esc(r.cls)}` : ''}" viewBox="0 0 ${W} ${H}" role="img" aria-label="구좌 구성 윤곽: ${esc(g.map(x => ROLE_KO[x.r] || x.r).join(' → ')).slice(0, 200)}"><rect class="pg" x=".3" y=".3" width="${W - .6}" height="${H - .6}" rx="2"/>${out}<text x="${W - PAD}" y="${H - 3}" text-anchor="end">${label}</text></svg>`;
 }
 const thumb = r => (r.img ? `<img src="${esc(r.img)}" alt="" loading="lazy">` : shapeThumb(r) || (r.link ? '<span class="cap">링크만 있어요</span>' : demoImg(r.r[0], r.r[1])));
 const pageOf = r => (r.page ? all().find(x => x.id === r.page) : null);
