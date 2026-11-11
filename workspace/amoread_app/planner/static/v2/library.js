@@ -70,17 +70,19 @@ function demoImg(w, h) {
 // 윤곽 썸네일: 이미지가 없어도 구좌 역할(메인 비주얼·상품·쿠폰…)을 순서대로 쌓은 간략 화면으로 '이런 구성의 프로모션'을 보인다
 const SH = { hero: 24, product_list: 22, coupon_offer: 10, sale_offer: 11, benefit_overview: 13, partner_benefit: 11, brand_story: 15, editorial_story: 14, brand_intro: 13, lookbook: 19, visual_gallery: 19, image_block: 15,
   participation_event: 13, terms_notice: 8, section_navigation: 6, related_promotions: 11, share: 6, app_promo: 7, live_commerce: 15, content: 9 };
-function shapeBlock(role, x, y, w, h) {
+function shapeBlock(role, x, y, w, h, o = {}) {
   const R = (a, b, c, d, k, rx = 1) => `<rect class="${k}" x="${(a).toFixed(1)}" y="${(b).toFixed(1)}" width="${Math.max(c, .5).toFixed(1)}" height="${Math.max(d, .5).toFixed(1)}" rx="${rx}"/>`;
   const lines = (a, b, c, n, g = 2.4) => Array.from({ length: n }, (_, i) => R(a, b + i * g, i === n - 1 ? c * .6 : c, 1, 'ln', .5)).join('');
+  const cap = (a, b, c, k = 'tx') => (o.t && o.cap ? `<text class="${k}" x="${a.toFixed(1)}" y="${b.toFixed(1)}">${esc(o.t.slice(0, c))}</text>` : '');
+  const nI = Math.max(0, o.i || 0);
   switch (role) {
-    case 'hero': return R(x, y, w, h, 'ac', 1.6) + R(x + 5, y + h - 11, w * .52, 2.6, 'wh', .8) + R(x + 5, y + h - 7, w * .32, 2, 'wh', .8) + R(x + 5, y + h - 3.8, w * .2, 2.2, 'wh', 1.1);
-    case 'product_list': { const cw = (w - 4) / 3; return [0, 1, 2].map(i => R(x + i * (cw + 2), y, cw, h - 5, 'bk', 1) + R(x + i * (cw + 2), y + h - 3.6, cw * .7, 1.3, 'ln', .5)).join(''); }
-    case 'coupon_offer': return R(x, y, w, h, 'ol', 1.5) + R(x + 4, y + h / 2 - 1.2, w * .4, 2.4, 'ac2', .8) + R(x + w - 14, y + 2, 10, h - 4, 'ac', 1);
+    case 'hero': return R(x, y, w, h, 'ac', 1.6) + cap(x + 5, y + h - 14, 13, 'txw') + R(x + 5, y + h - 11, w * .52, 2.6, 'wh', .8) + R(x + 5, y + h - 7, w * .32, 2, 'wh', .8) + R(x + 5, y + h - 3.8, w * .2, 2.2, 'wh', 1.1);
+    case 'product_list': { const n = Math.max(2, Math.min(4, nI || 3)), cw = (w - (n - 1) * 2) / n; return Array.from({ length: n }, (_, i) => R(x + i * (cw + 2), y, cw, h - 5, 'bk', 1) + R(x + i * (cw + 2), y + h - 3.6, cw * .7, 1.3, 'ln', .5)).join(''); }
+    case 'coupon_offer': return R(x, y, w, h, 'ol', 1.5) + R(x + 4, y + h / 2 - 1.2, w * .4, 2.4, 'ac2', .8) + R(x + w - 14, y + 2, 10, h - 4, 'ac', 1) + cap(x + 4, y + h / 2 - 3.4, 12);
     case 'sale_offer': return R(x, y, w, h, 'bk', 1.2) + `<circle class="ac" cx="${x + 7}" cy="${y + h / 2}" r="${Math.min(4.2, h / 2 - 1)}"/>` + lines(x + 15, y + h / 2 - 2.4, w - 20, 2);
-    case 'benefit_overview': case 'partner_benefit': return [0, 1, 2].map(i => `<circle class="ac2" cx="${x + 7 + i * (w - 14) / 2.2}" cy="${y + 4}" r="2.6"/>` + R(x + 2 + i * (w - 14) / 2.2, y + 8.4, 10, 1.2, 'ln', .5)).join('');
+    case 'benefit_overview': case 'partner_benefit': { const n = o.l > 260 ? 4 : o.l < 60 ? 2 : 3; return Array.from({ length: n }, (_, i) => `<circle class="ac2" cx="${x + 6 + i * (w - 12) / (n - .6)}" cy="${y + 4}" r="2.6"/>` + R(x + 1 + i * (w - 12) / (n - .6), y + 8.4, 9, 1.2, 'ln', .5)).join(''); }
     case 'brand_story': case 'editorial_story': case 'brand_intro': return R(x, y, h, h, 'bk', 1) + lines(x + h + 3, y + 2, w - h - 3, Math.max(2, Math.floor((h - 3) / 2.4)));
-    case 'lookbook': case 'visual_gallery': case 'image_block': { const tw = (w - 2) / 2, th = (h - 2) / 2; return [0, 1, 2, 3].map(i => R(x + (i % 2) * (tw + 2), y + Math.floor(i / 2) * (th + 2), tw, th, 'bk', 1)).join(''); }
+    case 'lookbook': case 'visual_gallery': case 'image_block': { const n = Math.max(2, Math.min(6, nI || 4)), cols = n > 4 ? 3 : 2, rows = Math.ceil(n / cols), tw = (w - (cols - 1) * 2) / cols, th = (h - (rows - 1) * 2) / rows; return Array.from({ length: n }, (_, i) => R(x + (i % cols) * (tw + 2), y + Math.floor(i / cols) * (th + 2), tw, th, 'bk', 1)).join(''); }
     case 'participation_event': return lines(x + w * .2, y + 1, w * .6, 2) + R(x + w * .3, y + h - 5.5, w * .4, 4.4, 'ac', 2.2);
     case 'section_navigation': return [0, 1, 2, 3].map(i => R(x + i * (w / 4), y + 1, w / 4 - 2, h - 2, i ? 'bk' : 'ac2', 1.6)).join('');
     case 'related_promotions': return R(x, y, w / 2 - 1, h, 'bk', 1) + R(x + w / 2 + 1, y, w / 2 - 1, h, 'bk', 1);
@@ -90,24 +92,32 @@ function shapeBlock(role, x, y, w, h) {
     default: return lines(x, y, w, Math.max(2, Math.floor(h / 2.4)));
   }
 }
+// 브랜드(출처)마다 배너 색이 달라지게: 이름에서 색상값을 뽑는다
+const hueOf = s => { let h = 0; for (const c of String(s || '')) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
 function shapeThumb(r) {
-  let roles = (r.shape && r.shape.length ? r.shape : r.role ? [r.role] : []).filter(x => x !== 'ui_noise' && x !== 'empty');
-  if (!roles.length) return '';
-  const W = 90, H = 120, PAD = 6, w = W - PAD * 2, one = r.kind !== 'page' || roles.length === 1;
-  let g = []; roles.forEach(x => { const l = g[g.length - 1]; l && l.r === x ? l.n++ : g.push({ r: x, n: 1 }); });
-  if (one) g = [{ r: roles[0], n: 1, big: true }];
-  const room = H - PAD * 2 - 8, hOf = it => (SH[it.r] || 9) * (1 + .55 * (Math.min(it.n, 3) - 1)), total = g.reduce((a, it) => a + hOf(it) + 3, 0);
-  const sc = one ? 2.6 : Math.max(.55, Math.min(1, room / total));   // 길면 줄여서 전부 담고, 그래도 넘치면 말줄임
-  let used = one ? (room - hOf(g[0]) * sc) / 2 : 0, out = '', shown = 0;
+  const X = (r.shape_x && r.shape_x.length ? r.shape_x : (r.shape || (r.role ? [r.role] : [])).map(x => ({ r: x }))).filter(x => x.r !== 'ui_noise' && x.r !== 'empty');
+  if (!X.length) return '';
+  const W = 90, H = 120, PAD = 6, w = W - PAD * 2, one = r.kind !== 'page' || X.length === 1;
+  // 같은 역할이 이어지면 묶되, 묶음마다 글 길이·이미지 수를 합쳐 높이와 모양에 반영
+  let g = []; X.forEach(x => { const l = g[g.length - 1]; if (l && l.r === x.r) { l.n++; l.l += x.l || 0; l.i += x.i || 0; } else g.push({ r: x.r, n: 1, l: x.l || 0, i: x.i || 0, t: x.t || '' }); });
+  if (one) g = [{ ...g[0], n: 1, big: true }];
+  const few = r.kind === 'page' && X.length <= 2, nm = few ? String(r.name || '').replace(/^\d{6}\s*/, '').replace(/\[[^\]]*\]/g, '').trim() : '', nl = nm ? [nm.slice(0, 12), nm.slice(12, 24), nm.slice(24, 35)].filter(Boolean) : [], TOP = r.kind === 'page' ? 9 + nl.length * 5 : 0;
+  const room = H - PAD * 2 - 8 - TOP;
+  const TEXTY = new Set(['product_list', 'brand_story', 'editorial_story', 'brand_intro', 'terms_notice', 'content', 'benefit_overview']);
+  const hOf = it => { const base = SH[it.r] || 9, k = TEXTY.has(it.r) && it.l ? .75 + Math.min(it.l / it.n, 700) / 700 * .85 : 1; return base * k * (1 + .55 * (Math.min(it.n, 3) - 1)); };
+  const total = g.reduce((a, it) => a + hOf(it) + 3, 0);
+  const sc = one ? Math.min(2.6, room / hOf(g[0])) : Math.max(.55, Math.min(1, room / total));
+  let used = one ? (room - hOf(g[0]) * sc) / 2 : 0, out = r.kind === 'page' ? `<text class="bt" x="${PAD}" y="${PAD + 1}">${esc(String(r.src || '').slice(0, 14))}</text>` + nl.map((t, i) => `<text class="nm" x="${PAD}" y="${PAD + 9 + i * 5}">${esc(t)}</text>`).join('') : '', shown = 0;
   for (const it of g) {
     const h = hOf(it) * sc, gap = 3 * sc;
-    if (used + h > room && shown) { out += `<circle class="ln" cx="${W / 2 - 4}" cy="${PAD + used + 2}" r="1"/><circle class="ln" cx="${W / 2}" cy="${PAD + used + 2}" r="1"/><circle class="ln" cx="${W / 2 + 4}" cy="${PAD + used + 2}" r="1"/>`; break; }
+    if (used + h > room && shown) { out += `<circle class="ln" cx="${W / 2 - 4}" cy="${PAD + TOP + used + 2}" r="1"/><circle class="ln" cx="${W / 2}" cy="${PAD + TOP + used + 2}" r="1"/><circle class="ln" cx="${W / 2 + 4}" cy="${PAD + TOP + used + 2}" r="1"/>`; break; }
     const each = h / Math.min(it.n, 3);
-    for (let k = 0; k < Math.min(it.n, 3); k++) out += shapeBlock(it.r, PAD, PAD + used + k * each, w, each - (it.n > 1 ? 1.5 : 0));
+    for (let k = 0; k < Math.min(it.n, 3); k++) out += shapeBlock(it.r, PAD, PAD + TOP + used + k * each, w, each - (it.n > 1 ? 1.5 : 0), { t: it.t, l: it.l / it.n, i: Math.round(it.i / it.n), cap: !one && sc >= .8 && each >= 11 && k === 0 });
     used += h + gap; shown++;
   }
-  const label = one ? esc(r.stype || ROLE_KO[roles[0]] || '') : `구좌 ${roles.length}개`;
-  return `<svg class="shp ${r.cls ? `c-${esc(r.cls)}` : ''}" viewBox="0 0 ${W} ${H}" role="img" aria-label="구좌 구성 윤곽: ${esc(g.map(x => ROLE_KO[x.r] || x.r).join(' → ')).slice(0, 200)}"><rect class="pg" x=".3" y=".3" width="${W - .6}" height="${H - .6}" rx="2"/>${out}<text x="${W - PAD}" y="${H - 3}" text-anchor="end">${label}</text></svg>`;
+  const label = one ? esc(r.stype || ROLE_KO[X[0].r] || '') : `구좌 ${X.length}개`;
+  const hue = hueOf(r.src || r.brand || r.name);
+  return `<svg class="shp ${r.cls ? `c-${esc(r.cls)}` : ''}" style="--bn:hsl(${hue} 42% 40%)" viewBox="0 0 ${W} ${H}" role="img" aria-label="구좌 구성 윤곽: ${esc(g.map(x => ROLE_KO[x.r] || x.r).join(' → ')).slice(0, 200)}"><rect class="pg" x=".3" y=".3" width="${W - .6}" height="${H - .6}" rx="2"/>${out}<rect class="cl" x="${W - PAD - 7}" y="2.2" width="7" height="2.4" rx="1.2"/><text x="${W - PAD}" y="${H - 3}" text-anchor="end">${label}</text></svg>`;
 }
 const thumb = r => (r.img ? `<img src="${esc(r.img)}" alt="" loading="lazy">` : shapeThumb(r) || (r.link ? '<span class="cap">링크만 있어요</span>' : demoImg(r.r[0], r.r[1])));
 const pageOf = r => (r.page ? all().find(x => x.id === r.page) : null);
