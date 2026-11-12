@@ -683,7 +683,7 @@ def claude_job(job_id: str):
 
 def main():
     import uvicorn
-    url = f"http://127.0.0.1:{config.SERVER_PORT}/"
+    url = f"http://127.0.0.1:{config.SERVER_PORT}/v2/home"
     if "--no-browser" not in sys.argv:
         threading.Timer(1.5, lambda: webbrowser.open(url)).start()
     print(f"기획 도우미: {url}  (이 창을 닫으면 종료됩니다)")
