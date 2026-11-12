@@ -1,0 +1,4 @@
+/* 수집 화면 잘라 보기 공용 (capture.js) */
+.crop { position: absolute; inset: 0; overflow: hidden; display: block; }
+.cclip { position: absolute; left: 0; overflow: hidden; display: block; background: #fff; contain: paint; transform: translateZ(0); }
+.cinner { position: absolute; left: 0; top: 0; transform-origin: 0 0; display: block; }

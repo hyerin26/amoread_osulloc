@@ -408,25 +408,49 @@ function demoImg(w, h) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w * 40}" height="${h * 40}"><defs><pattern id="p" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="16" fill="#f3f3f3"/></pattern></defs><rect width="100%" height="100%" fill="#ffffff"/><rect width="100%" height="100%" fill="url(#p)"/><rect x="0.5" y="0.5" width="${w * 40 - 1}" height="${h * 40 - 1}" fill="none" stroke="#dedede"/></svg>`;
   return `<img src="data:image/svg+xml,${encodeURIComponent(svg)}" alt="">`;
 }
+// ---- 서버 AI 추천 레퍼런스 (수집해 둔 원본 구좌): 있으면 예시 REFS 대신 이것을 쓴다 ----
+const LIVE = { by: {}, loading: {} };   // by[구좌 id] = { top: [id…], more: [id…] } | null(서버 AI 없음 → 예시)
+const capSpan = r => {   // 수집해 둔 화면에서 그 구좌만 잘라 보여 준다 (화면에 보일 때 그림)
+  if (!r.cap) return '';
+  const b = Cap.band(r.pg, r.name, r.sx?.t), at = b ? `data-y="${b.y}" data-h="${b.h}"` : r.sx ? `data-t="${esc(r.sx.t)}" data-n="${r.sx.n}"` : '';
+  return at ? `<span class="crop" data-crop data-id="${esc(r.pid)}" ${at}></span>` : '';
+};
+async function loadRecs(s) {
+  if (LIVE.by[s.id] !== undefined || LIVE.loading[s.id]) return;
+  LIVE.loading[s.id] = 1;
+  try {
+    const d = PLAN.doc || {}, res = await v2api('/api/am/ai/references', { section: { layoutId: s.layout, name: (s.name || '').slice(0, 40), purpose: (s.role || '').slice(0, 20) }, n: 8,
+      doc: { id: d.id || '', title: d.title || '', brief: d.brief || {}, v2: { cls: d.v2?.cls || '', seed: d.v2?.seed || '', keywords: d.v2?.keywords || [] } } });
+    if (res.mode !== 'ai' || !res.items?.length) LIVE.by[s.id] = null;
+    else {
+      const ids = res.items.map(it => { REFS[it.id] = { name: it.title, page: it.campaign, from: it.from, layout: LNAME[it.layout] ? it.layout : null, r: [9, 16], why: it.why || it.reason, live: true, role: it.role, cap: it.cap, pg: it.pglayout, pid: it.page, sx: it.sx, url: it.url }; return it.id; });
+      LIVE.by[s.id] = { top: ids.slice(0, 3), more: ids.slice(3) };
+    }
+  } catch (e) { LIVE.by[s.id] = null; }
+  delete LIVE.loading[s.id];
+  if (S() && S().id === s.id && tab === 'refs') renderPanel();
+}
 function refCard(s, k) {
-  const r = REFS[k], att = s.att.some(a => a.ref === k), canLay = r.layout && r.layout !== s.layout;
-  return `<div class="ref ${att ? 'att' : ''}"><span class="thumb">${r.img ? `<img src="${esc(r.img)}" alt="">` : demoImg(r.r[0], r.r[1])}</span><div>
+  const r = REFS[k], att = s.att.some(a => a.ref === k), canLay = r.layout && (r.layout !== s.layout || (r.live && r.role === 'product_list'));
+  return `<div class="ref ${att ? 'att' : ''}"><span class="thumb">${r.img ? `<img src="${esc(r.img)}" alt="">` : demoImg(r.r[0], r.r[1])}${capSpan(r)}</span><div>
         <div class="rn">${esc(r.name)}</div><div class="cap"><span class="tag ${r.from === '자사몰' ? 'real' : ''}">${esc(r.from)}</span> ${esc(r.page || '')}</div><div class="why">${esc(r.why || '')}</div>
         <div class="ra"><button class="btn xs" data-refview="${k}">미리보기</button>
           <button class="btn xs ${att ? '' : 'primary'}" data-refatt="${k}" aria-pressed="${att}">${att ? '참고에서 빼기' : '참고로 붙이기'}</button>
-          ${r.layout ? `<button class="btn xs" data-reflay="${k}" ${canLay ? '' : 'disabled'} title="${!canLay ? '지금과 같은 레이아웃이에요' : `${LNAME[r.layout]}로 바꿔요 · 문구·메모는 그대로`}">레이아웃 가져오기</button>` : ''}
+          ${r.layout ? `<button class="btn xs" data-reflay="${k}" ${canLay ? '' : 'disabled'} title="${!canLay ? '지금과 같은 레이아웃이에요' : r.live ? '원본에서 칸 수를 재서 우리 레이아웃 중 가장 가까운 것으로 바꿔요 · 문구·메모는 그대로' : `${LNAME[r.layout]}로 바꿔요 · 문구·메모는 그대로`}">레이아웃 가져오기</button>` : ''}
           <button class="btn xs ghost" data-refsave="${k}" aria-pressed="${saved.has(k)}">${saved.has(k) ? '★ 즐겨찾기 해제' : '☆ 즐겨찾기'}</button></div></div></div>`;
 }
 function refsTab(s) {
-  const cand = s.refs.concat(Object.keys(REFS).filter(k => !s.refs.includes(k) && REFS[k].layout === s.layout).slice(0, 1));
+  loadRecs(s);
+  const lv = LIVE.by[s.id], wait = LIVE.by[s.id] === undefined;
+  const cand = lv ? lv.top : wait ? [] : s.refs.concat(Object.keys(REFS).filter(k => !s.refs.includes(k) && !REFS[k].live && REFS[k].layout === s.layout).slice(0, 1));
   // 더 찾기: 위에 없는 레퍼런스 전부 (같은 구좌 종류 먼저). 라이브러리에 사진·핀터레스트로 모은 것도 여기 나와요
-  const more = Object.keys(REFS).filter(k => !cand.includes(k)).sort((a, b) => (REFS[b].layout === s.layout) - (REFS[a].layout === s.layout));
+  const more = lv ? lv.more : wait ? [] : Object.keys(REFS).filter(k => !cand.includes(k) && !REFS[k].live).sort((a, b) => (REFS[b].layout === s.layout) - (REFS[a].layout === s.layout));
   const moreBox = !refMore ? '' : `<div class="refmore" role="region" aria-label="레퍼런스 더 찾기">
       ${more.length ? `<p class="hint">${more.length}개 · 같은 구좌 종류(${esc(LNAME[s.layout])}) 먼저</p><div class="refs">${more.map(k => refCard(s, k)).join('')}</div>`
         : '<div class="empty-st"><b>더 보여 드릴 레퍼런스가 없어요</b><p class="hint">레퍼런스 라이브러리에서 핀터레스트 보드를 연결하거나 이미지·링크를 직접 추가하면 여기에서도 고를 수 있어요.</p></div>'}
       <a class="btn xs" href="/v2/library" target="_blank" rel="noopener">레퍼런스 라이브러리 새 탭으로 열기</a></div>`;
-  return `<p class="hint">이 구좌에 참고할 <b>원본 구좌 레퍼런스</b>예요. 자사몰과 외부 페이지에서 잘라 낸 구좌예요.</p>
-    <div class="refs">${cand.map(k => refCard(s, k)).join('') || '<p class="hint">이 구좌 종류의 예시가 아직 없어요</p>'}</div>
+  return `<p class="hint">이 구좌에 참고할 <b>원본 구좌 레퍼런스</b>예요. ${lv ? '수집해 둔 자사몰·외부 페이지에서 이 구좌와 비슷한 구좌를 찾았어요.' : '아래는 예시예요 (수집 데이터가 없을 때).'}</p>
+    <div class="refs">${cand.map(k => refCard(s, k)).join('') || `<p class="hint">${wait ? '수집해 둔 레퍼런스에서 찾는 중이에요…' : '이 구좌 종류의 예시가 아직 없어요'}</p>`}</div>
     <button class="btn sm" data-refmore aria-expanded="${refMore}">${refMore ? '더 찾기 닫기' : `레퍼런스 더 찾기 (${more.length})`}</button>
     ${moreBox}
     ${moodBlock(s)}`;
@@ -556,7 +580,8 @@ function dlg(o, h, sub, body, foot) { $('#dlgO').textContent = o; $('#dlgH').tex
 
 // ================= 동작 =================
 const refocus = sel => { const el = document.querySelector(sel); el?.focus(); return !!el; };
-document.addEventListener('click', e => {
+const _rp = renderPanel; renderPanel = function () { _rp(); Cap.lazy($('#panel')); };
+document.addEventListener('click', async e => {
   const t = e.target, s = S(), d = k => t.closest(`[data-${k}]`), v = k => d(k)?.dataset[k.replace(/-(.)/g, (_, c) => c.toUpperCase())];
   // 구좌 추가·삭제·실행 취소 (구좌가 하나도 없어도 동작)
   if (d('secaddopen') || t.closest('#secAdd')) { openAddSec(); return; }
@@ -607,9 +632,16 @@ document.addEventListener('click', e => {
   if (d('rvshow')) { const k = v('rvshow'); s.rv.show[k] = s.rv.show[k] ? 0 : 1; render(); refocus(`[data-rvshow="${k}"]`); return; }
   if (d('rvmv')) { const [j, dd] = v('rvmv').split(':').map(Number), o = s.rv.order; [o[j], o[j + dd]] = [o[j + dd], o[j]]; render(); refocus(`[data-rvmv="${j + dd}:${dd}"]`); return; }
   if (d('rvadd')) { const used = s.rv.groups.map(g => g.seq), next = [...new Set(REVIEWS.map(r => r.seq))].find(x => !used.includes(x)); if (next) { s.rv.groups.push({ seq: next, picks: [] }); render(); } else toast(liveOn ? '후기가 있는 이 기획안 상품을 모두 넣었어요 (상품을 카드에 넣으면 그 후기도 여기 나와요)' : '예시 후기가 있는 상품을 모두 넣었어요'); return; }
-  if (d('refview')) { const r = REFS[v('refview')]; dlg('원본 구좌 레퍼런스 · 미리보기', r.name, `${r.from} · ${r.page} — 미리보기만 해요. 이 구좌는 바뀌지 않아요.`, `<div class="thumb big">${demoImg(r.r[0], r.r[1])}</div><p class="hint">원본 비율 ${r.r[0]}:${r.r[1]} (예시). 원본 페이지 캡처가 아직 연결 전이라 전체 페이지는 볼 수 없어요.</p>`, ''); return; }
+  if (d('refview')) { const k = v('refview'), r = REFS[k], big = capSpan(r); dlg('원본 구좌 레퍼런스 · 미리보기', r.name, `${r.from} · ${r.page} — 미리보기만 해요. 이 구좌는 바뀌지 않아요.`, `<div class="thumb big">${demoImg(r.r[0], r.r[1])}${big}</div><p class="hint">${big ? '수집해 둔 원본 화면에서 이 구좌만 잘라 보여 줘요 (이미지 파일은 저장하지 않아 회색 칸).' : `원본 비율 ${r.r[0]}:${r.r[1]} (예시). 수집해 둔 화면이 없어 전체 페이지는 볼 수 없어요.`}</p>`, r.cap ? `<button class="btn sm" data-refwhole="${k}">전체 페이지 보기 · 이 구좌 위치</button>` : ''); Cap.lazy($('#dlgB')); return; }
+  if (d('refwhole')) { const r = REFS[v('refwhole')]; $('#dlgB').innerHTML = '<div id="rw"></div>'; $('#dlgS').textContent = '수집 당시 모습 그대로예요. 초록 실선 박스가 이 구좌 자리예요 (이미지는 회색 칸).'; $('#dlgF').innerHTML = `<button class="btn sm" data-refview="${v('refwhole')}">구좌만 보기</button>`; Cap.whole($('#rw'), r.pid, r.pg, r.name); return; }
   if (d('refatt')) { const k = v('refatt'), i = s.att.findIndex(a => a.ref === k); if (i >= 0) s.att.splice(i, 1); else s.att.push({ ref: k, note: '' }); render(); toast(i >= 0 ? '참고에서 뺐어요' : '참고로 붙였어요. 디자인 요청 탭에서 참고할 것을 적을 수 있어요'); return; }
-  if (d('reflay') && !d('reflay').disabled) { const r = REFS[v('reflay')]; setLayout(s, r.layout); render(); toast(`레이아웃을 '${LNAME[r.layout]}'로 가져왔어요. 문구·메모는 그대로예요`); return; }
+  if (d('reflay') && !d('reflay').disabled) {
+    const k = v('reflay'), r = REFS[k]; let ly = r.layout, note = '';
+    const b = r.live && r.role === 'product_list' && r.cap ? Cap.band(r.pg, r.name, r.sx?.t) : null;
+    if (b) { toast('원본 화면에서 칸 수를 재는 중이에요…'); try { const n = await Cap.cols(r.pid, b.y, b.h); if (n >= 3) ly = 'grid3'; else if (n === 2) ly = 'grid2'; note = ` · 원본은 ${n}칸`; } catch (e2) {} }
+    if (ly === s.layout) { toast(`레이아웃은 그대로 '${LNAME[ly]}'예요${note}. 원본 칸 수가 지금 구좌와 같거나 우리 레이아웃에 딱 맞는 종류가 없어요`); return; }
+    setLayout(s, ly); render(); toast(`레이아웃을 '${LNAME[ly]}'로 바꿨어요${note}. 칸 수는 원본에서 잰 값이고, 세부 모양은 우리 레이아웃 중 가장 가까운 것이에요. 문구·메모는 그대로예요`); return;
+  }
   if (d('refsave')) { const k = v('refsave'); saved.has(k) ? saved.delete(k) : saved.add(k); renderPanel(); return; }
   if (d('moodlink')) { moodLink = !moodLink; renderPanel(); refocus(moodLink ? '#moodUrl' : '[data-moodlink]'); return; }
   if (d('moodurl')) { const raw = $('#moodUrl').value.trim(); let u; try { u = new URL(raw); } catch { u = null; }

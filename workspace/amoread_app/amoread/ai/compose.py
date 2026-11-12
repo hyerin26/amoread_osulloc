@@ -12,6 +12,7 @@ from . import cases, refs, rules
 NO_REF = {"terms_notice", "share", "app_promo", "related_promotions", "section_navigation"}   # 정해진 문구·기능이라 레퍼런스를 찾지 않는다
 
 
+
 def _match(doc: dict, plan: dict) -> list:
     b, v2 = doc.get("brief") or {}, doc.get("v2") or {}
     cls = rules.CLS_NAME.get(v2.get("cls"), "")
@@ -58,8 +59,8 @@ def build(doc: dict, per_section: int = 1) -> dict:
                 ref_items[item["id"]] = item
                 pg = refs._state["pages"].get(r["page_id"]) or {}
                 pages.setdefault(r["page_id"], {"name": pg.get("name") or r["campaign"], "from": refs.BRAND_FROM.get(r["brand"], "외부"), "period": "", "r": [9, 16],
-                                                "secs": pg.get("secs") or [], "url": r.get("url", "")})
-                row.append({"src": [r["page_id"], r["title"]], "refId": item["id"]})
+                                                "secs": pg.get("secs") or [], "url": r.get("url", ""), **refs.capture_info(r["page_id"])})
+                row.append({"src": [r["page_id"], r["title"]], "refId": item["id"], "sx": {"t": (r.get("text") or "")[:120], "n": len(r.get("text") or "")}})
         secs_c.append(row)
     if anchor:
         basis.append(f"기준 페이지 '{(refs._state['pages'].get(anchor) or {}).get('name', anchor)[:30]}': 구좌 {len(need)}개 중 {own}개를 이 페이지에서 가져오고 나머지는 다른 사례로 보충")

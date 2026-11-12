@@ -136,7 +136,18 @@ function shapeThumb(r) {
   const label = one ? esc(r.stype || ROLE_KO[X[0].r] || '') : `구좌 ${X.length}개`;
   return `<svg class="shp ${r.cls ? `c-${esc(r.cls)}` : ''}" viewBox="0 0 ${W} ${H}" role="img" aria-label="구좌 구성 윤곽: ${esc(g.map(x => ROLE_KO[x.r] || x.r).join(' → ')).slice(0, 200)}"><rect class="pg" x=".3" y=".3" width="${W - .6}" height="${H - .6}" rx="2"/>${out}<text x="${W - PAD}" y="${H - 3}" text-anchor="end">${label}</text></svg>`;
 }
-const thumb = r => (r.img ? `<img src="${esc(r.img)}" alt="" loading="lazy">` : shapeThumb(r) || (r.link ? '<span class="cap">링크만 있어요</span>' : demoImg(r.r[0], r.r[1])));
+// 구좌는 원본 화면을 수집해 둔 페이지면 그 구좌 자리를 잘라 썸네일로 쓴다 (화면에 보일 때 그린다). 못 그리면 아래 구성도가 그대로 보인다
+// 구좌 글 카드: 잘라 볼 화면이 없을 때 구성도 대신 쓴다 (같은 유형끼리 똑같아 보이는 문제 방지). 수집 때 저장한 글만 쓴다
+function textCard(r) {
+  const nm = String(r.name || ''); let t = String(r.summary || '').replace(/\s+/g, ' ').trim();
+  for (let i = 0; i < 3 && nm && t.startsWith(nm); i++) t = t.slice(nm.length).replace(/^[\s.·:,\-]+/, '');   // 앞에 제목이 반복돼 저장돼 있어서 걷어 낸다
+  return `<span class="tc"><b>${esc(nm)}</b>${t ? `<span class="tx">${esc(t)}</span>` : ''}<span class="tk">${esc(r.stype || ROLE_KO[r.role] || '')}</span></span>`;
+}
+const cropOf = r => { if (r.kind !== 'sec' || r.img) return ''; const p = pageOf(r); if (!p?.rendered) return ''; const b = Cap.band(p.layout, r.psec, r.summary);
+  const at = b ? `data-y="${b.y}" data-h="${b.h}"` : `data-t="${esc(r.summary || r.psec)}" data-n="${r.tl || 0}"`;   // 위치를 못 찾으면 글로 그 요소를 찾아 그린다
+  return `<span class="cropbox">${textCard(r)}<span class="crop" data-crop data-id="${esc(p.id)}" ${at}></span></span>`; };
+const thumb = r => (cropOf(r) || (r.kind === 'sec' && !r.img && r.ai ? `<span class="cropbox">${textCard(r)}</span>` : thumb0(r)));
+const thumb0 = r => (r.img ? `<img src="${esc(r.img)}" alt="" loading="lazy">` : shapeThumb(r) || (r.link ? '<span class="cap">링크만 있어요</span>' : demoImg(r.r[0], r.r[1])));
 const pageOf = r => (r.page ? all().find(x => x.id === r.page) : null);
 
 // 서버에 저장된 항목 → 화면용 (출처·이미지 주소를 붙임)
@@ -214,6 +225,7 @@ function render() {
     : `<div class="empty">${q ? `'${esc(q)}'와 ` : ''}고른 조건에 맞는 레퍼런스가 없어요.<button class="btn sm" data-clearall>필터·검색 지우기</button></div>`;
   $('#grid').innerHTML = (libState === 'err' ? `<div class="empty warn">직접 추가한 레퍼런스를 불러오지 못했어요 (${esc(libErr)}). 예시만 보여요.<button class="btn sm" data-reload>다시 불러오기</button></div>` : '')
     + (list.length ? list.map(card).join('') : empty);
+  Cap.lazy($('#grid'));
   renderDrawer();
 }
 function card(r) {
@@ -286,6 +298,7 @@ async function savePin(pid) {
 function renderDrawer() {
   const r = byId(cur), d = $('#drawer');
   d.hidden = !r; $('#scrim').hidden = !r; if (!r) return;
+  queueMicrotask(() => Cap.lazy(d));
   const p = pageOf(r), kids = r.kind === 'page' ? all().filter(x => x.page === r.id) : [], fav = FAV.has(r.id);
   const kv = [['종류', kindName(r)], ['출처', r.from + (r.src && r.src !== r.from ? ` · ${r.src.replace(/^Pinterest · /, '')}` : '')], r.cls && ['분류', clsName(r.cls)], r.season && ['명분·시즌', r.season], p && ['페이지', p.name], r.concept && ['컨셉 구성', r.concept],
     r.ben && ['혜택 방식', r.ben.join(', ')], r.stype && ['구좌 종류', `${r.stype} (임시)`], r.mode && ['참여 방식', r.mode], r.pts?.length && ['참고할 것', r.pts.join(', ')], r.tags?.length && ['태그', r.tags.map(t => `#${t}`).join(' ')], r.created_at && ['추가한 날', r.created_at.slice(0, 10)]].filter(Boolean);
@@ -339,18 +352,7 @@ async function snapView(id) {
 // 수집해 둔 페이지(그려서 저장한 HTML+CSS)를 이 화면 안에 격리해 그린다: 섀도 DOM + CSSOM 스타일시트 (화면 보안 설정을 풀지 않고, 칸(iframe) 없이 어느 브라우저에서나 보임)
 // 스크립트는 수집 때 이미 빠져 있고, 태그 안 style은 CSP가 막으므로 값을 떼어 두었다가 CSSOM으로 다시 입힌다
 async function mountCapture(host, id) {
-  let d; try { d = await v2api('/api/am/ai/capture?id=' + encodeURIComponent(id)); } catch (e) { host.textContent = `화면을 불러오지 못했어요: ${e.message}`; return false; }
-  const doc = new DOMParser().parseFromString(d.html, 'text/html');
-  const css = [...doc.querySelectorAll('style')].map(x => x.textContent).join('\n'); doc.querySelectorAll('style').forEach(x => x.remove());
-  const sty = []; doc.body.querySelectorAll('[style]').forEach(e => { e.dataset.cs = sty.length; sty.push(e.getAttribute('style')); e.removeAttribute('style'); });
-  const sh = host.attachShadow({ mode: 'open' }), sheet = new CSSStyleSheet();
-  sheet.replaceSync(css.replace(/:root/g, ':host').replace(/(^|[},\s])html(?=[\s,{.:#\[>+~])/g, '$1:host').replace(/(^|[},\s])body(?=[\s,{.:#\[>+~])/g, '$1.cbody'));
-  sh.adoptedStyleSheets = [sheet];
-  const wrap = document.createElement('div'); wrap.className = `cbody ${doc.body.className}`;
-  wrap.append(...[...doc.body.childNodes].map(n => document.importNode(n, true)));
-  sh.append(wrap);
-  wrap.querySelectorAll('[data-cs]').forEach(e => { e.style.cssText = sty[+e.dataset.cs]; });
-  return true;
+  try { await Cap.mount(host, id); return true; } catch (e) { host.textContent = `화면을 불러오지 못했어요: ${e.message}`; return false; }
 }
 function wholePage(id, mark, mode) {
   const p = all().find(x => x.id === id);

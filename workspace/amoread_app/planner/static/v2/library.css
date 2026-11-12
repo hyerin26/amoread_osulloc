@@ -275,3 +275,15 @@ dialog::backdrop { background: var(--scrim); }
 #dlgB .dwhy { font-style: normal; color: #b45309; }
 #dlgB .dlow { margin-top: 12px; }
 #dlgB .dlow > summary { cursor: pointer; font-size: 14px; font-weight: 600; padding: 8px 0; }
+
+.cropbox { position: absolute; inset: 6px; display: block; }
+.dfig .cropbox { position: relative; inset: auto; width: min(100%, 260px); aspect-ratio: 3 / 4; }
+.cropbox .shp, .dfig .cropbox .shp { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; }
+/* 잘라 보기가 구성도 테두리를 덮거나, 구성도가 비쳐 보이지 않게: 테두리 안쪽에 흰 바탕으로 */
+.cropbox .crop { inset: 3px; border-radius: 4px; }
+
+/* 구좌 글 카드 */
+.tc { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px 12px 10px; background: var(--surface, #fff); border: 1px solid var(--line-sub); border-radius: 6px; overflow: hidden; text-align: left; }
+.tc b { font-size: 14px; line-height: 1.35; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.tc .tx { font-size: 12px; line-height: 1.5; color: var(--ink2, #666); display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
+.tc .tk { margin-top: auto; align-self: flex-end; font-size: 12px; color: var(--ink2, #666); }

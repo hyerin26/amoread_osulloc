@@ -80,6 +80,11 @@ function demoImg(w, h, alt) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w * 40}" height="${h * 40}"><defs><pattern id="p" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="16" fill="#f3f3f3"/></pattern></defs><rect width="100%" height="100%" fill="#ffffff"/><rect width="100%" height="100%" fill="url(#p)"/><rect x="0.5" y="0.5" width="${w * 40 - 1}" height="${h * 40 - 1}" fill="none" stroke="#dedede"/></svg>`;
   return `<img src="data:image/svg+xml,${encodeURIComponent(svg)}" alt="${esc(alt)}">`;
 }
+// 수집해 둔 화면이 있으면 원본 구좌 자리를 잘라 보여 준다 (없으면 빗금 자리)
+const capOf = src => { const p = PAGES[src[0]]; if (!p?.cap) return ''; const b = Cap.band(p.layout, src[1]);
+  const sx = CANDS.flatMap(k => k.secs).map(s => s[3]).find(g => g?.src && g.src[0] === src[0] && g.src[1] === src[1])?.sx;
+  const at = b ? `data-y="${b.y}" data-h="${b.h}"` : sx ? `data-t="${esc(sx.t)}" data-n="${sx.n}"` : '';
+  return at ? `<span class="crop" data-crop data-id="${esc(src[0])}" ${at}></span>` : ''; };
 function visual(c) {
   if (c.type === 'single') {
     const p = PAGES[c.page];
@@ -87,7 +92,7 @@ function visual(c) {
   }
   if (c.type === 'mix') {
     const s = srcList(c), show = s.slice(0, s.length > 4 ? 3 : 4), more = s.length - show.length;
-    return `<button class="vis mosaic" data-src="${c.id}" aria-label="출처 ${s.length}개 보기">${show.map((x, i) => { const r = SEC_R[x[1]] || [3, 4]; return `<span class="cell">${demoImg(r[0], r[1], '')}<b>${NUM[i]}</b></span>`; }).join('')}${more ? `<span class="cell more">+${more}</span>` : ''}</button>`;
+    return `<button class="vis mosaic" data-src="${c.id}" aria-label="출처 ${s.length}개 보기">${show.map((x, i) => { const r = SEC_R[x[1]] || [3, 4]; return `<span class="cell">${capOf(x) || demoImg(r[0], r[1], '')}<b>${NUM[i]}</b></span>`; }).join('')}${more ? `<span class="cell more">+${more}</span>` : ''}</button>`;
   }
   return `<div class="vis none"><span>원본 없음</span><span class="cap">${esc(c.basis)} 기준으로 자동으로 짠 구성이에요</span></div>`;
 }
@@ -168,7 +173,7 @@ function groupLine(r, i) {
     <span class="cap">${r.tabs ? `탭 ${r.tabs.length}개: ${r.tabs.map(esc).join(' · ')} · 탭 하나가 PROMO_WORK 칸 하나` : `'${esc(r.gname)}' 묶음을 구좌 ${parts}개로 나눴어요`} · 지난 행사에서 추정</span></div>`;
 }
 function render() {
-  renderCands(); renderEdit();
+  renderCands(); renderEdit(); Cap.lazy($('#cands'));
   $$('.demo .seg [data-n]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.n === n));
   $$('.demo [data-pair]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pair === pair));
   $('#pairSeg').hidden = n !== 2;
@@ -241,6 +246,13 @@ $('#nextBtn').addEventListener('click', () => { if (!PLAN.id) { toast(`예시예
 function openOrig(pageKey, mark) {
   const p = PAGES[pageKey]; if ($('#srcDlg').open) $('#srcDlg').close();
   $('#origH').textContent = p.name;
+  if (p.cap) {   // 수집해 둔 화면이 있으면 원본 모양 그대로 + 가져온 구좌 위치 강조
+    $('#origSub').textContent = `${p.from} · 수집 당시 모습 그대로예요. 초록 실선 박스가 이번 구성에 가져온 구좌예요 (이미지는 파일을 저장하지 않아 회색 칸)`;
+    $('#origNote').textContent = '';
+    Cap.whole($('#origBody'), pageKey, p.layout, mark);
+    $('#origDlg').showModal(); return;
+  }
+
   $('#origSub').textContent = p.zones ? `${p.from}${p.period ? ` · ${p.period}` : ''} · PROMO_WORK 카테고리명(진열 칸)을 행 순서대로 늘어놓았어요` : `${p.from}${p.period ? ` · ${p.period}` : ''} · 실제로 걸렸던 페이지 한 장 전체예요`;
   $('#origBody').innerHTML = p.secs.map((nm, i) => `<div class="oseg ${nm === mark ? 'used' : ''}"><div class="t"><span class="grow">${i + 1}. ${esc(nm)}</span>
       ${nm === mark ? '<span class="tag real">이번 구성에 가져온 구좌</span>' : ''}<span class="tag">${p.zones ? `진열 칸 · 상품 ${p.zones[i]?.count ?? '-'}개` : '원본 구좌 레퍼런스'}</span></div>
@@ -258,11 +270,12 @@ function openSources(id) {
     if (!g?.src) return `<tr><td>${i + 1}. ${esc(nm)}</td><td class="cap">레퍼런스 없이 규칙으로 넣었어요</td><td></td><td></td></tr>`;
     const k = list.indexOf(g.src), p = PAGES[g.src[0]];
     const r = SEC_R[g.src[1]] || [3, 4];
-    return `<tr><td>${i + 1}. ${esc(nm)}</td><td><span class="sth">${demoImg(r[0], r[1], '')}<b>${NUM[k]}</b></span> ${esc(g.src[1])}</td>
+    return `<tr><td>${i + 1}. ${esc(nm)}</td><td><span class="sth ${capOf(g.src) ? 'cap' : ''}">${capOf(g.src) || demoImg(r[0], r[1], '')}<b>${NUM[k]}</b></span> ${esc(g.src[1])}</td>
       <td><span class="tag ${p.from === '자사몰' ? 'real' : ''}">${p.from}</span> ${esc(p.name)}</td>
       <td><button class="btn sm" data-orig="${g.src[0]}" data-mark="${esc(g.src[1])}">전체 페이지 보기</button></td></tr>`;
   }).join('')}</tbody></table>`;
   $('#srcDlg').showModal();
+  Cap.lazy($('#srcBody'));
 }
 
 

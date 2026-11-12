@@ -265,13 +265,26 @@ def roles_for(layout_id: str, name: str = "", purpose: str = "") -> list[str]:
     return ["editorial_story", "brand_story", "brand_intro"]   # text-cta
 
 
+def capture_info(page_id: str) -> dict:
+    """화면 수집본이 있는 페이지면 구좌 띠 배치(layout)를 붙인다 → 화면이 원본 구좌를 잘라 보여 주고 전체 페이지에서 위치를 강조한다."""
+    try:
+        from .. import references
+        it = next((x for x in references.load().get("items", []) if x.get("id") == page_id), None)
+        lay = (it or {}).get("layout")
+        if lay and lay.get("bands") and (it or {}).get("rendered"):
+            return {"layout": {"ph": lay["ph"], "vw": lay.get("vw", 390), "bands": [{k: b.get(k) for k in ("y", "h", "st", "role")} | {"txt": (b.get("txt") or "")[:40]} for b in lay["bands"]]}, "cap": True}
+    except Exception:
+        pass
+    return {}
+
+
 def as_ref(r: dict, why: str = "") -> dict:
     """색인 행 → 화면 레퍼런스 모양(references.js의 REFS 항목 + 출처)."""
     role = r["role"]
     layout = rules.layout_for(role, r["text"]) if role in rules.ROLE_CAT else None   # 레이아웃으로 옮길 수 없는 역할은 '참고 전용'
     return {"id": r["id"], "title": r["title"], "campaign": r["campaign"], "cat": rules.ROLE_CAT.get(role, "스토리"),
             "applicable": layout is not None, "layout": layout, "reason": why or f"'{rules.ROLE_NAME.get(role, role)}' 구좌 사례", "summary": r["text"][:80] + "…",
-            "role": role, "brand": r["brand"], "from": BRAND_FROM.get(r["brand"], "외부"), "url": r.get("url", ""), "page": r["page_id"], "images": r.get("images") or []}   # images = 원본 이미지 주소(화면이 아직 쓰지 않음)
+            "role": role, "brand": r["brand"], "from": BRAND_FROM.get(r["brand"], "외부"), "url": r.get("url", ""), "page": r["page_id"], "images": r.get("images") or [], "cap": bool(capture_info(r["page_id"])), "pglayout": capture_info(r["page_id"]).get("layout"), "sx": {"t": (r.get("text") or "")[:120], "n": len(r.get("text") or "")}}   # images = 원본 이미지 주소(화면이 아직 쓰지 않음)
 
 
 def query_for(doc: dict, name: str, purpose: str = "") -> str:

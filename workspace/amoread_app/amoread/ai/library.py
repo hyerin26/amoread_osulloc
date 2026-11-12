@@ -49,7 +49,7 @@ def items(kinds=("page", "sec", "event")) -> dict:
         if not sec["stype"]:
             continue
         base = {"season": lb["season"], "cls": lb["cls"], "from": refs.BRAND_FROM.get(pg["brand"], "외부"), "src": pg["brand"], "page": r["page_id"], "psec": r["title"],
-                "link": pg.get("url", ""), "r": [9, 16], "ai": True, "label": {"by": lb["labeled_by"], "confidence": lb["confidence"]}, "summary": r["text"][:120], "role": r["role"]}
+                "link": pg.get("url", ""), "r": [9, 16], "ai": True, "label": {"by": lb["labeled_by"], "confidence": lb["confidence"]}, "summary": r["text"][:120], "tl": len(r["text"]), "role": r["role"]}
         if "event" in kinds and r["role"] == "participation_event":
             out.append({**base, "id": r["id"], "kind": "event", "name": r["title"], "mode": (sec["mode"] or [""])[0]})
         elif "sec" in kinds:
