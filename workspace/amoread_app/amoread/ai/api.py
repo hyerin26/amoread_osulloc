@@ -161,6 +161,7 @@ def ai_hidden():
 
 class CollectReq(BaseModel):
     urls: list[Annotated[str, Field(max_length=500)]] = Field(max_length=60)
+    allow_known: bool = False   # 같은 주소여도 내용이 달라진 프로모션을 새로 추가할 때(신규 찾기 화면)
 
 
 @router.get("/collect/sources")
@@ -175,7 +176,7 @@ def ai_collect_start(req: CollectReq):
     """주소 목록을 하나씩 내려받아 구좌 나누기·자동 분류 후 라이브러리에 추가 (백그라운드). 진행은 /collect/status로 묻는다."""
     from . import collect
     try:
-        return collect.start(req.urls)
+        return collect.start(req.urls, req.allow_known)
     except intake.IntakeError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
 
@@ -185,6 +186,34 @@ def ai_collect_status(id: str = ""):
     from . import collect
     j = collect.status(id)
     return j if j else JSONResponse({"error": "수집 기록을 찾을 수 없어요"}, status_code=404)
+
+
+class DiscoverReq(BaseModel):
+    market: str = Field(pattern=r"^[a-z0-9_-]{1,20}$")
+
+
+@router.get("/discover")
+def ai_discover():
+    """마켓별 마지막 확인 결과(신규/이미 있음). 확인은 /discover/start."""
+    from . import discover
+    return {"markets": discover.view(), "running": any(j["state"] == "running" for j in discover._jobs.values())}
+
+
+@router.post("/discover/start")
+def ai_discover_start(req: DiscoverReq):
+    """마켓 하나의 기획전·이벤트 목록을 브라우저로 열어 프로모션 링크를 긁는다 (백그라운드). 진행은 /discover/status."""
+    from . import discover
+    try:
+        return discover.start(req.market)
+    except intake.IntakeError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+
+
+@router.get("/discover/status")
+def ai_discover_status(id: str = ""):
+    from . import discover
+    j = discover.status(id)
+    return j if j else JSONResponse({"error": "확인 기록을 찾을 수 없어요"}, status_code=404)
 
 
 class PreviewReq(BaseModel):

@@ -70,18 +70,35 @@ def clean_urls(raw: list[str]) -> list[str]:
     return out[:MAX_URLS]
 
 
-def _one(url: str, have: set[str]) -> dict:
+def _one(url: str, have: set[str], allow_known: bool = False) -> dict:
     n = normalize(url)
-    if n in have:
+    if n in have and not allow_known:
         return {"url": url, "status": "skip", "msg": "이미 있어요"}
+    d, err = None, ""
     try:
         d = intake.preview_url(url)
     except intake.IntakeError as e:
-        return {"url": url, "status": "fail", "msg": str(e)}
+        err = str(e)
     except Exception:
-        return {"url": url, "status": "fail", "msg": "읽는 중 오류가 났어요"}
-    if any("본문이 거의 비어" in w for w in d.get("warnings", [])):
-        return {"url": url, "status": "empty", "msg": "본문이 거의 비어 있어요 (브라우저에서 그려야 보이는 페이지). HTML 파일로 추가해 주세요", "name": d["name"]}
+        err = "읽는 중 오류가 났어요"
+    if d is None or any("본문이 거의 비어" in w for w in d.get("warnings", [])):
+        # 주소로 받은 HTML이 비었거나(브라우저에서 그려야 보이는 페이지: 컬리 등) 못 받았으면 → 브라우저로 그려서 그 결과로 구좌를 나눈다
+        try:
+            from . import render
+            cap = render.capture(url) if render.available() else {"ok": False, "reason": ""}
+        except Exception:
+            cap = {"ok": False, "reason": ""}
+        if cap.get("ok"):
+            try:
+                d2 = intake.preview_html(cap["html"], url=cap.get("final_url") or url)
+            except intake.IntakeError:
+                d2 = None
+            if d2 and not any("본문이 거의 비어" in w for w in d2.get("warnings", [])):
+                d = d2
+        if d is None:
+            return {"url": url, "status": "gone" if cap.get("gone") else "fail", "msg": err or cap.get("reason") or "읽지 못했어요"}
+        if any("본문이 거의 비어" in w for w in d.get("warnings", [])):
+            return {"url": url, "status": "empty", "msg": "본문이 거의 비어 있어요. HTML 파일로 추가해 주세요", "name": d["name"]}
     try:
         out = intake.commit(d["draft_id"], {"auto": True})
     except intake.IntakeError as e:
@@ -99,13 +116,13 @@ def _one(url: str, have: set[str]) -> dict:
     return {"url": url, "status": "added", "msg": msg, "name": d["name"], "id": out.get("id")}
 
 
-def _run(job: dict, urls: list[str]):
+def _run(job: dict, urls: list[str], allow_known: bool = False):
     have = known()
     try:
         for i, u in enumerate(urls):
             if i:
                 time.sleep(PAUSE)
-            job["items"].append(_one(u, have))
+            job["items"].append(_one(u, have, allow_known))
             job["done"] = i + 1
     finally:
         job["state"] = "done"
@@ -113,7 +130,7 @@ def _run(job: dict, urls: list[str]):
         _lock.release()
 
 
-def start(raw_urls: list[str]) -> dict:
+def start(raw_urls: list[str], allow_known: bool = False) -> dict:
     urls = clean_urls(raw_urls)
     if not urls:
         raise intake.IntakeError("http(s)로 시작하는 주소를 한 줄에 하나씩 적어 주세요")
@@ -125,7 +142,7 @@ def start(raw_urls: list[str]) -> dict:
     jid = uuid.uuid4().hex[:12]
     job = {"id": jid, "state": "running", "total": len(urls), "done": 0, "items": []}
     _jobs[jid] = job
-    threading.Thread(target=_run, args=(job, urls), daemon=True).start()
+    threading.Thread(target=_run, args=(job, urls, allow_known), daemon=True).start()
     return job
 
 

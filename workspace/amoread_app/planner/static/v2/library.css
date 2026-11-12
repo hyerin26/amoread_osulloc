@@ -245,3 +245,27 @@ dialog::backdrop { background: var(--scrim); }
 .wb.used { border-style: solid; border-width: 3px; background: rgba(31, 111, 84, .07); }
 .wbt { position: absolute; top: 0; left: 0; display: flex; gap: 6px; align-items: center; max-width: 100%; padding: 3px 6px; background: rgba(255, 255, 255, .94); border: 1px solid var(--line); border-radius: 0 0 8px 0; font-size: 11.5px; font-weight: 600; pointer-events: auto; }
 .wb.none .wbt { opacity: .7; font-weight: 500; }
+
+/* 마켓별 신규 프로모션 찾기 */
+#discMarkets { margin-bottom: 10px; }
+#dlgB .dtools { display: flex; align-items: center; gap: 8px; margin: 8px 0 10px; }
+#dlgB .dcount { margin-left: auto; font-size: 13px; color: var(--muted, #6b7280); }
+#dlgB .dlist { display: flex; flex-direction: column; border: 1px solid var(--line, #e5e7eb); border-radius: 12px; overflow: hidden; }
+#dlgB .drow { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--line, #e5e7eb); }
+#dlgB .drow:first-child { border-top: 0; }
+#dlgB .drow:hover { background: rgba(0, 0, 0, .03); }
+#dlgB .dmain { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; cursor: pointer; }
+#dlgB .dmain input { width: 18px; height: 18px; flex: none; margin: 0; }
+#dlgB .dtxt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+#dlgB .dtxt b { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-all; }
+#dlgB .dmeta { font-size: 12px; color: var(--muted, #6b7280); }
+#dlgB .dlink { flex: none; font-size: 12px; color: var(--muted, #6b7280); text-decoration: none; padding: 4px 8px; border-radius: 8px; }
+#dlgB .dlink:hover { background: rgba(0, 0, 0, .06); color: inherit; }
+#dlgB .dchg { font-style: normal; color: #b45309; font-weight: 600; }
+#dlgB .dbar { position: sticky; top: -20px; z-index: 3; background: var(--surface); padding: 30px 0 10px; border-bottom: 1px solid var(--line, #e5e7eb); }
+#dlgB .dbar .dtools { margin: 0; }
+#dlgB .dbar .dout { margin: 10px 0 0; max-height: 150px; overflow: auto; }
+#dlgB .dtools .primary { margin-left: 4px; }
+#dlgB .dout:empty { display: none; }
+#dlgB .dout { margin: 0 0 10px; }
+#dlgB .dlist input[disabled] { opacity: .35; cursor: not-allowed; }

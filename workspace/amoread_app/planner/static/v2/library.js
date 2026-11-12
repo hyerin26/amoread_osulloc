@@ -426,7 +426,7 @@ async function openCollect() {
   $('#dlg').showModal();
 }
 function colRows(items) {
-  const ST = { added: ['추가됨', 'ok'], skip: ['건너뜀', ''], empty: ['본문 없음', 'err'], fail: ['실패', 'err'] };
+  const ST = { added: ['추가됨', 'ok'], skip: ['건너뜀', ''], empty: ['본문 없음', 'err'], gone: ['없는 페이지', 'err'], fail: ['실패', 'err'] };
   return items.map(it => { const [t, c] = ST[it.status] || [it.status, '']; return `<div class="imp-row"><span class="chip ${c}">${t}</span> <b>${esc(it.name || it.url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 50))}</b> <span class="cap">${esc(it.msg || '')}</span></div>`; }).join('');
 }
 async function startCollect(btn) {
@@ -440,6 +440,68 @@ async function startCollect(btn) {
       out.innerHTML = `<p class="hint">${s.state === 'done' ? `끝났어요 — ${s.total}개 중 ${n}개 추가` : `읽는 중… ${s.done}/${s.total}`}</p>${colRows(s.items)}`;
       if (s.state === 'done') { btn.disabled = false; if (n) loadLib(); return; }
       collectTimer = setTimeout(tick, 1500);
+    };
+    tick();
+  } catch (e) { out.innerHTML = `<p class="cap err">${esc(e.message)}</p>`; btn.disabled = false; }
+}
+
+// ---------- 마켓별 신규 프로모션 찾기: 마켓 버튼 → 목록 화면에서 링크 긁기 → 우리 레퍼런스에 없는 것(신규)을 골라 추가 ----------
+let DISC = [], discKey = '', discTimer = null;
+const DISC_MAX = 30;
+async function openDiscover() {
+  $('#dlgO').textContent = '레퍼런스 수집'; $('#dlgH').textContent = '마켓별 신규 프로모션 찾기';
+  $('#dlgS').textContent = `마켓을 누르면 그 마켓의 기획전·이벤트 목록을 열어 링크를 읽고, 라이브러리에 없는 새 프로모션을 알려 드려요. 추가할 것을 골라 [추가]를 누르면 상세 페이지를 읽어 구좌 나누기·분류까지 자동으로 해요 (한 번에 ${DISC_MAX}개까지). 읽기만 하고 로그인·클릭은 하지 않아요.`;
+  $('#dlgF').innerHTML = '';
+  $('#dlg').showModal();
+  await loadDisc();
+}
+async function loadDisc() {
+  try { const d = await v2api('/api/am/ai/discover'); DISC = d.markets || []; } catch (e) { $('#dlgB').innerHTML = `<p class="cap err">${esc(e.message)}</p>`; return; }
+  if (!discKey || !DISC.some(m => m.key === discKey)) discKey = DISC.find(m => m.checked)?.key || DISC[0]?.key || '';
+  renderDisc();
+}
+function renderDisc(msg) {
+  const m = DISC.find(x => x.key === discKey), news = m ? m.items.filter(x => x.new) : [], have = m ? m.have : 0;
+  $('#dlgB').innerHTML = `<div class="chips-row" id="discMarkets">${DISC.map(x => `<button type="button" class="chip" data-dmk="${esc(x.key)}" aria-pressed="${x.key === discKey}">${esc(x.label)}${x.checked ? ` · 신규 ${x.new}` : ''}</button>`).join('')}</div>
+    ${m ? `<p class="hint" aria-live="polite">${msg || (m.checked ? `${esc(m.label)} · 마지막 확인 ${esc(m.at)} · 찾은 ${m.total}개 중 신규 ${news.length}개 · 이미 있음 ${m.have}개${m.ended ? ` · 끝남 ${m.ended}개` : ''} (내용으로 비교)` : `${esc(m.label)} · 아직 확인 전이에요`)}</p>
+      <div class="dbar"><div class="dtools"><button class="btn sm" data-dgo="${esc(m.key)}">${m.checked ? '다시 확인' : '신규 확인'}</button>${news.length ? `<button class="btn sm" data-dall="1">전체 선택/해제</button><span class="dcount" id="dCount"></span><button class="btn sm primary" data-dadd>선택한 것 추가</button>` : ''}</div>
+      <div id="colOut" class="dout" aria-live="polite"></div></div>
+      <div id="discList" class="dlist">${news.map((x, i) => `<div class="drow"><label class="dmain"><input type="checkbox" class="dsel" value="${esc(x.url)}" ${i < DISC_MAX ? 'checked' : ''}><span class="dtxt"><b>${esc(x.title || x.url.slice(0, 50))}</b><span class="dmeta">${x.changed ? '<em class="dchg">내용 바뀐 같은 링크</em> · ' : ''}처음 본 날 ${esc((x.first_seen || '').slice(5))}</span></span></label><a class="dlink" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer" aria-label="원본 열기">원본 ↗</a></div>`).join('') || (m.checked ? '<p class="cap">새로 올라온 프로모션이 없어요.</p>' : '')}</div>` : ''}`;
+  $('#dlgF').innerHTML = '';
+  discCount();
+}
+function discCount() {
+  const all = [...document.querySelectorAll('.dsel')], n = all.filter(x => x.checked).length, c = $('#dCount'), b = $('[data-dadd]');
+  all.forEach(x => { x.disabled = !x.checked && n >= DISC_MAX; });   // 한 번에 DISC_MAX개까지: 가득 차면 나머지는 눌러지지 않게 막는다
+  if (c) c.textContent = n >= DISC_MAX ? `${n}/${DISC_MAX}개 선택 (최대)` : `${n}개 선택`;
+  if (b) { b.textContent = n ? `선택한 ${n}개 추가` : '선택한 것 추가'; b.disabled = !n; }
+}
+async function discGo(key, btn) {
+  btn.disabled = true; renderDiscBusy(`${DISC.find(x => x.key === key)?.label || ''} 목록과 각 페이지 내용을 읽는 중… (1~5분, 창을 닫아도 계속돼요)`);
+  try {
+    const j = await v2api('/api/am/ai/discover/start', { market: key });
+    const tick = async () => {
+      let s; try { s = await v2api('/api/am/ai/discover/status?id=' + j.id); } catch { renderDisc('진행 상황을 읽지 못했어요'); return; }
+      if (s.state === 'running') { discTimer = setTimeout(tick, 1500); return; }
+      await loadDisc(); if (s.state === 'error') renderDisc(s.error);
+    };
+    tick();
+  } catch (e) { await loadDisc(); renderDisc(e.message); }
+}
+function renderDiscBusy(msg) { $('#discList') && ($('#discList').innerHTML = ''); const h = $('#dlgB .hint'); if (h) h.textContent = msg; $('#dlgB [data-dgo]')?.setAttribute('disabled', ''); }
+async function discAdd(btn) {
+  const urls = [...document.querySelectorAll('.dsel:checked')].map(x => x.value), out = $('#colOut');
+  if (!urls.length) { out.innerHTML = '<p class="cap err">추가할 프로모션을 골라 주세요</p>'; return; }
+  if (urls.length > DISC_MAX) { out.innerHTML = `<p class="cap err">한 번에 ${DISC_MAX}개까지예요. ${urls.length - DISC_MAX}개를 빼 주세요</p>`; return; }
+  btn.disabled = true; out.innerHTML = '<p class="hint">시작하는 중…</p>';
+  try {
+    const j = await v2api('/api/am/ai/collect/start', { urls, allow_known: true });
+    const tick = async () => {
+      let s; try { s = await v2api('/api/am/ai/collect/status?id=' + j.id); } catch { out.innerHTML = '<p class="cap err">진행 상황을 읽지 못했어요</p>'; btn.disabled = false; return; }
+      const n = s.items.filter(x => x.status === 'added').length;
+      out.innerHTML = `<p class="hint">${s.state === 'done' ? `끝났어요 — ${s.total}개 중 ${n}개 추가` : `읽는 중… ${s.done}/${s.total}`}</p>${colRows(s.items)}`;
+      if (s.state === 'done') { btn.disabled = false; if (n) { loadLib(); const keep = out.innerHTML; loadDisc().then(() => { const o = $('#colOut'); if (o) o.innerHTML = keep; }); } return; }
+      discTimer = setTimeout(tick, 1500);
     };
     tick();
   } catch (e) { out.innerHTML = `<p class="cap err">${esc(e.message)}</p>`; btn.disabled = false; }
@@ -566,6 +628,7 @@ function saveMemo(id, text) {
 }
 
 // ================= 동작 =================
+document.addEventListener('change', e => { if (e.target.classList?.contains('dsel')) discCount(); });
 document.addEventListener('click', e => {
   const t = e.target, d = k => t.closest(`[data-${k}]`), v = k => d(k)?.dataset[k];
   if (d('tab')) { const k = v('tab'); if (k === tab) return; tab = k; f = {}; cur = null; if (tab === 'pin' && pinState === 'idle') loadPins(); render(); document.querySelector(`[data-tab="${CSS.escape(tab)}"]`)?.focus(); return; }
@@ -593,6 +656,11 @@ document.addEventListener('click', e => {
     impLoad({ method: 'url', url: u }, '불러오는 중… 서버가 페이지를 내려받고 있어요 (최대 15초)'); return;
   }
   if (t.closest('#collectBtn')) { openCollect(); return; }
+  if (t.closest('#discoverBtn')) { openDiscover(); return; }
+  if (d('dmk')) { discKey = v('dmk'); renderDisc(); return; }
+  if (d('dgo')) { discGo(v('dgo'), d('dgo')); return; }
+  if (d('dall')) { const bx = [...document.querySelectorAll('.dsel')], on = bx.some(x => !x.checked); bx.forEach((x, i) => { x.disabled = false; x.checked = on && i < DISC_MAX; }); discCount(); return; }
+  if (d('dadd')) { discAdd(d('dadd')); return; }
   if (t.closest('#addBtn')) { openAdd(); return; }
   if (d('unboard')) { const url = v('unboard'); v2api('/api/am/pinterest/boards/delete', { url }).then(r => { BOARDS = r.boards; PINS = PINS.filter(p => p.board !== url); render(); toast('보드 구독을 뺐어요. 이미 담은 핀은 라이브러리에 남아요'); }).catch(er => toast(er.message)); return; }
   if (d('pinsave')) { const b = d('pinsave'); b.disabled = true; savePin(v('pinsave')); return; }
