@@ -17,7 +17,7 @@ def run(only_old=False, show_unlabeled=False):
         top = refs.search(q["text"], [q["role"]], k=40 if only_old else 5)   # 제품은 구좌마다 3~5개만 받는다
         if only_old: top = [r for r in top if r["brand"] in OLD_BRANDS]
         top = top[:5]; lab = L.get(q["qid"], {})
-        g = [lab.get(r["id"]) for r in top]; un += sum(x is None for x in g); g0 = [x or 0 for x in g]
+        g = [lab.get(r.get("orig_id", r["id"])) for r in top]; un += sum(x is None for x in g); g0 = [x or 0 for x in g]
         best = sorted(lab.values(), reverse=True)[:5]; idcg = sum((2**x-1)/np.log2(i+2) for i, x in enumerate(best))
         nd.append(sum((2**x-1)/np.log2(i+2) for i, x in enumerate(g0))/idcg if idcg else 0)
         p5.append(np.mean([x == 2 for x in g0])); hit.append(float(any(x == 2 for x in g0))); FOOD.append(np.mean([r["brand"] in FOOD_BRANDS for r in top]))

@@ -115,10 +115,76 @@ def ai_references(req: RefsReq):
     return refs.recommend(req.section.model_dump(), req.doc.model_dump(), req.n)
 
 
+@router.get("/snapshot")
+def ai_snapshot(id: str = ""):
+    """수집본 화면: 저장해 둔 페이지를 안전한 읽기용 HTML로. 외부 링크가 만료돼도 볼 수 있다. 저장본이 없으면 { ok: false }."""
+    from . import snapshot
+    return snapshot.view(id)
+
+
+@router.get("/capture")
+def ai_capture(id: str = ""):
+    """화면 수집본(그려서 저장한 HTML+CSS). 화면이 안전하게 그려 넣는다(스크립트 없음). 없으면 404."""
+    import re as _re
+    from . import render
+    if not _re.fullmatch(r"[A-Za-z0-9_.-]{1,60}", id or ""):
+        return JSONResponse({"error": "잘못된 id예요"}, status_code=400)
+    h = render.load_html(id)
+    return {"html": h} if h is not None else JSONResponse({"error": "저장된 화면이 없어요"}, status_code=404)
+
+
 @router.get("/library")
 def ai_library():
     """레퍼런스 화면용 목록: 수집한 원본 페이지·구좌·참여 이벤트 + 자동 분류 라벨 (사람이 고친 값 우선). 색인이 없으면 mode='demo'."""
     return library.items()
+
+
+class HideReq(BaseModel):
+    id: str = Field(pattern=r"^[A-Za-z0-9_.-]{1,60}$")
+    on: bool = True
+
+
+@router.post("/hide")
+def ai_hide(req: HideReq):
+    """수집본 페이지 삭제(숨김)/되돌리기. 원본 색인 파일은 그대로 두고 삭제 목록(ai_refs_user/hidden.json)에만 적어서, 색인을 다시 만들어도 다시 나오지 않고 되돌릴 수 있다."""
+    if req.on and req.id not in refs._state.get("pages", {}):
+        refs._load()
+        if req.id not in refs._state.get("pages", {}):
+            return JSONResponse({"error": "없는 레퍼런스예요"}, status_code=404)
+    return {"ok": True, "hidden": refs.set_hidden(req.id, req.on)}
+
+
+@router.get("/hidden")
+def ai_hidden():
+    return {"ids": sorted(refs.hidden())}
+
+
+class CollectReq(BaseModel):
+    urls: list[Annotated[str, Field(max_length=500)]] = Field(max_length=60)
+
+
+@router.get("/collect/sources")
+def ai_collect_sources():
+    """수집 버튼 화면: 지난번에 적은 주소 목록."""
+    from . import collect
+    return {"urls": collect.sources(), "max": collect.MAX_URLS}
+
+
+@router.post("/collect/start")
+def ai_collect_start(req: CollectReq):
+    """주소 목록을 하나씩 내려받아 구좌 나누기·자동 분류 후 라이브러리에 추가 (백그라운드). 진행은 /collect/status로 묻는다."""
+    from . import collect
+    try:
+        return collect.start(req.urls)
+    except intake.IntakeError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+
+
+@router.get("/collect/status")
+def ai_collect_status(id: str = ""):
+    from . import collect
+    j = collect.status(id)
+    return j if j else JSONResponse({"error": "수집 기록을 찾을 수 없어요"}, status_code=404)
 
 
 class PreviewReq(BaseModel):

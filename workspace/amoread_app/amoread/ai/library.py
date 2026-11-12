@@ -38,7 +38,7 @@ def items(kinds=("page", "sec", "event")) -> dict:
         frm = refs.BRAND_FROM.get(pg["brand"], "외부")
         base = {"season": lb["season"], "cls": lb["cls"], "from": frm, "src": pg["brand"], "link": pg.get("url", ""), "r": [9, 16], "ai": True,
                 "label": {"type": lb["type"], "type_name": (rules.TYPES.get(lb["type"]) or rules.GENERIC)["name"], "confidence": lb["confidence"], "by": lb["labeled_by"], "evidence": lb.get("evidence", {})}}
-        if "page" in kinds and pg["brand"] != "user":   # 직접 가져온 페이지는 레퍼런스 화면이 따로 보여 준다 (구좌만 여기서)
+        if "page" in kinds and pg["brand"] != "user" and not pg.get("own"):   # 직접 가져온 페이지는 레퍼런스 화면이 따로 보여 준다 (구좌만 여기서)
             out.append({**base, "id": pid, "kind": "page", "name": pg["name"], "ben": lb["ben"], "concept": "", "secs": pg["secs"], "shape": shape.get(pid, []), "shape_x": shape_x.get(pid, [])})
     for r in refs._state["rows"]:
         lb = labels.get(r["page_id"])

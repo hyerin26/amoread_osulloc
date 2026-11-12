@@ -97,7 +97,7 @@ def label_pages(full: list[dict], metas: dict, out: Path) -> dict:
     return labels
 
 
-def build(src: Path, out: Path, vectors: bool = False) -> dict:
+def build(src: Path, out: Path, vectors: bool = False, html_dir: Path | None = None) -> dict:
     """src 폴더의 sections_unified.jsonl(role 하나로 합친 섹션)·pages_meta.jsonl → out. 벡터는 같은 행 순서로 직접 계산한다."""
     full = [json.loads(x) for x in (src / "sections_unified.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
     metas = {p["page_id"]: p for p in map(json.loads, (src / "pages_meta.jsonl").read_text(encoding="utf-8").splitlines())}
@@ -124,13 +124,22 @@ def build(src: Path, out: Path, vectors: bool = False) -> dict:
         m = SentenceTransformer(refs.DENSE_MODEL)
         x = m.encode(["passage: " + r["text"] for r in lines], batch_size=32, normalize_embeddings=True, show_progress_bar=False)
         np.save(out / "vectors.npy", x)   # 행 순서가 sections.jsonl과 같다
-    return {"sections": len(lines), "pages": len(pages), "vectors": vectors}
+    snaps = 0
+    if html_dir and html_dir.is_dir():   # 수집본 화면용 저장본 (외부 링크가 만료돼도 볼 수 있게)
+        from . import snapshot
+        for pid in pages:
+            f = html_dir / f"{pid}.html"
+            if f.exists():
+                snapshot.save(out, pid, f.read_text(encoding="utf-8", errors="ignore"))
+                snaps += 1
+    return {"sections": len(lines), "pages": len(pages), "vectors": vectors, "snapshots": snaps}
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--src", type=Path, help="sections_unified.jsonl 등이 있는 폴더")
     ap.add_argument("--out", type=Path, default=refs.AI_DIR, help="출력 폴더 (기본: planner/data/ai_refs)")
+    ap.add_argument("--html-dir", type=Path, help="수집한 페이지 HTML 폴더(<페이지 id>.html). 있으면 수집본 화면용으로 가볍게 줄여 색인 폴더/html에 저장")
     ap.add_argument("--vectors", action="store_true", help="의미 벡터도 계산")
     ap.add_argument("--export-labels", type=Path, help="분류 라벨을 검수용 CSV로 내보내기 (색인을 만든 뒤)")
     ap.add_argument("--import-labels", type=Path, help="검수한 CSV에서 고친 칸을 label_overrides.json에 저장 (다음 색인부터 유지)")
@@ -143,6 +152,6 @@ if __name__ == "__main__":
         else:
             print("고친 페이지:", labeling.import_overrides(a.import_labels, a.out / "page_labels.json", a.out / "label_overrides.json"))
     elif a.src:
-        print(build(a.src, a.out, a.vectors))
+        print(build(a.src, a.out, a.vectors, a.html_dir))
     else:
         ap.error("--src 또는 --export-labels / --import-labels 가 필요해요")

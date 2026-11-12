@@ -384,15 +384,17 @@ def commit(draft_id: str, edits: dict) -> dict:
     rid = out["id"]
     # AI 검색용 사용자 색인
     secs = draft["sections"]
-    _user_write(rid, {"name": name, "brand": "user", "url": draft.get("link", ""), "secs": [s["title"] for s in secs]},
+    _user_write(rid, {"name": name, "brand": "user", "url": draft.get("link", ""), "collected_at": date.today().isoformat(), "secs": [s["title"] for s in secs]},
                 [{"id": f"{rid}:{s['id']}", "page_id": rid, "brand": "user", "role": s["role"], "title": s["title"], "campaign": f"직접 추가 · {name}"[:70], "url": draft.get("link", ""),
                   "order": s["order"], "text": re.sub(r"\s+", " ", s["text"]).strip()[:600], "images": [], **labeling.classify_section(s)} for s in secs
                  if s["role"] not in ("ui_noise", "empty") and s["text"].strip()],
-                {"season": item["season"], "season_basis": "사람이 확인", "cls": item["cls"], "type": edits.get("type") or draft["type"], "ben": ben, "mode": [item["mode"]] if item["mode"] else [], "month": None,
-                 "concept": "", "evidence": draft["evidence"], "confidence": "confirmed", "labeled_by": "human"})
+                {"season": item["season"], "season_basis": draft.get("season_basis") or "자동" if edits.get("auto") else "사람이 확인", "cls": item["cls"], "type": edits.get("type") or draft["type"], "ben": ben, "mode": [item["mode"]] if item["mode"] else [], "month": None,
+                 "concept": "", "evidence": draft["evidence"], "confidence": draft["confidence"] if edits.get("auto") else "confirmed", "labeled_by": "auto" if edits.get("auto") else "human"})
     try:
         (USER_DIR / "html").mkdir(parents=True, exist_ok=True)
         shutil.copyfile(d / "page.html.gz", USER_DIR / "html" / f"{rid}.html.gz")
+        from . import snapshot
+        (USER_DIR / "html" / f"{rid}.meta.json").write_text(json.dumps(snapshot.stats(gzip.decompress((d / "page.html.gz").read_bytes()).decode("utf-8", "replace"))), encoding="utf-8")
     except OSError:
         pass
     if draft.get("og_image"):   # 대표 이미지(있으면)를 받아 썸네일로
@@ -436,4 +438,13 @@ def remove(rid: str):
     try:
         (USER_DIR / "html" / f"{rid}.html.gz").unlink()
     except OSError:
+        pass
+    try:
+        (USER_DIR / "html" / f"{rid}.meta.json").unlink()
+    except OSError:
+        pass
+    try:
+        from . import render
+        render.remove(rid)   # 화면 수집본(그려서 저장한 HTML·배치)도 함께
+    except Exception:
         pass

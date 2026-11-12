@@ -10,7 +10,7 @@ a = ap.parse_args(); py = sys.executable
 env = dict(os.environ, PYTHONUTF8="1", PYTHONPATH=a.app)
 def run(*cmd, **kw): return subprocess.run(cmd, env=dict(env, **kw.get("env", {})), cwd=kw.get("cwd"), capture_output=True, text=True)
 print("1) 역할 합치기"); r = run(py, str(d / "build_unified.py"), a.data); print("   ", r.stdout.strip().splitlines()[0], "|", r.stdout.strip().splitlines()[-1]); r.returncode and sys.exit(r.stderr)
-print("2) 색인 만들기"); r = run(py, "-m", "amoread.ai.build_index", "--src", str(d / "unified"), *([] if a.no_vectors else ["--vectors"]), cwd=a.app); print("   ", r.stdout.strip().splitlines()[-1]); r.returncode and sys.exit(r.stderr)
+print("2) 색인 만들기"); r = run(py, "-m", "amoread.ai.build_index", "--src", str(d / "unified"), "--html-dir", str(pathlib.Path(a.data) / "pages"), *([] if a.no_vectors else ["--vectors"]), cwd=a.app); print("   ", r.stdout.strip().splitlines()[-1]); r.returncode and sys.exit(r.stderr)
 r = run(py, "-m", "amoread.ai.build_index", "--export-labels", str(d / "label_review.csv"), cwd=a.app); print("   분류 라벨 검수표:", r.stdout.strip().split("→")[-1].strip() or r.stderr[-200:])
 import collections
 lb = json.load(open(pathlib.Path(a.app) / "planner/data/ai_refs/page_labels.json", encoding="utf-8"))

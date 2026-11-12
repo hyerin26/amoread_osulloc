@@ -43,34 +43,58 @@ def _mt(f: Path):
         return 0
 
 
+HIDDEN = USER_DIR / "hidden.json"   # 담당자가 삭제한 수집본 페이지 id (색인을 다시 만들어도 다시 나오지 않게 색인 폴더 밖에 둔다)
+
+
+def hidden() -> set:
+    try:
+        return set(json.loads(HIDDEN.read_text(encoding="utf-8")))
+    except (OSError, ValueError):
+        return set()
+
+
+def set_hidden(page_id: str, on: bool) -> int:
+    cur = hidden()
+    cur.add(page_id) if on else cur.discard(page_id)
+    USER_DIR.mkdir(parents=True, exist_ok=True)
+    HIDDEN.write_text(json.dumps(sorted(cur), ensure_ascii=False), encoding="utf-8")
+    return len(cur)
+
+
 def _load():
     f, uf = AI_DIR / "sections.jsonl", USER_DIR / "sections.jsonl"
     if not f.exists() and not uf.exists():
         _state.update(loaded=False, rows=[])
         return False
-    mt = (_mt(f), _mt(uf), _mt(USER_DIR / "pages.json"))
+    mt = (_mt(f), _mt(uf), _mt(USER_DIR / "pages.json"), _mt(HIDDEN))
     if _state["loaded"] and _state["mtime"] == mt:   # 파일이 바뀌면 다시 읽는다 (서버를 끄지 않아도 됨)
         return True
 
     def read(p):
         return [json.loads(x) for x in p.read_text(encoding="utf-8").splitlines() if x.strip()] if p.exists() else []
 
-    main_rows = read(f)
-    rows = main_rows + read(uf)   # 담당자가 직접 가져온 레퍼런스(사용자 색인)를 뒤에 붙인다
+    hid = hidden()
+    main_all = read(f)
+    keep_main = [i for i, r in enumerate(main_all) if r["page_id"] not in hid]
+    main_rows = [main_all[i] for i in keep_main]
+    rows = main_rows + [r for r in read(uf) if r["page_id"] not in hid]   # 담당자가 직접 가져온 레퍼런스(사용자 색인)를 뒤에 붙인다
     docs = [_grams(r["text"]) for r in rows]
     df = Counter(g for d in docs for g in set(d))
     pages = {}
     for pf in (AI_DIR / "pages.json", USER_DIR / "pages.json"):
         if pf.exists():
             pages.update(json.loads(pf.read_text(encoding="utf-8")))
+    pages = {k: v for k, v in pages.items() if k not in hid}
     vec = None
     vf = AI_DIR / "vectors.npy"
     if os.getenv("AMOREAD_AI_DENSE") == "1" and vf.exists():
         try:
             import numpy as np
             vec = np.load(vf)
-            if len(vec) != len(main_rows):   # 벡터는 수집 색인 행만 있다 (사용자 행은 아래에서 평균으로 채움)
+            if len(vec) != len(main_all):   # 벡터는 수집 색인 행만 있다 (사용자 행은 아래에서 평균으로 채움)
                 vec = None
+            elif len(main_rows) != len(main_all):
+                vec = vec[keep_main]   # 삭제한 페이지의 벡터 행도 뺀다
         except Exception:   # numpy가 없거나 파일이 깨졌으면 키워드만 쓴다
             vec = None
     _state.update(loaded=True, rows=rows, pages=pages, tf=[Counter(d) for d in docs], df=df,

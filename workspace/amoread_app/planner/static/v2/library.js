@@ -97,7 +97,22 @@ function shapeBlock0(role, x, y, w, h, o = {}) {
 }
 // 브랜드(출처)마다 배너 색이 달라지게: 이름에서 색상값을 뽑는다
 const hueOf = s => { let h = 0; for (const c of String(s || '')) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
+// 화면 수집으로 받은 실제 배치(띠마다 높이·칸 수·이미지 수)로 그린 윤곽: 높이는 제곱근으로 눌러 짧은 띠도 보이게 한다
+function bandThumb(r) {
+  const B = r.layout.bands.filter(b => b.h >= 12), W = 90, H = 120, PAD = 6, w = W - PAD * 2, gap = 1.4, room = H - PAD * 2 - 8;
+  if (B.length < 2) return '';
+  const wt = B.map(b => Math.sqrt(b.h)), k = (room - gap * (B.length - 1)) / wt.reduce((a, b) => a + b, 0);
+  let y = PAD, out = '';
+  B.forEach((b, i) => {
+    const h = wt[i] * k, role = b.role || (b.t < 25 && b.i ? 'image_block' : 'content');
+    out += h < 7 ? `<g class="f-${FAM[role] || 'info'}"><rect class="bk" x="${PAD}" y="${y.toFixed(1)}" width="${w}" height="${Math.max(h, 1.2).toFixed(1)}" rx="1"/></g>`
+      : shapeBlock(role, PAD, y, w, h, { i: role === 'product_list' ? Math.min(4, Math.max(2, b.c)) : b.i, l: b.t });
+    y += h + gap;
+  });
+  return `<svg class="shp ${r.cls ? `c-${esc(r.cls)}` : ''}" viewBox="0 0 ${W} ${H}" role="img" aria-label="실제 배치 윤곽: 띠 ${B.length}개"><rect class="pg" x=".3" y=".3" width="${W - .6}" height="${H - .6}" rx="2"/>${out}<text x="${W - PAD}" y="${H - 3}" text-anchor="end">구좌 ${B.length}개 · 실제 배치</text></svg>`;
+}
 function shapeThumb(r) {
+  if (r.layout?.bands?.length >= 2) { const t = bandThumb(r); if (t) return t; }
   const X = (r.shape_x && r.shape_x.length ? r.shape_x : (r.shape || (r.role ? [r.role] : [])).map(x => ({ r: x }))).filter(x => x.r !== 'ui_noise' && x.r !== 'empty');
   if (!X.length) return '';
   const W = 90, H = 120, PAD = 6, w = W - PAD * 2, one = r.kind !== 'page' || X.length === 1;
@@ -128,7 +143,7 @@ const pageOf = r => (r.page ? all().find(x => x.id === r.page) : null);
 function view(x) {
   const pin = x.source === 'Pinterest', b = BOARDS.find(y => y.url === x.board);
   const ver = encodeURIComponent(x.updated_at || '');
-  return { ...x, own: true, from: pin ? 'Pinterest' : '직접 추가', src: pin ? `Pinterest${b?.name ? ` · ${b.name}` : ''}` : '직접 추가',
+  return { ...x, own: true, from: pin ? 'Pinterest' : x.migrated ? x.from_label : '직접 추가', src: pin ? `Pinterest${b?.name ? ` · ${b.name}` : ''}` : x.migrated ? x.brand : '직접 추가',
     img: x.img_file ? `/refimg/own/${x.img_file}?v=${ver}` : x.pin_img ? pinImg(x.pin_img) : '', r: [3, 4] };
 }
 const FIELDS = ['id', 'kind', 'kind_label', 'name', 'season', 'cls', 'source', 'link', 'pin_id', 'pin_img', 'board', 'pts', 'tags', 'memo'];
@@ -283,19 +298,84 @@ function renderDrawer() {
         <div class="row"><button class="btn sm" data-star="${r.id}" aria-pressed="${fav}">${fav ? '★ 즐겨찾기 해제' : '☆ 즐겨찾기'}</button>
           ${r.kind === 'page' ? `<button class="btn sm" data-whole="${r.id}">전체 페이지 보기</button>${kids.length ? `<button class="btn sm" data-kids="${r.id}">이 페이지의 구좌 ${kids.length}개</button>` : ''}`
             : p ? `<button class="btn sm" data-whole="${p.id}" data-mark="${esc(r.psec)}">전체 페이지 보기 · 이 구좌 위치</button>` : ''}
-          ${r.own ? `<button class="btn sm" data-edit="${r.id}">고치기</button><button class="btn sm ghost danger" data-del="${r.id}">삭제</button>` : ''}</div>
+          ${r.own ? `<button class="btn sm" data-edit="${r.id}">고치기</button><button class="btn sm ghost danger" data-del="${r.id}">삭제</button>` : r.ai && r.kind === 'page' ? `<button class="btn sm ghost danger" data-hide="${r.id}">삭제</button>` : ''}</div>
         <p class="hint">${use}</p>
       </div>
       <label class="f"><span>메모 <em>(선택) ${r.own ? '저장돼요' : '예시라 저장되지 않아요'}</em></span><textarea rows="3" maxlength="300" data-memo="${r.id}" placeholder="예) 탭 모양만 참고, 색은 너무 진함">${esc(r.memo || '')}</textarea><span class="cap" id="memoSt" aria-live="polite"></span></label>
     </div>`;
 }
-function wholePage(id, mark) {
+// 수집 범위 표: 이 레퍼런스에서 무엇을 받았고 무엇을 못 받았는지 (디자인·배치가 있는지 직접 확인하는 용도)
+function captureBox(c, p, rd) {
+  if (!c || c.bytes === undefined) return '<p class="hint">이 레퍼런스는 수집 범위 정보가 없어요 (예전에 저장됨).</p>';
+  const note = p?.content_changed ? '<p class="hint err">이 화면은 <b>나중에 다시 받은 것</b>이에요. 같은 주소지만 내용(상품 목록 등)이 달라져서 구좌 제목·검색용 글과 안 맞을 수 있어요.</p>' : '';
+  const row = (a, b, st, t) => `<tr><td>${a}</td><td>${b}</td><td class="cp-${st}">${t}</td></tr>`;
+  return `<div class="cap-box"><h3>어디까지 받아 왔나</h3>${note}<table class="cap-tb"><tbody>
+    ${row('HTML 구조(태그 뼈대)', `${Math.round(c.bytes / 1024)}KB · 클래스 요소 ${c.cls}개`, 'ok', '✔ 받음')}
+    ${row('글(텍스트)', `${c.text.toLocaleString()}자`, 'ok', '✔ 받음')}
+    ${row('이미지', `img ${c.img}개 (주소 ${c.img_src}개)`, 'mid', '△ 주소만 · 파일 없음')}
+    ${rd ? row('CSS 스타일', `파일 ${rd.css_files}개 · ${Math.round(rd.css_bytes / 1024)}KB (그려진 화면에 적용)`, 'ok', '✔ 받음') : row('CSS 파일·블록', `파일 ${c.css_link}개 · 블록 ${c.style_tag}개`, c.css_link || c.style_tag ? 'mid' : 'no', c.css_link || c.style_tag ? '△ 일부 있음' : '✘ 못 받음')}
+    ${row('요소에 직접 붙은 스타일', `${c.style_attr}개`, c.style_attr ? 'mid' : 'no', c.style_attr ? '△ 일부(크기·색 일부)' : '✘ 없음')}
+    ${row('글꼴·아이콘 파일', '-', 'no', '✘ 못 받음')}
+    ${rd ? row('실제 배치(몇 칸·크기·위치)', `모바일 ${rd.viewport[0]}px · 세로 ${rd.page_h.toLocaleString()}px · 구좌 띠 ${rd.bands}개 (${rd.captured_at})`, 'ok', '✔ 받음') : row('실제 배치(몇 칸·크기·위치)', '-', 'no', '✘ 못 받음 (화면을 그려 보지 않아서)')}
+    ${row('버튼·링크', `링크 ${c.a}개 · 버튼 ${c.button}개`, 'ok', '✔ 받음')}</tbody></table>
+    <p class="hint">${rd ? '아래 화면은 <b>그려서 저장한 원본 모양</b>이에요 (이미지 파일만 빠져 회색 칸으로 보여요).' : '그래서 카드의 색 블록 그림은 받은 구조로 <b>우리가 그린 구성도</b>이고, 원본의 색·모양·간격이 아니에요. 화면 수집(재수집)을 하면 채워져요.'}${p?.link ? ` 원본은 <a class="lnk" href="${esc(p.link)}" target="_blank" rel="noopener noreferrer">링크</a>에서 확인할 수 있어요 (바뀌었을 수 있음).` : ''}</p></div>`;
+}
+// 수집 당시 화면: 저장해 둔 페이지를 읽기용으로 보여 준다 (외부 링크가 바뀌거나 만료돼도 그대로)
+async function snapView(id) {
   const p = all().find(x => x.id === id);
-  $('#dlgO').textContent = `원본 프로모션 전체 페이지 · ${p.from}${p.demo ? ' · 예시' : ''}`; $('#dlgH').textContent = p.name; $('#dlgS').textContent = p.concept ? `컨셉 구성: ${p.concept}` : '실제로 걸렸던 페이지 한 장 전체 자리예요 (예시)';
-  $('#dlgB').innerHTML = p.secs.map((s, i) => { const k = all().find(x => x.page === p.id && x.psec === s); return `<div class="oseg ${s === mark ? 'used' : ''}"><div class="t"><span class="grow">${i + 1}. ${esc(s)}</span>${s === mark ? '<span class="tag real">지금 보는 구좌</span>' : ''}${k ? `<button class="btn xs" data-open="${k.id}" data-fromdlg>이 구좌 보기</button>` : ''}</div><span class="ph"></span></div>`; }).join('');
-  $('#dlgF').innerHTML = '';
+  $('#dlgB').innerHTML = '<p class="hint">불러오는 중…</p>';
+  try {
+    const d = await v2api('/api/am/ai/snapshot?id=' + encodeURIComponent(id));
+    $('#dlgB').innerHTML = d.ok ? `${captureBox(d.capture, p, d.rendered)}${d.rendered ? `<div class="snapframe" aria-label="수집 당시 화면 (원본 모양)"></div>
+      <details class="snapd"><summary>글만 읽기용으로 보기</summary><div class="snap">${d.html}</div></details>`
+      : `<p class="hint">글·구조만 읽기용으로 보여 줘요 (이미지는 자리로 표시, 링크는 눌리지 않아요). 이미지 ${d.images}개 · 원본 링크가 바뀌어도 이 화면은 그대로예요.</p><div class="snap">${d.html}</div>`}`
+      : '<p class="hint">이 레퍼런스는 저장된 수집본이 없어요. 구좌 목록만 볼 수 있어요.</p>';
+  } catch (e) { $('#dlgB').innerHTML = `<p class="hint">불러오지 못했어요: ${esc(e.message)}</p>`; }
+  $('#dlgF').innerHTML = `<button class="btn sm" data-whole="${esc(id)}">구좌 목록으로</button>`;
+  $('#dlgB').scrollTop = 0;
+  if ($('#dlgB .snapframe')) mountCapture($('#dlgB .snapframe'), id);
+  if (p) $('#dlgS').textContent = '수집 당시 화면';
+}
+// 수집해 둔 페이지(그려서 저장한 HTML+CSS)를 이 화면 안에 격리해 그린다: 섀도 DOM + CSSOM 스타일시트 (화면 보안 설정을 풀지 않고, 칸(iframe) 없이 어느 브라우저에서나 보임)
+// 스크립트는 수집 때 이미 빠져 있고, 태그 안 style은 CSP가 막으므로 값을 떼어 두었다가 CSSOM으로 다시 입힌다
+async function mountCapture(host, id) {
+  let d; try { d = await v2api('/api/am/ai/capture?id=' + encodeURIComponent(id)); } catch (e) { host.textContent = `화면을 불러오지 못했어요: ${e.message}`; return false; }
+  const doc = new DOMParser().parseFromString(d.html, 'text/html');
+  const css = [...doc.querySelectorAll('style')].map(x => x.textContent).join('\n'); doc.querySelectorAll('style').forEach(x => x.remove());
+  const sty = []; doc.body.querySelectorAll('[style]').forEach(e => { e.dataset.cs = sty.length; sty.push(e.getAttribute('style')); e.removeAttribute('style'); });
+  const sh = host.attachShadow({ mode: 'open' }), sheet = new CSSStyleSheet();
+  sheet.replaceSync(css.replace(/:root/g, ':host').replace(/(^|[},\s])html(?=[\s,{.:#\[>+~])/g, '$1:host').replace(/(^|[},\s])body(?=[\s,{.:#\[>+~])/g, '$1.cbody'));
+  sh.adoptedStyleSheets = [sheet];
+  const wrap = document.createElement('div'); wrap.className = `cbody ${doc.body.className}`;
+  wrap.append(...[...doc.body.childNodes].map(n => document.importNode(n, true)));
+  sh.append(wrap);
+  wrap.querySelectorAll('[data-cs]').forEach(e => { e.style.cssText = sty[+e.dataset.cs]; });
+  return true;
+}
+function wholePage(id, mark, mode) {
+  const p = all().find(x => x.id === id);
+  const vis = p.layout?.bands?.length >= 2 && mode !== 'list';
+  $('#dlgO').textContent = `원본 프로모션 전체 페이지 · ${p.from}${p.demo ? ' · 예시' : ''}`; $('#dlgH').textContent = p.name;
+  $('#dlgS').textContent = vis ? (p.content_changed ? '나중에 다시 받은 화면이에요 (내용이 달라져 구좌 제목과 안 맞을 수 있어요). ' : '') + '수집 당시 모습 그대로, 구좌별로 박스를 쳤어요. 박스 위 [이 구좌 보기]로 구좌만 따로 볼 수 있어요 (이미지는 파일을 저장하지 않아 회색 칸).' : p.concept ? `컨셉 구성: ${p.concept}` : '실제로 걸렸던 페이지 한 장 전체 자리예요 (예시)';
+  const can = (p.ai || p.own) && p.kind === 'page';
+  if (vis) { wholeVisual(p, mark); }
+  else $('#dlgB').innerHTML = p.secs.map((s, i) => { const k = all().find(x => x.page === p.id && x.psec === s); return `<div class="oseg ${s === mark ? 'used' : ''}"><div class="t"><span class="grow">${i + 1}. ${esc(s)}</span>${s === mark ? '<span class="tag real">지금 보는 구좌</span>' : ''}${k ? `<button class="btn xs" data-open="${k.id}" data-fromdlg>이 구좌 보기</button>` : ''}</div><span class="ph"></span></div>`; }).join('');
+  $('#dlgF').innerHTML = (can ? `<button class="btn sm" data-snap="${esc(p.id)}">수집 범위 보기</button>` : '') + (p.layout?.bands?.length >= 2 ? `<button class="btn sm" data-whole="${esc(p.id)}" ${mark ? `data-mark="${esc(mark)}"` : ''} data-wmode="${vis ? 'list' : 'vis'}">${vis ? '목록으로 보기' : '원본 모양으로 보기'}</button>` : '');
   $('#dlg').showModal();
-  if (mark) $('#dlgB .used')?.scrollIntoView({ block: 'center' });
+  if (mark) ($('#dlgB .used') || $('#dlgB .wb.used'))?.scrollIntoView({ block: 'center' });
+}
+// 수집한 페이지를 원본 모양 그대로(칸 안) 보여 주고, 그 위에 구좌 띠마다 박스를 얹는다 (위치·높이는 수집 때 잰 값)
+function wholeVisual(p, mark) {
+  const L = p.layout, linked = L.bands.some(b => b.st || b.role), bands = linked ? L.bands.filter(b => b.h >= 8) : [], k = t => (t ? all().find(x => x.page === p.id && x.psec === t) : null);
+  let n = 0;
+  $('#dlgB').innerHTML = `<div class="wv" data-h="${L.ph}"><div class="wvf" aria-label="수집 당시 화면"></div>`
+    + bands.map(b => { const kk = k(b.st), tag = b.st || ROLE_KO[b.role] || ''; if (tag) n++;
+      return `<div class="wb ${tag ? '' : 'none'} ${b.st && b.st === mark ? 'used' : ''}" data-y="${b.y}" data-h="${b.h}"><div class="wbt"><span>${tag ? `${n}. ${esc(tag.slice(0, 22))}` : '상단·기타'}</span>${kk ? `<button class="btn xs" data-open="${kk.id}" data-fromdlg>이 구좌 보기</button>` : ''}</div></div>`; }).join('') + '</div>';
+  if (!linked) $('#dlgB').insertAdjacentHTML('afterbegin', '<p class="hint">이 페이지는 띠를 구좌에 연결하지 못해 박스를 그리지 않았어요 (예전 수집분과 내용이 많이 달라졌거나 상품 목록 위주일 때 그래요).</p>');
+  const px = (el, o) => { for (const [a, v] of Object.entries(o)) el.style[a] = v + 'px'; };   // 위치는 CSSOM으로 (화면 보안 설정이 태그 안 style을 막아서)
+  px($('#dlgB .wv'), { height: L.ph }); px($('#dlgB .wvf'), { height: L.ph });
+  mountCapture($('#dlgB .wvf'), p.id);
+  $('#dlgB').querySelectorAll('.wb').forEach(e => px(e, { top: +e.dataset.y, height: +e.dataset.h }));
 }
 
 // ---------- 추가·고치기 창 (종류·분류·명분·시즌·참고할 것은 '직접 입력' 가능) ----------
@@ -331,6 +411,38 @@ function openAdd(r) {
   $('#dlgF').innerHTML = `<button class="btn sm primary" data-addgo ${r ? '' : 'disabled'}>${r ? '저장' : '추가'}</button>`;
   $('#dlg').showModal();
   $('#addName').focus();
+}
+
+// ---------- 수집(임시 버튼): 주소 목록을 한꺼번에 내려받아 구좌 나누기·분류까지 자동으로 추가 ----------
+let collectTimer = null;
+async function openCollect() {
+  let urls = [], max = 30;
+  try { const d = await v2api('/api/am/ai/collect/sources'); urls = d.urls || []; max = d.max || max; } catch { /* 빈 목록으로 */ }
+  $('#dlgO').textContent = '레퍼런스 수집'; $('#dlgH').textContent = '링크 한꺼번에 수집하기';
+  $('#dlgS').textContent = `주소를 한 줄에 하나씩 적고 [수집 시작]을 누르면 읽어서 구좌 나누기와 분류까지 자동으로 하고 라이브러리에 넣어요 (한 번에 ${max}개까지). 이미 있는 주소는 건너뛰고, 분류는 자동이라 틀릴 수 있어요.`;
+  $('#dlgB').innerHTML = `<label class="f"><span>수집할 주소 <em>한 줄에 하나</em></span><textarea id="colUrls" rows="8" placeholder="https://…">${esc(urls.join('\n'))}</textarea></label>
+    <div id="colOut" aria-live="polite"></div>`;
+  $('#dlgF').innerHTML = '<button class="btn sm primary" data-colgo>수집 시작</button>';
+  $('#dlg').showModal();
+}
+function colRows(items) {
+  const ST = { added: ['추가됨', 'ok'], skip: ['건너뜀', ''], empty: ['본문 없음', 'err'], fail: ['실패', 'err'] };
+  return items.map(it => { const [t, c] = ST[it.status] || [it.status, '']; return `<div class="imp-row"><span class="chip ${c}">${t}</span> <b>${esc(it.name || it.url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 50))}</b> <span class="cap">${esc(it.msg || '')}</span></div>`; }).join('');
+}
+async function startCollect(btn) {
+  const urls = $('#colUrls').value.split('\n').map(x => x.trim()).filter(Boolean), out = $('#colOut');
+  btn.disabled = true; out.innerHTML = '<p class="hint">시작하는 중…</p>';
+  try {
+    const j = await v2api('/api/am/ai/collect/start', { urls });
+    const tick = async () => {
+      let s; try { s = await v2api('/api/am/ai/collect/status?id=' + j.id); } catch { out.innerHTML = '<p class="cap err">진행 상황을 읽지 못했어요</p>'; btn.disabled = false; return; }
+      const n = s.items.filter(x => x.status === 'added').length;
+      out.innerHTML = `<p class="hint">${s.state === 'done' ? `끝났어요 — ${s.total}개 중 ${n}개 추가` : `읽는 중… ${s.done}/${s.total}`}</p>${colRows(s.items)}`;
+      if (s.state === 'done') { btn.disabled = false; if (n) loadLib(); return; }
+      collectTimer = setTimeout(tick, 1500);
+    };
+    tick();
+  } catch (e) { out.innerHTML = `<p class="cap err">${esc(e.message)}</p>`; btn.disabled = false; }
 }
 
 // ---------- 새 레퍼런스 가져오기: 링크/HTML 파일 → 서버가 읽고 분류한 초안 → 확인·수정 → 추가 ----------
@@ -429,6 +541,16 @@ async function delRef(id) {
   try { await v2api(`/api/am/references/${id}/delete`, {}); OWN = OWN.filter(x => x.id !== id); FAV.delete(id); cur = null; render(); toast('레퍼런스를 지웠어요'); }
   catch (e) { toast(`지우지 못했어요: ${e.message}`); }
 }
+// 수집본 페이지 삭제: 색인 파일은 그대로 두고 삭제 목록에만 적는다 (색인을 다시 만들어도 안 나오고, 되돌릴 수 있다)
+async function hideRef(id) {
+  const r = byId(id); if (!r) return;
+  if (!confirm(`'${r.name}'을(를) 라이브러리에서 지울까요?\n이 페이지의 구좌도 함께 안 보이고 구좌 추천에도 쓰이지 않아요. 수집을 다시 해도 다시 나오지 않아요.`)) return;
+  try {
+    await v2api('/api/am/ai/hide', { id, on: true });
+    for (let i = R.length - 1; i >= 0; i--) if (R[i].id === id || R[i].page === id) R.splice(i, 1);
+    FAV.delete(id); cur = null; render(); toast('레퍼런스를 지웠어요');
+  } catch (e) { toast(`지우지 못했어요: ${e.message}`); }
+}
 async function toggleFav(id) {
   const on = !FAV.has(id); on ? FAV.add(id) : FAV.delete(id); render();
   toast(on ? "즐겨찾기에 넣었어요. '즐겨찾기만'을 켜면 모아 볼 수 있어요" : '즐겨찾기에서 뺐어요');
@@ -454,7 +576,10 @@ document.addEventListener('click', e => {
   if (d('star')) { toggleFav(v('star')); return; }
   if (d('open')) { const fromDlg = d('fromdlg'); cur = v('open'); if (fromDlg) $('#dlg').close(); const r = byId(cur); if (r && tk(r) !== tab) { tab = tk(r); f = {}; } render(); return; }
   if (d('close') || t.id === 'scrim') { cur = null; render(); return; }
-  if (d('whole')) { wholePage(v('whole'), d('whole').dataset.mark); return; }
+  if (d('hide')) { hideRef(v('hide')); return; }
+  if (d('colgo')) { startCollect(d('colgo')); return; }
+  if (d('snap')) { snapView(v('snap')); return; }
+  if (d('whole')) { wholePage(v('whole'), d('whole').dataset.mark, d('whole').dataset.wmode === 'list' ? 'list' : ''); return; }
   if (d('kids')) { const id = v('kids'), p = R.find(x => x.id === id); tab = 'sec'; f = {}; q = p.name; $('#q').value = q; cur = null; render(); toast(`'${p.name}'의 구좌만 보여요`); return; }
   if (d('edit')) { openAdd(byId(v('edit'))); return; }
   if (d('del')) { delRef(v('del')); return; }
@@ -467,6 +592,7 @@ document.addEventListener('click', e => {
     if (!/^https?:\/\//.test(u)) { $('#addErr').textContent = '링크는 http나 https로 시작하는 주소를 넣어 주세요'; $('#addUrl')?.focus(); return; }
     impLoad({ method: 'url', url: u }, '불러오는 중… 서버가 페이지를 내려받고 있어요 (최대 15초)'); return;
   }
+  if (t.closest('#collectBtn')) { openCollect(); return; }
   if (t.closest('#addBtn')) { openAdd(); return; }
   if (d('unboard')) { const url = v('unboard'); v2api('/api/am/pinterest/boards/delete', { url }).then(r => { BOARDS = r.boards; PINS = PINS.filter(p => p.board !== url); render(); toast('보드 구독을 뺐어요. 이미 담은 핀은 라이브러리에 남아요'); }).catch(er => toast(er.message)); return; }
   if (d('pinsave')) { const b = d('pinsave'); b.disabled = true; savePin(v('pinsave')); return; }
