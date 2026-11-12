@@ -24,13 +24,17 @@ const PLAN = (() => {
       return null;
     }
     st.doc.v2 = { cls: '', seed: '', keywords: [], stage: 'brief', ...(st.doc.v2 || {}) };
+    const hero = st.doc.page?.sections?.find(s => s.layoutId === 'hero');
+    const copy = st.doc.brief?.key_copy;
+    const copyChanged = !!(hero && copy && hero.headline !== copy);
+    if (copyChanged) hero.headline = copy;
     const ident = document.querySelector('.v2ident');
     if (ident) { ident.textContent = st.doc.title; ident.title = `기획안 목록으로 · ${st.doc.title}`; }
     document.querySelectorAll('[data-plan-title]').forEach(h => { h.textContent = st.doc.title; });   // 예시 제목 대신 지금 연 기획안 이름
     st.progress();
     tagLinks();
     say(`저장됨 ${String(st.doc.updated_at || '').slice(5, 16)}`);
-    if (STEPS.includes(here) && st.doc.v2.stage !== here) st.save(d => { d.v2.stage = here; }, true);   // 홈 목록의 '지금 단계'
+    if (STEPS.includes(here) && (st.doc.v2.stage !== here || copyChanged)) st.save(d => { d.v2.stage = here; }, true);   // 홈 목록의 '지금 단계'
     return st.doc;
   })();
   // 단계 막대 진행 상황 (2026-11-10): 저장된 기획안 값으로만 판단. 끝난 단계 = .is-done(체크), 남은 일 = 작은 글자

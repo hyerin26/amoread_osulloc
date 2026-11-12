@@ -413,6 +413,9 @@ function saveBrief() {
     d.title = $('#title').value.trim().slice(0, 80) || d.title;
     d.brief = { ...d.brief, concept: $('#concept').value.trim().slice(0, 300), audience: $('#who').value.trim().slice(0, 300), key_copy: $('#copy').value.trim().slice(0, 120) };
     d.v2.keywords = picked.filter(k => k.length <= 20).slice(0, 30);
+    const hero = d.page?.sections?.find(s => s.layoutId === 'hero');
+    if (hero) hero.headline = d.brief.key_copy;
+
   });
 }
 // ---------- 우리 데이터 (기획안이 열려 있을 때, 실제): 명분 사전 · 지난 컨셉 · 이름이 겹치는 판매 중 상품 · 효능 표현 ----------
