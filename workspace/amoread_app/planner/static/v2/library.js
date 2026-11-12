@@ -446,7 +446,7 @@ async function startCollect(btn) {
 }
 
 // ---------- 마켓별 신규 프로모션 찾기: 마켓 버튼 → 목록 화면에서 링크 긁기 → 우리 레퍼런스에 없는 것(신규)을 골라 추가 ----------
-let DISC = [], discKey = '', discTimer = null;
+let DISC = [], DAILY = {}, discKey = '', discTimer = null;
 const DISC_MAX = 30;
 async function openDiscover() {
   $('#dlgO').textContent = '레퍼런스 수집'; $('#dlgH').textContent = '마켓별 신규 프로모션 찾기';
@@ -456,19 +456,32 @@ async function openDiscover() {
   await loadDisc();
 }
 async function loadDisc() {
-  try { const d = await v2api('/api/am/ai/discover'); DISC = d.markets || []; } catch (e) { $('#dlgB').innerHTML = `<p class="cap err">${esc(e.message)}</p>`; return; }
+  try { const d = await v2api('/api/am/ai/discover'); DISC = d.markets || []; DAILY = d.daily || {}; } catch (e) { $('#dlgB').innerHTML = `<p class="cap err">${esc(e.message)}</p>`; return; }
   if (!discKey || !DISC.some(m => m.key === discKey)) discKey = DISC.find(m => m.checked)?.key || DISC[0]?.key || '';
   renderDisc();
 }
 function renderDisc(msg) {
   const m = DISC.find(x => x.key === discKey), news = m ? m.items.filter(x => x.new) : [], have = m ? m.have : 0;
-  $('#dlgB').innerHTML = `<div class="chips-row" id="discMarkets">${DISC.map(x => `<button type="button" class="chip" data-dmk="${esc(x.key)}" aria-pressed="${x.key === discKey}">${esc(x.label)}${x.checked ? ` · 신규 ${x.new}` : ''}</button>`).join('')}</div>
+  $('#dlgB').innerHTML = `<p class="cap">${DAILY.last_ok ? `마지막 자동 확인(매일 아침): ${esc(DAILY.last_ok)}` : '자동 확인 기록이 아직 없어요 (매일 자동 확인을 켜면 여기에 시각이 나와요)'}</p><div class="chips-row" id="discMarkets">${DISC.map(x => `<button type="button" class="chip" data-dmk="${esc(x.key)}" aria-pressed="${x.key === discKey}">${esc(x.label)}${x.checked ? ` · 신규 ${x.new}` : ''}</button>`).join('')}</div>
     ${m ? `<p class="hint" aria-live="polite">${msg || (m.checked ? `${esc(m.label)} · 마지막 확인 ${esc(m.at)} · 찾은 ${m.total}개 중 신규 ${news.length}개 · 이미 있음 ${m.have}개${m.ended ? ` · 끝남 ${m.ended}개` : ''} (내용으로 비교)` : `${esc(m.label)} · 아직 확인 전이에요`)}</p>
       <div class="dbar"><div class="dtools"><button class="btn sm" data-dgo="${esc(m.key)}">${m.checked ? '다시 확인' : '신규 확인'}</button>${news.length ? `<button class="btn sm" data-dall="1">전체 선택/해제</button><span class="dcount" id="dCount"></span><button class="btn sm primary" data-dadd>선택한 것 추가</button>` : ''}</div>
       <div id="colOut" class="dout" aria-live="polite"></div></div>
-      <div id="discList" class="dlist">${news.map((x, i) => `<div class="drow"><label class="dmain"><input type="checkbox" class="dsel" value="${esc(x.url)}" ${i < DISC_MAX ? 'checked' : ''}><span class="dtxt"><b>${esc(x.title || x.url.slice(0, 50))}</b><span class="dmeta">${x.changed ? '<em class="dchg">내용 바뀐 같은 링크</em> · ' : ''}처음 본 날 ${esc((x.first_seen || '').slice(5))}</span></span></label><a class="dlink" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer" aria-label="원본 열기">원본 ↗</a></div>`).join('') || (m.checked ? '<p class="cap">새로 올라온 프로모션이 없어요.</p>' : '')}</div>` : ''}`;
+      <div id="discList">${dList(news.filter(x => !x.low), true)}${dLow(news.filter(x => x.low))}${!news.length && m.checked ? '<p class="cap">새로 올라온 프로모션이 없어요.</p>' : ''}</div>` : ''}`;
   $('#dlgF').innerHTML = '';
   discCount();
+}
+function dRow(x, checked) {
+  const why = (x.why || []).filter(w => w !== '기간 있음').join(' · ');
+  return `<div class="drow"><label class="dmain"><input type="checkbox" class="dsel" value="${esc(x.url)}" ${checked ? 'checked' : ''}><span class="dtxt"><b>${esc(x.title || x.url.slice(0, 50))}</b><span class="dmeta">${x.changed ? '<em class="dchg">내용 바뀐 같은 링크</em> · ' : ''}처음 본 날 ${esc((x.first_seen || '').slice(5))}${why ? ` · <em class="dwhy">${esc(why)}</em>` : ''}</span></span></label>${x.score == null ? '' : `<span class="dscore ${x.low ? 'lo' : x.score >= 70 ? 'hi' : ''}" title="참고 가치 점수(규칙 계산)">참고 ${x.score}</span>`}<a class="dlink" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer" aria-label="원본 열기">원본 ↗</a></div>`;
+}
+function dList(items, pick) {
+  if (!items.length) return '';
+  let n = 0;
+  return `<div class="dlist">${items.map(x => dRow(x, pick && n++ < DISC_MAX)).join('')}</div>`;
+}
+function dLow(items) {
+  if (!items.length) return '';
+  return `<details class="dlow"><summary>참고 가치 낮음 ${items.length}개 접어 둠 <span class="cap">(카드·결제 행사, 상설 코너, 내용 적음 등 · 눌러서 보기)</span></summary>${dList(items, false)}</details>`;
 }
 function discCount() {
   const all = [...document.querySelectorAll('.dsel')], n = all.filter(x => x.checked).length, c = $('#dCount'), b = $('[data-dadd]');

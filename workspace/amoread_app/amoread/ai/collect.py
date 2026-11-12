@@ -127,6 +127,11 @@ def _run(job: dict, urls: list[str], allow_known: bool = False):
     finally:
         job["state"] = "done"
         job["ended"] = time.time()
+        try:   # 공유 폴더(AMOREAD_SNAPSHOT_DIR)가 설정돼 있으면 수집이 끝날 때마다 스냅샷을 올린다
+            from . import snapshot_pack
+            snapshot_pack.auto()
+        except Exception:
+            pass
         _lock.release()
 
 

@@ -146,3 +146,27 @@ $env:PYTHONUTF8 = "1"
 - 마켓 추가는 `discover.MARKETS`에 항목 하나(진입 주소 `pages`, 상세 주소 모양 `pat`). 현재 오설록·컬리·29CM·지그재그. 결과는 `planner/data/ai_collect/discover.json`.
 - 수집 시 주소로 받은 HTML이 비면(컬리 등) 브라우저로 그려서 구좌를 나눈다. playwright가 있는 Python으로 서버를 띄워야 한다(`requirements-capture.txt`).
 - 목록 제목은 링크 글자라 거칠다(컬리는 주소 끝말로 나오기도). 추가하면 상세를 읽어 이름이 바뀐다.
+
+## 스냅샷 공유 (`snapshot_pack.py`)
+DB 없이 파일로 쓰는 환경용. **수집·처리(쓰기)는 한 PC에서만** 하고 다른 PC는 스냅샷을 받아 읽는다.
+- 내보내기: `python -m amoread.ai.snapshot_pack export --out <공유 동기화 폴더>` → `amoread_snapshot_날짜_시각.zip` (최근 14개만 유지, `--keep`). 환경변수 `AMOREAD_SNAPSHOT_DIR`를 정해 두면 수집 버튼 작업이 끝날 때마다 자동으로 올린다.
+- 불러오기: `python -m amoread.ai.snapshot_pack import <zip 또는 폴더>` (폴더면 가장 최근 것). 파일별 해시 확인 → 현재 데이터를 `planner/data/_backup/`에 복사 → 교체.
+- 담기는 것: ai_refs, ai_refs_user(화면 수집본 포함), references/refs.json, ai_collect. 이미지·임시 초안·기획안·프로젝트는 담지 않는다. zip 안은 data 기준 상대경로뿐이고 데이터 파일에 절대경로가 없어 어느 PC에 풀어도 된다.
+- 업로드 중 반쯤 쓴 파일을 남이 받지 않도록 `.partial`로 쓰고 끝나면 이름을 바꾼다.
+
+## 매일 자동 확인 (`daily.py`, `register_daily.ps1`)
+- `python -m amoread.ai.daily` : 모든 마켓의 신규 프로모션을 확인해 목록만 갱신한다(레퍼런스에 추가는 사람이 화면에서). 끝나면 `AMOREAD_SNAPSHOT_DIR`가 있을 때 스냅샷도 올린다.
+- 꺼져 있던 날·오프라인을 견디게: 인터넷이 없으면 종료코드 2로 끝나 스케줄러가 재시도, 마지막 성공 후 20시간 안이면 건너뜀(하루 한 번만), 마켓 하나가 실패해도 나머지 진행. `--force`, `--markets a,b`, `--min-hours N`. 일부 마켓만 돌린 실행은 '오늘 완료'로 치지 않는다.
+- Windows 등록: `powershell -ExecutionPolicy Bypass -File register_daily.ps1 -At 09:30` → 매일 지정 시각 + 로그인 시 실행, 놓치면 켜진 직후 실행, 네트워크 있을 때만, 실패 시 30분 간격 3회 재시도. (Windows에서 직접 돌려 보지 못함 — 처음 한 번 `Start-ScheduledTask -TaskName AMOREAD_daily`로 확인)
+- 기록: `planner/data/ai_collect/daily.json` (마지막 성공 시각, 마켓별 결과). 신규 찾기 화면 위에 '마지막 자동 확인'으로 나온다.
+
+## 참고 가치 점수 (`discover.score`)
+- 신규 목록의 각 후보에 0~100점과 이유를 붙인다. `LOW`(45) 미만은 "참고 가치 낮음"으로 접어 두고(기본 선택 안 함, 지우지는 않음) 사람이 펼쳐서 볼 수 있다.
+- 규칙: 제목에 카드·즉시할인·청구할인·결제 행사 −60 / 상설 코너(오마트·단독상품·랭킹 등) −30 / 기간 표시 +15, 없음 −10 / 글 800자 미만 −25, 1500자 이상 +10 / 이미지 12개 이상 +10, 6개 미만 −15 / 상품 링크가 많고 큰 제목이 적으면 −15 / 열었는데 글이 비면 20점.
+- 본 샘플 10개(올리브영 기획전 85, 쓱 장보기 페스타 85, 오설록 블랙프라이데이 85, 29CM 쇼케이스 85, SSG 카드 행사 25 …)에 맞춰 잡은 가설이다. 새 마켓을 붙일 때마다 샘플을 직접 눈으로 보고 점수가 맞는지 확인할 것.
+- 마켓은 올리브영(`oliveyoung`) 추가 — 홈·이벤트·올리브베러 화면의 `planshop/detail` 링크.
+
+## 처음 받은 PC에서 바로 실행 (`setup_env.py`, `setup.bat`, `setup.sh`)
+- `planner/data/`(레퍼런스 색인 포함)는 깃에 올라가지 않는다(.gitignore). 브랜치만 받으면 구좌 추천만 나오고 레퍼런스는 비어 있다.
+- `python setup_env.py --snapshot <스냅샷 zip 또는 폴더>` (Windows는 `setup.bat`, Mac은 `./setup.sh`): .venv 만들기 → 패키지 설치 → 스냅샷으로 데이터 넣기 → 점검 → 실행 방법 안내. 이미 된 단계는 건너뛰므로 다시 실행해도 된다. `--no-capture`(playwright 제외), `--run`(끝나고 서버 실행).
+- 스냅샷은 수집 담당이 `python -m amoread.ai.snapshot_pack export --out <공유 폴더>`로 올린 zip. 환경변수 `AMOREAD_SNAPSHOT_DIR`가 있으면 `--snapshot`을 생략해도 된다.

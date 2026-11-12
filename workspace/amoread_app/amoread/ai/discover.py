@@ -27,6 +27,9 @@ MARKETS = {
               "pat": [r"kurly\.com/(collections|clay)/[^?#/]+", r"event\.kurly\.com/lego/event/\S+"]},
     "29cm": {"label": "29CM", "pages": ["https://www.29cm.co.kr/", "https://www.29cm.co.kr/store/showcase"],
              "pat": [r"29cm\.co\.kr/content/(brand-news|collection|showcase|29live)/\S+"]},
+    "oliveyoung": {"label": "올리브영", "strip_query": True,
+                   "pages": ["https://m.oliveyoung.co.kr/m/mtn", "https://m.oliveyoung.co.kr/m/mtn?menu=event", "https://m.oliveyoung.co.kr/m/mtn/olivebetter", "https://m.oliveyoung.co.kr/m/mtn?menu=planshop"],
+                   "pat": [r"oliveyoung\.co\.kr/m/mtn/planshop/detail/\w+"]},
     "zigzag": {"label": "지그재그", "pages": ["https://zigzag.kr/"],
                "pat": [r"zigzag\.kr/events/[0-9a-f-]{20,}"]},
 }
@@ -57,7 +60,7 @@ _LINKS_JS = r"""() => [...document.querySelectorAll('a[href]')].map(a => {
 })"""
 
 
-_GENERIC = re.compile(r"^\d*\s*(메인\s*)?배너(\s*이미지)?$|^이미지$|^더보기$|^바로가기$|^전체\s*보기$|^자세히\s*보기$")
+_GENERIC = re.compile(r"^\d*\s*(메인\s*)?배너(\s*이미지)?$|^이미지$|^더보기$|^바로가기$|^전체\s*보기$|^자세히\s*보기$|^[\d.~\s\-/월일]+$")
 
 
 def _title(s: str, url: str = "") -> str:
@@ -67,7 +70,19 @@ def _title(s: str, url: str = "") -> str:
     return t or urllib.parse.urlsplit(url).path.rstrip("/").rsplit("/", 1)[-1][:60]
 
 
-FP_CHARS = 3000      # 후보 페이지에서 읽는 글자 수 (같은 프로모션인지 비교용)
+_FP_JS = r"""(n) => {
+  const body = document.body, txt = (body ? body.innerText : '').replace(/\s+/g, ' ').trim();
+  const goods = [...document.querySelectorAll('a[href]')].filter(a => /goods|product|item|catalog|prd/i.test(a.href)).length;
+  let heads = 0;   // 큰 글씨(20px 이상)의 짧은 제목 글 = 구좌 제목·카피 수
+  for (const e of document.querySelectorAll('h1,h2,h3,h4,strong,b,p,div,span')) {
+    if (e.childElementCount > 1) continue;
+    const t = (e.textContent || '').trim();
+    if (t.length < 2 || t.length > 60) continue;
+    if (parseFloat(getComputedStyle(e).fontSize) >= 20) { heads++; if (heads >= 60) break; }
+  }
+  return { t: document.title || '', b: txt.slice(0, n), len: txt.length, imgs: document.images.length, h: document.documentElement.scrollHeight, goods, heads };
+}"""
+FP_CHARS = 6000      # 후보 페이지에서 읽는 글자 수 (같은 프로모션인지 비교용)
 FP_PARALLEL = 8      # 후보 페이지를 동시에 여는 수
 
 
@@ -120,24 +135,29 @@ async def _scan_async(m: dict) -> list[dict]:
             found = list(out.values())[:MAX_PER_MARKET]
             sem = asyncio.Semaphore(FP_PARALLEL)
 
-            async def fp(x):   # 2) 후보마다 실제 내용 글을 읽어 둔다 (주소가 같아도 내용이 바뀔 수 있어서 주소 대신 내용으로 비교한다)
+            async def fp(x):   # 2) 후보마다 실제 내용 글을 읽어 둔다 (주소가 같아도 내용이 바뀔 수 있어서 주소 대신 내용으로 비교한다). 느린 페이지는 한 번 더 시도
                 async with sem:
-                    pg = await ctx.new_page()
-                    try:
-                        await pg.goto(x["url"], wait_until="domcontentloaded", timeout=15000)
+                    x["fp"] = ""
+                    for attempt in range(2):
+                        pg = await ctx.new_page()
                         try:
-                            await pg.wait_for_load_state("networkidle", timeout=3000)
+                            await pg.goto(x["url"], wait_until="domcontentloaded", timeout=15000 + 10000 * attempt)
+                            try:
+                                await pg.wait_for_load_state("networkidle", timeout=3000)
+                            except Exception:
+                                pass
+                            await pg.wait_for_timeout(700)
+                            r = await pg.evaluate(_FP_JS, FP_CHARS)
+                            x["fp"] = r["b"]
+                            x["pt"] = _title(r["t"], "")
+                            x["m"] = {k: r[k] for k in ("len", "imgs", "h", "goods", "heads")}
+                            if len(x["title"]) < 3 or re.fullmatch(r"[0-9a-f-]{8,}|[\w-]{1,24}", x["title"] or ""):   # 목록에서 못 읽은 제목은 페이지 제목으로
+                                x["title"] = _title(r["t"], x["url"])
+                            break
                         except Exception:
-                            pass
-                        await pg.wait_for_timeout(700)
-                        r = await pg.evaluate("() => ({t: document.title || '', b: (document.body ? document.body.innerText : '').replace(/\\s+/g, ' ').trim().slice(0, %d)})" % FP_CHARS)
-                        x["fp"] = r["b"]
-                        if len(x["title"]) < 3 or re.fullmatch(r"[0-9a-f-]{8,}|[\w-]{1,24}", x["title"] or ""):   # 목록에서 못 읽은 제목은 페이지 제목으로
-                            x["title"] = _title(r["t"], x["url"])
-                    except Exception:
-                        x["fp"] = ""
-                    finally:
-                        await pg.close()
+                            continue
+                        finally:
+                            await pg.close()
             await asyncio.gather(*(fp(x) for x in found))
             return found
         finally:
@@ -151,19 +171,23 @@ def _scan_pages(m: dict) -> list[dict]:
         return asyncio.run(_scan_async(m))
 
 
+def scan_and_save(key: str) -> int:
+    """마켓 하나를 확인해 결과를 discover.json에 저장하고 찾은 개수를 돌려준다 (버튼 작업과 매일 자동 실행이 함께 쓴다)."""
+    found = _scan_pages(MARKETS[key])
+    db = _load()
+    prev = {collect.normalize(x["url"]): x for x in db.get(key, {}).get("items", [])}
+    today = datetime.now().strftime("%Y-%m-%d")
+    for x in found:
+        old = prev.get(collect.normalize(x["url"]))
+        x["first_seen"] = old["first_seen"] if old else today
+    db[key] = {"at": datetime.now().strftime("%Y-%m-%d %H:%M"), "items": found}
+    _save(db)
+    return len(found)
+
+
 def _run(job: dict, key: str):
     try:
-        m = MARKETS[key]
-        found = _scan_pages(m)
-        db = _load()
-        prev = {collect.normalize(x["url"]): x for x in db.get(key, {}).get("items", [])}
-        today = datetime.now().strftime("%Y-%m-%d")
-        for x in found:
-            old = prev.get(collect.normalize(x["url"]))
-            x["first_seen"] = old["first_seen"] if old else today
-        db[key] = {"at": datetime.now().strftime("%Y-%m-%d %H:%M"), "items": found}
-        _save(db)
-        job["found"] = len(found)
+        job["found"] = scan_and_save(key)
         job["state"] = "done"
     except intake.IntakeError as e:
         job["state"], job["error"] = "error", str(e)
@@ -259,6 +283,43 @@ def _judge(x: dict, lib: list[tuple], urls: set, common: set = frozenset()) -> t
     return ("have", "같은 링크") if same_url else ("new", "")   # 글을 못 읽은 페이지는 주소로만 비교
 
 
+# ---------- 참고 가치 점수: 규칙으로 계산하고 이유를 같이 보여 준다 (사람이 최종 판단). 낮은 건 목록에서 접어 두기만 하고 지우지 않는다 ----------
+LOW = 45   # 이 점수 미만은 '참고 가치 낮음'으로 접는다
+_PAY = re.compile(r"카드\s*(행사|혜택|할인)|즉시\s*할인|청구\s*할인|무이자|결제\s*(수단|행사)|페이\s*(결제|혜택)|쿠폰북|포인트\s*(적립|전환)")
+_FIXED = re.compile(r"오마트|단독상품|베스트\s*(상품|셀러)?$|랭킹|전체\s*상품|원하는\s*날|오늘의\s*딜")
+_PERIOD = re.compile(r"\d{1,2}\s*[./월]\s*\d{1,2}\s*일?\s*[\(\)가-힣]{0,3}\s*[~\-–]\s*\d{0,2}|기간\s*[:：]|~\s*\d{1,2}\s*[./월]\s*\d{1,2}")
+
+
+def score(x: dict) -> tuple[int | None, list[str]]:
+    """기획 참고용으로 볼 만한 정도(0~100)와 이유. 페이지 내용을 못 읽었으면 (None, [])."""
+    m, text = x.get("m"), x.get("fp") or ""
+    if not m:
+        return None, []   # 예전 확인 결과(내용 없이 링크만 저장): 판단하지 않는다
+    if not text.strip():
+        return 20, ["내용 못 읽음"]   # 열었지만 글이 비어 있음(앱 이동·차단 등): 추가해도 구좌를 못 나눌 가능성이 커서 접는다
+    sc, why = 50, []
+    head = f"{x.get('title', '')} {x.get('pt', '')}"
+    if _PAY.search(head):   # 제목에 있을 때만: 본문에는 카드 혜택을 한 구좌로 곁들이는 일반 이벤트도 많다
+        sc -= 60; why.append("카드·결제 행사")
+    if _FIXED.search(head):
+        sc -= 30; why.append("상설 코너")
+    if _PERIOD.search(text):
+        sc += 15; why.append("기간 있음")
+    else:
+        sc -= 10; why.append("기간 표시 없음")
+    if m["len"] < 800:
+        sc -= 25; why.append("글이 적음")
+    elif m["len"] >= 1500:
+        sc += 10
+    if m["imgs"] >= 12:
+        sc += 10
+    elif m["imgs"] < 6:
+        sc -= 15; why.append("이미지 적음")
+    if m["goods"] >= 60 and m["heads"] < 4:
+        sc -= 15; why.append("상품 진열 위주")
+    return max(0, min(100, sc)), why
+
+
 def view() -> list[dict]:
     """마켓별 마지막 확인 결과를 지금 라이브러리와 내용으로 비교한 것 (신규/내용 바뀜/이미 있음/끝남)."""
     db, out = _load(), []
@@ -275,8 +336,10 @@ def view() -> list[dict]:
             elif st == "ended":
                 ended += 1
             else:
-                items.append({"url": x["url"], "title": x["title"], "first_seen": x.get("first_seen", ""), "new": True, "changed": st == "changed", "note": note})
-        items.sort(key=lambda x: (x["changed"], x["title"]))
+                sc, why = score(x)
+                items.append({"url": x["url"], "title": x["title"], "first_seen": x.get("first_seen", ""), "new": True, "changed": st == "changed", "note": note,
+                              "score": sc, "why": why, "low": sc is not None and sc < LOW})
+        items.sort(key=lambda x: (x["low"], x["changed"], -(x["score"] if x["score"] is not None else 50), x["title"]))
         out.append({"key": key, "label": m["label"], "at": (d or {}).get("at"), "checked": d is not None, "have": have, "ended": ended,
-                    "total": len(items) + have + ended, "new": len(items), "items": items})
+                    "total": len(items) + have + ended, "new": len(items), "low": sum(1 for x in items if x["low"]), "items": items})
     return out

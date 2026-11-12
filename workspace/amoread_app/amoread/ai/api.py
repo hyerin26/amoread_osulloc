@@ -195,8 +195,8 @@ class DiscoverReq(BaseModel):
 @router.get("/discover")
 def ai_discover():
     """마켓별 마지막 확인 결과(신규/이미 있음). 확인은 /discover/start."""
-    from . import discover
-    return {"markets": discover.view(), "running": any(j["state"] == "running" for j in discover._jobs.values())}
+    from . import daily, discover
+    return {"markets": discover.view(), "daily": daily.state(), "running": any(j["state"] == "running" for j in discover._jobs.values())}
 
 
 @router.post("/discover/start")

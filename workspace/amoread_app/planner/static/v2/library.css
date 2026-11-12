@@ -269,3 +269,9 @@ dialog::backdrop { background: var(--scrim); }
 #dlgB .dout:empty { display: none; }
 #dlgB .dout { margin: 0 0 10px; }
 #dlgB .dlist input[disabled] { opacity: .35; cursor: not-allowed; }
+#dlgB .dscore { flex: none; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: rgba(0, 0, 0, .06); color: var(--muted, #6b7280); }
+#dlgB .dscore.hi { background: #dcfce7; color: #166534; font-weight: 600; }
+#dlgB .dscore.lo { background: #fee2e2; color: #991b1b; }
+#dlgB .dwhy { font-style: normal; color: #b45309; }
+#dlgB .dlow { margin-top: 12px; }
+#dlgB .dlow > summary { cursor: pointer; font-size: 14px; font-weight: 600; padding: 8px 0; }
