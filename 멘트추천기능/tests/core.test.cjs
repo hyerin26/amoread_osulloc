@@ -1,0 +1,24 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const path = require('node:path');
+const box = {};
+vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../static/core.js'),'utf8'),box);
+const C = box.CopyRecommendationCore;
+const s={id:'hero',name:'원래 제목',role:'원래 설명',layout:'hero',cards:[{seq:'101'}]};
+const source={doc:{id:'a'.repeat(32),brief:{concept:'봄',key_copy:'원래 제목'}},section:s,sections:[s],
+  products:{'101':{seq:'101',name:'녹차',category:'차',cost:123456,sales_28:999999}},rows:[{seq:'101',rate:.2,cost:456789}],extras:[]};
+const snap=C.snapshot(source);
+assert(!JSON.stringify(snap).includes('123456'));
+assert(!JSON.stringify(snap).includes('999999'));
+assert(!JSON.stringify(snap).includes('456789'));
+assert.equal(snap.request.draft.product_seqs[0],'101');
+assert.equal(Object.keys(C.patchFor({headline:'새 제목',subhead:'새 설명'},'headline')).join(','),'name');
+assert.equal(Object.keys(C.patchFor({headline:'새 제목',subhead:'새 설명'},'subhead')).join(','),'role');
+const old=snap.fingerprint;s.name='수동 수정';assert.notEqual(C.snapshot(source).fingerprint,old);
+const changed=C.snapshot(source).fingerprint;source.products['101'].cost=888888;assert.equal(C.snapshot(source).fingerprint,changed);
+source.section.cards[0].seq='102';assert.notEqual(C.snapshot(source).fingerprint,changed);
+assert.equal(C.esc('<img onerror="x">'),'&lt;img onerror=&quot;x&quot;&gt;');
+assert.throws(()=>C.patchFor({headline:'🌿'.repeat(31),subhead:'설명'},'both'));
+assert.throws(()=>C.snapshot({...source,doc:null}));
+console.log('copy core: 12 assertions passed');
