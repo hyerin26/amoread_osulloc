@@ -10,3 +10,4 @@ body.en-host { margin: 0; background: var(--bg); color: var(--ink); font-family:
 .en-host .inspector { top: var(--v2-head-h, 120px); max-height: calc(100vh - var(--v2-head-h, 120px)); }
 /* 폰 머리의 고정 문구(OSULLOC · PAGE BLUEPRINT)는 편집할 수 없는 장식이라 비워 둔다 */
 .en-host .phone-head:empty { display: none; }
+
