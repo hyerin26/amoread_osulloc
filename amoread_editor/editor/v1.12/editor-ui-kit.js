@@ -56,3 +56,27 @@ window.AMEditorKit=(()=>{
   }
   return {icon,revealInPreview};
 })();
+
+/* CSP-safe inline styles (2026-11-14, AMOREAD app integration).
+ * The app server sends `style-src 'self'`, which ignores style="..." attributes written into HTML strings.
+ * Templates write data-am-style="..." instead; this applies only listed properties with plain values through
+ * CSSOM (allowed by CSP). Works the same in the standalone Lab (no CSP). */
+(()=>{
+  const PROP=/^(--am-[a-z-]+|width|text-align|aspect-ratio|background|margin-top)$/;
+  const VALUE=/^[\w\s.%#(),\/-]+$/;
+  const done=new WeakMap();
+  const apply=el=>{
+    const raw=el.getAttribute('data-am-style');
+    if(!raw||done.get(el)===raw)return;
+    done.set(el,raw);
+    for(const decl of raw.split(';')){
+      const i=decl.indexOf(':');if(i<0)continue;
+      const prop=decl.slice(0,i).trim().toLowerCase(),value=decl.slice(i+1).trim();
+      if(PROP.test(prop)&&VALUE.test(value)&&!/url\s*\(|expression/i.test(value))el.style.setProperty(prop,value);
+    }
+  };
+  const scan=root=>{if(root.nodeType!==1)return;if(root.hasAttribute('data-am-style'))apply(root);root.querySelectorAll('[data-am-style]').forEach(apply);};
+  new MutationObserver(list=>list.forEach(m=>m.addedNodes.forEach(scan))).observe(document.documentElement,{childList:true,subtree:true});
+  if(document.body)scan(document.body);
+  window.AMEditorStyleScan=scan;
+})();

@@ -13,6 +13,7 @@
 - Claude 호출: 분당 제한 + 요청/결과 로그(data/chat_log.jsonl)
 """
 import logging
+import re
 import secrets
 import sys
 import threading
@@ -90,16 +91,31 @@ def index():
 
 # 새 버전 (plans/20 재설계 화면). 예전 화면(/)은 그대로 두고 /v2/ 아래에 따로. 정해진 이름만 열어 준다
 V2_PAGES = {"home", "brief", "compose", "editor", "preview", "deals", "library", "settings"}
+# 신규 구좌편집기 (기존 /v2/editor는 그대로 두고 따로). 끄면 화면 404 + 화면 안 <!--editor-next-->…<!--/editor-next--> 진입 버튼을 뺀다
+EDITOR_NEXT_ON = config.EDITOR_NEXT and (config.EDITOR_NEXT_DIR / "app.js").is_file()
+_EDITOR_NEXT_BLOCK = re.compile(r"<!--editor-next-->.*?<!--/editor-next-->", re.S)
+_EDITOR_NEXT_FILE = re.compile(r"^[A-Za-z0-9_.-]+\.(js|css)$")   # 편집기 폴더의 js·css만 (테스트·문서·하위 폴더는 열지 않음)
 
 
 @app.get("/v2", response_class=HTMLResponse)
 @app.get("/v2/", response_class=HTMLResponse)
 @app.get("/v2/{page}", response_class=HTMLResponse)
 def v2_page(page: str = "home"):
-    if page not in V2_PAGES:
+    if page not in V2_PAGES and not (page == "editor-next" and EDITOR_NEXT_ON):
         raise HTTPException(404, "없는 화면입니다.")
     html = (STATIC_DIR / "v2" / f"{page}.html").read_text(encoding="utf-8")
+    if not EDITOR_NEXT_ON:
+        html = _EDITOR_NEXT_BLOCK.sub("", html)
     return HTMLResponse(html.replace("__PLANNER_TOKEN__", TOKEN))
+
+
+@app.get("/v2/editor-next/{name}")
+def editor_next_file(name: str):
+    m = _EDITOR_NEXT_FILE.match(name)
+    p = config.EDITOR_NEXT_DIR / name if m and EDITOR_NEXT_ON else None
+    if not p or not p.is_file():
+        raise HTTPException(404, "없는 파일입니다.")
+    return FileResponse(p, media_type="text/javascript" if m.group(1) == "js" else "text/css")
 
 
 # 레퍼런스 이미지 (2026-11-10): <img>가 토큰 머리를 보낼 수 없어 /api 밖에 둔다 (서버는 127.0.0.1 + Host 검사만 통과)

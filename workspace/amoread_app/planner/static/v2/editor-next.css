@@ -1,0 +1,12 @@
+/* 신규 구좌편집기(v1.12)를 앱 틀(v2top + v2plan) 안에 놓는 배치만 다룬다.
+   색·글자·간격은 /static/tokens.css + v2/shell.css 값을 그대로 쓴다 (v1.12의 tokens.demo.css는 읽지 않음).
+   --v2-head-h: shell.js가 계산하는 고정 머리막대 높이 */
+body.en-host { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); }
+.en-host .en-tools { min-height: 0; padding: var(--s2) var(--s5); justify-content: flex-end; }
+.en-host .en-tools .topstatus { margin-left: auto; }
+.en-host .guardrail { padding: var(--s2) var(--s5); }
+.en-host .guardrail.is-error { background: var(--err-soft); color: var(--err); }
+.en-host .workspace { min-height: calc(100vh - var(--v2-head-h, 120px)); max-width: none; }
+.en-host .inspector { top: var(--v2-head-h, 120px); max-height: calc(100vh - var(--v2-head-h, 120px)); }
+/* 폰 머리의 고정 문구(OSULLOC · PAGE BLUEPRINT)는 편집할 수 없는 장식이라 비워 둔다 */
+.en-host .phone-head:empty { display: none; }

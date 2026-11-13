@@ -146,7 +146,7 @@ const customPresetHeight=c=>CUSTOM_PRESETS[c.height]||CUSTOM_PRESETS.medium;
 function customPreview(s){
  const c=ensureCustom(s),image=safeRefImage(c.imageData),url=safeReferenceUrl(c.referenceUrl);
  const customHeight=customManualHeight(c),visibleHeight=customHeight||customPresetHeight(c);
- const heightAttr=customHeight?` style="--am-custom-height:${customHeight}px"`:'';
+ const heightAttr=customHeight?` data-am-style="--am-custom-height:${customHeight}px"`:'';
  const showResize=!window.AM_CB_STATIC_EXPORT&&s.id===current;
  const embedded=AMBlocks.renderSlot(s,'section:after',blockContext(),{staticView:!!window.AM_CB_STATIC_EXPORT,showEmpty:cbRailMode==='library'&&showResize});
  const resize=showResize?`<button type="button" role="slider" class="am-custom-resize-handle" data-custom-resize="${E(s.id)}" aria-label="자유 기획 구좌 높이 조절, 위아래 화살표로 20픽셀 변경" aria-orientation="vertical" aria-valuemin="${CUSTOM_SIZE_MIN}" aria-valuemax="${CUSTOM_SIZE_MAX}" aria-valuenow="${visibleHeight}" aria-valuetext="${visibleHeight}픽셀" title="끌어서 프레임 높이 변경 · ↑↓ 20px, Shift+↑↓ 100px"><span class="am-custom-resize-lines" aria-hidden="true"></span><span class="am-custom-resize-readout" aria-hidden="true">${visibleHeight}px</span></button>`:'';
@@ -290,7 +290,7 @@ function renderProductCardElements(s,p,options={}){
  const imgOn=!!on.img,labelOn=!!on.label;
  const place=['top-left','top-right','bottom-left','bottom-right'].includes(def.labelPosition)?def.labelPosition:'top-left';
  const effectiveRatio=productView(s)==='masonry'&&Number.isInteger(options.masonryIndex)?masonryRatio(s,p.id,options.masonryIndex):imageRatio(s);
- const media=()=>`<div class="mock-product-media" data-card-element="img" data-effective-ratio="${E(effectiveRatio)}" style="--am-product-aspect:${E(effectiveRatio.replace(':',' / '))}"><div class="mock-product-image" aria-label="상품 이미지 자리">이미지 자리</div>${labelOn?`<span class="mock-el mock-el--label mock-card-label mock-card-label--corner ${E(place)}" data-card-element="label">${E(def.label||'라벨 입력 필요')}</span>`:''}</div>`;
+ const media=()=>`<div class="mock-product-media" data-card-element="img" data-effective-ratio="${E(effectiveRatio)}" data-am-style="--am-product-aspect:${E(effectiveRatio.replace(':',' / '))}"><div class="mock-product-image" aria-label="상품 이미지 자리">이미지 자리</div>${labelOn?`<span class="mock-el mock-el--label mock-card-label mock-card-label--corner ${E(place)}" data-card-element="label">${E(def.label||'라벨 입력 필요')}</span>`:''}</div>`;
  const inline=()=>`<div class="mock-el mock-el--label mock-label-without-image" data-card-element="label">${E(def.label||'라벨 입력 필요')} <small>이미지를 켜면 모서리로 이동</small></div>`;
  let drawnImage=false;
  const html=order.map(k=>{
@@ -336,7 +336,7 @@ function eventPreview(s){
  if(kind==='ev-stamp'){
    const total=[3,5,7].includes(Number(ui.totalDays))?Number(ui.totalDays):7;
    const current=Math.max(0,Math.min(total,Number(ui.currentDays)||0));
-   return `<div class="mock-event mock-event--stamp"><div class="mock-ev-stamp-cover"><div class="mock-ev-badge">DAILY CHECK-IN</div><h4>${content(ui.stampCaption,'출석 안내 문구 입력')}</h4><div class="mock-ev-stamp-status"><strong>${current}<small> / ${total}일</small></strong><span>시안의 진행 상태 예시</span></div><div class="mock-ev-track"><i style="width:${current/total*100}%"></i></div></div><div class="mock-ev-content"><div class="mock-ev-days">${Array.from({length:total},(_,i)=>`<div class="mock-ev-day ${i<current?'complete':i===current?'today':''}"><b>${i<current?'✓':i===current?'●':String(i+1).padStart(2,'0')}</b><small>DAY ${i+1}</small></div>`).join('')}</div><div class="mock-ev-action">오늘 출석하기 <span>→</span></div></div>${foot}</div>`;
+   return `<div class="mock-event mock-event--stamp"><div class="mock-ev-stamp-cover"><div class="mock-ev-badge">DAILY CHECK-IN</div><h4>${content(ui.stampCaption,'출석 안내 문구 입력')}</h4><div class="mock-ev-stamp-status"><strong>${current}<small> / ${total}일</small></strong><span>시안의 진행 상태 예시</span></div><div class="mock-ev-track"><i data-am-style="width:${current/total*100}%"></i></div></div><div class="mock-ev-content"><div class="mock-ev-days">${Array.from({length:total},(_,i)=>`<div class="mock-ev-day ${i<current?'complete':i===current?'today':''}"><b>${i<current?'✓':i===current?'●':String(i+1).padStart(2,'0')}</b><small>DAY ${i+1}</small></div>`).join('')}</div><div class="mock-ev-action">오늘 출석하기 <span>→</span></div></div>${foot}</div>`;
  }
  if(kind==='ev-draw'){
    const labels=(ui.wheelLabels||'').split(/\n/).map(x=>x.trim()).filter(Boolean).slice(0,4);
@@ -386,7 +386,7 @@ function reviewPreview(s){
 function preview(s){
  const active=s.id===current?' active':'';
  const title=(s.layout==='text-cta'?'':`<h3>${E(s.name)}</h3>`)+(s.layout==='text-cta'||s.layout==='split'?'':s.role?`<p>${E(s.role)}</p>`:'')+s.lines.map(x=>x.text?`<p class="preview-extra-line">${E(x.text)}</p>`:'').join('');
- return `<section class="preview-block${active} am-align-${E(s.align||'left')} am-gap-${E(s.gap||'normal')}" role="button" tabindex="0" aria-label="${E(s.name)} 구좌 편집" aria-pressed="${s.id===current}" data-page="${E(s.id)}" data-image-ratio="${E(imageRatio(s))}" style="--am-section-image-aspect:${E(imageRatioCss(s))}">${title}${demoInner(s)}${s.layout==='ev-quiz'||s.layout==='custom'?'':AMBlocks.renderSlot(s,'section:after',blockContext(),{staticView:!!window.AM_CB_STATIC_EXPORT,showEmpty:cbRailMode==='library'&&s.id===current&&!window.AM_CB_STATIC_EXPORT})}${ctaMarkup(s)}</section>`;
+ return `<section class="preview-block${active} am-align-${E(s.align||'left')} am-gap-${E(s.gap||'normal')}" role="button" tabindex="0" aria-label="${E(s.name)} 구좌 편집" aria-pressed="${s.id===current}" data-page="${E(s.id)}" data-image-ratio="${E(imageRatio(s))}" data-am-style="--am-section-image-aspect:${E(imageRatioCss(s))}">${title}${demoInner(s)}${s.layout==='ev-quiz'||s.layout==='custom'?'':AMBlocks.renderSlot(s,'section:after',blockContext(),{staticView:!!window.AM_CB_STATIC_EXPORT,showEmpty:cbRailMode==='library'&&s.id===current&&!window.AM_CB_STATIC_EXPORT})}${ctaMarkup(s)}</section>`;
 }
 
 function renderPage(){

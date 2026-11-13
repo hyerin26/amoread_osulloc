@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="planner-token" content="__PLANNER_TOKEN__">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>신규 구좌 편집 (시험) · AMOREAD 새 버전</title>
+<!-- 신규 구좌편집기 v1.12 (amoread_editor/editor/v1.12, 서버가 /v2/editor-next/파일 로 제공).
+     디자인 기준: 앱의 Green UI v2.5.1 (/static/tokens.css + v2/shell.css). v1.12의 tokens.demo.css는 읽지 않는다.
+     편집 값은 기획안의 editor_next에 따로 저장 (기존 편집기의 page.sections와 섞지 않음) -->
+<link rel="preload" href="/static/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/tokens.css">
+<link rel="stylesheet" href="/static/v2/shell.css">
+<link rel="stylesheet" href="/v2/editor-next/styles.css">
+<link rel="stylesheet" href="/v2/editor-next/composable.css">
+<link rel="stylesheet" href="/v2/editor-next/editor-spacing.css">
+<link rel="stylesheet" href="/v2/editor-next/layout-integrity.css">
+<link rel="stylesheet" href="/v2/editor-next/custom-section.css">
+<link rel="stylesheet" href="/v2/editor-next/image-layout-v110.css">
+<link rel="stylesheet" href="/v2/editor-next/ia-v111.css">
+<link rel="stylesheet" href="/v2/editor-next/editor-ui-kit.css">
+<link rel="stylesheet" href="/v2/editor-next/block-quality.css">
+<link rel="stylesheet" href="/v2/editor-next/canvas-selection.css">
+<link rel="stylesheet" href="/static/v2/editor-next.css">
+</head>
+<body class="en-host">
+<header class="v2top">
+  <a class="v2logo" href="/v2/home"><i aria-hidden="true">a</i>AMOREAD</a>
+  <nav class="v2nav" aria-label="메뉴"><a href="/v2/home">홈</a><a href="/v2/library">레퍼런스</a></nav>
+  <span class="v2grow"></span><span class="v2date">신규 구좌편집기 · 시험 중</span>
+  <a class="v2old" href="/">예전 화면</a>
+  <a class="v2gear" href="/v2/settings" aria-label="설정·데이터"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
+</header>
+<div class="v2plan" aria-label="기획안 막대">
+  <a class="v2ident" href="/v2/home" title="기획안 목록으로">예시 기획안</a>
+  <nav class="v2steps" aria-label="단계"><a href="/v2/brief">01 브리프</a><a href="/v2/compose">02 구좌 구성</a><a href="/v2/editor-next" aria-current="step">03 구좌 편집</a><a href="/v2/preview">04 미리보기·내보내기</a></nav>
+  <a class="v2space" href="/v2/deals">상품·할인</a>
+  <span class="v2saved" id="v2saved" aria-live="polite"></span>
+  <span class="v2grow"></span>
+  <a class="v2btn" id="enBack" href="/v2/editor"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>기존 구좌 편집기로</a>
+</div>
+
+<header class="topbar en-tools" aria-label="신규 편집기 도구">
+  <div class="topstatus"><button type="button" class="am-ed-button am-ed-button--subtle" id="iaCheckAll" aria-label="전체 기획안 검수 열기">전체 검수 <span id="iaIssueCount">· 확인 중</span></button><button class="am-ed-button am-ed-button--subtle" id="undo">실행 취소</button><button class="am-ed-button am-ed-button--subtle" id="redo">다시 실행</button><button class="am-ed-button am-ed-button--subtle" id="exportDemo">JSON 내보내기</button><button class="am-ed-button am-ed-button--subtle" id="exportHandoff">인계용 HTML</button><button class="am-ed-button am-ed-button--subtle" id="reset" hidden>예시 초기화</button></div>
+</header>
+<div class="guardrail" id="enNotice" role="status">데이터를 불러오는 중이에요.</div>
+<main class="workspace cb-has-rail">
+ <nav class="cb-rail" aria-label="좌측 작업 모드"><button type="button" data-cb-rail="sections" aria-pressed="true" title="페이지 구성 트리"><svg class="am-kit-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#am-kit-list-tree"></use></svg><span>구성</span></button><button type="button" data-cb-rail="library" aria-pressed="false" title="구좌와 요소 추가"><svg class="am-kit-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#am-kit-blocks"></use></svg><span>추가</span></button><button type="button" data-cb-rail="data" aria-pressed="false" title="상품·후기·레퍼런스 자료"><svg class="am-kit-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#am-kit-database"></use></svg><span>자료</span></button></nav>
+ <aside class="outline" aria-label="전체 프로모션 구좌"><div class="panel-head"><div class="kicker">PAGE OUTLINE</div><h1 id="cb-outline-title">구좌 목록 <small>전체 페이지</small></h1><p class="outline-desc" id="cb-outline-desc">전체 페이지 구성을 관리하세요. 가운데 구좌도 클릭할 수 있어요.</p></div><div id="section-list"></div><div id="component-library" hidden></div><div id="data-library" hidden></div><button class="am-ed-button am-ed-button--subtle am-ed-add" id="addSection">＋ 구좌 추가</button><div class="outline-foot">구성: 위치와 구조 · 추가: 새 구좌/요소 · 자료: 연결할 정보</div></aside>
+ <section class="center" aria-label="프로모션 와이어프레임"><div class="center-head"><div class="kicker">LIVE WIREFRAME · 전체 프로모션</div><h2 data-plan-title>예시 기획안</h2><p>중앙 구좌를 클릭하면 오른쪽에서 해당 구좌를 편집할 수 있어요.</p></div><div class="phone-wrap"><div class="phone"><div class="phone-head" aria-hidden="true"></div><div id="page"></div></div></div><div class="preview-note">구조 검토용 와이어프레임 · 실제 자사몰 화면이나 링크 동작을 구현한 것은 아닙니다.</div></section>
+ <aside class="inspector" aria-label="선택 구좌 속성 편집"><div class="inspector-head"><div class="kicker">SECTION INSPECTOR <span id="position"></span></div><h2 id="insTitle"></h2><nav id="ia-breadcrumb" class="ia-breadcrumb" aria-label="현재 편집 위치"></nav><div id="ia-edit-scope" class="ia-scope" role="status"></div><button type="button" id="changeLayout" class="am-ed-layout-trigger"><span><small>구좌 유형</small><strong id="layoutLabel"></strong></span><span>유형 변경 <span aria-hidden="true">▾</span></span></button></div><div id="tabbar" class="tabbar" role="tablist" aria-label="구좌 편집 탭"></div><div id="panel-body" class="panel-body"></div></aside>
+</main>
+<dialog class="am-ed-picker" id="typeDialog" aria-labelledby="pickerTitle"><div class="am-ed-picker-head"><div><div class="kicker">SECTION CATALOG · 22 TYPES / VISUAL LAYOUTS</div><h2 id="pickerTitle">구좌 유형 선택</h2><p id="pickerSubtitle">선택한 구좌의 내용과 구성 차이를 확인하세요.</p></div><button type="button" class="am-ed-icon-btn" id="pickerClose" aria-label="선택기 닫기">×</button></div><div class="am-ed-picker-controls"><input type="search" id="pickerSearch" class="am-ed-input" placeholder="구좌 이름·역할 검색" aria-label="구좌 검색"><div id="pickerCats" class="am-ed-picker-cats" role="group" aria-label="구좌 분류"></div></div><div class="am-ed-picker-main"><div id="pickerResults" class="am-ed-picker-results"></div><div class="am-ed-picker-summary"><span class="kicker">선택한 유형</span><h3 id="selectedType">구좌를 선택해주세요</h3><p id="selectedDesc"></p><div id="selectedPreview" class="am-ed-selected-preview"></div><div class="am-ed-note" id="impactNote">기존 문구·메모·레퍼런스는 유지됩니다.</div></div></div><div class="am-ed-picker-foot"><div class="am-ed-picker-foot-info"><span id="pickerCount"></span><button type="button" id="pickerZoom" class="am-ed-button am-ed-button--subtle am-ed-button--sm">원래 비율로 전체 보기 ↗</button></div><div class="am-ed-actionrow"><button class="am-ed-button am-ed-button--subtle" id="pickerCancel">취소</button><button class="am-ed-button am-ed-button--primary" id="pickerApply">적용</button></div></div></dialog>
+<dialog class="am-ed-full-preview-dialog" id="fullPreviewDialog" aria-labelledby="fullPreviewName"><header class="am-ed-full-preview-head"><div><div class="kicker">340px · 원래 비율</div><h2 id="fullPreviewName">구좌 전체 미리보기</h2><p>구좌의 실제 모바일 구성 비율을 유지한 기획용 시안입니다.</p></div><button id="pickerFullClose" type="button" class="am-ed-icon-btn" aria-label="전체 미리보기 닫기">×</button></header><div class="am-ed-full-preview-scroll"><div id="pickerFullPreview" class="am-ed-full-preview-content"></div></div></dialog>
+<dialog id="ia-qa-dialog" class="ia-qa-dialog" aria-label="전체 기획안 검수"><div class="ia-qa-head"><h2>전체 기획안 검수</h2><button type="button" class="am-ed-button am-ed-button--subtle" id="iaQaClose">닫기</button></div><p>입력값 누락과 연결 오류를 점검합니다. 실제 법무·운영 승인은 아닙니다.</p><div id="ia-qa-items"></div></dialog>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="/static/v2/shell.js"></script>
+<script src="/static/v2/api.js"></script>
+<script src="/static/v2/plan.js"></script>
+<script src="/static/v2/editor-next-host.js"></script>
+<script src="/v2/editor-next/editor-ui-kit.js"></script>
+<script src="/v2/editor-next/catalog.js"></script>
+<script src="/v2/editor-next/components.js"></script>
+<script src="/v2/editor-next/flows.js"></script>
+<script src="/v2/editor-next/composable.js"></script>
+<script src="/v2/editor-next/app.js"></script>
+</body>
+</html>

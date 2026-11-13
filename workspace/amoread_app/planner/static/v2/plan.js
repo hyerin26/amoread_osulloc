@@ -10,7 +10,7 @@ const PLAN = (() => {
   // 기획안 안의 화면으로 가는 링크에 id를 붙여 같은 기획안으로 이동
   const tagLinks = () => document.querySelectorAll('a[href^="/v2/"]').forEach(a => {
     const u = new URL(a.getAttribute('href'), location.origin);
-    if (!STEPS.includes(u.pathname.split('/').pop())) return;
+    if (![...STEPS, 'editor-next'].includes(u.pathname.split('/').pop())) return;   // editor-next: 신규 구좌편집기 (단계 저장 대상은 아님)
     u.searchParams.set('id', st.id);
     a.setAttribute('href', u.pathname + u.search + u.hash);
   });
