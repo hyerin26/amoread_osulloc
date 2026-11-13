@@ -58,6 +58,10 @@ with sync_playwright() as p:
     first.locator('[data-cb-add="productCard"]').click()
     assert first.locator('#page [data-page="s4"] .cb-node--productCard').count()==1
     first.locator('[data-cb-field="productId"]').select_option('D003')
+    # v1.12: element settings appear only for enabled elements and only after '편집' (collapsed by default).
+    first.locator('#page [data-page="s4"] .cb-node--productCard').first.click(position={'x':3,'y':3})  # card shell → element list
+    first.locator('#panel-body [data-cb-visible="label"]').check()
+    first.locator('#panel-body [data-cb-expand="label"]').click()
     first.locator('[data-cb-field="card.def.label"]').fill('1.12 추천')
     first.locator('#page [data-page="s4"]').click()
     assert '휴대용 티 보틀' in first.locator('#page [data-page="s4"]').inner_text()
@@ -70,6 +74,9 @@ with sync_playwright() as p:
     assert second.locator('#page [data-page="s4"] .cb-node--productCard').count()==1
     second.locator('#page [data-page="s4"] .cb-node--productCard').click()
     assert second.locator('[data-cb-field="productId"]').input_value()=='D003'
+    second.locator('#page [data-page="s4"] .cb-node--productCard').first.click(position={'x':3,'y':3})
+    assert second.locator('#panel-body [data-cb-visible="label"]').is_checked()   # enabled state persisted
+    second.locator('#panel-body [data-cb-expand="label"]').click()
     assert second.locator('[data-cb-field="card.def.label"]').input_value()=='1.12 추천'
     # 4. Editor-only hierarchy remains distinct from storefront visual design.
     assert second.locator('.ia-groups.am-kit-primary-nav').count()==0 or second.locator('[data-cb-back]').count()==1

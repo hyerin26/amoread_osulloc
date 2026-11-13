@@ -9,7 +9,7 @@ def mount(page):
  for f in CSS:page.add_style_tag(content=(D/f).read_text(encoding='utf8'))
  for f in JS:page.add_script_tag(content=(D/f).read_text(encoding='utf8'))
 with sync_playwright() as p:
- browser=p.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox'])
+ browser=p.chromium.launch(executable_path='/usr/bin/chromium' if Path('/usr/bin/chromium').exists() else None,headless=True,args=['--no-sandbox'])
  page=browser.new_page(viewport={'width':1550,'height':1030},accept_downloads=True)
  errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
  mount(page)

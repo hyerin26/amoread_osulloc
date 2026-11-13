@@ -65,6 +65,9 @@ with sync_playwright() as p:
  def row_order():
   return page.locator(panel+' [data-cb-row]').evaluate_all(
    'els=>els.map(el=>el.dataset.cbRow)')
+ # The 16-row list is its own scroll box (overflowY asserted above). Playwright's drag_to scrolls that box
+ # between mousedown and move, so the pointer lands on another row. Unclip it to test the reorder logic itself.
+ page.locator(panel+' [data-cb-sort-list]').evaluate("el=>{el.style.maxHeight='none';el.style.overflow='visible'}")
  initial=row_order()
  assert initial.index('name')<initial.index('sale')
  page.locator(panel+' [data-cb-row="name"]').drag_to(

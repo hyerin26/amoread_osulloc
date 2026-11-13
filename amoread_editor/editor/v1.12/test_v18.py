@@ -9,7 +9,7 @@ from PIL import Image
 D=Path(__file__).resolve().parent
 errors=[]
 with sync_playwright() as p:
- browser=p.chromium.launch(executable_path='/usr/bin/chromium', headless=True,args=['--no-sandbox'])
+ browser=p.chromium.launch(executable_path='/usr/bin/chromium' if Path('/usr/bin/chromium').exists() else None, headless=True,args=['--no-sandbox'])
  page=browser.new_page(viewport={'width':1490,'height':930})
  page.on('pageerror',lambda e:errors.append(str(e)))
  page.set_content((D/'index.html').read_text(encoding='utf8'))

@@ -3,3 +3,4 @@
 -r planner/requirements.txt
 pytest>=8
 playwright>=1.45
+pillow>=10   # 편집기 v1.12 test_v18.py
