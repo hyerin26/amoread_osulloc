@@ -133,6 +133,17 @@ def ai_capture(id: str = ""):
     return {"html": h} if h is not None else JSONResponse({"error": "저장된 화면이 없어요"}, status_code=404)
 
 
+@router.get("/wire")
+def ai_wire(site: str = "", sec: int = -1):
+    """추출해 둔 와이어프레임에서 구좌 하나의 구조(요소 좌표·종류·글자 위계·카드 묶음). 없으면 404."""
+    import re as _re
+    from . import wireframes
+    if not _re.fullmatch(r"[A-Za-z0-9_.-]{1,40}", site or ""):
+        return JSONResponse({"error": "잘못된 site예요"}, status_code=400)
+    d = wireframes.section(site, sec)
+    return d if d is not None else JSONResponse({"error": "이 구좌의 와이어프레임이 없어요"}, status_code=404)
+
+
 @router.get("/library")
 def ai_library():
     """레퍼런스 화면용 목록: 수집한 원본 페이지·구좌·참여 이벤트 + 자동 분류 라벨 (사람이 고친 값 우선). 색인이 없으면 mode='demo'."""

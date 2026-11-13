@@ -61,6 +61,18 @@ const Cap = (() => {
     }
     return m.get(best).length > cap ? null : best;
   }
+  // 구좌 글이 여러 요소에 나뉘어 있어 findEl이 못 찾을 때: 글의 낱말을 가장 많이 품은 가장 작은 요소를 쓴다 (낱말의 60% 이상, 최소 1개)
+  function findByWords(c, text) {
+    const words = [...new Set(String(text || '').split(/[^0-9A-Za-z\u3131-\u318e\uac00-\ud7a3]+/).map(nz).filter(w => w.length >= 2))].slice(0, 14);
+    if (!words.length) return null;
+    const need = Math.max(1, Math.ceil(words.length * 0.6)), m = texts(c); let best = null, bl = Infinity;
+    for (const [el, t] of m) {
+      if (t.length >= bl || t.length > 12000) continue;
+      let k = 0; for (const w of words) if (t.includes(w)) k++;
+      if (k >= need) { best = el; bl = t.length; }
+    }
+    return best;
+  }
   function pruned(c, target) {   // 조상 껍데기(클래스)는 남겨 CSS가 그대로 먹게 하고, 형제는 뺀다. 조상의 인라인 스타일(슬라이드 이동 등)은 버린다
     const path = []; for (let n = target; n && n !== c.doc.body; n = n.parentElement) path.unshift(n);
     const wrap = document.createElement('div'); wrap.className = `cbody ${c.doc.body.className}`; let cur = wrap;
@@ -102,6 +114,65 @@ const Cap = (() => {
       return Math.min(best, 4);
     } finally { host.remove(); }
   }
+  // ---- 구조 뽑기: 저장해 둔 화면을 숨겨서 그린 뒤, 구좌 범위 안의 요소를 이미지·글·상자로 나눠 와이어프레임 요소 목록으로 만든다 (wire.js가 그린다)
+  // at = {y,h} (원본 위치로 자름) 또는 {t,n} (구좌 글로 요소를 찾음). 이미지 속 글자는 읽지 못하고, 이미지는 칸으로만 남는다
+  async function skeleton(id, at) {
+    const c = await load(id), host = document.createElement('div');
+    host.style.position = 'absolute'; host.style.left = '-9999px'; host.style.top = '0'; host.style.width = W + 'px'; host.style.pointerEvents = 'none';   // 화면 밖에 그린다 (visibility:hidden은 자식에 상속돼 요소를 못 거르므로 쓰지 않음)
+    document.body.append(host);
+    try {
+      const sh = host.attachShadow({ mode: 'open' }); sh.adoptedStyleSheets = [c.sheet];
+      const wrap = document.createElement('div'); wrap.className = `cbody ${c.doc.body.className}`;
+      wrap.append(...[...c.doc.body.childNodes].map(n => document.importNode(n, true))); sh.append(wrap);
+      wrap.querySelectorAll('[data-cs]').forEach(e => { e.style.cssText = c.sty[+e.dataset.cs]; });
+      const hr = host.getBoundingClientRect();
+      let y0, y1, root = wrap;
+      if (at.y !== undefined) { y0 = +at.y; y1 = y0 + +at.h; }
+      else {
+        const t = findEl(c, at.t, +at.n) || findByWords(c, at.t); if (!t) throw new Error('no match');
+        const path = []; for (let n = t; n && n !== c.doc.body; n = n.parentNode) path.unshift([...n.parentNode.childNodes].indexOf(n));
+        let live = wrap; for (const i of path) live = live?.childNodes[i];
+        if (!live || live.nodeType !== 1) throw new Error('no match');
+        const r = live.getBoundingClientRect(); y0 = r.top - hr.top; y1 = r.bottom - hr.top; root = live;
+      }
+      const full = Math.max(1, y1 - y0), H = Math.min(full, 1400), cut = full > H;   // 너무 긴 구좌는 앞 1400px만 (상품 수백 개짜리 목록 등)
+      const out = [], skip = new Set(), r1 = v => Math.round(v * 10) / 10;
+      const isClear = col => !col || /^rgba\(0,\s*0,\s*0,\s*0\)$|^transparent$/.test(col) || /^rgb\(255,\s*255,\s*255\)$/.test(col);
+      let imgArea = 0;
+      for (const e of [root, ...root.querySelectorAll('*')]) {
+        if (out.length > 600) break;
+        if (e.parentElement && skip.has(e.parentElement)) { skip.add(e); continue; }
+        const cs = getComputedStyle(e);
+        if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity === 0) { skip.add(e); continue; }
+        const r = e.getBoundingClientRect(), x = r.left - hr.left, y = r.top - hr.top - y0;
+        if (r.width < 2 || r.height < 2 || y + r.height < 0 || y > H || x + r.width < 0 || x > W) continue;
+        const ln = e.localName;
+        if (ln === 'img' || ln === 'video' || ln === 'canvas' || ln === 'svg' || ln === 'picture') {   // 이미지: 안쪽은 더 보지 않는다
+          if (r.width >= 8 && r.height >= 8) { out.push({ t: 'img', k: 'image', x: r1(x), y: r1(y), w: r1(r.width), h: r1(r.height) }); imgArea += Math.min(r.width, W) * Math.min(r.height, H); }
+          skip.add(e); continue;
+        }
+        if (/url\(/.test(cs.backgroundImage) && r.width >= 24 && r.height >= 24) { out.push({ t: 'img', k: 'image', x: r1(x), y: r1(y), w: r1(r.width), h: r1(r.height) }); imgArea += Math.min(r.width, W) * Math.min(r.height, H); }
+        else {
+          const bw = ['Top', 'Right', 'Bottom', 'Left'].reduce((a, s) => a + (cs['border' + s + 'Style'] !== 'none' ? parseFloat(cs['border' + s + 'Width']) || 0 : 0), 0);
+          if ((!isClear(cs.backgroundColor) || bw > 0) && r.width >= 20 && r.height >= 14 && !(r.width >= W * 0.98 && r.height >= H * 0.9)) {
+            const btn = ln === 'button' || e.getAttribute('role') === 'button' || (ln === 'a' && r.height < 64) || ((parseFloat(cs.borderTopLeftRadius) || 0) >= r.height / 2 - 1 && r.height < 64);
+            out.push({ t: 'pn', k: btn ? 'button' : 'box', x: r1(x), y: r1(y), w: r1(r.width), h: r1(r.height) });
+          }
+        }
+        const tn = [...e.childNodes].filter(n => n.nodeType === 3 && n.nodeValue.trim());
+        if (tn.length) {   // 글: 글 마디가 차지한 자리를 막대 줄로
+          const rg = document.createRange(); rg.setStartBefore(tn[0]); rg.setEndAfter(tn[tn.length - 1]);
+          const tr = rg.getBoundingClientRect(); if (tr.width < 2 || tr.height < 2) continue;
+          const fs = parseFloat(cs.fontSize) || 12, lh = parseFloat(cs.lineHeight) || fs * 1.3, lines = Math.max(1, Math.round(tr.height / lh));
+          const raw = rg.toString().replace(/\s+/g, ' ').trim();
+          const kind = /^\s*\d{1,3}\s*%/.test(raw) ? 'discount' : /\d[\d,]*\s*원/.test(raw) && raw.length < 24 ? 'price' : fs >= 16 ? 'title' : fs <= 11 ? 'caption' : 'body';
+          out.push({ t: 'tx', k: kind, x: r1(tr.left - hr.left), y: r1(tr.top - hr.top - y0), w: r1(tr.width), h: r1(tr.height), fs: r1(fs), fw: parseInt(cs.fontWeight) || 400,
+            al: /center/.test(cs.textAlign) ? 'center' : /right|end/.test(cs.textAlign) ? 'right' : 'left', ...(lines <= 1 ? { one: 1 } : {}) });
+        }
+      }
+      return { w: W, h: r1(H), y: 0, elements: out, share: Math.min(1, imgArea / (W * H)), cut, full: Math.round(full) };
+    } finally { host.remove(); }
+  }
   // 목록 안의 [data-crop] 칸을 화면에 보일 때만 하나씩 그린다. 실패하면 칸을 비워 밑그림(구성도)이 그대로 보이게 한다
   const queue = []; let busy = false;
   async function pump() {
@@ -132,7 +203,8 @@ const Cap = (() => {
     const hit = bs.find(b => title && b.st === title); if (hit) return hit;
     const t = nz(title).slice(0, 10), x = nz(text).slice(0, 14), taken = new Set(bs.filter(b => b.st).map(b => b.st));
     if (taken.has(title)) return null;
-    return bs.find(b => !b.st && b.txt && ((t.length >= 4 && nz(b.txt).includes(t)) || (x.length >= 8 && nz(b.txt).includes(x)))) || null;
+    return bs.find(b => !b.st && b.txt && ((t.length >= 4 && nz(b.txt).includes(t)) || (x.length >= 8 && nz(b.txt).includes(x))))
+      || (t.length >= 4 ? bs.find(b => b.txt && nz(b.txt).startsWith(t)) : null) || null;
   }
-  return { mount, crop, cropEl, cols, lazy, whole, band, load };
+  return { mount, crop, cropEl, cols, lazy, whole, band, load, skeleton };
 })();

@@ -57,6 +57,7 @@ const LAYOUTS = [
   ['후기', [['review', '후기 모음']]],
 ];
 const LNAME = Object.fromEntries(LAYOUTS.flatMap(([, ls]) => ls));
+LNAME.custom = '레퍼런스 구조';   // 레퍼런스의 와이어프레임을 가져온 구좌 (고정 목록에는 없고, 레퍼런스 탭에서 가져올 때만 생긴다)
 const kindOf = ly => ['grid2', 'grid3', 'feat'].includes(ly) ? 'product' : ly === 'deal-banner' ? 'deal' : ly.startsWith('ev-') ? 'event' : ly === 'review' ? 'review' : 'info';
 
 // 카드 요소 (자사몰 페이지에서 본 순서). src: 자동 = 데이터에서 / 직접 = 담당자 / AI = 연결 예정·검토 필요
@@ -210,6 +211,7 @@ function wCard(c, s) {
 }
 function wBody(s) {
   const k = kindOf(s.layout);
+  if (s.layout === 'custom') return s.wire ? `<div class="w-wire">${wireHost(s.wire)}</div>` : '<div class="w-lines"><span></span><span></span></div>';
   if (s.layout === 'hero') return `<div class="w-hero"><b>${esc(s.name || '메인 카피')}</b>${s.role ? `<span class="cap">${esc(s.role)}</span>` : ''}${s.lines.filter(l => l.text).map(l => `<span class="cap">${esc(l.text)}</span>`).join('')}</div>`;
   if (k === 'deal') return '<div class="w-deal">오늘 특가 마감까지 00:00:00<br><span class="cap">날짜마다 바뀌어요 · 상품은 상품·할인의 하루특가 편성에서</span></div>';
   if (k === 'product') {
@@ -240,11 +242,22 @@ function renderPhone() {
     const tail = kindOf(s.layout) !== 'event' && s.ctaOn && s.cta ? `<span class="w-more">${esc(s.cta)}</span>` : '';   // 이벤트는 버튼이 조건 상자 안에
     return `<button class="ws" data-sec="${s.id}" ${s.id === cur ? 'aria-current="true"' : ''} aria-label="${i + 1}번 구좌 ${esc(s.name)} 편집"><span class="lbl">${i + 1}</span>${head}${wBody(s)}${tail}</button>`;
   }).join('');
+  Wire.lazy($('#phone')); Wire.skLazy($('#phone'));
 }
 
+// ================= 레퍼런스 구조 (와이어프레임) =================
+// 구좌에는 {site, sec}와 요약만 저장하고, 요소는 공유 파일(planner/data/wireframes)에서 그릴 때 받아 온다
+const wireInfo = w => `<div class="wire-info"><div class="kv">${w.title ? `<b>${esc(w.title)}</b>` : ''}<span>${esc(w.label || '')}</span></div>
+  <div class="kv"><span>역할 <b>${esc(w.role || '-')}</b></span>${w.cards ? `<span>카드 <b>${w.cards}</b></span>` : ''}${w.cols ? `<span><b>${w.cols}열 × ${w.rows || 1}행</b></span>` : ''}${w.carousel ? '<span><b>가로 슬라이드</b></span>' : ''}${w.fullbleed ? '<span><b>통이미지</b></span>' : ''}</div></div>`;
+function wireTab(s) {
+  const w = s.wire;
+  if (!w) return '<p class="hint">연결된 레퍼런스 구조가 없어요. 레퍼런스 탭에서 [구조 있음] 표시가 있는 레퍼런스의 [구조 가져오기]를 눌러 주세요.</p>';
+  return `${wireInfo(w)}<div class="wire-box">${wireHost(w)}${wfLegend}<p class="hint sk-note"></p></div>
+    <p class="hint">글이 들어갈 자리는 텍스트, 사진이 들어갈 자리는 이미지로 보여 줘요. 문구·이미지는 위 문구 탭과 디자인 요청에 적어 주세요. 위에서 구좌 종류를 고르면 기본 모양으로 되돌아가요.</p>`;
+}
 // ================= 패널 =================
 function tabsFor(s) {
-  const k = kindOf(s.layout), mid = k === 'product' ? [['shape', '카드 모양'], ['products', '상품']] : k === 'deal' ? [['products', '상품']] : k === 'event' ? [['event', '운영 조건']] : k === 'review' ? [['review', '후기']] : [];
+  const k = kindOf(s.layout), mid = k === 'product' ? [['shape', '카드 모양'], ['products', '상품']] : k === 'deal' ? [['products', '상품']] : k === 'event' ? [['event', '운영 조건']] : k === 'review' ? [['review', '후기']] : s.layout === 'custom' ? [['wire', '레퍼런스 구조']] : [];
   return [['copy', '문구'], ...mid, ['refs', '레퍼런스'], ['notes', '디자인 요청']];
 }
 function renderPanel() {
@@ -259,9 +272,10 @@ function renderPanel() {
   $('#panel').innerHTML = `<div class="ph-h"><div class="ph-title"><h2>${esc(s.name || '제목 없는 구좌')}</h2>
         <span class="ph-acts"><button class="btn xs ghost" data-secdup title="이 구좌를 바로 아래에 복제">복제</button><button class="btn xs ghost danger" data-secdel title="이 구좌 지우기">삭제</button></span></div>
       <div class="overline">${String(i + 1).padStart(2, '0')}번째 구좌 · ${esc(LNAME[s.layout])}</div>
-      <label class="row"><span class="cap">구좌 종류</span><select data-layout aria-label="구좌 종류 바꾸기 (문구·메모는 그대로)">${LAYOUTS.map(([g, ls]) => `<optgroup label="${g}">${ls.map(([k, n]) => `<option value="${k}" ${s.layout === k ? 'selected' : ''}>${n}</option>`).join('')}</optgroup>`).join('')}</select></label></div>
+      <label class="row"><span class="cap">구좌 종류</span><select data-layout aria-label="구좌 종류 바꾸기 (문구·메모는 그대로)">${LAYOUTS.map(([g, ls]) => `<optgroup label="${g}">${ls.map(([k, n]) => `<option value="${k}" ${s.layout === k ? 'selected' : ''}>${n}</option>`).join('')}</optgroup>`).join('')}${s.layout === 'custom' ? '<option value="custom" selected>레퍼런스 구조</option>' : ''}</select></label></div>
     <div class="ph-tabs"><div class="seg" role="tablist" aria-label="편집 패널">${tabs.map(([k, n]) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}">${n}${k === 'refs' && (s.att.length + s.moods.length) ? ` ${s.att.length + s.moods.length}` : ''}</button>`).join('')}</div></div>
-    <div class="ph-b" id="pbody">${({ copy: copyTab, shape: shapeTab, products: productsTab, event: eventTab, review: reviewTab, refs: refsTab, notes: notesTab })[tab](s)}</div>`;
+    <div class="ph-b" id="pbody">${({ copy: copyTab, shape: shapeTab, products: productsTab, event: eventTab, review: reviewTab, wire: wireTab, refs: refsTab, notes: notesTab })[tab](s)}</div>`;
+  Wire.lazy($('#panel')); Wire.skLazy($('#panel'));
 }
 // 문구 탭: 고객에게 보이는 글(와이어프레임 위에서 아래 순서) / 기획용(안 보임)
 function copyTab(s) {
@@ -410,9 +424,21 @@ function demoImg(w, h) {
 }
 // ---- 서버 AI 추천 레퍼런스 (수집해 둔 원본 구좌): 있으면 예시 REFS 대신 이것을 쓴다 ----
 const LIVE = { by: {}, loading: {} };   // by[구좌 id] = { top: [id…], more: [id…] } | null(서버 AI 없음 → 예시)
+const capPos = r => {   // 수집 화면에서 이 구좌의 자리: 원본 위치 {y,h} 또는 구좌 글 {t,n}
+  if (!r.cap) return null;
+  const b = Cap.band(r.pg, r.name, r.sx?.t);
+  return b ? { y: b.y, h: b.h } : r.sx ? { t: r.sx.t, n: r.sx.n } : null;
+};
+const posAttr = p => !p ? '' : p.y !== undefined ? `data-y="${p.y}" data-h="${p.h}"` : `data-t="${esc(p.t)}" data-n="${p.n}"`;
+const capAt = r => posAttr(capPos(r));
+// 구좌의 구조 참조: 추출해 둔 와이어프레임({site,sec}) 우선, 없으면 수집 화면에서 자동 추출({auto,id,y,h|t,n}). 둘 다 없으면 null
+const wireOf = r => r.wire || (capPos(r) ? { auto: 1, id: r.pid, ...capPos(r), label: r.name, role: r.role || '' } : null);
+const wfLegend = '<div class="wf-legend"><span><i class="lt"></i>텍스트</span><span><i class="li"></i>이미지</span><span><i class="lp"></i>버튼·상자</span></div>';
+const wireHost = w => w.auto ? `<div class="wf" data-sk data-id="${esc(w.id)}" ${posAttr(w)}></div>` : `<div class="wf" data-wf="${esc(w.site)}|${w.sec}"></div>`;
+const sameWire = (a, b) => !!a && !!b && (a.auto ? b.auto && a.id === b.id && a.y === b.y && a.t === b.t : !b.auto && a.site === b.site && a.sec === b.sec);
 const capSpan = r => {   // 수집해 둔 화면에서 그 구좌만 잘라 보여 준다 (화면에 보일 때 그림)
   if (!r.cap) return '';
-  const b = Cap.band(r.pg, r.name, r.sx?.t), at = b ? `data-y="${b.y}" data-h="${b.h}"` : r.sx ? `data-t="${esc(r.sx.t)}" data-n="${r.sx.n}"` : '';
+  const at = capAt(r);
   return at ? `<span class="crop" data-crop data-id="${esc(r.pid)}" ${at}></span>` : '';
 };
 async function loadRecs(s) {
@@ -423,7 +449,7 @@ async function loadRecs(s) {
       doc: { id: d.id || '', title: d.title || '', brief: d.brief || {}, v2: { cls: d.v2?.cls || '', seed: d.v2?.seed || '', keywords: d.v2?.keywords || [] } } });
     if (res.mode !== 'ai' || !res.items?.length) LIVE.by[s.id] = null;
     else {
-      const ids = res.items.map(it => { REFS[it.id] = { name: it.title, page: it.campaign, from: it.from, layout: LNAME[it.layout] ? it.layout : null, r: [9, 16], why: it.why || it.reason, live: true, role: it.role, cap: it.cap, pg: it.pglayout, pid: it.page, sx: it.sx, url: it.url }; return it.id; });
+      const ids = res.items.map(it => { REFS[it.id] = { name: it.title, page: it.campaign, from: it.from, layout: LNAME[it.layout] ? it.layout : null, r: [9, 16], why: it.why || it.reason, live: true, role: it.role, cap: it.cap, pg: it.pglayout, pid: it.page, sx: it.sx, url: it.url, wire: it.wire || null }; return it.id; });
       LIVE.by[s.id] = { top: ids.slice(0, 3), more: ids.slice(3) };
     }
   } catch (e) { LIVE.by[s.id] = null; }
@@ -433,8 +459,8 @@ async function loadRecs(s) {
 function refCard(s, k) {
   const r = REFS[k], att = s.att.some(a => a.ref === k), canLay = r.layout && (r.layout !== s.layout || (r.live && r.role === 'product_list'));
   return `<div class="ref ${att ? 'att' : ''}"><span class="thumb">${r.img ? `<img src="${esc(r.img)}" alt="">` : demoImg(r.r[0], r.r[1])}${capSpan(r)}</span><div>
-        <div class="rn">${esc(r.name)}</div><div class="cap"><span class="tag ${r.from === '자사몰' ? 'real' : ''}">${esc(r.from)}</span> ${esc(r.page || '')}</div><div class="why">${esc(r.why || '')}</div>
-        <div class="ra"><button class="btn xs" data-refview="${k}">미리보기</button>
+        <div class="rn">${esc(r.name)}</div><div class="cap"><span class="tag ${r.from === '자사몰' ? 'real' : ''}">${esc(r.from)}</span> ${esc(r.page || '')}${r.wire ? ` <span class="tag" title="추출해 둔 와이어프레임이 있어요">구조 있음${r.wire.cols ? ` · ${r.wire.cols}열` : ''}${r.wire.carousel ? ' · 슬라이드' : ''}</span>` : ''}</div><div class="why">${esc(r.why || '')}</div>
+        <div class="ra"><button class="btn xs" data-refview="${k}">미리보기</button>${wireOf(r) ? `<button class="btn xs" data-wireview="${k}">구조 보기</button><button class="btn xs" data-wireuse="${k}" ${s.layout === 'custom' && sameWire(s.wire, wireOf(r)) ? 'disabled' : ''} title="이 구좌의 모양을 레퍼런스의 구조로 바꿔요 · 문구·메모는 그대로">구조 가져오기</button>` : ''}
           <button class="btn xs ${att ? '' : 'primary'}" data-refatt="${k}" aria-pressed="${att}">${att ? '참고에서 빼기' : '참고로 붙이기'}</button>
           ${r.layout ? `<button class="btn xs" data-reflay="${k}" ${canLay ? '' : 'disabled'} title="${!canLay ? '지금과 같은 레이아웃이에요' : r.live ? '원본에서 칸 수를 재서 우리 레이아웃 중 가장 가까운 것으로 바꿔요 · 문구·메모는 그대로' : `${LNAME[r.layout]}로 바꿔요 · 문구·메모는 그대로`}">레이아웃 가져오기</button>` : ''}
           <button class="btn xs ghost" data-refsave="${k}" aria-pressed="${saved.has(k)}">${saved.has(k) ? '★ 즐겨찾기 해제' : '☆ 즐겨찾기'}</button></div></div></div>`;
@@ -632,7 +658,15 @@ document.addEventListener('click', async e => {
   if (d('rvshow')) { const k = v('rvshow'); s.rv.show[k] = s.rv.show[k] ? 0 : 1; render(); refocus(`[data-rvshow="${k}"]`); return; }
   if (d('rvmv')) { const [j, dd] = v('rvmv').split(':').map(Number), o = s.rv.order; [o[j], o[j + dd]] = [o[j + dd], o[j]]; render(); refocus(`[data-rvmv="${j + dd}:${dd}"]`); return; }
   if (d('rvadd')) { const used = s.rv.groups.map(g => g.seq), next = [...new Set(REVIEWS.map(r => r.seq))].find(x => !used.includes(x)); if (next) { s.rv.groups.push({ seq: next, picks: [] }); render(); } else toast(liveOn ? '후기가 있는 이 기획안 상품을 모두 넣었어요 (상품을 카드에 넣으면 그 후기도 여기 나와요)' : '예시 후기가 있는 상품을 모두 넣었어요'); return; }
-  if (d('refview')) { const k = v('refview'), r = REFS[k], big = capSpan(r); dlg('원본 구좌 레퍼런스 · 미리보기', r.name, `${r.from} · ${r.page} — 미리보기만 해요. 이 구좌는 바뀌지 않아요.`, `<div class="thumb big">${demoImg(r.r[0], r.r[1])}${big}</div><p class="hint">${big ? '수집해 둔 원본 화면에서 이 구좌만 잘라 보여 줘요 (이미지 파일은 저장하지 않아 회색 칸).' : `원본 비율 ${r.r[0]}:${r.r[1]} (예시). 수집해 둔 화면이 없어 전체 페이지는 볼 수 없어요.`}</p>`, r.cap ? `<button class="btn sm" data-refwhole="${k}">전체 페이지 보기 · 이 구좌 위치</button>` : ''); Cap.lazy($('#dlgB')); return; }
+  if (d('refview')) {
+    const k = v('refview'), r = REFS[k], big = capSpan(r), at = capAt(r);
+    const sk = at && r.cap ? `<figure><div class="wf wf-sk" data-sk data-id="${esc(r.pid)}" ${at}></div>${wfLegend}<figcaption class="hint sk-note">구조 — 원본 화면에서 자동으로 뽑았어요</figcaption></figure>` : '';
+    dlg('원본 구좌 레퍼런스 · 미리보기', r.name, `${r.from} · ${r.page} — 미리보기만 해요. 이 구좌는 바뀌지 않아요.`,
+      big ? `<div class="sbs"><figure><div class="thumb big">${demoImg(r.r[0], r.r[1])}${big}</div><figcaption class="hint">수집해 둔 원본 화면에서 이 구좌만 잘라 보여 줘요 (이미지 파일은 저장하지 않아 회색 칸)</figcaption></figure>${sk}</div>`
+        : `<div class="thumb big">${demoImg(r.r[0], r.r[1])}</div><p class="hint">원본 비율 ${r.r[0]}:${r.r[1]} (예시). 수집해 둔 화면이 없어 전체 페이지는 볼 수 없어요.</p>`,
+      r.cap ? `<button class="btn sm" data-refwhole="${k}">전체 페이지 보기 · 이 구좌 위치</button>` : '');
+    Cap.lazy($('#dlgB')); Wire.skLazy($('#dlgB')); return;
+  }
   if (d('refwhole')) { const r = REFS[v('refwhole')]; $('#dlgB').innerHTML = '<div id="rw"></div>'; $('#dlgS').textContent = '수집 당시 모습 그대로예요. 초록 실선 박스가 이 구좌 자리예요 (이미지는 회색 칸).'; $('#dlgF').innerHTML = `<button class="btn sm" data-refview="${v('refwhole')}">구좌만 보기</button>`; Cap.whole($('#rw'), r.pid, r.pg, r.name); return; }
   if (d('refatt')) { const k = v('refatt'), i = s.att.findIndex(a => a.ref === k); if (i >= 0) s.att.splice(i, 1); else s.att.push({ ref: k, note: '' }); render(); toast(i >= 0 ? '참고에서 뺐어요' : '참고로 붙였어요. 디자인 요청 탭에서 참고할 것을 적을 수 있어요'); return; }
   if (d('reflay') && !d('reflay').disabled) {
@@ -641,6 +675,19 @@ document.addEventListener('click', async e => {
     if (b) { toast('원본 화면에서 칸 수를 재는 중이에요…'); try { const n = await Cap.cols(r.pid, b.y, b.h); if (n >= 3) ly = 'grid3'; else if (n === 2) ly = 'grid2'; note = ` · 원본은 ${n}칸`; } catch (e2) {} }
     if (ly === s.layout) { toast(`레이아웃은 그대로 '${LNAME[ly]}'예요${note}. 원본 칸 수가 지금 구좌와 같거나 우리 레이아웃에 딱 맞는 종류가 없어요`); return; }
     setLayout(s, ly); render(); toast(`레이아웃을 '${LNAME[ly]}'로 바꿨어요${note}. 칸 수는 원본에서 잰 값이고, 세부 모양은 우리 레이아웃 중 가장 가까운 것이에요. 문구·메모는 그대로예요`); return;
+  }
+  if (d('wireview')) {
+    const k = v('wireview'), r = REFS[k], w = r && wireOf(r); if (!w) return;
+    dlg('레퍼런스 구조 · 미리보기', r.name, `${r.from} · ${r.page} — 구조만 보여 줘요 (글이 들어갈 자리는 텍스트, 사진이 들어갈 자리는 이미지). 이 구좌는 바뀌지 않아요.`,
+      `${wireInfo({ ...w, title: r.page })}<div class="wire-box">${wireHost(w)}${wfLegend}<p class="hint sk-note">${w.auto ? '수집해 둔 화면에서 자동으로 뽑은 구조예요. 이미지 속 글자는 읽지 못해요.' : ''}</p></div>`,
+      `<button class="btn sm primary" data-wireuse="${k}">이 구조로 바꾸기</button>`);
+    Wire.lazy($('#dlgB')); Wire.skLazy($('#dlgB')); return;
+  }
+  if (d('wireuse') && !d('wireuse').disabled) {
+    const k = v('wireuse'), r = REFS[k], w = r && wireOf(r); if (!w) return;
+    setLayout(s, 'custom'); s.wire = { ...w, title: r.page || r.name }; tab = 'wire';
+    if ($('#dlg').open) $('#dlg').close();
+    render(); toast(`구좌 모양을 레퍼런스 구조로 바꿨어요 (${r.page || r.name}). 문구·메모는 그대로예요. 종류를 다시 고르면 되돌릴 수 있어요`); return;
   }
   if (d('refsave')) { const k = v('refsave'); saved.has(k) ? saved.delete(k) : saved.add(k); renderPanel(); return; }
   if (d('moodlink')) { moodLink = !moodLink; renderPanel(); refocus(moodLink ? '#moodUrl' : '[data-moodlink]'); return; }
@@ -804,6 +851,7 @@ function fromSection(x) {
       s.tabs = x.tabs.map(t => { const cs = slots.filter(sl => (sl.tabId || first) === t.tabId).map(mk); return { id: t.tabId, name: t.label, cat: t.zone_tag || '', cards: cs.length ? cs : [slot(), slot()] }; }); }
     else s.cards = slots.length ? slots.map(mk) : [slot(), slot(), slot(), slot()];
   }
+  if (layout === 'custom') s.wire = v.wire || null;
   if (k === 'review') s.rv = v.rv || { shape: 'mix', groups: [], order: [], show: { img: 1, name: 1, price: 0 }, author: 'hide' };
   if (k === 'event') s.ev = v.ev || { how: '', reward: '', rewardText: '', pick: '', count: '', when: '', login: true, notice: '' };
   return s;
@@ -820,7 +868,7 @@ function toSection(s, i) {
     ...(s.card ? { slots: (s.tabs ? s.tabs.flatMap(t => t.cards.map(c => slotOut(c, t.id))) : (s.cards || []).map(c => slotOut(c, null))).slice(0, 40) } : {}),
     v2: { scope: cut(s.scope, 200), num: !!s.num, ctaOn: !!s.ctaOn, ctaTo: cut(s.ctaTo, 60), lines: (s.lines || []).map(l => ({ id: l.id, text: cut(l.text, 120) })),
       refs: s.refs || [], moods: (s.moods || []).map(m => ({ id: m.id, pts: [...m.pts] })),
-      ...(s.card ? { card: { order: s.card.order, on: s.card.on, def: defOut(s.card.def) }, cards: cardExtra(s) } : {}), ...(s.rv ? { rv: s.rv } : {}), ...(s.ev ? { ev: s.ev } : {}) } };
+      ...(s.card ? { card: { order: s.card.order, on: s.card.on, def: defOut(s.card.def) }, cards: cardExtra(s) } : {}), ...(s.rv ? { rv: s.rv } : {}), ...(s.ev ? { ev: s.ev } : {}), ...(s.layout === 'custom' && s.wire ? { wire: s.wire } : {}) } };
 }
 // 이 화면의 할인(items) → 기획안 promo_rows (하루특가·조합 행은 건드리지 않음)
 function rowsFromItems(d) {

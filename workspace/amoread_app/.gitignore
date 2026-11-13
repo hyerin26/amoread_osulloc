@@ -6,6 +6,7 @@ planner/data/*
 !planner/data/ai_refs/
 !planner/data/ai_refs_user/
 !planner/data/references/
+!planner/data/wireframes/
 planner/data/references/*
 !planner/data/references/refs.json
 .env
