@@ -1,5 +1,11 @@
 # 신규 구좌편집기 연결 · Green UI 우선 적용 가이드
 
+> **실제 적용(2026-11-14, design_eun):** 아래의 iframe 브리지(launcher.js) 방식은 쓰지 않았습니다. 앱 서버가
+> `X-Frame-Options: DENY`와 CSP(`script-src 'self'; style-src 'self'`)를 보내 iframe·인라인 스타일이 막히기 때문입니다.
+> 대신 앱 라우트 `/v2/editor-next`(workspace/amoread_app/planner/static/v2/editor-next.*)가 이 폴더의 v1.12 파일을 직접 읽고,
+> 기획안·상품·후기는 앱 API(`/api/am/projects`, `/api/products`, `/api/product/{seq}`)로 연결합니다. 저장은 기획안의 `editor_next`.
+> 실행·끄기·테스트는 저장소 루트 README §9. 아래 내용은 업로드 당시의 설계 기록으로 남겨 둡니다.
+
 대상 브랜치: **osulloc / design_eun**  
 기존 편집기 삭제 여부: **삭제하지 않음**  
 신규 코드 위치: \`amoread-editor/editor/v1.12/\`  

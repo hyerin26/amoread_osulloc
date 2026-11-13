@@ -149,6 +149,24 @@ PYTHONUTF8=1 PLANNER_PORT=9751 .venv/bin/python -m planner.server --no-browser
 
 ---
 
+## 9. 신규 구좌편집기 (시험, `design_eun`)
+
+- **열기**: 기존 구좌 편집(`/v2/editor?id=…`) 상단의 **[신규 편집기로 열기 (시험)]** → `/v2/editor-next?id=…`. 돌아갈 때는 **[기존 구좌 편집기로]**.
+  기존 편집기(`/v2/editor`, 예전 화면 `/`)는 그대로입니다.
+- **끄기**: `$env:AMOREAD_EDITOR_NEXT = "0"`으로 서버를 띄우면 화면과 진입 버튼이 사라집니다. 편집기 파일은 `amoread_editor/editor/v1.12`.
+- **저장**: 같은 기획안의 `editor_next`에 따로 저장합니다. 처음 열 때만 기존 편집기 구좌를 가져오고, 이후 기존 편집기·미리보기(04)에는 반영되지 않습니다.
+  다른 화면이 먼저 저장했으면 덮어쓰지 않고 "저장 못 했어요"로 알립니다(모든 화면 공통).
+- **테스트**:
+  ```powershell
+  .venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+  .venv\Scripts\python.exe -m playwright install chromium
+  .venv\Scripts\python.exe -m pytest tests -q            # 앱 저장 단위 + 브라우저 통합 테스트 (서버를 스스로 띄움)
+  ```
+  편집기 자체 회귀: `amoread_editor\editor\v1.12`에서 `..\..\..\workspace\amoread_app\.venv\Scripts\python.exe run_regression_v112.py`
+- **디자인 비교**: 서버를 띄운 뒤 `amoread_editor\integration\green_ui_compare.py --label before`, `--label after` → `green-ui-compare\report.html`
+
+---
+
 ## 문제가 생기면
 
 | 증상 | 해결 |
