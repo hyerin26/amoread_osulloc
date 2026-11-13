@@ -8,6 +8,7 @@
 """
 import json
 import re
+import threading
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -82,11 +83,31 @@ def _keep_section_v2(page, prev_page):
     return page
 
 
+class Conflict(Exception):
+    """화면이 가진 updated_at(base_updated_at)이 저장된 값과 다름 = 그 사이 다른 화면이 저장함."""
+    def __init__(self, updated_at):
+        super().__init__(updated_at)
+        self.updated_at = updated_at
+
+
+_SAVE_LOCK = threading.Lock()   # 확인(prev 읽기)과 쓰기 사이에 다른 저장이 끼지 않게
+
+
 def save(doc: dict) -> dict:
-    """doc: 검증된 요청 dict(api.ProjectReq.model_dump()). id가 없거나 형식이 틀리면 새로 만든다."""
+    """doc: 검증된 요청 dict(api.ProjectReq.model_dump()). id가 없거나 형식이 틀리면 새로 만든다.
+    base_updated_at을 보냈고 저장된 기획안의 updated_at과 다르면 Conflict (저장하지 않음).
+    shortcut: updated_at이 초 단위라 같은 1초 안에 두 화면이 저장하면 못 잡는다. 동시 사용자가 늘면 버전 번호로 바꾼다."""
+    with _SAVE_LOCK:
+        return _save(doc)
+
+
+def _save(doc: dict) -> dict:
     PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
     pid = doc.get("id") if valid_id(doc.get("id")) else uuid.uuid4().hex
     prev = _read(_path(pid)) or {}
+    base = doc.get("base_updated_at")
+    if base and prev and prev.get("updated_at") != base:
+        raise Conflict(prev.get("updated_at"))
     out = {
         "schema_version": SCHEMA_VERSION, "id": pid,
         "title": str(doc.get("title") or "").strip()[:80] or "제목 없는 기획안",
@@ -98,6 +119,8 @@ def save(doc: dict) -> dict:
         "pool": (doc.get("pool") or [])[:100],   # 후보 상품 (역할 미정)
         "page": _keep_section_v2(doc.get("page"), prev.get("page")),
         "v2": doc.get("v2") if doc.get("v2") is not None else prev.get("v2"),   # 새 버전 값: 예전 화면이 저장해도 지워지지 않게
+        # 신규 구좌편집기 값: 보내지 않는 화면(예전 화면 등)이 저장해도 지워지지 않게
+        "editor_next": doc.get("editor_next") if doc.get("editor_next") is not None else prev.get("editor_next"),
         "links": doc.get("links") or prev.get("links") or {"legacy_plan_id": None, "promo_work_keys": []},
         "snapshot": prev.get("snapshot"),
         "rationale": str(doc.get("rationale") or "")[:20000],
