@@ -19,7 +19,8 @@ LOG = LOG_DIR / "events.jsonl"
 MAX_BYTES = 5_000_000
 EVENTS = {"compose", "pick_cand", "pick_ref", "drop_ref"}
 PICK_W, DROP_W, CAP = 0.25, 0.5, 1.0   # 한 번 고르면 +0.25, 한 번 버리면 -0.5 (점수는 표준편차 단위). 합은 ±1을 넘지 않는다
-_cache = {"mt": None, "n": Counter(), "p": Counter(), "d": Counter()}
+GLOBAL_W = 0.25   # 구좌 종류를 알 때, 다른 구좌에서 고른/버린 기록은 이 비율만 반영 (한 구좌에서 많이 고른 사례가 모든 구좌에서 앞서지 않게)
+_cache = {"mt": None, "n": Counter(), "p": Counter(), "d": Counter(), "ps": Counter(), "ds": Counter()}
 
 
 def record(event: str, **fields) -> bool:
@@ -49,22 +50,28 @@ def _load():
     try:
         mt = LOG.stat().st_mtime
     except OSError:
-        _cache.update(mt=None, p=Counter(), d=Counter())
+        _cache.update(mt=None, p=Counter(), d=Counter(), ps=Counter(), ds=Counter())
         return
     if _cache["mt"] == mt:
         return
-    p, d = Counter(), Counter()
+    p, d, ps, ds = Counter(), Counter(), Counter(), Counter()
     for r in _rows():
         if r.get("event") == "pick_ref" and r.get("ref_id"):
             p[r["ref_id"]] += 1
+            ps[(r["ref_id"], r.get("section", ""))] += 1
         elif r.get("event") == "drop_ref" and r.get("ref_id"):
             d[r["ref_id"]] += 1
-    _cache.update(mt=mt, p=p, d=d)
+            ds[(r["ref_id"], r.get("section", ""))] += 1
+    _cache.update(mt=mt, p=p, d=d, ps=ps, ds=ds)
 
 
-def adjust(ref_id: str) -> float:
-    """레퍼런스(섹션 ID)에 더할 점수. 기록이 없으면 0."""
+def adjust(ref_id: str, section: str = "") -> float:
+    """레퍼런스(섹션 ID)에 더할 점수. 기록이 없으면 0. section(구좌 종류)을 주면 그 구좌에서 고른/버린 기록은 전부, 다른 구좌의 기록은 GLOBAL_W만 반영한다."""
     _load()
+    if section:
+        own = PICK_W * _cache["ps"][(ref_id, section)] - DROP_W * _cache["ds"][(ref_id, section)]
+        other = PICK_W * (_cache["p"][ref_id] - _cache["ps"][(ref_id, section)]) - DROP_W * (_cache["d"][ref_id] - _cache["ds"][(ref_id, section)])
+        return max(-CAP, min(CAP, own + GLOBAL_W * other))
     return max(-CAP, min(CAP, PICK_W * _cache["p"][ref_id] - DROP_W * _cache["d"][ref_id]))
 
 

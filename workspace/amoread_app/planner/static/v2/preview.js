@@ -258,7 +258,7 @@ function toSec(x) {
     return c(sl.seq && PRODUCTS[sl.seq] ? String(sl.seq) : null, { label: e.label || df.label || '', tag: e.tag || df.tag || '', pill: e.pill || df.pill || '', pillText: (e.pill ? e.pillText : df.pillText) || '',
       copy: sl.customCopy || df.copy || '', btn: e.btn || df.btn || '', off: e.off || [] }); };
   const s = { id: x.sectionId, name: x.headline || x.name || '', role: x.subhead || '', lines: (v.lines || []).map(l => l.text).filter(Boolean), layout: lay, num: !!v.num,
-    scope: v.scope || '', cta: (v.ctaOn ?? !!x.cta) && x.cta ? [x.cta, v.ctaTo || ''] : null, refs: [], moods: [], notes: x.designNotes || '' };
+    scope: v.scope || '', cta: (v.ctaOn ?? !!x.cta) && x.cta ? [x.cta, v.ctaTo || ''] : null, refs: (v.att || []).map(a => ({ name: a.name || '레퍼런스', page: [a.page, a.from].filter(Boolean).join(' · '), note: a.note || '', r: [9, 16] })), moods: [], notes: x.designNotes || '' };
   if (['grid2', 'grid3', 'feat'].includes(lay)) {
     s.on = v.card?.order && v.card?.on ? v.card.order.filter(k => v.card.on[k]) : ON_PRICE;
     if (x.tabs?.length) { const first = x.tabs[0].tabId; s.tabs = x.tabs.map(t => [t.label, (x.slots || []).filter(sl => (sl.tabId || first) === t.tabId).map(mk)]); }

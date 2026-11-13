@@ -222,6 +222,7 @@ function render() {
   $('#grid').className = 'grid';
   const empty = favOnly && !q && !Object.values(f).some(Boolean)
     ? `<div class="empty">이 탭에 즐겨찾기한 레퍼런스가 없어요. 카드의 ☆를 누르면 여기에 모여요.<button class="btn sm" data-clearall>즐겨찾기만 끄기</button></div>`
+    : !any ? `<div class="empty">${tname}에 담긴 레퍼런스가 아직 없어요.${tab === 'mood' ? ' 위 [+ 레퍼런스 추가]로 이미지·링크를 올리거나 Pinterest 보드를 연결하면 여기에 모여요.' : ' [신규 프로모션 찾기]나 [수집]으로 모을 수 있어요.'}</div>`
     : `<div class="empty">${q ? `'${esc(q)}'와 ` : ''}고른 조건에 맞는 레퍼런스가 없어요.<button class="btn sm" data-clearall>필터·검색 지우기</button></div>`;
   $('#grid').innerHTML = (libState === 'err' ? `<div class="empty warn">직접 추가한 레퍼런스를 불러오지 못했어요 (${esc(libErr)}). 예시만 보여요.<button class="btn sm" data-reload>다시 불러오기</button></div>` : '')
     + (list.length ? list.map(card).join('') : empty);
@@ -472,14 +473,16 @@ function renderDisc(msg) {
   $('#dlgF').innerHTML = '';
   discCount();
 }
+const dUnread = x => x.score == null && /^[\w\-./]{1,60}$/.test(x.title || '');   // 점수도 없고 제목이 주소 조각뿐 = 목록에서 제목을 못 읽고 내용도 아직 안 본 링크 (예전 확인 결과)
 function dRow(x, checked) {
-  const why = (x.why || []).filter(w => w !== '기간 있음').join(' · ');
+  const unread = dUnread(x); checked = checked && !unread;   // 뭔지 모르는 링크는 미리 체크하지 않는다 (원본을 보고 직접 고르게)
+  const why = [...(x.why || []).filter(w => w !== '기간 있음'), ...(unread ? ['제목·내용을 아직 못 읽었어요 — 원본 ↗로 확인하거나 \'다시 확인\'을 눌러 주세요'] : [])].join(' · ');
   return `<div class="drow"><label class="dmain"><input type="checkbox" class="dsel" value="${esc(x.url)}" ${checked ? 'checked' : ''}><span class="dtxt"><b>${esc(x.title || x.url.slice(0, 50))}</b><span class="dmeta">${x.changed ? '<em class="dchg">내용 바뀐 같은 링크</em> · ' : ''}처음 본 날 ${esc((x.first_seen || '').slice(5))}${why ? ` · <em class="dwhy">${esc(why)}</em>` : ''}</span></span></label>${x.score == null ? '' : `<span class="dscore ${x.low ? 'lo' : x.score >= 70 ? 'hi' : ''}" title="참고 가치 점수(규칙 계산)">참고 ${x.score}</span>`}<a class="dlink" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer" aria-label="원본 열기">원본 ↗</a></div>`;
 }
 function dList(items, pick) {
   if (!items.length) return '';
   let n = 0;
-  return `<div class="dlist">${items.map(x => dRow(x, pick && n++ < DISC_MAX)).join('')}</div>`;
+  return `<div class="dlist">${items.map(x => dRow(x, pick && !dUnread(x) && n++ < DISC_MAX)).join('')}</div>`;
 }
 function dLow(items) {
   if (!items.length) return '';
@@ -722,6 +725,17 @@ async function loadLib() {
   } catch (e) { /* 예시 유지 */ }
   render();
   if (tab === 'pin') loadPins();
+  loadHealth();
+}
+// 데이터 자체 점검(서버 /api/am/ai/health): 고쳐야 할 문제가 있을 때만 맨 위에 알린다. 문제가 없거나 '확인할 것' 수준이면 아무것도 안 보인다
+async function loadHealth() {
+  try {
+    const h = await v2api('/api/am/ai/health');
+    if (h.status !== 'error') return;
+    const box = document.createElement('div'); box.className = 'empty warn'; box.setAttribute('role', 'alert');
+    box.innerHTML = `<b>레퍼런스 데이터에 고쳐야 할 문제가 있어요</b><br>${h.items.filter(x => x.level === 'error').map(x => `${esc(x.title)}${x.fix ? ` → ${esc(x.fix)}` : ''}`).join('<br>')}`;
+    $('#grid').before(box);
+  } catch (e) { /* 점검을 못 해도 화면은 그대로 */ }
 }
 // 다른 화면에서 /v2/library#mood 처럼 탭을 집어 열 수 있게 (브리프의 [라이브러리에서 더 보기])
 { const h = decodeURIComponent(location.hash.slice(1)); if (h === 'pin' || BASE_TABS.some(t => t[0] === h)) tab = h; }

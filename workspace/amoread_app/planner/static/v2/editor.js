@@ -634,7 +634,9 @@ document.addEventListener('click', async e => {
   if (d('rvadd')) { const used = s.rv.groups.map(g => g.seq), next = [...new Set(REVIEWS.map(r => r.seq))].find(x => !used.includes(x)); if (next) { s.rv.groups.push({ seq: next, picks: [] }); render(); } else toast(liveOn ? '후기가 있는 이 기획안 상품을 모두 넣었어요 (상품을 카드에 넣으면 그 후기도 여기 나와요)' : '예시 후기가 있는 상품을 모두 넣었어요'); return; }
   if (d('refview')) { const k = v('refview'), r = REFS[k], big = capSpan(r); dlg('원본 구좌 레퍼런스 · 미리보기', r.name, `${r.from} · ${r.page} — 미리보기만 해요. 이 구좌는 바뀌지 않아요.`, `<div class="thumb big">${demoImg(r.r[0], r.r[1])}${big}</div><p class="hint">${big ? '수집해 둔 원본 화면에서 이 구좌만 잘라 보여 줘요 (이미지 파일은 저장하지 않아 회색 칸).' : `원본 비율 ${r.r[0]}:${r.r[1]} (예시). 수집해 둔 화면이 없어 전체 페이지는 볼 수 없어요.`}</p>`, r.cap ? `<button class="btn sm" data-refwhole="${k}">전체 페이지 보기 · 이 구좌 위치</button>` : ''); Cap.lazy($('#dlgB')); return; }
   if (d('refwhole')) { const r = REFS[v('refwhole')]; $('#dlgB').innerHTML = '<div id="rw"></div>'; $('#dlgS').textContent = '수집 당시 모습 그대로예요. 초록 실선 박스가 이 구좌 자리예요 (이미지는 회색 칸).'; $('#dlgF').innerHTML = `<button class="btn sm" data-refview="${v('refwhole')}">구좌만 보기</button>`; Cap.whole($('#rw'), r.pid, r.pg, r.name); return; }
-  if (d('refatt')) { const k = v('refatt'), i = s.att.findIndex(a => a.ref === k); if (i >= 0) s.att.splice(i, 1); else s.att.push({ ref: k, note: '' }); render(); toast(i >= 0 ? '참고에서 뺐어요' : '참고로 붙였어요. 디자인 요청 탭에서 참고할 것을 적을 수 있어요'); return; }
+  if (d('refatt')) { const k = v('refatt'), i = s.att.findIndex(a => a.ref === k); if (i >= 0) s.att.splice(i, 1); else s.att.push({ ref: k, note: '' });
+    if (REFS[k]?.live) v2api('/api/am/ai/feedback', { event: i >= 0 ? 'drop_ref' : 'pick_ref', doc_id: PLAN.id || '', ref_id: k, section: (s.layout || '').slice(0, 40) }).catch(() => {});   // 담당자가 붙인/뺀 사례를 기록 → 다음 추천에서 조금 앞/뒤로 (화면 변화 없음)
+    render(); toast(i >= 0 ? '참고에서 뺐어요' : '참고로 붙였어요. 디자인 요청 탭에서 참고할 것을 적을 수 있어요'); return; }
   if (d('reflay') && !d('reflay').disabled) {
     const k = v('reflay'), r = REFS[k]; let ly = r.layout, note = '';
     const b = r.live && r.role === 'product_list' && r.cap ? Cap.band(r.pg, r.name, r.sx?.t) : null;
@@ -790,7 +792,7 @@ const edP = r => ({ seq: String(r.seq), name: r.name, price: r.price, cost: r.co
 function fromSection(x) {
   const v = x.v2 || {}, layout = x.layoutId || 'hero', k = kindOf(layout);
   const s = { id: x.sectionId, name: x.headline || x.name || '', layout, role: x.subhead || '', scope: v.scope || '', num: !!v.num,
-    cta: x.cta || '', ctaOn: v.ctaOn ?? !!x.cta, ctaTo: v.ctaTo || '', refs: v.refs || [], att: [], notes: x.designNotes || '',
+    cta: x.cta || '', ctaOn: v.ctaOn ?? !!x.cta, ctaTo: v.ctaTo || '', refs: v.refs || [], att: (v.att || []).map(a => { if (!REFS[a.ref]) REFS[a.ref] = { name: a.name || '레퍼런스', page: a.page || '', from: a.from || '외부', layout: null, r: [9, 16], why: '', live: true, url: a.url || '' }; return { ref: a.ref, note: a.note || '' }; }), notes: x.designNotes || '',
     // 느낌 레퍼런스의 참고할 것: 예전 이름 '글씨' → '글씨체'
     moods: (v.moods || []).map(m => ({ id: m.id, pts: new Set((m.pts || []).map(p => (p === '글씨' ? '글씨체' : p))) })), lines: (v.lines || []).map(l => ({ id: l.id, text: l.text || '' })), cat: x.zone_tag || '' };
   // 카드 = 저장된 slots (상품 목록에 없는 SEQ는 비워 보이되 저장할 때 그대로 돌려놓음)
@@ -820,6 +822,7 @@ function toSection(s, i) {
     ...(s.card ? { slots: (s.tabs ? s.tabs.flatMap(t => t.cards.map(c => slotOut(c, t.id))) : (s.cards || []).map(c => slotOut(c, null))).slice(0, 40) } : {}),
     v2: { scope: cut(s.scope, 200), num: !!s.num, ctaOn: !!s.ctaOn, ctaTo: cut(s.ctaTo, 60), lines: (s.lines || []).map(l => ({ id: l.id, text: cut(l.text, 120) })),
       refs: s.refs || [], moods: (s.moods || []).map(m => ({ id: m.id, pts: [...m.pts] })),
+      att: (s.att || []).slice(0, 8).map(a => { const r = REFS[a.ref] || {}; return { ref: cut(a.ref, 80), note: cut(a.note, 120), name: cut(r.name, 60), page: cut(r.page, 60), from: cut(r.from, 10), url: /^https?:\/\//.test(r.url || '') ? cut(r.url, 300) : '' }; }),   // 붙인 레퍼런스: 이름·출처를 같이 저장해 다시 열어도, 레퍼런스가 색인에서 빠져도 목록이 남게
       ...(s.card ? { card: { order: s.card.order, on: s.card.on, def: defOut(s.card.def) }, cards: cardExtra(s) } : {}), ...(s.rv ? { rv: s.rv } : {}), ...(s.ev ? { ev: s.ev } : {}) } };
 }
 // 이 화면의 할인(items) → 기획안 promo_rows (하루특가·조합 행은 건드리지 않음)

@@ -221,7 +221,11 @@ def sections_from(blocks: list[dict]) -> list[dict]:
         return {"tags": {b["tag"]} if b["tag"] else set(), "texts": [], "heads": [], "n_images": 0, "n_links": 0, "bid": b["bid"]}
 
     for b in blocks:
-        new = cur is None or (b["tag"] and b["bid"] != cur["bid"] and (len(" ".join(cur["texts"])) > 30 or cur["n_images"] > 0)) or len(" ".join(cur["texts"])) > 900
+        cur_len = len(" ".join(cur["texts"])) if cur else 0
+        # 제목(h1·h2)이 새로 나오는데 지금 구좌에 이미 제목과 어느 정도 글이 있으면 새 구좌 (짧은 구좌가 다음 구좌에 먹히지 않게)
+        new_head = bool(cur) and b["tag"] in ("h1", "h2") and b["bid"] != cur["bid"] and bool(cur["heads"]) and cur_len >= 12
+        new_foot = bool(cur) and b["tag"] in ("footer", "nav") and b["bid"] != cur["bid"] and cur_len >= 6 and not (cur["tags"] & {"footer", "nav"})   # 푸터·내비는 앞 구좌에 붙지 않게 (유의사항이 혜택에 먹혀 분류가 틀어지는 것 방지)
+        new = cur is None or new_head or new_foot or (b["tag"] and b["bid"] != cur["bid"] and (cur_len > 30 or cur["n_images"] > 0)) or cur_len > 900
         if new:
             cur = start(b)
             secs.append(cur)

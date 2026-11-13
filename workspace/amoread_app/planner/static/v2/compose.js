@@ -94,7 +94,7 @@ function visual(c) {
     const s = srcList(c), show = s.slice(0, s.length > 4 ? 3 : 4), more = s.length - show.length;
     return `<button class="vis mosaic" data-src="${c.id}" aria-label="출처 ${s.length}개 보기">${show.map((x, i) => { const r = SEC_R[x[1]] || [3, 4]; return `<span class="cell">${capOf(x) || demoImg(r[0], r[1], '')}<b>${NUM[i]}</b></span>`; }).join('')}${more ? `<span class="cell more">+${more}</span>` : ''}</button>`;
   }
-  return `<div class="vis none"><span>원본 없음</span><span class="cap">${esc(c.basis)} 기준으로 자동으로 짠 구성이에요</span></div>`;
+  return `<div class="vis none"><span>원본 없음</span><span class="cap">${AI_LIVE ? '유형 규칙으로 정한 기본 틀이라 가져온 원본 페이지가 없어요' : `${esc(c.basis)} 기준으로 자동으로 짠 구성이에요`}</span></div>`;
 }
 function headTag(c) {
   if (c.type === 'single') { const p = PAGES[c.page]; return `<span class="tag ${p.from === '자사몰' ? 'real' : ''}">${p.from === '자사몰' ? '지난 행사' : '외부'}</span>`; }
@@ -106,7 +106,7 @@ const glance = c => {
   return `구좌 ${c.secs.length} · 탭 구좌 ${tabs} · 하루특가 ${deal ? '있음' : '없음'}`;
 };
 const basisOf = c => c.type === 'single' ? `${PAGES[c.page].from} · ${PAGES[c.page].name}${PAGES[c.page].period ? ` (${PAGES[c.page].period})` : ''}`
-  : c.type === 'mix' ? `자사몰·외부 레퍼런스 ${pagesOf(c).length}곳 · 연결 후 AI·로직` : c.basis;
+  : c.type === 'mix' ? `자사몰·외부 레퍼런스 ${pagesOf(c).length}곳 · ${AI_LIVE ? '수집한 사례에서 골랐어요' : '연결 후 AI·로직'}` : c.basis;
 const shown = () => n === 3 ? CANDS : CANDS.filter(c => pair.includes(c.id));
 
 // 탭 구좌 ↔ 따로 구좌: 탭 하나로 = 탭 하나가 PROMO_WORK Zone 하나 / 따로 = 탭마다 구좌 하나 (같은 묶음 열쇠 gk로 다시 묶을 수 있음)
@@ -124,7 +124,7 @@ function mergeGroup(gk) {
 function renderCands() {
   const list = shown(), box = $('#cands');
   box.className = `cands n${list.length}`;
-  $('#candCap').textContent = COMP_LIVE ? `이 기획안의 브리프(분류·키워드·메인 카피)와 PROMO_WORK 지난 행사로 ${list.length}개를 만들었어요` : `브리프(분류·키워드·메인 카피)와 레퍼런스로 ${list.length}개를 만들었어요`;
+  $('#candCap').textContent = COMP_LIVE && AI_LIVE ? `이 기획안의 브리프(분류·키워드·메인 카피)와 수집한 레퍼런스로 ${list.length}개를 만들었어요` : COMP_LIVE ? `이 기획안의 브리프(분류·키워드·메인 카피)와 PROMO_WORK 지난 행사로 ${list.length}개를 만들었어요` : `브리프(분류·키워드·메인 카피)와 레퍼런스로 ${list.length}개를 만들었어요`;
   box.innerHTML = list.map(c => {
     return `<article class="cand n${list.length}" ${chosen === c.id ? 'aria-current="true"' : ''} aria-labelledby="c${c.id}">
       <div class="head"><span class="letter">${c.id}</span><div class="grow"><h3 id="c${c.id}">${esc(c.title)}</h3><p class="cap">${esc(basisOf(c))}</p></div>${headTag(c)}</div>
@@ -342,7 +342,8 @@ async function buildLive(doc) {
   AI_LIVE = await applyAi(doc);   // 서버 AI가 준비돼 있으면 A·C를 그 결과로 바꾼다. 아니면 위 예시 그대로
   COMP_LIVE = true; n = 3;
   document.querySelectorAll('.demo .seg, .demo > .cap').forEach(x => { x.hidden = true; });   // 목업 보기용 개수 고르기는 숨김
-  const dp = document.querySelector('.demo p'); if (dp) dp.innerHTML = '<b>이 기획안으로 만든 추천이에요.</b> A는 분류·키워드 규칙, B는 PROMO_WORK 지난 행사의 진열 칸 순서예요. C(레퍼런스 조합)와 원본 페이지 캡처는 아직 예시예요.';
+  const dp = document.querySelector('.demo p'); if (dp) dp.innerHTML = AI_LIVE ? '<b>이 기획안으로 만든 추천이에요.</b> A는 프로모션 유형의 필수 구좌, C는 브리프에 가까운 레퍼런스 페이지에서 구좌를 가져와 이은 구성이에요. 지난 우리 기획안이 비슷하면 D로 나와요.'
+    : '<b>이 기획안으로 만든 추천이에요.</b> A는 분류·키워드 규칙, B는 PROMO_WORK 지난 행사의 진열 칸 순서예요. C(레퍼런스 조합)와 원본 페이지 캡처는 아직 예시예요.';
 }
 
 let toastT;

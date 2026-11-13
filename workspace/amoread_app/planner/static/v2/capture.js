@@ -7,11 +7,17 @@ const Cap = (() => {
   function load(id) {
     if (!cache.has(id)) {
       cache.set(id, v2api('/api/am/ai/capture?id=' + encodeURIComponent(id)).then(d => {
-        const doc = new DOMParser().parseFromString(d.html, 'text/html');
-        const css = [...doc.querySelectorAll('style')].map(x => x.textContent).join('\n'); doc.querySelectorAll('style').forEach(x => x.remove());
-        const sty = []; doc.body.querySelectorAll('[style]').forEach(e => { e.dataset.cs = sty.length; sty.push(e.getAttribute('style')); e.removeAttribute('style'); });   // 태그 안 style은 CSP가 막으므로 떼어 두었다가 CSSOM으로 입힌다
+        // 태그 안 style="…"을 파싱하는 순간 CSP가 위반으로 기록한다(막히지는 않지만 콘솔에 수백 줄) → 파싱 전에 다른 이름으로 바꿔 두었다가 아래에서 CSSOM으로 입힌다
+        const safe = String(d.html || '').replace(/<style\b/gi, '<script type="text/x-css"').replace(/<\/style\s*>/gi, '</script>')   // <style> 요소도 파싱만으로 CSP 위반이 기록되므로 실행되지 않는 글 덩어리로 바꿔 둔다
+          .replace(/(\s)style\s*=\s*("([^"]*)"|'([^']*)')/gi, (m, sp, q, a, b) => `${sp}data-sty="${String(a ?? b).replace(/"/g, '&quot;')}"`);
+        const doc = new DOMParser().parseFromString(safe, 'text/html');
+        const css = [...doc.querySelectorAll('script[type="text/x-css"]')].map(x => x.textContent).join('\n'); doc.querySelectorAll('script[type="text/x-css"]').forEach(x => x.remove());
+        const noUrl = v => v.replace(/url\(\s*(['"]?)(?!data:|#)[^)]*?\1\s*\)/gi, 'url("data:,")');
+        const sty = []; doc.body.querySelectorAll('[data-sty]').forEach(e => { e.dataset.cs = sty.length; sty.push(noUrl(e.getAttribute('data-sty'))); e.removeAttribute('data-sty'); });
+        doc.querySelectorAll('img,source,video,audio,image,use,link').forEach(e => ['src', 'srcset', 'poster', 'href', 'xlink:href'].forEach(a => { if (/^(?!data:|#|\s*$)/i.test(e.getAttribute(a) || '')) e.removeAttribute(a); }));   // 이미지 파일은 저장하지 않으므로 바깥 주소는 지운다 (회색 자리만 보임)
         const sheet = new CSSStyleSheet();
-        sheet.replaceSync(css.replace(/:root/g, ':host').replace(/(^|[},\s])html(?=[\s,{.:#\[>+~])/g, '$1:host').replace(/(^|[},\s])body(?=[\s,{.:#\[>+~])/g, '$1.cbody'));
+        sheet.replaceSync(css.replace(/url\(\s*(['"]?)(?!data:|#)[^)]*?\1\s*\)/gi, 'url("data:,")')   // 이미지·글꼴 주소는 모두 비운다: 파일을 저장하지 않아 어차피 안 뜨고, 남겨 두면 바깥 주소는 CSP 오류로, 안쪽 주소(/kr/…)는 우리 서버 404로 콘솔에 쌓인다
+          .replace(/:root/g, ':host').replace(/(^|[},\s])html(?=[\s,{.:#\[>+~])/g, '$1:host').replace(/(^|[},\s])body(?=[\s,{.:#\[>+~])/g, '$1.cbody'));
         return { doc, sty, sheet };
       }).catch(e => { cache.delete(id); throw e; }));
     }
@@ -107,7 +113,10 @@ const Cap = (() => {
   async function pump() {
     if (busy) return; busy = true;
     while (queue.length) {
-      const el = queue.shift(); if (!el.isConnected || el.dataset.done) continue; el.dataset.done = '1';
+      const el = queue.shift(); if (!el.isConnected || el.dataset.done) continue;
+      const r = el.getBoundingClientRect();   // 줄 서 있는 사이 화면에서 멀리 벗어났으면(빨리 내려간 경우) 그리지 않고 다시 보일 때 줄을 세운다
+      if (io && (r.bottom < -900 || r.top > innerHeight + 900)) { io.observe(el); continue; }
+      el.dataset.done = '1';
       try { if (el.dataset.y !== undefined) await crop(el, el.dataset.id, +el.dataset.y, +el.dataset.h); else await cropEl(el, el.dataset.id, el.dataset.t, +el.dataset.n); } catch (e) { el.querySelector('.cclip')?.remove(); }
       await new Promise(r => setTimeout(r, 15));
     }

@@ -9,6 +9,8 @@
 """
 from . import cases, refs, rules
 
+ANCHOR_AFFINITY = 0.6     # 기준 페이지 점수에 더하는 '우리 브랜드와 가까운 정도' (표준편차 단위 × 이 값, ±2σ까지만)
+ANCHOR_SEASON_MISS = 1.5  # 브리프와 페이지의 계절이 서로 알려져 있고 다르면 빼는 점수 (추석 선물에 크리스마스 페이지 방지)
 NO_REF = {"terms_notice", "share", "app_promo", "related_promotions", "section_navigation"}   # 정해진 문구·기능이라 레퍼런스를 찾지 않는다
 
 
@@ -32,15 +34,19 @@ def build(doc: dict, per_section: int = 1) -> dict:
     need = [s for s in plan["sections"] if s["role"] not in NO_REF]
     q_all = refs.query_for(doc, "", "")
     anchor, anchor_cov = None, 0.0
+    bs = refs.brief_season(doc)
     cands = refs.search_pages(q_all, k=12)
     if cands and need:
         def want(s):
             return refs.roles_for(s["layoutId"], s["name"], s["purpose"]) if s["role"] == "product_list" else [s["role"]]
         scored = []
+        aff = refs.page_affinity()
         for c in cands:
             cov = sum(1 for s in need if set(want(s)) & c["roles"]) / len(need)
             brand = refs._state["pages"].get(c["page_id"], {}).get("brand")
-            scored.append((c["score"] + 2.0 * cov + (0.5 if brand in refs.PREFER_BRANDS else 0), c["page_id"], cov))
+            ps = refs.page_season(c["page_id"])
+            adj = (0.5 if brand in refs.PREFER_BRANDS else 0) + ANCHOR_AFFINITY * max(-2.0, min(2.0, aff.get(c["page_id"], 0.0))) - (ANCHOR_SEASON_MISS if bs and ps and bs != ps else 0)
+            scored.append((c["score"] + 2.0 * cov + adj, c["page_id"], cov))
         _, anchor, anchor_cov = max(scored)
     own = 0
     for s in plan["sections"]:
@@ -48,11 +54,11 @@ def build(doc: dict, per_section: int = 1) -> dict:
         if s["role"] not in NO_REF:
             q = refs.query_for(doc, s["name"], s["purpose"])
             roles = refs.roles_for(s["layoutId"], s["name"], s["purpose"]) if s["role"] == "product_list" else [s["role"]]
-            hit = refs.search_in_page(q, roles, anchor, k=per_section) if anchor else []
+            hit = refs.search_in_page(q, roles, anchor, k=per_section, section=s["layoutId"]) if anchor else []
             if hit:
                 own += 1
             else:   # 그 페이지에 없는 구좌는 다른 사례로 보충
-                hit = refs.search(q, roles, k=per_section)
+                hit = refs.search(q, roles, k=per_section, season=bs, section=s["layoutId"])
             if hit:
                 r = hit[0]
                 item = refs.as_ref(r, refs.why_text(q, r, s["role"]))
@@ -62,6 +68,8 @@ def build(doc: dict, per_section: int = 1) -> dict:
                                                 "secs": pg.get("secs") or [], "url": r.get("url", ""), **refs.capture_info(r["page_id"])})
                 row.append({"src": [r["page_id"], r["title"]], "refId": item["id"], "sx": {"t": (r.get("text") or "")[:120], "n": len(r.get("text") or "")}})
         secs_c.append(row)
+    if anchor and bs and refs.page_season(anchor) and refs.page_season(anchor) != bs:
+        basis.append(f"주의: 기준 페이지는 {refs.page_season(anchor)} 시즌 사례예요. 브리프의 계절({bs})과 달라서 구성만 참고하고 문구·혜택은 바꿔 쓰세요")
     if anchor:
         basis.append(f"기준 페이지 '{(refs._state['pages'].get(anchor) or {}).get('name', anchor)[:30]}': 구좌 {len(need)}개 중 {own}개를 이 페이지에서 가져오고 나머지는 다른 사례로 보충")
     mixed = any(len(x) > 3 for x in secs_c)

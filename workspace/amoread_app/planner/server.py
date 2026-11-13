@@ -88,6 +88,13 @@ def index():
     return HTMLResponse(html.replace("__PLANNER_TOKEN__", TOKEN))
 
 
+@app.get("/favicon.ico")
+def favicon():
+    """브라우저가 화면마다 자동으로 찾는 아이콘. 없으면 404가 콘솔에 빨갛게 남아 진짜 오류와 섞이므로 비어 있는 응답(204)으로 답한다."""
+    from fastapi.responses import Response
+    return Response(status_code=204)
+
+
 # 새 버전 (plans/20 재설계 화면). 예전 화면(/)은 그대로 두고 /v2/ 아래에 따로. 정해진 이름만 열어 준다
 V2_PAGES = {"home", "brief", "compose", "editor", "preview", "deals", "library", "settings"}
 
@@ -676,6 +683,13 @@ def main():
     if "--no-browser" not in sys.argv:
         threading.Timer(1.5, lambda: webbrowser.open(url)).start()
     print(f"기획 도우미: {url}  (이 창을 닫으면 종료됩니다)")
+    try:   # AI 데이터 자체 점검 한 줄 요약 (문제가 있으면 무엇을 하면 되는지까지). 점검이 실패해도 서버는 켜진다
+        from amoread.ai import selfcheck
+        s = selfcheck.summary()
+        print({"ok": "AI 데이터 점검: 문제 없음", "warn": f"AI 데이터 점검: 확인할 것 {s['counts']['warn']}건 (python -m amoread.ai.selfcheck 로 자세히)",
+               "error": f"AI 데이터 점검: 고쳐야 할 문제 {s['counts']['error']}건 (python -m amoread.ai.selfcheck 로 자세히)"}[s["status"]])
+    except Exception:
+        pass
     uvicorn.run(app, host=config.SERVER_HOST, port=config.SERVER_PORT, log_level="warning")
 
 

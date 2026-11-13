@@ -69,6 +69,13 @@ def ai_status():
     return refs.status()
 
 
+@router.get("/health")
+def ai_health():
+    """AI 데이터가 서로 맞는지 스스로 점검한 결과 (읽기만). 화면은 오류가 있을 때만 알린다."""
+    from . import selfcheck
+    return selfcheck.summary()
+
+
 @router.post("/outline")
 def ai_outline(req: DocIn):
     """1단계만: 유형 판단과 구좌 목록. 레퍼런스 색인이 없어도 동작한다. 결과: { mode, basis, items } (outline.js purposeOutline과 같은 모양 + 판단 근거)."""

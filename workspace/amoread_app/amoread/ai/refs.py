@@ -102,6 +102,57 @@ def _load():
     return True
 
 
+# ---- 기준 페이지를 고를 때의 보정 (compose.build): 우리 브랜드와 말투·소재가 가까운가 / 브리프와 계절이 맞는가 ----
+SEASON_GROUP = {"봄": "봄", "여름": "여름", "가을": "가을", "겨울": "겨울", "연말": "겨울", "블프": "겨울"}   # 페이지 라벨의 시즌 말 → 계절 묶음 (모르는 말은 판단하지 않는다)
+
+
+def brief_season(doc: dict) -> str:
+    """브리프의 계절 묶음 ('' = 모름). 고른 명분·제목·키워드의 계절 말에서 찾는다."""
+    from . import labeling
+    b, v2 = doc.get("brief") or {}, doc.get("v2") or {}
+    ref = b.get("season_ref")
+    text = " ".join([str(doc.get("title") or ""), str(b.get("myeongbun") or ""), (ref.get("name") if isinstance(ref, dict) else str(ref or "")), " ".join(v2.get("keywords") or []), str(v2.get("seed") or "")])
+    hit = rules.season_hit(doc)
+    if hit:
+        text += " " + str(hit.get("name") or "") + " " + str(hit.get("keyword") or "")
+    for label, rx in labeling.SEASON_WORDS + [("블프", r"블프|블랙\s?프라이데이|블랙위크")]:
+        if re.search(rx, text):
+            return SEASON_GROUP[label]
+    return ""
+
+
+_pl = {"mt": None, "d": {}}
+
+
+def page_season(page_id: str) -> str:
+    """수집한 페이지의 계절 묶음 ('' = 모름)."""
+    fs = [d / "page_labels.json" for d in (AI_DIR, USER_DIR)]
+    mt = tuple(_mt(f) for f in fs)
+    if _pl["mt"] != mt:
+        d = {}
+        for f in fs:
+            try:
+                d.update(json.loads(f.read_text(encoding="utf-8")))
+            except (OSError, ValueError):
+                pass
+        _pl.update(mt=mt, d=d)
+    return SEASON_GROUP.get((_pl["d"].get(page_id) or {}).get("season", ""), "")
+
+
+def page_affinity() -> dict:
+    """페이지별 '우리 브랜드 글과 가까운 정도' (구좌 친화도의 평균, 페이지끼리 표준화). 패션·화장품 위주 외부 사례가 기준 페이지가 되는 것을 누른다."""
+    _load()
+    if _state.get("paff_mt") != _state["mtime"]:
+        by = _page_index()
+        aff = _affinity()
+        raw = {pid: sum(aff[i] for i in ix) / len(ix) for pid, ix in by.items() if ix}
+        v = list(raw.values())
+        m = sum(v) / len(v) if v else 0
+        sd = (sum((x - m) ** 2 for x in v) / len(v)) ** 0.5 if v else 1.0
+        _state.update(paff={k: (x - m) / (sd or 1.0) for k, x in raw.items()}, paff_mt=_state["mtime"])
+    return _state["paff"]
+
+
 def _page_index():
     """페이지 단위 검색용 색인 (페이지마다 구좌 글을 이어 붙인 것). 구좌 색인이 바뀌면 다시 만든다."""
     if _state.get("pg_mt") != _state["mtime"]:
@@ -130,7 +181,7 @@ def search_pages(query: str, k: int = 8, k1=1.5, b=0.75) -> list[dict]:
     return [{"page_id": p, "score": (sc[p] - m) / sd, "roles": {_state["rows"][i]["role"] for i in by[p]}} for p in top]
 
 
-def search_in_page(query: str, roles: list[str], page_id: str, k: int = 1) -> list[dict]:
+def search_in_page(query: str, roles: list[str], page_id: str, k: int = 1, section: str = "") -> list[dict]:
     """한 페이지 안에서만 역할이 roles인 구좌를 찾는다 (페이지 단위 조합이 한 사례 안에서 이어지게)."""
     if not _load() or not query.strip():
         return []
@@ -139,7 +190,7 @@ def search_in_page(query: str, roles: list[str], page_id: str, k: int = 1) -> li
     if not idx:
         return []
     bm = _bm25(query)
-    s = {i: bm[i] + feedback.adjust(rows[i]["id"]) for i in idx}
+    s = {i: bm[i] + feedback.adjust(rows[i]["id"], section) for i in idx}
     return [dict(rows[i], score=round(s[i], 3)) for i in sorted(idx, key=lambda i: -s[i])[:k]]
 
 
@@ -208,8 +259,12 @@ def _near_dup(a: str, b: str, th=0.8) -> bool:
     return bool(ga and gb) and len(ga & gb) / len(ga | gb) >= th
 
 
-def search(query: str, roles: list[str], k: int = 5, hybrid: float = 0.3) -> list[dict]:
-    """역할이 roles 중 하나인 섹션에서 query와 가장 가까운 k개. 색인이 없으면 []."""
+ROW_UNSHOWN = 0.5   # 수집한 화면이 그 사이 바뀌어(content_changed) 원본 구좌를 잘라 보여 줄 수 없는 페이지의 구좌에서 빼는 점수: 비슷한 후보끼리면 눈으로 확인되는 사례를 먼저 (제외하지는 않음)
+ROW_SEASON_MISS = 1.0   # 브리프와 계절이 다른 페이지의 구좌에서 빼는 점수 (표준편차 단위). 계절을 모르는 쪽(둘 중 하나가 '')은 건드리지 않는다
+
+
+def search(query: str, roles: list[str], k: int = 5, hybrid: float = 0.3, season: str = "", section: str = "") -> list[dict]:
+    """역할이 roles 중 하나인 섹션에서 query와 가장 가까운 k개. 색인이 없으면 []. season = 브리프의 계절 묶음(brief_season)."""
     if not _load() or not query.strip():
         return []
     rows = _state["rows"]
@@ -229,7 +284,11 @@ def search(query: str, roles: list[str], k: int = 5, hybrid: float = 0.3) -> lis
     if AFFINITY:
         az = _z(_affinity(), idx)
         s = [s[i] + AFFINITY * az[i] for i in range(len(rows))]
-    s = [s[i] + feedback.adjust(rows[i]["id"]) if i in idxset else s[i] for i in range(len(rows))]   # 담당자가 많이 고른/버린 사례는 조금 앞/뒤로
+    if season:   # 다른 계절 페이지의 구좌는 조금 뒤로 (추석 선물에 크리스마스 사례가 앞서지 않게)
+        s = [s[i] - (ROW_SEASON_MISS if i in idxset and page_season(rows[i]["page_id"]) not in ("", season) else 0) for i in range(len(rows))]
+    own = _own_items()
+    s = [s[i] - (ROW_UNSHOWN if i in idxset and (own.get(rows[i]["page_id"]) or {}).get("content_changed") else 0) for i in range(len(rows))]
+    s = [s[i] + feedback.adjust(rows[i]["id"], section) if i in idxset else s[i] for i in range(len(rows))]   # 담당자가 많이 고른/버린 사례는 조금 앞/뒤로
     order = sorted(idx, key=lambda i: -s[i])
     picked = []
     for i in order:   # 거의 같은 글(29cm 쇼케이스처럼 틀이 같은 것)은 하나만
@@ -250,8 +309,23 @@ def roles_for(layout_id: str, name: str = "", purpose: str = "") -> list[str]:
     n = name or ""
     if layout_id == "hero":
         return ["hero"]
-    if layout_id in ("grid2", "grid3"):
+    if layout_id in ("grid2", "grid3", "feat"):
         return ["product_list"]
+    # 구좌 편집 화면에만 있는 구좌 종류 (구성 화면의 7가지 밖): 모두 text-cta 쪽 글 구좌로 몰리면 유의사항·이벤트 구좌에 스토리 사례가 나온다
+    if layout_id == "notice":
+        return ["terms_notice"]
+    if layout_id in ("ev-quiz", "ev-ugc", "ev-stamp", "ev-draw"):
+        return ["participation_event"]
+    if layout_id == "ev-share":
+        return ["share", "participation_event"]
+    if layout_id == "ev-coupon":
+        return ["coupon_offer", "participation_event"]
+    if layout_id == "countdown":
+        return ["sale_offer", "hero"]
+    if layout_id == "story":
+        return ["brand_story", "editorial_story"]
+    if layout_id in ("service", "timeline", "detail"):
+        return ["editorial_story", "benefit_overview"]
     if layout_id == "split":
         return ["brand_story", "editorial_story", "product_list"] if re.search(r"스토리|이야기|소개", n) else ["product_list", "brand_story"]
     if layout_id == "deal-banner":
@@ -265,11 +339,22 @@ def roles_for(layout_id: str, name: str = "", purpose: str = "") -> list[str]:
     return ["editorial_story", "brand_story", "brand_intro"]   # text-cta
 
 
+_own = {"mt": None, "by_id": {}}
+
+
+def _own_items() -> dict:
+    """직접 가져온 레퍼런스(refs.json)를 id로 찾는 표. 파일이 바뀔 때만 다시 읽는다 (추천 한 번에 카드 수만큼 부르므로 매번 읽지 않는다)."""
+    from .. import references
+    mt = _mt(references.FILE)
+    if _own["mt"] != mt:
+        _own.update(mt=mt, by_id={x.get("id"): x for x in references.load().get("items", [])})
+    return _own["by_id"]
+
+
 def capture_info(page_id: str) -> dict:
     """화면 수집본이 있는 페이지면 구좌 띠 배치(layout)를 붙인다 → 화면이 원본 구좌를 잘라 보여 주고 전체 페이지에서 위치를 강조한다."""
     try:
-        from .. import references
-        it = next((x for x in references.load().get("items", []) if x.get("id") == page_id), None)
+        it = _own_items().get(page_id)
         lay = (it or {}).get("layout")
         if lay and lay.get("bands") and (it or {}).get("rendered"):
             return {"layout": {"ph": lay["ph"], "vw": lay.get("vw", 390), "bands": [{k: b.get(k) for k in ("y", "h", "st", "role")} | {"txt": (b.get("txt") or "")[:40]} for b in lay["bands"]]}, "cap": True}
@@ -281,10 +366,11 @@ def capture_info(page_id: str) -> dict:
 def as_ref(r: dict, why: str = "") -> dict:
     """색인 행 → 화면 레퍼런스 모양(references.js의 REFS 항목 + 출처)."""
     role = r["role"]
+    ci = capture_info(r["page_id"])
     layout = rules.layout_for(role, r["text"]) if role in rules.ROLE_CAT else None   # 레이아웃으로 옮길 수 없는 역할은 '참고 전용'
     return {"id": r["id"], "title": r["title"], "campaign": r["campaign"], "cat": rules.ROLE_CAT.get(role, "스토리"),
             "applicable": layout is not None, "layout": layout, "reason": why or f"'{rules.ROLE_NAME.get(role, role)}' 구좌 사례", "summary": r["text"][:80] + "…",
-            "role": role, "brand": r["brand"], "from": BRAND_FROM.get(r["brand"], "외부"), "url": r.get("url", ""), "page": r["page_id"], "images": r.get("images") or [], "cap": bool(capture_info(r["page_id"])), "pglayout": capture_info(r["page_id"]).get("layout"), "sx": {"t": (r.get("text") or "")[:120], "n": len(r.get("text") or "")}}   # images = 원본 이미지 주소(화면이 아직 쓰지 않음)
+            "role": role, "brand": r["brand"], "from": BRAND_FROM.get(r["brand"], "외부"), "url": r.get("url", ""), "page": r["page_id"], "images": r.get("images") or [], "cap": bool(ci), "pglayout": ci.get("layout"), "sx": {"t": (r.get("text") or "")[:120], "n": len(r.get("text") or "")}}   # images = 원본 이미지 주소(화면이 아직 쓰지 않음)
 
 
 def query_for(doc: dict, name: str, purpose: str = "") -> str:
@@ -309,7 +395,7 @@ def recommend(section: dict, doc: dict, n: int = 3) -> dict:
     roles = roles_for(lay, name, purpose)
     q = query_for(doc, name, purpose)
     items = []
-    for r in search(q, roles, k=n):
+    for r in search(q, roles, k=n, season=brief_season(doc), section=lay):
         items.append({**as_ref(r, why_text(q, r, r["role"])), "why": why_text(q, r, r["role"])})
     return {"mode": "ai", "basis": [f"역할 {', '.join(rules.ROLE_NAME.get(x, x) for x in roles[:2])} 필터 · " + ("키워드+의미 벡터" if st["mode"] != "keyword" else "키워드(BM25)") + " 검색",
                                    "레퍼런스는 수집한 외부 사례(원본 이미지 미연결)"], "items": items}

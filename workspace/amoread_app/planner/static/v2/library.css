@@ -45,6 +45,10 @@ h1, h2, h3, h4, p { margin: 0; }
 .c-season { background: var(--cls-season); color: var(--cls-season-ink); } .c-brand { background: var(--cls-brand); color: var(--cls-brand-ink); } .c-launch { background: var(--cls-launch); color: var(--cls-launch-ink); } .c-collab { background: var(--cls-collab); color: var(--cls-collab-ink); } .c-clear { background: var(--cls-clear); color: var(--cls-clear-ink); }
 .seg { display: inline-flex; gap: 4px; padding: 4px; background: var(--sunken); border-radius: var(--r2); max-width: 100%; overflow-x: auto; }
 .seg > button { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; min-height: var(--control-md); padding: 6px 14px; border-radius: 6px; color: var(--ink2); font-size: var(--fs-sm); font-weight: var(--fw-medium); white-space: nowrap; justify-content: center; line-height: var(--lh-label); }
+/* 칸이 넘쳐 가로로 밀어야 할 때 오른쪽 끝이 잘려 보이지 않게 흐림으로 알려 준다 (스크롤 위치에 따라 CSS만으로 사라짐 · 자바스크립트 없음) */
+.seg { scrollbar-width: none; background: linear-gradient(to right, var(--sunken) 30%, transparent), linear-gradient(to left, var(--sunken) 30%, transparent) 100% 0, radial-gradient(farthest-side at 0 50%, rgba(0,0,0,.18), transparent), radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.18), transparent) 100% 0;
+  background-repeat: no-repeat; background-size: 24px 100%, 24px 100%, 10px 100%, 10px 100%; background-attachment: local, local, scroll, scroll; background-color: var(--sunken); }
+.seg::-webkit-scrollbar { display: none; }
 .seg > button:hover { color: var(--ink); }
 .seg > button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-strong); }
 .seg > button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }

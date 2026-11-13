@@ -177,14 +177,21 @@ def brief_text(doc: dict) -> tuple[str, str]:
     return (name + " " + " ".join(str(x) for x in rest if x)).lower(), name.lower()
 
 
+def _kw_re(k: str) -> "re.Pattern":
+    """판단 키워드 정규식. 영문 단어(new·top·gift)는 낱말 경계를 둬서 'desktop'·'renewal' 안의 조각에는 반응하지 않는다 (한글은 조사가 붙으므로 부분 일치 그대로)."""
+    k = k.lower()
+    return re.compile(f"(?<![a-z0-9]){k}(?![a-z0-9])" if re.fullmatch(r"[a-z0-9 ]+", k) else k)
+
+
 def classify(doc: dict) -> list[dict]:
     text, name = brief_text(doc)
     v2, b = doc.get("v2") or {}, doc.get("brief") or {}
     score, hits = {}, {}
     for t, d in TYPES.items():
         for k, w in d["kw"].items():
-            if re.search(k.lower(), text):
-                score[t] = score.get(t, 0) + w * (1.5 if re.search(k.lower(), name) else 1)
+            rx = _kw_re(k)
+            if rx.search(text):
+                score[t] = score.get(t, 0) + w * (1.5 if rx.search(name) else 1)
                 hits.setdefault(t, []).append(k.replace(r"\s?", " ").replace(r"\d+", "N"))
     prior = {}
     season = season_hit(doc)
@@ -280,6 +287,9 @@ def generate(doc: dict, secondary_ratio: float = 0.6) -> dict:
             item["support"] = {"pages": n_pages, "have": have_n.get(role, 0)}
         out.append(item)
     conf = "low" if undecided else t["conf"] if main["score"] else "low"
+    if not undecided and not main["matched"]:   # 키워드·명분 근거 없이 목적·분류 가중치만으로 정한 유형은 높게 보이지 않게 한다
+        conf = "low"
+        notes.append("브리프에 유형을 가리키는 단어가 없어 목적·분류만으로 정한 유형이에요. 명분·콘셉트를 적으면 더 정확해져요")
     if n_pages and n_pages < 5:   # 같은 유형 사례가 5개 미만이면 신뢰도를 높게 두지 않는다
         conf = "low"
     elif n_pages and n_pages < 15 and conf == "high":
