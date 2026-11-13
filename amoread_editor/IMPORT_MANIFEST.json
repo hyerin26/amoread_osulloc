@@ -1,0 +1,527 @@
+{
+  "package": "AMOREAD design_eun upload handoff",
+  "version": "1.12",
+  "source": {
+    "repository": "https://github.com/EunseongOH/tea_ad",
+    "branch": "feat/composable-block-editor",
+    "commit": "79b66e5d730169bcaf6e23d16396c04dff10d256"
+  },
+  "target": {
+    "repository": "https://gitlab.com/amoread2/osulloc.git",
+    "branch": "design_eun",
+    "directory": "amoread-editor/"
+  },
+  "structure": {
+    "editor": "amoread-editor/editor/v1.12/",
+    "design": "amoread-editor/design/",
+    "integration": "amoread-editor/integration/"
+  },
+  "counts": {
+    "editor": 68,
+    "design": 32,
+    "integration": 4
+  },
+  "note": "No target GitLab access was available. This package keeps the host app unchanged; authenticated API adapters must be integrated separately.",
+  "files": [
+    {
+      "source": "design/README_design_system_v0.2.md",
+      "bytes": 15188,
+      "github_blob_sha": "fcd7421e9ec77d49376118cdffb07944f94dae00"
+    },
+    {
+      "source": "design/README_design_system_v2.1.md",
+      "bytes": 4812,
+      "github_blob_sha": "a51496debaf6742033f7db98cc10485816ea53b6"
+    },
+    {
+      "source": "design/README_design_system_v2.2.md",
+      "bytes": 4899,
+      "github_blob_sha": "d321f64603a74c853479f91171355207de1c3ccf"
+    },
+    {
+      "source": "design/README_design_system_v2.3.md",
+      "bytes": 5034,
+      "github_blob_sha": "d5ee98b5fe4007630c30af721967d3707065a1bf"
+    },
+    {
+      "source": "design/README_design_system_v2.4.md",
+      "bytes": 1559,
+      "github_blob_sha": "84a1b30219cc17e62f85353379d773da24bc4b8e"
+    },
+    {
+      "source": "design/README_design_system_v2.5.1.md",
+      "bytes": 527,
+      "github_blob_sha": "5e64c4c2e98c8898b0f73f636b38f1722974b4ac"
+    },
+    {
+      "source": "design/README_design_system_v2.5.md",
+      "bytes": 1260,
+      "github_blob_sha": "54c8865f6c0c5790d2dd6b666174679921f04727"
+    },
+    {
+      "source": "design/SEED_reference_v2.1.md",
+      "bytes": 1539,
+      "github_blob_sha": "5972e8f163151dd68f703b975b3ca494a45fcc4b"
+    },
+    {
+      "source": "design/UX_WRITING.md",
+      "bytes": 5160,
+      "github_blob_sha": "bdd04563f0040e436ef23ee89e00208362a72b1c"
+    },
+    {
+      "source": "design/components_v2.1.css",
+      "bytes": 12468,
+      "github_blob_sha": "7f44807b8ec016efa750343d7603479cf6610532"
+    },
+    {
+      "source": "design/guide.template.html",
+      "bytes": 12968,
+      "github_blob_sha": "05cc262ae5dc60e4dca3127506104db689f82fb8"
+    },
+    {
+      "source": "design/tokens_v0.2.css",
+      "bytes": 1880,
+      "github_blob_sha": "70f48d746d341f70e70a125a58227fe4dfb5c7ba"
+    },
+    {
+      "source": "design/tokens_v2.1.css",
+      "bytes": 4241,
+      "github_blob_sha": "17df97d7bf6a2a1d109aa4f50ef307a682fc6b71"
+    },
+    {
+      "source": "design/tokens_v2.1.json",
+      "bytes": 7570,
+      "github_blob_sha": "794f2dff4998554927c0dba69bd6426bee7bd270"
+    },
+    {
+      "source": "design/tokens_v2.2.css",
+      "bytes": 4654,
+      "github_blob_sha": "18194e7dda65674846299cb0bf32f0c3a8534a08"
+    },
+    {
+      "source": "design/tokens_v2.2.json",
+      "bytes": 8404,
+      "github_blob_sha": "b622f37e0cba2909cbec19253c4da615f60d37f8"
+    },
+    {
+      "source": "design/tokens_v2.3.css",
+      "bytes": 4749,
+      "github_blob_sha": "8060d42d9143032f5374905b5c1441b9b8f30d70"
+    },
+    {
+      "source": "design/tokens_v2.3.json",
+      "bytes": 8477,
+      "github_blob_sha": "15ed1b96efcbc68096320962094dc3d11ad2da2b"
+    },
+    {
+      "source": "design/tokens_v2.4.css",
+      "bytes": 5056,
+      "github_blob_sha": "8485f0e26310073e34ffa09b0a334573a3b285b0"
+    },
+    {
+      "source": "design/tokens_v2.4.json",
+      "bytes": 9009,
+      "github_blob_sha": "b28c6b8d400c86de989cd3f49679b6b5a765adb8"
+    },
+    {
+      "source": "design/tokens_v2.5.1.css",
+      "bytes": 5138,
+      "github_blob_sha": "f2286474db9ae2e4aceeb503696e50b029d07406"
+    },
+    {
+      "source": "design/tokens_v2.5.1.json",
+      "bytes": 9143,
+      "github_blob_sha": "eff8c29fc9e9141c79951c4d1411a1b32dcfc75f"
+    },
+    {
+      "source": "design/tokens_v2.5.css",
+      "bytes": 5145,
+      "github_blob_sha": "ce04690dad67a59bd45ab756303820c7bc4b694b"
+    },
+    {
+      "source": "design/tokens_v2.5.json",
+      "bytes": 9152,
+      "github_blob_sha": "6ae287fb1fd33fe955a4b342c9f6d7786ff5e9e3"
+    },
+    {
+      "source": "design/ux-copy.csv",
+      "bytes": 15602,
+      "github_blob_sha": "446f600ae25cdf744a008c2e8a35faf5fd916b42"
+    },
+    {
+      "source": "design/visual-guide_v0.2.html",
+      "bytes": 37702,
+      "github_blob_sha": "339b4d5d211fbde227a8940f9f206e9bc6a37a25"
+    },
+    {
+      "source": "design/visual-guide_v2.1.html",
+      "bytes": 92401,
+      "github_blob_sha": "b2040108a9016121fcc3d166807fdba3a03c1a7f"
+    },
+    {
+      "source": "design/visual-guide_v2.2.html",
+      "bytes": 3239956,
+      "github_blob_sha": "0ccc4f12d3fbe9b2ef370e047dbb4dacde6f206d"
+    },
+    {
+      "source": "design/visual-guide_v2.3.html",
+      "bytes": 3241354,
+      "github_blob_sha": "afc914a48fd27ab52a99496a7e2b036ac4a15dec"
+    },
+    {
+      "source": "design/visual-guide_v2.4.html",
+      "bytes": 3241714,
+      "github_blob_sha": "cb052fd6e95350092422d76f09bd1d00ee0f3495"
+    },
+    {
+      "source": "design/visual-guide_v2.5.1.html",
+      "bytes": 3242094,
+      "github_blob_sha": "d661755107d9a619da00cfcd6acef6de0d1d92e8"
+    },
+    {
+      "source": "design/visual-guide_v2.5.html",
+      "bytes": 3242008,
+      "github_blob_sha": "85bed6dc2ad8df445ec6af245ce9ca986fb26732"
+    },
+    {
+      "source": "integrated/v1.12/CARD_ELEMENTS_AUDIT_v1.8.md",
+      "bytes": 2311,
+      "github_blob_sha": "ff15de09a2401db5dec1637c2baaabad1cfd1a97"
+    },
+    {
+      "source": "integrated/v1.12/CHANGELOG_v1.10.1.md",
+      "bytes": 985,
+      "github_blob_sha": "672f4b732092a2bb284c9b91cf00dd459b2f8ae8"
+    },
+    {
+      "source": "integrated/v1.12/CHANGELOG_v1.10.md",
+      "bytes": 804,
+      "github_blob_sha": "140bbd432e2fc051067bcc95352d0414e8a42df5"
+    },
+    {
+      "source": "integrated/v1.12/CHANGELOG_v1.11.md",
+      "bytes": 3370,
+      "github_blob_sha": "f3a5ffcd9d760983319917dface039ddd460e8cd"
+    },
+    {
+      "source": "integrated/v1.12/CHANGELOG_v1.12.md",
+      "bytes": 1423,
+      "github_blob_sha": "dff2cd3153f1c77b3648cd07e2dce602c84c43b8"
+    },
+    {
+      "source": "integrated/v1.12/CHANGELOG_v1.8.md",
+      "bytes": 4000,
+      "github_blob_sha": "290ca7400235e1e39d36aedf269d5993955f9792"
+    },
+    {
+      "source": "integrated/v1.12/CHANGELOG_v1.9.md",
+      "bytes": 2104,
+      "github_blob_sha": "57ae30c52c928503bdee9780adf70e933a69ddec"
+    },
+    {
+      "source": "integrated/v1.12/EDITOR_COMPONENT_REGISTRY_v1.12.json",
+      "bytes": 14027,
+      "github_blob_sha": "c333587ed638d64e5693e0e26fb280fda9f6a7f2"
+    },
+    {
+      "source": "integrated/v1.12/EDITOR_UI_SYSTEM_v1.12.md",
+      "bytes": 11410,
+      "github_blob_sha": "c33d828196c065c909f24da604c66339c81d0287"
+    },
+    {
+      "source": "integrated/v1.12/LAYOUT_CONFLICT_POLICY_v1.10.1.md",
+      "bytes": 6624,
+      "github_blob_sha": "03e58d3ba7a2374df9cd78335cd11afac82aa0e9"
+    },
+    {
+      "source": "integrated/v1.12/README.md",
+      "bytes": 2103,
+      "github_blob_sha": "9a589b7274d533289dd83395f41719a23881b574"
+    },
+    {
+      "source": "integrated/v1.12/README_v1.10.md",
+      "bytes": 478,
+      "github_blob_sha": "e185e9fb675e4c1bac14e0dc402fcf55dd0ad087"
+    },
+    {
+      "source": "integrated/v1.12/README_v1.11.md",
+      "bytes": 1914,
+      "github_blob_sha": "ef5ede0709c491ff118bbc12514afd4fb706372b"
+    },
+    {
+      "source": "integrated/v1.12/README_v1.12.md",
+      "bytes": 8464,
+      "github_blob_sha": "c6d4052f60591b97d1bcbfec786e7e0826c680db"
+    },
+    {
+      "source": "integrated/v1.12/README_v1.8.md",
+      "bytes": 2103,
+      "github_blob_sha": "9a589b7274d533289dd83395f41719a23881b574"
+    },
+    {
+      "source": "integrated/v1.12/README_v1.9.md",
+      "bytes": 1788,
+      "github_blob_sha": "d34e222cbcaf27db50ee987eaee1a0e98e05e888"
+    },
+    {
+      "source": "integrated/v1.12/SETTINGS_REFLECTION_AUDIT_v112.md",
+      "bytes": 5922,
+      "github_blob_sha": "68dc432ec9741e692d9bfbe29a3496dda0a3c061"
+    },
+    {
+      "source": "integrated/v1.12/SOURCE_MANIFEST_v1.12.json",
+      "bytes": 8071,
+      "github_blob_sha": "751bc418a3bb2c02fbca7e4836ce6e1e99c69923"
+    },
+    {
+      "source": "integrated/v1.12/app.js",
+      "bytes": 154307,
+      "github_blob_sha": "9a0b262a85c8d4e7d3ba8e1c7f738673c67683b9"
+    },
+    {
+      "source": "integrated/v1.12/block-quality.css",
+      "bytes": 34325,
+      "github_blob_sha": "8085b7a2aa50e5c1738f497e6725fbef7cf06b5c"
+    },
+    {
+      "source": "integrated/v1.12/canvas-selection.css",
+      "bytes": 10456,
+      "github_blob_sha": "0cd8d31c85d1071bc592eaf0250438b4e64272a9"
+    },
+    {
+      "source": "integrated/v1.12/capture_ia_v111.py",
+      "bytes": 1062,
+      "github_blob_sha": "d3c263e94dc81d808ac0b96e1cbd5186ee0097d0"
+    },
+    {
+      "source": "integrated/v1.12/catalog.js",
+      "bytes": 7930,
+      "github_blob_sha": "d9587bfadf5c2af783de3f89515b7bad4e56786a"
+    },
+    {
+      "source": "integrated/v1.12/components.js",
+      "bytes": 3207,
+      "github_blob_sha": "059abc5f420b26c6aa00b262de3d23f9d6410803"
+    },
+    {
+      "source": "integrated/v1.12/composable.css",
+      "bytes": 10902,
+      "github_blob_sha": "c242bec615b5101ef022a3250e8fdceb37ce023d"
+    },
+    {
+      "source": "integrated/v1.12/composable.js",
+      "bytes": 20161,
+      "github_blob_sha": "ed782b76dd96ac70e5b620ccf8b2efc87d0316d1"
+    },
+    {
+      "source": "integrated/v1.12/custom-section.css",
+      "bytes": 6420,
+      "github_blob_sha": "c49c85614b459ad824ee6607db0a6f64f7b2e208"
+    },
+    {
+      "source": "integrated/v1.12/editor-components-gallery.js",
+      "bytes": 2703,
+      "github_blob_sha": "6dc8a9fce7b2b07d1f5cb2505d0a0276b4ddb9e5"
+    },
+    {
+      "source": "integrated/v1.12/editor-components.html",
+      "bytes": 7138,
+      "github_blob_sha": "5252c05102cbe0a87f16d7e2a2a8981ceeecfebb"
+    },
+    {
+      "source": "integrated/v1.12/editor-spacing.css",
+      "bytes": 10014,
+      "github_blob_sha": "a427c59a00ad2ba8cc88e10b71c29f38664f9ecc"
+    },
+    {
+      "source": "integrated/v1.12/editor-ui-kit.css",
+      "bytes": 19233,
+      "github_blob_sha": "1543267aacdc840bd4dbb377ed6e5b61112c1a3f"
+    },
+    {
+      "source": "integrated/v1.12/editor-ui-kit.js",
+      "bytes": 4918,
+      "github_blob_sha": "5b9c8f41dd83123f2ea325d551c54f755574b854"
+    },
+    {
+      "source": "integrated/v1.12/flows.js",
+      "bytes": 41982,
+      "github_blob_sha": "b14913f678b0901ec15b01173dbfae2a6535a611"
+    },
+    {
+      "source": "integrated/v1.12/ia-v111.css",
+      "bytes": 8700,
+      "github_blob_sha": "eb7aca5b793335bec82a7aca85ff8f9e04004c38"
+    },
+    {
+      "source": "integrated/v1.12/image-layout-v110.css",
+      "bytes": 5658,
+      "github_blob_sha": "c4a4c304a1c0a5053f013c64d9c9ac480ac29dc9"
+    },
+    {
+      "source": "integrated/v1.12/index.html",
+      "bytes": 7784,
+      "github_blob_sha": "e0c784368bbc6e38c85d5126c4af3a9ca2b2e5ad"
+    },
+    {
+      "source": "integrated/v1.12/layout-integrity.css",
+      "bytes": 5530,
+      "github_blob_sha": "a0b6993428d0b8016a1794c9144c4884b2d20998"
+    },
+    {
+      "source": "integrated/v1.12/legacy_bridge_v111.py",
+      "bytes": 1782,
+      "github_blob_sha": "29e76e19f3b453bfaac83e0033030d38fe7ba2d6"
+    },
+    {
+      "source": "integrated/v1.12/legacy_bridge_v112.py",
+      "bytes": 3234,
+      "github_blob_sha": "55aeb8ffb01ad796e2da6cf7274db3ae9290f28a"
+    },
+    {
+      "source": "integrated/v1.12/run_legacy_compat_v111.py",
+      "bytes": 847,
+      "github_blob_sha": "803c997445b62d2e2bb53e668e64ded3aa14f51b"
+    },
+    {
+      "source": "integrated/v1.12/run_regression_v112.py",
+      "bytes": 1779,
+      "github_blob_sha": "3cd6b5e86cd044bf21a3abddbacef397ba0c5186"
+    },
+    {
+      "source": "integrated/v1.12/sample_reviews_demo.csv",
+      "bytes": 115,
+      "github_blob_sha": "12252c3b650bcd0171518b77e592c97977190f71"
+    },
+    {
+      "source": "integrated/v1.12/screenshot_resize_v19.py",
+      "bytes": 2157,
+      "github_blob_sha": "235fa17e8e18d1b4cbd2e9903dc5d08fe846ef8c"
+    },
+    {
+      "source": "integrated/v1.12/styles.css",
+      "bytes": 47254,
+      "github_blob_sha": "adcb1fa84bd0433b747235bcb4062d6f3cc9a210"
+    },
+    {
+      "source": "integrated/v1.12/test_block_quality_v112.py",
+      "bytes": 6637,
+      "github_blob_sha": "c8a2777cf335cbded0285d38ecba11744ab8b295"
+    },
+    {
+      "source": "integrated/v1.12/test_composition_interactions_v112.py",
+      "bytes": 6732,
+      "github_blob_sha": "4a9ca7d83aa38121ee012553de5c147387a2eadf"
+    },
+    {
+      "source": "integrated/v1.12/test_editor_kit_v112.py",
+      "bytes": 4232,
+      "github_blob_sha": "9478a75dcf53f5f601e6a750eff36a13e8eb9c3d"
+    },
+    {
+      "source": "integrated/v1.12/test_editor_ui_kit_v112.py",
+      "bytes": 5562,
+      "github_blob_sha": "e3c9230fbe6ad09479e4832f00c0e44dcaeefbc7"
+    },
+    {
+      "source": "integrated/v1.12/test_elements_v18.py",
+      "bytes": 2947,
+      "github_blob_sha": "98992dcf94332481e46ca543145f70231716145b"
+    },
+    {
+      "source": "integrated/v1.12/test_ia_v111.py",
+      "bytes": 4866,
+      "github_blob_sha": "28dd4edbf765b6edfd6afc5ea05fd4baa4d41968"
+    },
+    {
+      "source": "integrated/v1.12/test_inspector_navigation_v112.py",
+      "bytes": 6953,
+      "github_blob_sha": "e5015e167c6f0a569150e914f7237373c0cccb17"
+    },
+    {
+      "source": "integrated/v1.12/test_layout_conflicts_v1101.py",
+      "bytes": 4889,
+      "github_blob_sha": "c9ce6d262ff8c30d650dfbc6f2357c1245be2cdb"
+    },
+    {
+      "source": "integrated/v1.12/test_layout_v171.py",
+      "bytes": 5288,
+      "github_blob_sha": "7a31e80a88560c23a98b9f95ee79fe5db1780902"
+    },
+    {
+      "source": "integrated/v1.12/test_linked_controls_v112.py",
+      "bytes": 7604,
+      "github_blob_sha": "af7601d11ced082dcc67e310ccf330713352addc"
+    },
+    {
+      "source": "integrated/v1.12/test_media_layout_v110.py",
+      "bytes": 3842,
+      "github_blob_sha": "36d62d7c08d31ba561c809ede3a42967a8155f75"
+    },
+    {
+      "source": "integrated/v1.12/test_resize_v19.py",
+      "bytes": 2478,
+      "github_blob_sha": "3ed817aa727a8982c71f99a198c3bb7dec11fa08"
+    },
+    {
+      "source": "integrated/v1.12/test_scroll_v162.py",
+      "bytes": 3775,
+      "github_blob_sha": "36341366a39c5e44191f9e47296a09805937598f"
+    },
+    {
+      "source": "integrated/v1.12/test_settings_audit_v112.py",
+      "bytes": 7388,
+      "github_blob_sha": "2efef19b961fbb51494af576580f2c7eb328d837"
+    },
+    {
+      "source": "integrated/v1.12/test_settings_matrix_v112.py",
+      "bytes": 4762,
+      "github_blob_sha": "b4263a40ac8ebd709b5c9a21cfc6d6acaa86179a"
+    },
+    {
+      "source": "integrated/v1.12/test_storage_v16.py",
+      "bytes": 3450,
+      "github_blob_sha": "f1f864e3a5a93887e9292494e8acbcdf068308e7"
+    },
+    {
+      "source": "integrated/v1.12/test_v112_integration.py",
+      "bytes": 5578,
+      "github_blob_sha": "af9cc00dd7dba79fef4ec66ed74d25d700d686d8"
+    },
+    {
+      "source": "integrated/v1.12/test_v112_resize.py",
+      "bytes": 3113,
+      "github_blob_sha": "a82c0368977fd0feff2f59d93f910cb75d4003bc"
+    },
+    {
+      "source": "integrated/v1.12/test_v12.py",
+      "bytes": 6738,
+      "github_blob_sha": "b8b266512033668a7a3969004220fc739e39e73d"
+    },
+    {
+      "source": "integrated/v1.12/test_v15.py",
+      "bytes": 6637,
+      "github_blob_sha": "39a115ca490a64e399b7c782b073101479ae603a"
+    },
+    {
+      "source": "integrated/v1.12/test_v16.py",
+      "bytes": 5360,
+      "github_blob_sha": "669c66f8e8f5699c994551f52698427e79a827d8"
+    },
+    {
+      "source": "integrated/v1.12/test_v17.py",
+      "bytes": 4710,
+      "github_blob_sha": "1d2702e46c850127d8e920ffd95b799317fbccf1"
+    },
+    {
+      "source": "integrated/v1.12/test_v18.py",
+      "bytes": 6645,
+      "github_blob_sha": "1adaeafed445f7a5d67ebe3e2a20a84d4f02e046"
+    },
+    {
+      "source": "integrated/v1.12/tokens.demo.css",
+      "bytes": 1099,
+      "github_blob_sha": "6ed0aa7698af79220cb6a4b624ed1f27478eb265"
+    }
+  ]
+}

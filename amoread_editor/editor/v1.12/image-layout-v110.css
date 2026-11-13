@@ -1,0 +1,85 @@
+/* AMOREAD v1.10: responsive image media, truly anchored labels and view-aware counts.
+   Do not alter existing global Green UI tokens or stored section values. */
+.mock-product-media {container-type:inline-size;position:relative;overflow:hidden;border-radius:var(--ed-radius,var(--r2));}
+.mock-product-media > .mock-product-image {
+  display:grid!important;place-items:center;width:100%;height:auto!important;min-height:0!important;
+  aspect-ratio:var(--am-product-aspect,1 / 1);margin:0!important;
+  border-radius:inherit;box-sizing:border-box;
+}
+.mock-product-media > .mock-card-label--corner {
+  position:absolute;z-index:2;inset:auto;display:flex;align-items:center;justify-content:center;
+  box-sizing:border-box;max-width:100%;max-height:100%;min-width:0;
+  padding:clamp(2px,2.4cqw,5px) clamp(3px,4cqw,8px);
+  font-size:clamp(8px,7cqw,12px);font-weight:700;line-height:1.2;
+  border:0;box-shadow:none;overflow-wrap:anywhere;white-space:normal;
+  border-radius:0;pointer-events:none;
+}
+.mock-card-label--corner.top-left {top:0;left:0;right:auto;bottom:auto;border-radius:0 0 8px 0;}
+.mock-card-label--corner.top-right {top:0;right:0;left:auto;bottom:auto;border-radius:0 0 0 8px;}
+.mock-card-label--corner.bottom-left {bottom:0;left:0;right:auto;top:auto;border-radius:0 8px 0 0;}
+.mock-card-label--corner.bottom-right {bottom:0;right:0;left:auto;top:auto;border-radius:8px 0 0 0;}
+@container (max-width:110px) {
+ .mock-product-media > .mock-card-label--corner {font-size:8px;line-height:1.05;padding:2px 3px;}
+ .mock-card-label--corner.top-left {border-radius:0 0 5px 0;}
+ .mock-card-label--corner.top-right {border-radius:0 0 0 5px;}
+ .mock-card-label--corner.bottom-left {border-radius:0 5px 0 0;}
+ .mock-card-label--corner.bottom-right {border-radius:5px 0 0 0;}
+}
+/* 4-column layout: bounded card width and no grid overflow. */
+.mock-products.am-cols-4 {grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--ed-space-inline,4px);}
+.mock-products.am-cols-4 > .mock-product {min-width:0;padding:3px;}
+.mock-products.am-cols-4 .mock-card-name,.mock-products.am-cols-4 .mock-card-price {font-size:9px;overflow-wrap:anywhere;}
+.mock-products.am-cols-4 .mock-card-price {line-height:1.28;}
+/* Exactly one column in list/card regardless of the previously saved grid count. */
+.mock-products.am-product-view-list,.mock-products.am-product-view-card {grid-template-columns:minmax(0,1fr)!important;}
+/* Masonry: actual column count follows inspector's 1–4 selection. */
+.mock-products.am-product-view-masonry.am-cols-1 {columns:1;}
+.mock-products.am-product-view-masonry.am-cols-2 {columns:2;}
+.mock-products.am-product-view-masonry.am-cols-3 {columns:3;}
+.mock-products.am-product-view-masonry.am-cols-4 {columns:4;}
+/* Carousel: count is cards in viewport, not layout grid columns. */
+.mock-products.am-product-view-carousel.am-cols-1 {--am-visible-count:1;}
+.mock-products.am-product-view-carousel.am-cols-2 {--am-visible-count:2;}
+.mock-products.am-product-view-carousel.am-cols-3 {--am-visible-count:3;}
+.mock-products.am-product-view-carousel.am-cols-4 {--am-visible-count:4;}
+.mock-products.am-product-view-carousel>.mock-product {
+  flex:0 0 calc((100% - (var(--am-visible-count,2) - 1) * var(--ed-space-element,8px)) / var(--am-visible-count,2));
+  max-width:calc((100% - (var(--am-visible-count,2) - 1) * var(--ed-space-element,8px)) / var(--am-visible-count,2));
+  min-width:0;
+}
+.am-ed-column-picker {grid-template-columns:repeat(4,minmax(0,1fr));}
+.am-ed-column-thumb.cols-4 {grid-template-columns:repeat(4,minmax(0,1fr));}
+/* Section image sizing — controlled by --am-section-image-aspect, never by static height. */
+.preview-block .am-flow-info-hero .am-flow-img-ghost,
+.preview-block .am-flow-info-split .am-flow-img-ghost,
+.preview-block .am-flow-info-list .am-flow-img-ghost,
+.preview-block .mock-split .mock-image,
+.preview-block > .mock-image,
+.preview-block .mock-review-feature,
+.preview-block .mock-review-inline-photo,
+.preview-block .mock-ev-upload {
+  aspect-ratio:var(--am-section-image-aspect,4 / 3);
+  height:auto!important;min-height:0!important;
+  width:100%;max-width:100%;box-sizing:border-box;
+}
+/* A horizontal split should not be forced to the intrinsic image min-height. */
+.preview-block .am-flow-info-hero .am-flow-img-ghost {min-height:0!important;}
+.preview-block .mock-review-feature,.preview-block .mock-review-inline-photo {display:grid;place-items:center;}
+.preview-block .mock-ev-upload {display:grid;place-content:center;}
+/* Uncouple product card image from parent section when a reusable card has its own ratio. */
+.cb-node--productCard .mock-product-media {max-width:100%;}
+
+/* Attached free-form reference images respond to section-level ratios too. */
+.preview-block .am-custom-reference-image {
+  aspect-ratio:var(--am-section-image-aspect,4 / 3);
+  height:auto!important;max-height:none!important;
+  width:100%;object-fit:contain;background:var(--sunken);
+}
+
+/* v1.10.1: scoped controls for independent masonry ratios, design tokens only. */
+.am-ed-masonry-product{padding:var(--ed-space-card,12px) 0;border-bottom:1px solid var(--line-sub)}
+.am-ed-masonry-product__head{display:flex;align-items:center;justify-content:space-between;gap:var(--ed-space-element,8px);margin-bottom:var(--ed-space-element,8px)}
+.am-ed-masonry-product__head strong{font-size:var(--fs-sm);min-width:0;overflow-wrap:anywhere}
+.am-ed-masonry-product:last-child{border-bottom:0}
+/* Variable image heights come from per-item --am-product-aspect, rather than a fixed uniform ratio. */
+.mock-products.am-product-view-masonry>.mock-product .mock-product-media>.mock-product-image{aspect-ratio:var(--am-product-aspect,1 / 1)}
