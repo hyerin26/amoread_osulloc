@@ -139,6 +139,17 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 from amoread.api import router as amoread_router  # noqa: E402
 app.include_router(amoread_router)
 
+# 멘트추천기능: 기존 app/Guard를 재사용하는 선택 모듈 (새 서버 없음).
+from importlib.util import spec_from_file_location, module_from_spec  # noqa: E402
+_copy_dir = Path(__file__).resolve().parents[3] / "멘트추천기능"
+if (_copy_dir / "__init__.py").is_file():
+    _copy_spec = spec_from_file_location("osulloc_copy_recommender", _copy_dir / "__init__.py",
+                                         submodule_search_locations=[str(_copy_dir)])
+    _copy_module = module_from_spec(_copy_spec)
+    sys.modules[_copy_spec.name] = _copy_module
+    _copy_spec.loader.exec_module(_copy_module)
+    _copy_module.install(app)
+
 
 # ----------------------------------------------------------------------
 # 데이터
@@ -679,7 +690,7 @@ def claude_job(job_id: str):
 
 def main():
     import uvicorn
-    url = f"http://127.0.0.1:{config.SERVER_PORT}/"
+    url = f"http://127.0.0.1:{config.SERVER_PORT}/v2/home"
     if "--no-browser" not in sys.argv:
         threading.Timer(1.5, lambda: webbrowser.open(url)).start()
     print(f"기획 도우미: {url}  (이 창을 닫으면 종료됩니다)")

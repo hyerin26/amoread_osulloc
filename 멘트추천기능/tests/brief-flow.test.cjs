@@ -1,0 +1,36 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const vm=require('node:vm');
+const {URL,URLSearchParams}=require('node:url');
+const clone=value=>JSON.parse(JSON.stringify(value));
+const base=path.resolve(__dirname,'../../workspace/amoread_app/planner/static/v2');
+const source=name=>fs.readFileSync(path.join(base,name+'.js'),'utf8');
+const functionSource=(text,name,end)=>text.slice(text.indexOf('function '+name+'('),text.indexOf(end,text.indexOf('function '+name+'(')));
+(async()=>{
+ const doc={id:'a'.repeat(32),title:'동기화 검증',brief:{key_copy:'브리프에서 고른 새 카피',period:{start:'2026-11-12',end:'2026-11-20'}},v2:{cls:'season',keywords:['겨울','티타임'],stage:'compose'},page:{sections:[{sectionId:'hero',layoutId:'hero',headline:'오래된 카피',subhead:'설명 유지'},{sectionId:'goods',layoutId:'grid2',headline:'상품 제목 유지'}]}};
+ const fields={};const $=selector=>fields[selector]??=( {textContent:''} );
+ const ctx=vm.createContext({document:{querySelector:()=>null,querySelectorAll:()=>[],getElementById:()=>null,addEventListener(){}},addEventListener(){},location:{pathname:'/v2/compose',search:'?id='+doc.id},URL,URLSearchParams,setTimeout:()=>1,clearTimeout(){},v2api:async()=>clone(doc),$ ,CLS_N:{season:'시즌'}});
+ vm.runInContext(source('plan')+';globalThis.plan=PLAN;',ctx);await ctx.plan.ready;
+ assert.equal(ctx.plan.doc.page.sections[0].headline,doc.brief.key_copy);
+ assert.equal(ctx.plan.doc.page.sections[0].subhead,'설명 유지');
+ assert.equal(ctx.plan.doc.page.sections[1].headline,'상품 제목 유지');
+ vm.runInContext(functionSource(source('compose'),'renderBriefSummary','let COMP_LIVE'),ctx);
+ ctx.renderBriefSummary(ctx.plan.doc);
+ assert.equal(fields['#briefPeriod'].textContent,'11/12(목) ~ 11/20(금)');
+ assert.equal(fields['#briefKeywords'].textContent,'겨울 · 티타임');
+ assert.equal(fields['#briefCopy'].textContent,doc.brief.key_copy);
+ ctx.rows=[{id:'newhero',layout:'hero',name:'메인 비주얼'},{id:'goods',layout:'grid2',name:'상품'},{id:'second',layout:'hero',name:'다른 비주얼'}];
+ vm.runInContext(functionSource(source('compose'),'toSections','function saveCompose'),ctx);
+ const sections=ctx.toSections({sections:[{sectionId:'goods',headline:'상품 제목 유지',slots:[{slotId:'keep'}]},{sectionId:'second',headline:'다른 비주얼 유지'}]});
+ assert.equal(sections[0].headline,doc.brief.key_copy);
+ assert.equal(sections[1].headline,'상품 제목 유지');assert.equal(sections[1].slots[0].slotId,'keep');assert.equal(sections[2].headline,'다른 비주얼 유지');
+ // Run the actual brief save handler, including explicit clearing of a chosen copy.
+ ctx.picked=['새 키워드'];ctx.PLAN=ctx.plan;
+ fields['#title']={value:doc.title};fields['#concept']={value:'컨셉'};fields['#who']={value:'대상'};fields['#copy']={value:''};
+ vm.runInContext(functionSource(source('brief'),'saveBrief','// ---------- 우리 데이터'),ctx);
+ ctx.saveBrief();assert.equal(ctx.plan.doc.brief.key_copy,'');assert.equal(ctx.plan.doc.page.sections[0].headline,'');assert.equal(ctx.plan.doc.page.sections[1].headline,'상품 제목 유지');
+ ctx.renderBriefSummary({brief:{},v2:{}});
+ assert.equal(fields['#briefPeriod'].textContent,'기간 미정');assert.equal(fields['#briefCopy'].textContent,'메인 카피 미정');
+ console.log('brief flow: 15 assertions passed');
+})().catch(error=>{throw error});

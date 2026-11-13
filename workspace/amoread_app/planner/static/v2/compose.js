@@ -317,6 +317,18 @@ async function pastCand(doc) {
   }
   return null;
 }
+function renderBriefSummary(doc) {
+  const b = doc.brief || {}, period = b.period || {};
+  const dateLabel = value => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return '미정';
+    const date = new Date(`${value}T00:00:00`);
+    return `${date.getMonth()+1}/${date.getDate()}(${'일월화수목금토'[date.getDay()]})`;
+  };
+  $('#briefClass').textContent = CLS_N[doc.v2?.cls] || '분류 미정';
+  $('#briefPeriod').textContent = period.start || period.end ? `${dateLabel(period.start)} ~ ${dateLabel(period.end)}` : '기간 미정';
+  $('#briefKeywords').textContent = (doc.v2?.keywords || []).join(' · ') || '선택한 키워드 없음';
+  $('#briefCopy').textContent = b.key_copy || '메인 카피 미정';
+}
 let COMP_LIVE = false, AI_LIVE = false;
 // 구좌 구성 AI (서버 /api/am/ai/compose): 브리프 → A 규칙형, C 레퍼런스 조합 + 원본 페이지(PAGES). 실패·색인 없음(mode≠ai)이면 false를 돌려 지금 로직을 그대로 쓴다
 async function applyAi(doc) {
@@ -331,6 +343,7 @@ async function applyAi(doc) {
 async function buildLive(doc) {
   const kw = (doc.v2?.keywords || [])[0] || doc.v2?.seed || doc.brief?.myeongbun || '', cls = CLS_N[doc.v2?.cls] || '분류 미정', base = CANDS.find(c => c.id === 'A');
   COPY = doc.brief?.key_copy || doc.brief?.myeongbun || doc.title || '';
+  renderBriefSummary(doc);
   Object.assign(base, { title: `${cls} 기본형`, why: `${cls} 프로모션의 기본 틀에 고른 키워드를 넣었어요`, basis: `분류: ${cls}`,
     match: [[`같은 분류: ${cls}`, !!doc.v2?.cls], [`키워드: ${kw || '없음'}`, !!kw], ['메인 카피', !!doc.brief?.key_copy]],
     secs: [['메인 비주얼', 'hero', '명분과 메인 카피를 첫 화면에 크게'], ...(doc.v2?.keywords || []).slice(0, 2).map(k => [`${k} 추천`, 'grid2', `고른 키워드 '${k}'에 맞는 상품`]),
@@ -354,10 +367,11 @@ render();
 let lastJ = null;
 function toSections(prev) {
   const old = Object.fromEntries(((prev && prev.sections) || []).map(x => [x.sectionId, x]));
+  const firstHero = rows.find(r => r.layout === 'hero');
   return rows.map((r, i) => {
     const o = old[r.id] || {};
     const tabs = r.tabs ? r.tabs.map((label, j) => ({ ...(o.tabs?.[j] || {}), tabId: o.tabs?.[j]?.tabId || `${r.id}t${j + 1}`, label: String(label).slice(0, 40), zone_tag: o.tabs?.[j]?.zone_tag || '' })) : [];
-    return { ...o, sectionId: r.id, order: i, name: String(r.name).slice(0, 40), layoutId: r.layout, role: String(r.why || '').slice(0, 200),
+    return { ...o, ...(r === firstHero ? {headline: PLAN.doc?.brief?.key_copy || ''} : {}), sectionId: r.id, order: i, name: String(r.name).slice(0, 40), layoutId: r.layout, role: String(r.why || '').slice(0, 200),
       zone_kind: String(r.kind || '').slice(0, 20), tabs, v2: { ...(o.v2 || {}), gk: r.gk || '', gname: r.gname || '' } };
   });
 }

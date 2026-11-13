@@ -271,9 +271,10 @@ function copyTab(s) {
     <label class="f"><span>${hero ? '메인 카피' : '제목'}</span><input type="text" data-sf="name" maxlength="60" value="${esc(s.name)}" placeholder="${hero ? '' : '예) 마중차, GIFT ROOM'}">
       <span class="hint">${hero ? '브리프에서 정한 메인 카피예요. 여기서 고치면 브리프에도 바뀌어요' : '구좌 목록에도 이 제목으로 보여요'}</span></label>
     <label class="f"><span>설명 <em>(선택) 제목 아래 한두 줄</em></span><textarea data-sf="role" maxlength="200" rows="2" placeholder="예) 첫 인사를 건네며 입맛을 돋궈줄 차">${esc(s.role)}</textarea></label>
+    <div class="chips-row"><button class="btn xs" type="button" data-copy-polish>AI로 문구 다듬기</button><span class="hint">입력한 설명을 자연스럽고 감각적인 광고 문장으로</span></div>
     ${s.lines.map((l, j) => `<div class="f"><span class="l">추가 문구 ${j + 1}</span><div class="lnrow"><input type="text" data-line="${j}" maxlength="120" value="${esc(l.text)}" aria-label="추가 문구 ${j + 1}">
       <span class="tools"><button class="ib" data-linemv="${j}:-1" ${j ? '' : 'disabled'} aria-label="위로">↑</button><button class="ib" data-linemv="${j}:1" ${j < s.lines.length - 1 ? '' : 'disabled'} aria-label="아래로">↓</button><button class="ib" data-linedel="${j}" aria-label="추가 문구 ${j + 1} 삭제">✕</button></span></div></div>`).join('')}
-    <div class="chips-row"><button class="btn xs" data-lineadd>+ 문구 한 줄 추가</button><button class="btn xs" disabled title="AI 문구 다듬기는 아직 연결 전이에요">AI로 문구 다듬기 · 준비 중</button></div>
+    <div class="chips-row"><button class="btn xs" data-lineadd>+ 문구 한 줄 추가</button></div>
     <div class="f"><span class="l">버튼</span><label class="ck"><input type="checkbox" data-ctaon ${s.ctaOn ? 'checked' : ''}> 이 구좌에 버튼 넣기</label>
       ${s.ctaOn ? `<div class="two"><label class="f"><span class="hint">버튼 문구</span><input type="text" data-sf="cta" maxlength="30" value="${esc(s.cta)}" placeholder="${k === 'product' ? '예) 티백 더보기' : k === 'event' ? '예) 참여하기' : '예) 혜택 받기'}"></label>
         <label class="f"><span class="hint">어디로 <em>(선택)</em></span><input type="text" data-sf="ctaTo" maxlength="60" value="${esc(s.ctaTo)}" placeholder="예) 티백 카테고리, 쿠폰 받기"></label></div>` : '<span class="hint">버튼 없이 둬요. 언제든 다시 켤 수 있어요.</span>'}</div>
@@ -281,7 +282,7 @@ function copyTab(s) {
     ${hero ? '' : `<label class="f"><span>담는 것 <em>(선택)</em></span><input type="text" data-sf="scope" maxlength="40" value="${esc(s.scope)}" placeholder="예) 티백, 선물 세트, 티푸드"></label>`}
     ${k === 'product' ? `<label class="f"><span>엑셀 카테고리명 <em>(선택) PROMO_WORK 카테고리명</em></span><input type="text" data-sf="cat" maxlength="40" value="${esc(s.cat)}" placeholder="비워 둬요">
       <span class="hint">지난 PROMO_WORK에는 비어 있거나('가을 차회') 제목과 다른 이름('혜택 02 쿠폰가')이 섞여 있어요. 어떻게 쓸지 멘토님께 확인 중이라 기본은 비워 둬요.${s.tabs ? ' 탭 구좌는 탭마다 정해요(확인 후).' : ''}</span></label>` : ''}
-    <div class="box"><span class="cap">문구 제안 <span class="tag demo-t">연결 예정</span></span><p class="hint">브리프 컨셉으로 제목·설명을 이야기 순서(코스·방·여정)로 제안해요. 예) 가을 차회: 01 마중차 · 첫 인사를 건네며 입맛을 돋궈줄 차</p></div>`;
+    ${window.CopyRecommendation ? window.CopyRecommendation.render(s.id) : '<p class="hint">AI 추천 모듈을 불러오지 못했어요. 페이지를 새로고침해 주세요.</p>'}`;
 }
 // 카드 모양 탭: 이 구좌의 카드 모두에 같은 모양 (요소 켜고 끄기·순서). 위에 견본 카드를 바로 보여줌
 const sampleOf = s => cardsOf(s).find(c => c.seq) || slot();
@@ -665,7 +666,7 @@ document.addEventListener('input', e => {
   const t = e.target, s = S();
   if (t.id === 'pq') { t.closest('.search')?.classList.toggle('has-value', !!t.value); q = t.value; const tmp = document.createElement('div'); tmp.innerHTML = pickList(); $('#phits').outerHTML = tmp.querySelector('#phits').outerHTML; return; }
   if (!s) return;
-  if (t.dataset.sf) { s[t.dataset.sf] = t.value; renderPhone(); renderList(); if (t.dataset.sf === 'name') $('#panel h2').textContent = s.name; return; }
+  if (t.dataset.sf) { s[t.dataset.sf] = t.value; if (t.dataset.sf === 'name') syncHeroCopy(s); renderPhone(); renderList(); if (t.dataset.sf === 'name') $('#panel h2').textContent = s.name; return; }
   if (t.dataset.cf && t.tagName !== 'SELECT') { const c = cardOfEl(s, t); if (c) { c[t.dataset.cf] = t.value; renderPhone(); renderList(); } return; }
   if (t.dataset.df && t.tagName !== 'SELECT') { s.card.def[t.dataset.df] = t.value; renderPhone(); renderList(); const sm = $('#pbody .sample'); if (sm) sm.innerHTML = wCard(sampleOf(s), s); return; }
   if (t.dataset.appeal) { const it = itemOf(t.dataset.appeal); if (it) it.appeal = t.value; renderPhone(); return; }
@@ -725,8 +726,8 @@ let liveOn = false, lastE = null, KWS = [], PERIOD = ['', ''];
 // 구좌·카드·문구·할인 상태가 바뀔 때마다 앞 상태를 기억 (최대 60번). 글자를 칠 때는 0.6초 모아서 한 번.
 // 화면 이동(뒤로 가기)과는 따로: 이건 이 화면 안의 편집 이력만. 버튼 + Ctrl+Z / Ctrl+Shift+Z(또는 Ctrl+Y). 입력칸 안에서는 브라우저 기본 되돌리기
 const hist = { past: [], future: [], cur: null, key: null };
-const histKey = () => JSON.stringify([secs.map(toSection), items]);
-const histSnap = () => ({ secs: structuredClone(secs), items: structuredClone(items), cur });
+const histKey = () => JSON.stringify([secs.map(toSection), items, PLAN.doc?.brief?.key_copy || '']);
+const histSnap = () => ({ secs: structuredClone(secs), items: structuredClone(items), cur, briefCopy: PLAN.doc?.brief?.key_copy || '' });
 function syncHist() { const u = $('#undoBtn'), r = $('#redoBtn'); if (u) u.disabled = !hist.past.length; if (r) r.disabled = !hist.future.length; }
 function track() {
   const k = histKey();
@@ -739,6 +740,7 @@ let trackT = null; const trackSoon = () => { clearTimeout(trackT); trackT = setT
 function resetHist() { hist.past = []; hist.future = []; hist.key = null; hist.cur = null; track(); }
 function restoreHist(st) {
   secs = structuredClone(st.secs); items = structuredClone(st.items);
+  if (liveOn && PLAN.doc) PLAN.save(d => { d.brief.key_copy = st.briefCopy || ''; });
   cur = secs.some(x => x.id === st.cur) ? st.cur : secs.some(x => x.id === cur) ? cur : secs[0]?.id ?? null;
   hist.cur = st; hist.key = histKey(); renderBase(); saveEditor(); syncHist();
 }
@@ -806,6 +808,7 @@ function fromSection(x) {
       s.tabs = x.tabs.map(t => { const cs = slots.filter(sl => (sl.tabId || first) === t.tabId).map(mk); return { id: t.tabId, name: t.label, cat: t.zone_tag || '', cards: cs.length ? cs : [slot(), slot()] }; }); }
     else s.cards = slots.length ? slots.map(mk) : [slot(), slot(), slot(), slot()];
   }
+  s.copyRecommendation = v.copyRecommendation || null;
   if (k === 'review') s.rv = v.rv || { shape: 'mix', groups: [], order: [], show: { img: 1, name: 1, price: 0 }, author: 'hide' };
   if (k === 'event') s.ev = v.ev || { how: '', reward: '', rewardText: '', pick: '', count: '', when: '', login: true, notice: '' };
   return s;
@@ -820,7 +823,7 @@ function toSection(s, i) {
     layoutId: s.layout, zone_tag: cut(s.cat, 40), designNotes: cut(s.notes, 2000),
     ...(s.tabs ? { tabs: s.tabs.map(t => ({ tabId: t.id, label: cut(t.name, 40), zone_tag: cut(t.cat, 40) })) } : {}),
     ...(s.card ? { slots: (s.tabs ? s.tabs.flatMap(t => t.cards.map(c => slotOut(c, t.id))) : (s.cards || []).map(c => slotOut(c, null))).slice(0, 40) } : {}),
-    v2: { scope: cut(s.scope, 200), num: !!s.num, ctaOn: !!s.ctaOn, ctaTo: cut(s.ctaTo, 60), lines: (s.lines || []).map(l => ({ id: l.id, text: cut(l.text, 120) })),
+    v2: { copyRecommendation: s.copyRecommendation || null, scope: cut(s.scope, 200), num: !!s.num, ctaOn: !!s.ctaOn, ctaTo: cut(s.ctaTo, 60), lines: (s.lines || []).map(l => ({ id: l.id, text: cut(l.text, 120) })),
       refs: s.refs || [], moods: (s.moods || []).map(m => ({ id: m.id, pts: [...m.pts] })),
       att: (s.att || []).slice(0, 8).map(a => { const r = REFS[a.ref] || {}; return { ref: cut(a.ref, 80), note: cut(a.note, 120), name: cut(r.name, 60), page: cut(r.page, 60), from: cut(r.from, 10), url: /^https?:\/\//.test(r.url || '') ? cut(r.url, 300) : '' }; }),   // 붙인 레퍼런스: 이름·출처를 같이 저장해 다시 열어도, 레퍼런스가 색인에서 빠져도 목록이 남게
       ...(s.card ? { card: { order: s.card.order, on: s.card.on, def: defOut(s.card.def) }, cards: cardExtra(s) } : {}), ...(s.rv ? { rv: s.rv } : {}), ...(s.ev ? { ev: s.ev } : {}) } };
@@ -950,7 +953,7 @@ PLAN.ready.then(async doc => {
   secs.forEach(s => { (s.tabs || []).forEach(t => { if (seenId.has(t.id)) t.id = uid('t'); seenId.add(t.id); }); allCards(s).forEach(c => { if (seenId.has(c.id)) c.id = uid('c'); seenId.add(c.id); }); });
   secs.forEach(s => { if (s.rv) s.rv.groups = s.rv.groups.filter(g => P[g.seq]); });   // 예시 상품(P106 등)이 남아 있으면 뺌
   liveOn = true; lastE = JSON.stringify([secs.map(toSection), items]);
-  document.querySelector('.demo').innerHTML = '<b>이 기획안의 실제 내용이에요.</b> 구좌는 구좌 구성에서 정한 것, 상품·가격·원가·후기는 실제 데이터예요. 카드에 넣거나 할인을 고치면 상품·할인과 같은 값으로 저장돼요. 레퍼런스·느낌 이미지와 AI 문구 다듬기는 아직 예시예요.';
+  document.querySelector('.demo').innerHTML = '<b>이 기획안의 실제 내용이에요.</b> 구좌는 구좌 구성에서 정한 것, 상품·가격·원가·후기는 실제 데이터예요. 카드에 넣거나 할인을 고치면 상품·할인과 같은 값으로 저장돼요. 레퍼런스·느낌 이미지는 아직 예시예요. AI 카피 추천은 Claude 연결 상태에 따라 사용할 수 있어요.';
   renderBase(); resetHist();   // 불러온 상태가 이력의 출발점 (예시 화면으로 되돌아가지 않게)
   if (want) showSec(cur, true);
   // 후기·별점은 그린 뒤에 채운다 (2026-11-10: 후기를 다 받을 때까지 예시 화면이 보이고 고친 것도 저장되지 않던 것). 후기는 저장 값이 아니라 다시 그려도 저장하지 않음
@@ -1002,3 +1005,37 @@ PLAN.ready.then(async doc => {
 // 편집 이력의 출발점 (예시 화면 또는 기획안을 불러오기 전 상태. 기획안을 불러오면 resetHist로 다시 잡음)
 track();
 loadLibMoods();
+
+// 멘트추천기능과 연결: 원본 편집/저장/실행 취소 흐름을 그대로 사용한다.
+function syncHeroCopy(s) {
+  if (liveOn && PLAN.doc && s === secs.find(x => x.layout === 'hero')) {
+    PLAN.save(d => { d.brief.key_copy = cut(s.name, 120); });
+  }
+}
+window.CopyRecommendation?.connect({
+  enabled: () => liveOn && !!PLAN.id,
+  currentId: () => cur,
+  snapshot(id) {
+    const section = secs.find(x => x.id === id);
+    return window.CopyRecommendationCore.snapshot({doc: PLAN.doc, section, sections: secs, products: P, rows: items, extras: EXTRAS});
+  },
+  async prepare(id) {
+    if (!liveOn || !PLAN.id) throw Error('저장된 기획안에서 사용할 수 있어요.');
+    if (!secs.some(x => x.id === id)) throw Error('구좌를 찾지 못했어요.');
+    if (Object.keys(drafts).length) throw Error('미반영 할인이 있어요. 상품 탭에서 반영하거나 되돌린 뒤 추천해 주세요.');
+    saveEditor(); await PLAN.flush();
+  },
+  paint(id) {
+    if (id !== cur || tab !== 'copy') return;
+    const body = $('#pbody'), top = body?.scrollTop || 0;
+    renderPanel(); const next = $('#pbody'); if (next) next.scrollTop = top;
+  },
+  apply(id, patch, meta) {
+    if (id !== cur) throw Error('추천받은 구좌로 돌아온 뒤 적용해 주세요.');
+    const section = secs.find(x => x.id === id); if (!section) throw Error('구좌를 찾지 못했어요.');
+    clearTimeout(trackT); track();
+    Object.assign(section, patch); section.copyRecommendation = meta;
+    if ('name' in patch) syncHeroCopy(section);
+    render(); toast('AI 문구를 적용했어요. 직접 수정하거나 실행 취소할 수 있어요.', true);
+  }
+});
