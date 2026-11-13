@@ -114,7 +114,7 @@ const PRODUCTS=[
  {id:'D006',name:'아이스 티 팩',listPrice:19000,rate:.18,extraRate:0,rating:4.7,reviews:56,quote:'차갑게 우려도 향이 진해요.',appeal:'시원한 티타임'}
 ];
 const MONEY=n=>Math.round(n).toLocaleString('ko-KR')+'원';
-const priced=p=>{const first=Math.round(p.listPrice*(1-p.rate));const sale=Math.round(first*(1-p.extraRate));return {first,sale,pct:Math.round((1-sale/p.listPrice)*100)}};
+const priced=p=>{if(Number.isFinite(p.salePrice)&&Number.isFinite(p.firstPrice))return {first:p.firstPrice,sale:p.salePrice,pct:Math.round((1-p.salePrice/p.listPrice)*100)};const first=Math.round(p.listPrice*(1-p.rate));const sale=Math.round(first*(1-p.extraRate));return {first,sale,pct:Math.round((1-sale/p.listPrice)*100)}};
 let REVIEWS=[
 {id:'r1',productId:'D001',title:'아침에 즐기기 편한 차예요',text:'부담스럽지 않은 향이라서 자주 마시게 됩니다.',rating:5,source:'demo'},
 {id:'r2',productId:'D005',title:'선물 포장이 마음에 들어요',text:'포장이 정갈하게 되어 있어 선물하기 좋았어요.',rating:5,source:'demo'},
@@ -125,9 +125,12 @@ let REVIEWS=[
 ];
 const seedReviews=JSON.stringify(REVIEWS);
 
+// Host (app) mode: the host supplies real catalog data, so never seed fictional products/reviews/references.
+function HOST_MODE(){return window.AMOREAD_EDITOR_OPTIONS?.persistence==='external';}
+let CATALOG_NOTE=null; // host-provided source description shown instead of the demo source text
 function makeSection(layout,id,name,subtitle){
  const t=window.AM_makeSection(layout,id),defs=ITEM_DEFAULTS[layout]||t.items.map(x=>[x.label,x.text]);
- return {id,layout,productView:'grid',imageRatio:['grid2','grid3','feat'].includes(layout)?'1:1':'4:3',name:name??t.title,role:subtitle??t.subtitle,lines:[],num:false,ctaOn:false,cta:'',ctaTo:'',ctaStyle:CTA_DEFAULTS[layout]||'outline',ctaStyleModified:false,ctaTargetType:'none',ctaTarget:'',scope:'',cat:'',align:'left',gap:'normal',items:defs.map(x=>({label:x[0],text:x[1]})),card:{order:ORDER.slice(),on:Object.fromEntries(ORDER.map(k=>[k,['img','name','list','pct','pname','sale'].includes(k)?1:0])),def:{labelPosition:'top-left',label:'BEST',pill:'직접 쓰기',pillText:'오늘만',tag:'추천',copy:'고객의 선택을 돕는 한 줄',btn:'담기'}},productIds:['D001','D002'],appeals:Object.fromEntries(PRODUCTS.map(p=>[p.id,p.appeal])),ev:{how:'',reward:'쿠폰',rewardText:'',pick:'추첨',count:'',when:'',login:true,notice:'',ui:{...(EVENT_UI_DEFAULTS[layout]||{})}},rv:{shape:'mix',layout:'cards',productId:'all',show:{img:true,name:true,price:false},selected:['r1','r2'],order:['r1','r2'],titles:{r1:'',r2:''},author:'hide'},refs:[{id:'ref1',name:'이전 자사몰 선물 기획전',from:'가상 레퍼런스',attached:false,note:''},{id:'ref2',name:'브랜드 포장 안내',from:'가상 레퍼런스',attached:false,note:''}],moods:[],notes:''};
+ return {id,layout,productView:'grid',imageRatio:['grid2','grid3','feat'].includes(layout)?'1:1':'4:3',name:name??t.title,role:subtitle??t.subtitle,lines:[],num:false,ctaOn:false,cta:'',ctaTo:'',ctaStyle:CTA_DEFAULTS[layout]||'outline',ctaStyleModified:false,ctaTargetType:'none',ctaTarget:'',scope:'',cat:'',align:'left',gap:'normal',items:defs.map(x=>({label:x[0],text:x[1]})),card:{order:ORDER.slice(),on:Object.fromEntries(ORDER.map(k=>[k,['img','name','list','pct','pname','sale'].includes(k)?1:0])),def:{labelPosition:'top-left',label:'BEST',pill:'직접 쓰기',pillText:'오늘만',tag:'추천',copy:'고객의 선택을 돕는 한 줄',btn:'담기'}},productIds:HOST_MODE()?[]:['D001','D002'],appeals:Object.fromEntries(PRODUCTS.map(p=>[p.id,p.appeal])),ev:{how:'',reward:'쿠폰',rewardText:'',pick:'추첨',count:'',when:'',login:true,notice:'',ui:{...(EVENT_UI_DEFAULTS[layout]||{})}},rv:{shape:'mix',layout:'cards',productId:'all',show:{img:true,name:true,price:false},selected:HOST_MODE()?[]:['r1','r2'],order:HOST_MODE()?[]:['r1','r2'],titles:HOST_MODE()?{}:{r1:'',r2:''},author:'hide'},refs:HOST_MODE()?[]:[{id:'ref1',name:'이전 자사몰 선물 기획전',from:'가상 레퍼런스',attached:false,note:''},{id:'ref2',name:'브랜드 포장 안내',from:'가상 레퍼런스',attached:false,note:''}],moods:[],notes:''};
 }
 
 function ensureCustom(s){
@@ -274,9 +277,9 @@ function productElement(s,p,key){
   case 'list':return wrap(key,`<del>${MONEY(p.listPrice)}</del>`);
   case 'first':return wrap(key,p.extraRate>0?`<del>1단 ${MONEY(price.first)}</del>`:'<span class="mock-card-empty">2단 혜택 미적용</span>');
   case 'pct':return wrap(key,`<strong class="mock-card-discount">${price.pct}% 할인</strong>`);
-  case 'pname':return wrap(key,`<span class="mock-card-price-label">${p.extraRate>0?'추가 혜택가':p.rate>0?'할인가':'판매가'}</span>`);
+  case 'pname':return wrap(key,`<span class="mock-card-price-label">${safe(p.priceLabel||(p.extraRate>0?'추가 혜택가':p.rate>0?'할인가':'판매가'))}</span>`);
   case 'sale':return wrap(key,`<strong class="mock-card-price">${MONEY(price.sale)}</strong>`);
-  case 'rating':return wrap(key,`<span class="mock-card-rating">★ ${p.rating.toFixed(1)} · 후기 ${p.reviews}개</span>`);
+  case 'rating':return wrap(key,p.reviews>0&&p.rating>0?`<span class="mock-card-rating">★ ${p.rating.toFixed(1)} · 후기 ${p.reviews}개</span>`:'<span class="mock-card-empty">후기 없음</span>');
   case 'review':return wrap(key,`<span class="mock-card-quote">“${safe(p.quote)}”</span>`);
   case 'copy':return wrap(key,`<span class="mock-card-copy">${safe(v.copy||'카드 문구 입력 필요')}</span>`);
   case 'btn':return wrap(key,`<span class="mock-card-action">${safe(v.btn||'버튼 문구 입력 필요')}</span>`);
@@ -378,7 +381,7 @@ function reviewPreview(s){
  const featured=rv.productId!=='all'?PRODUCT_FOR_REVIEW(rv.productId):products[0];
  const layout=rv.layout||'cards';
  const feature=rv.show.img&&featured?`<div class="mock-review-feature"><b>상품 이미지</b><small>${E(featured.name)}</small></div>`:'';
- const card=r=>{const p=PRODUCT_FOR_REVIEW(r.productId);return `<div class="mock-review-card" data-native-review-id="${E(r.id)}">${rv.show.img&&layout==='cards'?'<div class="mock-review-inline-photo">상품 사진</div>':''}${rv.show.name?`<div class="mock-review-product">${E(p?.name||r.productId||'상품 미확정')}</div>`:''}<strong>${E(rv.titles[r.id]||r.title)}</strong><div class="stars">${'★'.repeat(Math.max(1,Math.min(5,Number(r.rating)||5)))}</div><p>${E(r.text)}</p>${rv.show.price&&p?`<small>가격 ${MONEY(priced(p).sale)}</small>`:''}</div>`};
+ const card=r=>{const p=PRODUCT_FOR_REVIEW(r.productId);return `<div class="mock-review-card" data-native-review-id="${E(r.id)}">${rv.show.img&&layout==='cards'?'<div class="mock-review-inline-photo">상품 사진</div>':''}${rv.show.name?`<div class="mock-review-product">${E(p?.name||r.productId||'상품 미확정')}</div>`:''}<strong>${E(rv.titles[r.id]||r.title)}</strong>${Number(r.rating)>0?`<div class="stars">${'★'.repeat(Math.max(1,Math.min(5,Math.round(Number(r.rating)))))}</div>`:''}<p>${E(r.text)}</p>${rv.show.price&&p?`<small>가격 ${MONEY(priced(p).sale)}</small>`:''}</div>`};
  let ordered=filtered;
  if(rv.shape==='per')ordered=filtered.slice().sort((a,b)=>a.productId.localeCompare(b.productId));
  return `<div class="mock-review-shell ${E(layout)} am-cols-${[1,2,3].includes(Number(rv.columns))?Number(rv.columns):2} ${!rv.show.img?"no-image":""}">${['feature-left','feature-top'].includes(layout)?feature:''}<div class="mock-review-grid">${ordered.length?ordered.map(card).join(''):'<div class="mock-item">선택한 상품의 후기가 없습니다.</div>'}</div></div>`;
@@ -447,7 +450,7 @@ function shapePanel(s){
  return nativeCardVisibilityPanel(s)+productViewPicker(s)+columnPicker(s)+G('카드 표시 요소 · 16개','프리셋 없이 각 요소의 표시 여부·순서·문구를 직접 편집합니다. 변경 사항은 중앙 모든 상품 카드에 즉시 반영됩니다.',rows)+G('데이터 표시 기준','이 화면의 상품·가격·후기는 가상 데이터입니다.',`<div class="am-ed-note">상품명·정가·할인가·할인율·별점·후기 원문은 자동 연동 항목입니다. 실제 앱의 가격 계산 및 상품별 개별 표시(off[]) 규칙은 사내 원본을 유지해야 합니다.</div>`);
 }
 function productPanel(s){
- const content=PRODUCTS.map(p=>`<label class="am-ed-product-row"><div class="thumb">IMG</div><div class="txt"><b>${E(p.name)}</b><small>${E(p.id)} · 가상 최종가 ${MONEY(priced(p).sale)}</small></div><input type="checkbox" data-product="${E(p.id)}" ${s.productIds.includes(p.id)?'checked':''}></label>`).join('');
+ const content=PRODUCTS.map(p=>`<label class="am-ed-product-row"><div class="thumb">IMG</div><div class="txt"><b>${E(p.name)}</b><small>${E(p.id)} · ${E(p.priceNote||'가상 최종가')} ${MONEY(priced(p).sale)}</small></div><input type="checkbox" data-product="${E(p.id)}" ${s.productIds.includes(p.id)?'checked':''}></label>`).join('');
  const appeals=s.productIds.map(id=>PRODUCTS.find(p=>p.id===id)).filter(Boolean).map(p=>F('appeals.'+p.id,p.name+' · 상품별 소구문구',s.appeals[p.id]||'',{max:80,area:true,rows:2,help:'한 상품에 하나의 소구문구. 카드 요소를 켜면 미리보기에 반영됩니다.'})).join('');
  return nativeCardVisibilityPanel(s)+G('상품 선택 · 가상 데이터','실제 프로젝트에서는 기존 상품 선택 서랍과 SEQ·프로모션 할인 테이블 연동을 그대로 사용해야 합니다.',content)+G('상품별 소구문구','카드 모양 탭의 소구문구 표시 요소와 연결됩니다.',appeals||'<div class="am-ed-note">상품을 먼저 선택해주세요.</div>')+G('원본에 있던 세부 기능','v0.6에서 빠졌지만 반드시 유지할 기능입니다.',`<div class="am-ed-note am-ed-note--warning">탭별 상품 배치 / 빈 슬롯 / 카드별 라벨·문구 / 1단 할인율 임시 변경 및 반영/되돌리기 / 최종 가격 / 판정 근거 / 상품 추천. 이 Lab은 시각 컴포넌트만 보여줍니다.</div>`);
 }
@@ -476,8 +479,8 @@ function reviewPanel(s){
  const rv=s.rv,filtered=rv.productId==='all'?REVIEWS:REVIEWS.filter(r=>r.productId===rv.productId),selected=rv.order.filter(id=>rv.selected.includes(id));
  const productSelect=`<div class="am-ed-field"><label class="am-ed-label" for="rv-product">후기를 가져올 상품</label><select class="am-ed-input" id="rv-product" data-review-product><option value="all" ${rv.productId==='all'?'selected':''}>모든 상품</option>${PRODUCTS.map(p=>`<option value="${E(p.id)}" ${rv.productId===p.id?'selected':''}>${E(p.name)} (${E(p.id)})</option>`).join('')}</select><div class="am-ed-field-meta"><span class="am-ed-support">상품 SEQ로 연결합니다. 현재 목록은 가상 상품입니다.</span></div></div>`;
  const layoutChoices=`<div class="am-ed-review-layouts">${REVIEW_LAYOUTS.map(([id,label])=>`<button type="button" class="am-ed-review-layout-option" data-review-layout="${id}" aria-pressed="${rv.layout===id}"><span class="review-layout-visual ${id==='cards'?'as-cards':id==='text'?'as-text':id==='feature-top'?'as-top':''}">${id==='text'?'<em></em><em></em><em></em>':id==='feature-top'?'<i></i><em></em>':'<i></i><em></em>'}</span><b>${label}</b></button>`).join('')}</div>`;
- const reviews=filtered.map(r=>{const pos=selected.indexOf(r.id);const selectedIndex=pos>=0;return `<div class="am-ed-review-row"><label class="am-ed-inline"><input type="checkbox" data-reviewpick="${E(r.id)}" ${selectedIndex?'checked':''}><span><strong>${E(r.title)}</strong><small>${E(PRODUCT_FOR_REVIEW(r.productId)?.name||r.productId)} · ${E(r.productId)} · ${r.source==='demo'?'가상 후기':'로컬 CSV'}</small></span></label><p>${E(r.text)}</p>${selectedIndex?`<div class="am-ed-review-actions"><button type="button" data-review-step="${E(r.id)}:-1" ${pos===0?'disabled':''} aria-label="후기 위로">↑</button><button type="button" data-review-step="${E(r.id)}:1" ${pos===selected.length-1?'disabled':''} aria-label="후기 아래로">↓</button></div>${F('rv.titles.'+r.id,'별도 한 줄 제목',rv.titles[r.id]||'',{max:40,optional:true,help:'본문 원문은 수정하지 않습니다.'})}`:''}</div>`}).join('');
- return G('후기 데이터 불러오기','상품을 먼저 선택하고, 그 상품의 후기 중 노출할 항목을 고르세요.',productSelect+`<div class="am-ed-review-source"><strong>현재 소스: 가상 후기 ${REVIEWS.filter(r=>r.source==='demo').length}건 · 로컬 후기 ${REVIEWS.filter(r=>r.source==='csv').length}건</strong><span>사내 API는 연결되지 않았습니다. CSV는 브라우저 메모리에서만 사용합니다.</span><label class="am-ed-label" for="reviewsCsv">후기 CSV 불러오기 (선택)</label><input class="am-ed-file-input" type="file" id="reviewsCsv" accept=".csv,text/csv"><small>CSV 헤더: seq, title, text, rating / UTF-8. 원문은 수정하지 않습니다.</small></div>`)+G('후기 배치와 표시','상품별 묶음과 시각적 배치는 독립된 설정입니다.',`<div class="am-ed-field"><span class="am-ed-label">후기 묶음</span>${Choices('rv.shape',[['per','상품별로 묶기'],['mix','선택 순서대로']],rv.shape)}</div><div class="am-ed-field"><span class="am-ed-label">배치 구조 · 시각적 선택</span>${layoutChoices}</div>${['img','name','price'].map(k=>T('rv.show.'+k,{img:'상품 이미지',name:'상품명',price:'가격'}[k],rv.show[k])).join('')}${rv.layout==='text'?'<div class="am-ed-note">텍스트형에서는 상품 이미지를 표시하지 않습니다. 다른 배치로 돌아가면 위 이미지 설정이 다시 적용됩니다.</div>':''}`)+columnPicker(s)+G('후기 고르기·순서 변경',`해당 상품과 연결된 후기 ${filtered.length}건. 선택한 후기만 결과물에 표시됩니다.`,(reviews||'<div class="am-ed-note">선택한 상품의 후기가 아직 없습니다.</div>')+`<div class="am-ed-note">후기 본문·별점은 원천 데이터를 그대로 표시합니다. 상업적 이용 승인 여부는 사내 검수 대상입니다.</div>`);
+ const reviews=filtered.map(r=>{const pos=selected.indexOf(r.id);const selectedIndex=pos>=0;return `<div class="am-ed-review-row"><label class="am-ed-inline"><input type="checkbox" data-reviewpick="${E(r.id)}" ${selectedIndex?'checked':''}><span><strong>${E(r.title)}</strong><small>${E(PRODUCT_FOR_REVIEW(r.productId)?.name||r.productId)} · ${E(r.productId)} · ${E(r.sourceLabel||(r.source==='demo'?'가상 후기':'로컬 CSV'))}</small></span></label><p>${E(r.text)}</p>${selectedIndex?`<div class="am-ed-review-actions"><button type="button" data-review-step="${E(r.id)}:-1" ${pos===0?'disabled':''} aria-label="후기 위로">↑</button><button type="button" data-review-step="${E(r.id)}:1" ${pos===selected.length-1?'disabled':''} aria-label="후기 아래로">↓</button></div>${F('rv.titles.'+r.id,'별도 한 줄 제목',rv.titles[r.id]||'',{max:40,optional:true,help:'본문 원문은 수정하지 않습니다.'})}`:''}</div>`}).join('');
+ return G('후기 데이터 불러오기','상품을 먼저 선택하고, 그 상품의 후기 중 노출할 항목을 고르세요.',productSelect+`<div class="am-ed-review-source"><strong>현재 소스: ${CATALOG_NOTE?E(CATALOG_NOTE):`가상 후기 ${REVIEWS.filter(r=>r.source==='demo').length}건 · 로컬 후기 ${REVIEWS.filter(r=>r.source==='csv').length}건`}</strong><span>${CATALOG_NOTE?'후기 원문 전체가 아니라 앱이 제공하는 상품별 요약 발췌입니다.':'사내 API는 연결되지 않았습니다. CSV는 브라우저 메모리에서만 사용합니다.'}</span><label class="am-ed-label" for="reviewsCsv">후기 CSV 불러오기 (선택)</label><input class="am-ed-file-input" type="file" id="reviewsCsv" accept=".csv,text/csv"><small>CSV 헤더: seq, title, text, rating / UTF-8. 원문은 수정하지 않습니다.</small></div>`)+G('후기 배치와 표시','상품별 묶음과 시각적 배치는 독립된 설정입니다.',`<div class="am-ed-field"><span class="am-ed-label">후기 묶음</span>${Choices('rv.shape',[['per','상품별로 묶기'],['mix','선택 순서대로']],rv.shape)}</div><div class="am-ed-field"><span class="am-ed-label">배치 구조 · 시각적 선택</span>${layoutChoices}</div>${['img','name','price'].map(k=>T('rv.show.'+k,{img:'상품 이미지',name:'상품명',price:'가격'}[k],rv.show[k])).join('')}${rv.layout==='text'?'<div class="am-ed-note">텍스트형에서는 상품 이미지를 표시하지 않습니다. 다른 배치로 돌아가면 위 이미지 설정이 다시 적용됩니다.</div>':''}`)+columnPicker(s)+G('후기 고르기·순서 변경',`해당 상품과 연결된 후기 ${filtered.length}건. 선택한 후기만 결과물에 표시됩니다.`,(reviews||'<div class="am-ed-note">선택한 상품의 후기가 아직 없습니다.</div>')+`<div class="am-ed-note">후기 본문·별점은 원천 데이터를 그대로 표시합니다. 상업적 이용 승인 여부는 사내 검수 대상입니다.</div>`);
 }
 
 function refsPanel(s){return G('원본 구좌 레퍼런스','가상 레퍼런스로 선택/붙이기/개별 메모 컴포넌트를 시연합니다.',s.refs.map((r,i)=>`<div class="am-ed-ref"><div class="thumb">REF</div><div class="am-ed-stack"><div><strong>${E(r.name)}</strong><small>${E(r.from)}</small></div>${T('refs.'+i+'.attached','참고로 붙이기',r.attached)}${r.attached?F('refs.'+i+'.note','참고할 것',r.note,{max:120,optional:true,help:'구도, 레이아웃, 이미지 톤 등'}):''}</div></div>`).join(''))+G('느낌 레퍼런스','원본에서는 참고 지점을 색감·구도·소품·글씨체·카피 톤으로 선택합니다.',`<div class="am-ed-choice">${['색감','구도','소품','글씨체','카피 톤'].map(p=>`<button type="button" data-mood="${E(p)}" aria-pressed="${s.moods.includes(p)}">${E(p)}</button>`).join('')}</div><div class="am-ed-note am-ed-note--warning">원본은 att[]를 저장하지 않는 결손이 있습니다. 사내 통합 전 영속화 문제부터 해결해야 합니다.</div>`)}
@@ -566,7 +569,7 @@ function canInsertHere(s=section()){
 function renderIaDataLibrary(){
  const s=section();const prod=iaDataMode==='products',review=iaDataMode==='reviews',ref=iaDataMode==='refs';
  const modes=[['products','상품'],['reviews','후기'],['refs','레퍼런스']];
- let body='<div class="ia-data-note">자료는 연결할 원본입니다. 새로운 상품 카드를 추가하려면 ‘추가 > 요소’를 사용하세요. 현재 목록은 가상 데이터예요.</div>';
+ let body='<div class="ia-data-note">자료는 연결할 원본입니다. 새로운 상품 카드를 추가하려면 ‘추가 > 요소’를 사용하세요. '+(CATALOG_NOTE?'현재 목록은 이 기획안의 앱 데이터예요.':'현재 목록은 가상 데이터예요.')+'</div>';
  if(prod)body+='<div class="ia-data-results">'+PRODUCTS.map(p=>`<button type="button" class="ia-data-item" data-ia-bind-product="${E(p.id)}"><b>${E(p.name)}</b><small>${E(p.id)} · 선택한 요소/구좌에 연결</small></button>`).join('')+'</div>';
  else if(review)body+='<div class="ia-data-results">'+REVIEWS.slice(0,60).map(r=>`<button type="button" class="ia-data-item" data-ia-bind-review="${E(r.id)}"><b>★ ${E(String(r.rating||'·'))} · ${E(r.productId||'상품 미정')}</b><small>${E(String(r.text||'후기 내용').slice(0,56))}</small></button>`).join('')+'</div>';
  else if(ref)body+='<div class="ia-data-results">'+(s.refs||[]).map((r,i)=>`<button type="button" class="ia-data-item" data-ia-bind-ref="${i}"><b>${E(r.name)}</b><small>${E(r.from||'참고자료')} · 이 구좌에 첨부</small></button>`).join('')+'</div>';
@@ -1434,7 +1437,34 @@ window.AMOREAD_EDITOR_API=Object.freeze({
   cbSelected=null;canvasTarget=null;iaSelectedChild=null;
   undoStack=[];redoStack=[];renderAll();saveDemo();
  },
- setCatalog({products,reviews}={}){
+ // One-way conversion of the app's existing editor data (page.sections) into a v1.12 snapshot.
+ // Returns a new snapshot and never mutates the input. Products are kept only when present in the
+ // current catalog (call setCatalog first). Unknown layout ids become 'hero' like the existing editor.
+ fromLegacyPage(page){
+  const list=(Array.isArray(page?.sections)?page.sections:[]).filter(x=>x&&typeof x==='object').slice(0,40);
+  const used=new Set(),str=(v,n)=>String(v??'').slice(0,n);
+  const out=list.map((x,i)=>{
+   const layout=LAYOUTS[x.layoutId]?x.layoutId:'hero';
+   let id=/^[A-Za-z0-9_-]{1,40}$/.test(x.sectionId||'')?x.sectionId:'s'+(i+1);
+   while(used.has(id))id+='_'+(i+1);used.add(id);
+   const s=makeSection(layout,id,str(x.headline||x.name,120),str(x.subhead,400));
+   const v=x.v2&&typeof x.v2==='object'?x.v2:{};
+   s.cta=str(x.cta,40);s.ctaOn=!!(v.ctaOn||x.cta);s.ctaTo=str(v.ctaTo,60);s.cat=str(x.zone_tag,40);
+   s.notes=str(x.designNotes,2000);s.scope=str(v.scope,200);s.num=!!v.num;
+   s.lines=(Array.isArray(v.lines)?v.lines:[]).slice(0,10).map(l=>({text:str(l?.text,120)}));
+   const seqs=[...new Set((Array.isArray(x.slots)?x.slots:[]).map(sl=>String(sl?.seq??'')))].filter(seq=>PRODUCTS.some(p=>p.id===seq));
+   if(['grid2','grid3','feat','deal-banner'].includes(layout))s.productIds=seqs;
+   const card=v.card;
+   if(card&&Array.isArray(card.order)&&card.order.length===ORDER.length&&ORDER.every(k=>card.order.includes(k)))s.card.order=card.order.slice();
+   if(card&&card.on&&typeof card.on==='object')for(const k of ORDER)if(k in card.on)s.card.on[k]=card.on[k]?1:0;
+   if(card&&card.def&&typeof card.def==='object')for(const k of ['label','pill','pillText','tag','copy','btn'])if(typeof card.def[k]==='string'&&card.def[k])s.card.def[k]=card.def[k];
+   return s;
+  });
+  if(!out.length)out.push(makeSection('hero','s1'));
+  return {sections:out,current:out[0].id,tab:'copy'};
+ },
+ setCatalog({products,reviews,note}={}){
+  if(note!==undefined)CATALOG_NOTE=note?String(note).slice(0,200):null;
   if(products!==undefined){
    if(!Array.isArray(products)||products.some(p=>!p||typeof p.id!=='string'||typeof p.name!=='string'
        ||!Number.isFinite(p.listPrice)||p.listPrice<=0))

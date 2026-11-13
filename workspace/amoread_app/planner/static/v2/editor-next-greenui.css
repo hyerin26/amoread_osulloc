@@ -58,8 +58,10 @@
 .en-host .en-tools .topstatus { gap: var(--s2); }
 /* 대화상자 그림자는 기존 #dlg처럼 없음 (바탕 가림막으로 구분) */
 .en-host dialog.am-ed-picker, .en-host dialog.am-ed-full-preview-dialog, .en-host dialog.ia-qa-dialog { box-shadow: none; }
-/* 토스트 = .toast */
-.en-host .toast { border-radius: var(--r); font-size: var(--fs-sm); padding: 14px 18px; }
+/* 토스트 = .toast (기존 편집기처럼 아래 가운데). v1.12의 오른쪽 아래는 편집 패널 아래쪽 설정을 몇 초 동안 가려 클릭을 막았다.
+   상태 알림이라 누를 것이 없으므로 포인터를 통과시킨다 */
+.en-host .toast { left: 50%; right: auto; bottom: 32px; transform: translateX(-50%); pointer-events: none;
+  border-radius: var(--r); font-size: var(--fs-sm); padding: 14px 18px; }
 /* 글자: 화면 제목 = 페이지 제목(28/36/700), 패널 제목 줄 높이, 보조 문구 = 캡션 */
 .en-host .center-head h2 { font-size: var(--fs-masthead); line-height: var(--lh-masthead); font-weight: var(--fw-title); }
 .en-host .inspector-head h2 { line-height: var(--lh-h1); }
