@@ -1,0 +1,2002 @@
+{
+ "version": 1,
+ "source": "wireframes.json",
+ "pages": 15,
+ "total_sections": 125,
+ "templates": [
+  {
+   "id": "product-slider",
+   "type": "product_slider",
+   "name": "상품 가로 슬라이드",
+   "status": "new",
+   "existing_layout": null,
+   "roles": [
+    "product_list",
+    "sale_offer"
+   ],
+   "summary": "상품 카드가 옆으로 넘어가는 한 줄(또는 두 줄) 목록. 칩 필터와 더보기를 붙일 수 있다.",
+   "slots": [
+    {
+     "id": "title",
+     "name": "구좌 제목",
+     "kind": "text",
+     "required": true
+    },
+    {
+     "id": "sub",
+     "name": "보조 문구",
+     "kind": "text",
+     "required": false
+    },
+    {
+     "id": "chips",
+     "name": "칩 필터",
+     "kind": "chips",
+     "required": false,
+     "repeat": [
+      3,
+      6
+     ],
+     "note": "누르면 아래 카드가 바뀜"
+    },
+    {
+     "id": "card",
+     "name": "상품 카드",
+     "kind": "card",
+     "required": true,
+     "repeat": [
+      3,
+      12
+     ],
+     "note": "카드 모양은 기존 '카드 모양'(이미지·브랜드·상품명·할인율·가격·배지·버튼) 설정을 그대로 쓴다"
+    },
+    {
+     "id": "more",
+     "name": "더보기 버튼",
+     "kind": "button",
+     "required": false
+    },
+    {
+     "id": "note",
+     "name": "안내 한 줄",
+     "kind": "text",
+     "required": false,
+     "note": "예: 마일리지 페이백 10%"
+    }
+   ],
+   "options": [
+    {
+     "id": "rows",
+     "label": "줄 수",
+     "type": "select",
+     "default": 1,
+     "choices": [
+      1,
+      2
+     ]
+    },
+    {
+     "id": "cols_visible",
+     "label": "화면에 보이는 카드 수",
+     "type": "select",
+     "default": 3,
+     "choices": [
+      2,
+      3
+     ]
+    },
+    {
+     "id": "peek",
+     "label": "다음 카드 살짝 보이기",
+     "type": "toggle",
+     "default": true
+    },
+    {
+     "id": "card_parts",
+     "label": "카드에 보이는 것",
+     "type": "multi",
+     "default": [
+      "이미지",
+      "브랜드",
+      "상품명",
+      "할인율",
+      "가격"
+     ],
+     "choices": [
+      "이미지",
+      "브랜드",
+      "상품명",
+      "할인율",
+      "가격",
+      "배지",
+      "담기 버튼"
+     ]
+    },
+    {
+     "id": "rank_badge",
+     "label": "순위 배지",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "chips_on",
+     "label": "칩 필터",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "more_on",
+     "label": "더보기 버튼",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "progress",
+     "label": "스크롤 진행 막대",
+     "type": "toggle",
+     "default": true
+    }
+   ],
+   "evidence": {
+    "count": 9,
+    "pages": 5,
+    "components": {
+     "image": 1.0,
+     "title": 0.56,
+     "body": 0.78,
+     "name": 0.78,
+     "brand": 0.56,
+     "price": 0.44,
+     "badge": 0.44,
+     "button": 0.67,
+     "box": 0.67
+    },
+    "cols": {
+     "3": 4,
+     "1": 2,
+     "2": 2
+    },
+    "carousel": 9,
+    "fullbleed": 1,
+    "examples": [
+     {
+      "site": "blackweek",
+      "sec": 9,
+      "title": "컬리 블랙위크 · 모바일",
+      "label": "멤버스 추가 쿠폰: 25% 쿠폰 + 브랜드 로고 + 상품 슬라이드 + 가입 버튼",
+      "role": "coupon_offer"
+     },
+     {
+      "site": "kolon2",
+      "sec": 3,
+      "title": "코오롱몰 블랙프라이데이 '잡화데이' (카테고리데이) · 모바일",
+      "label": "마일리지 페이백 대상 상품: 칩 + 소분류 칩 + 상품 슬라이드(2행)",
+      "role": "sale_offer"
+     },
+     {
+      "site": "musinsa",
+      "sec": 8,
+      "title": "무신사 이벤트(혜택) 메인 · 모바일",
+      "label": "모은 혜택으로 구매하기 좋은 상품: 칩 필터 + 상품 슬라이드",
+      "role": "product_list"
+     }
+    ]
+   },
+   "wire": {
+    "site": "blackweek",
+    "sec": 9
+   }
+  },
+  {
+   "id": "product-grid",
+   "type": "product_grid",
+   "name": "상품 그리드 (옵션 추가)",
+   "status": "extend",
+   "existing_layout": [
+    "grid2",
+    "grid3",
+    "feat"
+   ],
+   "roles": [
+    "product_list"
+   ],
+   "summary": "지금의 2열·3열 상품 구좌. 레퍼런스에서 자주 보이는 '순위 배지', '더보기', '머리글'을 옵션으로 더한다.",
+   "slots": [
+    {
+     "id": "title",
+     "name": "구좌 제목",
+     "kind": "text",
+     "required": true
+    },
+    {
+     "id": "sub",
+     "name": "보조 문구",
+     "kind": "text",
+     "required": false
+    },
+    {
+     "id": "tabs",
+     "name": "탭·칩 필터",
+     "kind": "chips",
+     "required": false,
+     "repeat": [
+      2,
+      6
+     ]
+    },
+    {
+     "id": "card",
+     "name": "상품 카드",
+     "kind": "card",
+     "required": true,
+     "repeat": [
+      2,
+      24
+     ]
+    },
+    {
+     "id": "more",
+     "name": "더보기 버튼",
+     "kind": "button",
+     "required": false
+    }
+   ],
+   "options": [
+    {
+     "id": "rank_badge",
+     "label": "순위 배지 (1, 2, 3…)",
+     "type": "toggle",
+     "default": false,
+     "note": "랭킹 구좌에서 사용"
+    },
+    {
+     "id": "more_on",
+     "label": "더보기 버튼",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "sub_on",
+     "label": "보조 문구",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "rows",
+     "label": "보여 줄 줄 수",
+     "type": "number",
+     "default": 2,
+     "note": "원본 목록은 수백 개라도 앞 2~3줄만 보여 주는 경우가 대부분"
+    }
+   ],
+   "evidence": {
+    "count": 20,
+    "pages": 9,
+    "components": {
+     "image": 1.0,
+     "title": 0.7,
+     "body": 0.75,
+     "name": 0.75,
+     "brand": 0.75,
+     "price": 0.95,
+     "discount": 0.9,
+     "badge": 0.45,
+     "button": 0.55
+    },
+    "cols": {
+     "2": 6,
+     "1": 1,
+     "3": 12
+    },
+    "carousel": 8,
+    "fullbleed": 1,
+    "examples": [
+     {
+      "site": "shv1",
+      "sec": 5,
+      "title": "신세계V 쓱데이 첫구매 혜택 (이벤트 상세)",
+      "label": "첫 구매 인기 아이템: 카테고리 칩 5개 + 2행 상품 가로 슬라이드",
+      "role": "product_list"
+     },
+     {
+      "site": "kolon1",
+      "sec": 2,
+      "title": "코오롱몰 블랙프라이데이 '큼' (게임 포함) · 모바일",
+      "label": "베스트 랭킹: 헤드 + 칩 5개 + 3단 스택 가로 슬라이드",
+      "role": "product_list"
+     },
+     {
+      "site": "kologame",
+      "sec": 5,
+      "title": "코오롱몰 게임 페이지 '믹스매치' (카드 짝 맞추기) · 모바일",
+      "label": "게임에서 본 그 아이템: 3열 상품 그리드",
+      "role": "product_list"
+     }
+    ]
+   },
+   "wire": {
+    "site": "shv1",
+    "sec": 5
+   }
+  },
+  {
+   "id": "deal",
+   "type": "deal",
+   "name": "딜 (카운트다운·날짜 탭) + 상품",
+   "status": "extend",
+   "existing_layout": [
+    "deal-banner",
+    "countdown"
+   ],
+   "roles": [
+    "sale_offer",
+    "product_list"
+   ],
+   "summary": "시간·날짜로 열리는 특가 구좌. 카운트다운, 날짜 탭, 알림 신청, 상품 목록(슬라이드 또는 그리드)이 한 묶음이다.",
+   "slots": [
+    {
+     "id": "title",
+     "name": "구좌 제목",
+     "kind": "text",
+     "required": true
+    },
+    {
+     "id": "sub",
+     "name": "보조 문구",
+     "kind": "text",
+     "required": false
+    },
+    {
+     "id": "countdown",
+     "name": "카운트다운 (시:분:초)",
+     "kind": "group",
+     "required": false,
+     "note": "종료·시작까지 남은 시간"
+    },
+    {
+     "id": "date_tabs",
+     "name": "날짜 탭",
+     "kind": "chips",
+     "required": false,
+     "repeat": [
+      2,
+      7
+     ]
+    },
+    {
+     "id": "alarm",
+     "name": "알림 신청",
+     "kind": "toggle",
+     "required": false
+    },
+    {
+     "id": "info4",
+     "name": "안내 4칸 (시작·종료·참여 방법·TIP)",
+     "kind": "group",
+     "required": false
+    },
+    {
+     "id": "products",
+     "name": "상품 목록",
+     "kind": "card",
+     "required": true,
+     "repeat": [
+      3,
+      12
+     ]
+    }
+   ],
+   "options": [
+    {
+     "id": "countdown_on",
+     "label": "카운트다운",
+     "type": "toggle",
+     "default": true
+    },
+    {
+     "id": "date_tabs_on",
+     "label": "날짜 탭",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "alarm_on",
+     "label": "알림 신청 스위치",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "info4_on",
+     "label": "안내 4칸",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "products_shape",
+     "label": "상품 모양",
+     "type": "select",
+     "default": "slider",
+     "choices": [
+      "slider",
+      "grid"
+     ],
+     "note": "slider=가로 슬라이드, grid=그리드"
+    },
+    {
+     "id": "badge_only_today",
+     "label": "'ONLY TODAY' 배지",
+     "type": "toggle",
+     "default": false
+    }
+   ],
+   "evidence": {
+    "count": 9,
+    "pages": 3,
+    "components": {
+     "image": 1.0,
+     "title": 0.89,
+     "body": 1.0,
+     "name": 0.89,
+     "brand": 0.89,
+     "price": 0.89,
+     "discount": 0.44,
+     "badge": 0.33,
+     "button": 0.67,
+     "box": 0.44
+    },
+    "cols": {
+     "6": 1,
+     "3": 7
+    },
+    "carousel": 9,
+    "fullbleed": 1,
+    "examples": [
+     {
+      "site": "blackweek",
+      "sec": 7,
+      "title": "컬리 블랙위크 · 모바일",
+      "label": "매일 18시 마감 세일: 카운트다운 + 상품 슬라이드",
+      "role": "sale_offer"
+     },
+     {
+      "site": "blackweek",
+      "sec": 8,
+      "title": "컬리 블랙위크 · 모바일",
+      "label": "단 72시간 릴레이 브랜드: 날짜 탭 + 30% 쿠폰 + 상품 슬라이드",
+      "role": "sale_offer"
+     },
+     {
+      "site": "kolon1",
+      "sec": 8,
+      "title": "코오롱몰 블랙프라이데이 '큼' (게임 포함) · 모바일",
+      "label": "카테고리데이: 알림받기 + 기간 탭 + 잡화데이 쿠폰 + 상품 슬라이드",
+      "role": "sale_offer"
+     }
+    ]
+   },
+   "wire": {
+    "site": "blackweek",
+    "sec": 7
+   }
+  },
+  {
+   "id": "coupon",
+   "type": "coupon",
+   "name": "쿠폰 카드 (옵션 추가)",
+   "status": "extend",
+   "existing_layout": [
+    "ev-coupon"
+   ],
+   "roles": [
+    "coupon_offer"
+   ],
+   "summary": "쿠폰 금액·조건·받기 버튼이 있는 카드 묶음. 알림 신청, 안내 4칸, 전체 받기를 옵션으로 더한다.",
+   "slots": [
+    {
+     "id": "title",
+     "name": "구좌 제목",
+     "kind": "text",
+     "required": true
+    },
+    {
+     "id": "info4",
+     "name": "안내 4칸",
+     "kind": "group",
+     "required": false
+    },
+    {
+     "id": "coupon",
+     "name": "쿠폰 카드 (금액/비율 + 쿠폰명 + 기간 + 받기 버튼)",
+     "kind": "card",
+     "required": true,
+     "repeat": [
+      1,
+      6
+     ]
+    },
+    {
+     "id": "claim_all",
+     "name": "전체 받기 버튼",
+     "kind": "button",
+     "required": false
+    },
+    {
+     "id": "alarm",
+     "name": "알림 신청",
+     "kind": "toggle",
+     "required": false
+    },
+    {
+     "id": "notice_link",
+     "name": "유의사항 링크",
+     "kind": "text",
+     "required": false
+    }
+   ],
+   "options": [
+    {
+     "id": "cols",
+     "label": "카드 줄 모양",
+     "type": "select",
+     "default": 1,
+     "choices": [
+      1,
+      2
+     ],
+     "note": "1=한 줄에 하나"
+    },
+    {
+     "id": "claim_all_on",
+     "label": "전체 받기 버튼",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "alarm_on",
+     "label": "알림 신청",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "info4_on",
+     "label": "안내 4칸",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "limit_badge",
+     "label": "'선착순 N장' 배지",
+     "type": "toggle",
+     "default": false
+    }
+   ],
+   "evidence": {
+    "count": 11,
+    "pages": 8,
+    "components": {
+     "image": 0.82,
+     "title": 0.73,
+     "body": 0.91,
+     "button": 0.73,
+     "box": 0.45
+    },
+    "cols": {
+     "2": 1,
+     "1": 1
+    },
+    "carousel": 1,
+    "fullbleed": 2,
+    "examples": [
+     {
+      "site": "blackweek",
+      "sec": 6,
+      "title": "컬리 블랙위크 · 모바일",
+      "label": "매일 15시 990원딜: 안내 4칸 + 쿠폰 발급 카드",
+      "role": "sale_offer"
+     },
+     {
+      "site": "blackweek",
+      "sec": 2,
+      "title": "컬리 블랙위크 · 모바일",
+      "label": "매일 11시 100% 당첨 쿠폰: 1초 만에 쿠폰 받기 + 알림 신청",
+      "role": "coupon_offer"
+     },
+     {
+      "site": "shv4",
+      "sec": 2,
+      "title": "신세계V 아르마니 데이 (브랜드데이 기획전)",
+      "label": "THE ARMANI DAY: 단 하루 스페셜 쿠폰 2종 + 플러스 쇼핑백쿠폰 2종 + 전체 받기",
+      "role": "coupon_offer"
+     }
+    ]
+   },
+   "wire": {
+    "site": "blackweek",
+    "sec": 6
+   }
+  },
+  {
+   "id": "benefit-tiles",
+   "type": "benefit_tiles",
+   "name": "혜택 타일",
+   "status": "new",
+   "existing_layout": null,
+   "roles": [
+    "benefit_overview"
+   ],
+   "summary": "혜택 수치(~50%, 1만P)와 라벨을 작은 타일로 모아 한눈에 보여 준다.",
+   "slots": [
+    {
+     "id": "title",
+     "name": "구좌 제목",
+     "kind": "text",
+     "required": true
+    },
+    {
+     "id": "tile",
+     "name": "타일 (수치 + 라벨)",
+     "kind": "card",
+     "required": true,
+     "repeat": [
+      4,
+      8
+     ]
+    },
+    {
+     "id": "note",
+     "name": "안내 문구",
+     "kind": "text",
+     "required": false
+    }
+   ],
+   "options": [
+    {
+     "id": "cols",
+     "label": "한 줄 타일 수",
+     "type": "select",
+     "default": 4,
+     "choices": [
+      2,
+      3,
+      4
+     ]
+    },
+    {
+     "id": "tile_link",
+     "label": "타일을 누르면 해당 구좌로 이동",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "emphasis",
+     "label": "수치 강조",
+     "type": "toggle",
+     "default": true
+    }
+   ],
+   "evidence": {
+    "count": 2,
+    "pages": 2,
+    "components": {
+     "image": 0.5,
+     "title": 0.5,
+     "discount": 0.5,
+     "badge": 0.5,
+     "button": 1.0
+    },
+    "cols": {},
+    "carousel": 0,
+    "fullbleed": 1,
+    "examples": [
+     {
+      "site": "shv3",
+      "sec": 2,
+      "title": "신세계V 2026 쓱데이 (이벤트 허브)",
+      "label": "쓱데이 혜택 한눈에 확인: 2행×4 타일(혜택 수치 + 라벨)",
+      "role": "benefit_overview"
+     },
+     {
+      "site": "musinsa",
+      "sec": 0,
+      "title": "무신사 이벤트(혜택) 메인 · 모바일",
+      "label": "상단 배너 + 나의 혜택 요약",
+      "role": "hero"
+     }
+    ]
+   },
+   "wire": {
+    "site": "shv3",
+    "sec": 2
+   }
+  },
+  {
+   "id": "benefit-cards",
+   "type": "benefit_cards",
+   "name": "혜택 카드 리스트",
+   "status": "new",
+   "existing_layout": [
+    "benefit"
+   ],
+   "roles": [
+    "benefit_overview",
+    "sale_offer",
+    "partner_benefit"
+   ],
+   "summary": "카드사·포인트·리워드처럼 혜택을 한 줄 카드로 쌓는다. 단계형(1→2→3)으로도 쓴다.",
+   "slots": [
+    {
+     "id": "title",
+     "name": "구좌 제목",
+     "kind": "text",
+     "required": true
+    },
+    {
+     "id": "card",
+     "name": "혜택 카드 (아이콘·로고 + 혜택명 + 조건)",
+     "kind": "card",
+     "required": true,
+     "repeat": [
+      2,
+      6
+     ]
+    },
+    {
+     "id": "button",
+     "name": "카드별 버튼 (받기·혜택받기)",
+     "kind": "button",
+     "required": false
+    },
+    {
+     "id": "alarm",
+     "name": "알림 신청",
+     "kind": "toggle",
+     "required": false
+    }
+   ],
+   "options": [
+    {
+     "id": "style",
+     "label": "모양",
+     "type": "select",
+     "default": "list",
+     "choices": [
+      "list",
+      "steps"
+     ],
+     "note": "list=목록, steps=단계형"
+    },
+    {
+     "id": "numbering",
+     "label": "번호 표시",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "button_on",
+     "label": "카드별 버튼",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "logo_on",
+     "label": "로고·아이콘",
+     "type": "toggle",
+     "default": true
+    }
+   ],
+   "evidence": {
+    "count": 6,
+    "pages": 3,
+    "components": {
+     "image": 0.67,
+     "title": 0.83,
+     "body": 0.67,
+     "button": 0.83
+    },
+    "cols": {},
+    "carousel": 0,
+    "fullbleed": 2,
+    "examples": [
+     {
+      "site": "kolon1",
+      "sec": 9,
+      "title": "코오롱몰 블랙프라이데이 '큼' (게임 포함) · 모바일",
+      "label": "구매 리워드: 단계별 마일리지 4개 + 알림받기",
+      "role": "benefit_overview"
+     },
+     {
+      "site": "kolon1",
+      "sec": 5,
+      "title": "코오롱몰 블랙프라이데이 '큼' (게임 포함) · 모바일",
+      "label": "결제 혜택 카드 4개",
+      "role": "benefit_overview"
+     },
+     {
+      "site": "shv3",
+      "sec": 4,
+      "title": "신세계V 2026 쓱데이 (이벤트 허브)",
+      "label": "페이백 일정보기: 기간 2열 카드 + 페이백 조건",
+      "role": "sale_offer"
+     }
+    ]
+   },
+   "wire": {
+    "site": "kolon1",
+    "sec": 9
+   }
+  },
+  {
+   "id": "mission-list",
+   "type": "mission_list",
+   "name": "참여 리스트",
+   "status": "new",
+   "existing_layout": null,
+   "roles": [
+    "participation_event"
+   ],
+   "summary": "아이콘 + 제목 + 보상 문구 + 참여 버튼이 한 줄인 리스트. 미션·참여 혜택 모음에 쓴다.",
+   "slots": [
+    {
+     "id": "title",
+     "name": "구좌 제목",
+     "kind": "text",
+     "required": true
+    },
+    {
+     "id": "more",
+     "name": "더보기 링크",
+     "kind": "text",
+     "required": false
+    },
+    {
+     "id": "row",
+     "name": "리스트 행 (아이콘 + 제목 + 보상 + 버튼)",
+     "kind": "card",
+     "required": true,
+     "repeat": [
+      2,
+      8
+     ]
+    }
+   ],
+   "options": [
+    {
+     "id": "button_label",
+     "label": "버튼 문구",
+     "type": "text",
+     "default": "참여하기"
+    },
+    {
+     "id": "reward_on",
+     "label": "보상 문구",
+     "type": "toggle",
+     "default": true
+    },
+    {
+     "id": "progress_on",
+     "label": "진행 상태 (n/m)",
+     "type": "toggle",
+     "default": false
+    }
+   ],
+   "evidence": {
+    "count": 4,
+    "pages": 1,
+    "components": {
+     "image": 1.0,
+     "body": 1.0,
+     "button": 0.75
+    },
+    "cols": {},
+    "carousel": 0,
+    "fullbleed": 0,
+    "examples": [
+     {
+      "site": "musinsa",
+      "sec": 5,
+      "title": "무신사 이벤트(혜택) 메인 · 모바일",
+      "label": "둘러보고 모으는 다양한 혜택: 리스트 6개",
+      "role": "participation_event"
+     },
+     {
+      "site": "musinsa",
+      "sec": 7,
+      "title": "무신사 이벤트(혜택) 메인 · 모바일",
+      "label": "더 많은 혜택 추천: 2열 아이콘 메뉴 4행",
+      "role": "related_promotions"
+     },
+     {
+      "site": "musinsa",
+      "sec": 4,
+      "title": "무신사 이벤트(혜택) 메인 · 모바일",
+      "label": "참여하고 쉽게 받는 혜택: 리스트 3개",
+      "role": "participation_event"
+     }
+    ]
+   },
+   "wire": {
+    "site": "musinsa",
+    "sec": 5
+   }
+  },
+  {
+   "id": "participation",
+   "type": "participation",
+   "name": "응모·게임·래플 (옵션 추가)",
+   "status": "extend",
+   "existing_layout": [
+    "ev-draw",
+    "ev-quiz",
+    "ev-stamp",
+    "ev-ugc",
+    "ev-share"
+   ],
+   "roles": [
+    "participation_event"
+   ],
+   "summary": "지금의 이벤트 구좌 종류. 경품 표·참여 방법·당첨자 발표를 한 묶음(HOW TO)으로 옵션에 더한다.",
+   "slots": [
+    {
+     "id": "title",
+     "name": "구좌 제목",
+     "kind": "text",
+     "required": true
+    },
+    {
+     "id": "visual",
+     "name": "대표 이미지",
+     "kind": "image",
+     "required": false
+    },
+    {
+     "id": "cta",
+     "name": "응모·참여 버튼",
+     "kind": "button",
+     "required": true
+    },
+    {
+     "id": "prize",
+     "name": "경품 표 (1등~4등)",
+     "kind": "group",
+     "required": false
+    },
+    {
+     "id": "how",
+     "name": "참여 방법",
+     "kind": "group",
+     "required": false
+    },
+    {
+     "id": "winner",
+     "name": "당첨자 발표 일정",
+     "kind": "text",
+     "required": false
+    }
+   ],
+   "options": [
+    {
+     "id": "prize_on",
+     "label": "경품 표",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "how_on",
+     "label": "참여 방법 단계",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "winner_on",
+     "label": "당첨자 발표",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "consent_on",
+     "label": "수신 동의 문구",
+     "type": "toggle",
+     "default": false
+    }
+   ],
+   "evidence": {
+    "count": 4,
+    "pages": 4,
+    "components": {
+     "image": 1.0,
+     "title": 0.5,
+     "body": 1.0,
+     "button": 0.75,
+     "box": 1.0
+    },
+    "cols": {
+     "1": 1,
+     "4": 1
+    },
+    "carousel": 1,
+    "fullbleed": 1,
+    "examples": [
+     {
+      "site": "kologame",
+      "sec": 2,
+      "title": "코오롱몰 게임 페이지 '믹스매치' (카드 짝 맞추기) · 모바일",
+      "label": "게임 보드: 타이틀 + 남은 시간/맞춘 짝 + 카드 5열 + [게임 방법 모달: 4단계, 보상 3종, 게임 시작!, 공유]",
+      "role": "participation_event"
+     },
+     {
+      "site": "kolon1",
+      "sec": 4,
+      "title": "코오롱몰 블랙프라이데이 '큼' (게임 포함) · 모바일",
+      "label": "PLAY GAME 배너: 카드 짝 맞추기 진입(게임하러 가기)",
+      "role": "participation_event"
+     },
+     {
+      "site": "blackweek",
+      "sec": 10,
+      "title": "컬리 블랙위크 · 모바일",
+      "label": "블랙위크 포인트팟: 응모 버튼 + 경품/참여방법/당첨자 발표",
+      "role": "participation_event"
+     }
+    ]
+   },
+   "wire": {
+    "site": "kologame",
+    "sec": 2
+   }
+  },
+  {
+   "id": "hero",
+   "type": "hero",
+   "name": "히어로 (옵션 추가)",
+   "status": "extend",
+   "existing_layout": [
+    "hero"
+   ],
+   "roles": [
+    "hero"
+   ],
+   "summary": "지금의 메인 비주얼. 제목 겹치기, 기간 표기, 버튼, 통이미지 여부를 옵션으로 더한다.",
+   "slots": [
+    {
+     "id": "image",
+     "name": "키비주얼 이미지",
+     "kind": "image",
+     "required": true
+    },
+    {
+     "id": "title",
+     "name": "제목 (이미지 위)",
+     "kind": "text",
+     "required": false
+    },
+    {
+     "id": "period",
+     "name": "기간",
+     "kind": "text",
+     "required": false
+    },
+    {
+     "id": "cta",
+     "name": "버튼",
+     "kind": "button",
+     "required": false
+    }
+   ],
+   "options": [
+    {
+     "id": "overlay_title",
+     "label": "이미지 위 제목",
+     "type": "toggle",
+     "default": true
+    },
+    {
+     "id": "period_on",
+     "label": "기간 표기",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "cta_on",
+     "label": "버튼",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "fullbleed",
+     "label": "화면 폭에 꽉 채우기",
+     "type": "toggle",
+     "default": true
+    },
+    {
+     "id": "image_text",
+     "label": "이미지 안에 글자 포함(통이미지)",
+     "type": "toggle",
+     "default": false,
+     "note": "이미지 안 글자는 디자이너가 만들어 넣음"
+    }
+   ],
+   "evidence": {
+    "count": 14,
+    "pages": 13,
+    "components": {
+     "image": 0.79,
+     "title": 0.36,
+     "body": 0.43
+    },
+    "cols": {
+     "1": 1
+    },
+    "carousel": 2,
+    "fullbleed": 9,
+    "examples": [
+     {
+      "site": "blackweek",
+      "sec": 1,
+      "title": "컬리 블랙위크 · 모바일",
+      "label": "히어로 배경 이미지 + 탭바(가로 스크롤)",
+      "role": "hero"
+     },
+     {
+      "site": "shv2",
+      "sec": 1,
+      "title": "신세계V 시그니처 갤러리 (매거진 상세)",
+      "label": "인트로: 타이틀 'SHINSEGAE V Signature Gallery' + 기간 + 소개 카피",
+      "role": "hero"
+     },
+     {
+      "site": "kolon2",
+      "sec": 0,
+      "title": "코오롱몰 블랙프라이데이 '잡화데이' (카테고리데이) · 모바일",
+      "label": "상단 탭바 + 잡화데이 키비주얼",
+      "role": "hero"
+     }
+    ]
+   },
+   "wire": {
+    "site": "blackweek",
+    "sec": 1
+   }
+  },
+  {
+   "id": "brand-story",
+   "type": "brand_story",
+   "name": "브랜드 스토리 (옵션 추가)",
+   "status": "extend",
+   "existing_layout": [
+    "story"
+   ],
+   "roles": [
+    "brand_story",
+    "editorial_story",
+    "brand_intro"
+   ],
+   "summary": "이미지 + 제목 + 본문 단락 + 버튼. 어두운 배경, 버튼 개수, 이미지 위치를 옵션으로 더한다.",
+   "slots": [
+    {
+     "id": "image",
+     "name": "이미지",
+     "kind": "image",
+     "required": false
+    },
+    {
+     "id": "kicker",
+     "name": "소제목",
+     "kind": "text",
+     "required": false
+    },
+    {
+     "id": "title",
+     "name": "제목",
+     "kind": "text",
+     "required": true
+    },
+    {
+     "id": "body",
+     "name": "본문 단락",
+     "kind": "text",
+     "required": true,
+     "repeat": [
+      1,
+      4
+     ]
+    },
+    {
+     "id": "cta",
+     "name": "버튼",
+     "kind": "button",
+     "required": false,
+     "repeat": [
+      0,
+      2
+     ]
+    }
+   ],
+   "options": [
+    {
+     "id": "dark",
+     "label": "어두운 배경",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "cta_count",
+     "label": "버튼 수",
+     "type": "select",
+     "default": 1,
+     "choices": [
+      0,
+      1,
+      2
+     ]
+    },
+    {
+     "id": "image_pos",
+     "label": "이미지 위치",
+     "type": "select",
+     "default": "top",
+     "choices": [
+      "top",
+      "bg"
+     ],
+     "note": "top=위, bg=배경"
+    }
+   ],
+   "evidence": {
+    "count": 10,
+    "pages": 5,
+    "components": {
+     "image": 0.7,
+     "title": 0.6,
+     "body": 0.8,
+     "button": 0.3,
+     "box": 0.5
+    },
+    "cols": {
+     "1": 1
+    },
+    "carousel": 0,
+    "fullbleed": 4,
+    "examples": [
+     {
+      "site": "bluebottle2",
+      "sec": 5,
+      "title": "블루보틀 · 홀리데이 캠페인 블로그 · 모바일",
+      "label": "카페 시즌 메뉴 소개",
+      "role": "editorial_story"
+     },
+     {
+      "site": "bluebottle1",
+      "sec": 3,
+      "title": "블루보틀 · 2026 홀리데이 컬렉션 캠페인 · 모바일",
+      "label": "다크 스토리 'RITUALS OF WELCOME' + CTA 2개",
+      "role": "brand_story"
+     },
+     {
+      "site": "bluebottle2",
+      "sec": 2,
+      "title": "블루보틀 · 홀리데이 캠페인 블로그 · 모바일",
+      "label": "본문 이미지 1 + 스토리 단락 + 컬렉션 보기 CTA",
+      "role": "brand_story"
+     }
+    ]
+   },
+   "wire": {
+    "site": "bluebottle2",
+    "sec": 5
+   }
+  },
+  {
+   "id": "lookbook",
+   "type": "lookbook",
+   "name": "룩북·장문 스토리",
+   "status": "new",
+   "existing_layout": null,
+   "roles": [
+    "editorial_story",
+    "lookbook"
+   ],
+   "summary": "소제목·제목·장문 소개 아래에 롱 이미지가 이어지고, 이미지 위에 번호 캡션(STYLING·DETAIL·COLOR)이 놓인다.",
+   "slots": [
+    {
+     "id": "kicker",
+     "name": "소제목",
+     "kind": "text",
+     "required": false
+    },
+    {
+     "id": "title",
+     "name": "제목",
+     "kind": "text",
+     "required": true
+    },
+    {
+     "id": "intro",
+     "name": "장문 소개",
+     "kind": "text",
+     "required": true
+    },
+    {
+     "id": "video",
+     "name": "영상",
+     "kind": "media",
+     "required": false
+    },
+    {
+     "id": "long_image",
+     "name": "롱 이미지",
+     "kind": "image",
+     "required": true
+    },
+    {
+     "id": "caption",
+     "name": "번호 캡션 (NO.1 제목 + 설명)",
+     "kind": "card",
+     "required": false,
+     "repeat": [
+      2,
+      4
+     ]
+    }
+   ],
+   "options": [
+    {
+     "id": "numbered",
+     "label": "번호 캡션",
+     "type": "toggle",
+     "default": true
+    },
+    {
+     "id": "video_on",
+     "label": "영상",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "caption_align",
+     "label": "캡션 위치",
+     "type": "select",
+     "default": "left",
+     "choices": [
+      "left",
+      "right"
+     ]
+    },
+    {
+     "id": "brand_tag",
+     "label": "브랜드 표기",
+     "type": "toggle",
+     "default": false
+    }
+   ],
+   "evidence": {
+    "count": 2,
+    "pages": 1,
+    "components": {
+     "image": 1.0,
+     "title": 1.0,
+     "body": 1.0,
+     "caption": 1.0
+    },
+    "cols": {},
+    "carousel": 0,
+    "fullbleed": 2,
+    "examples": [
+     {
+      "site": "shv2",
+      "sec": 5,
+      "title": "신세계V 시그니처 갤러리 (매거진 상세)",
+      "label": "산타마리아노벨라: 영상 + 장문 카피 + 룩북 롱 이미지",
+      "role": "editorial_story"
+     },
+     {
+      "site": "shv2",
+      "sec": 3,
+      "title": "신세계V 시그니처 갤러리 (매거진 상세)",
+      "label": "스튜디오 톰보이: 장문 카피 + 룩북 롱 이미지(STYLING/DETAIL/COLOR)",
+      "role": "editorial_story"
+     }
+    ]
+   },
+   "wire": {
+    "site": "shv2",
+    "sec": 5
+   }
+  },
+  {
+   "id": "image-banner",
+   "type": "image_banner",
+   "name": "통이미지·배너",
+   "status": "new",
+   "existing_layout": null,
+   "roles": [
+    "brand_story",
+    "benefit_overview",
+    "related_promotions"
+   ],
+   "summary": "이미지 한 장(또는 여러 장)이 구좌의 전부인 구좌. 글은 이미지 안에 들어가 있다.",
+   "slots": [
+    {
+     "id": "image",
+     "name": "이미지 (글자 포함)",
+     "kind": "image",
+     "required": true,
+     "repeat": [
+      1,
+      4
+     ]
+    },
+    {
+     "id": "link",
+     "name": "연결 주소",
+     "kind": "text",
+     "required": false
+    },
+    {
+     "id": "alt",
+     "name": "대체 문구 (이미지 설명)",
+     "kind": "text",
+     "required": true,
+     "note": "이미지 속 글자를 글로도 적어 둠"
+    }
+   ],
+   "options": [
+    {
+     "id": "count",
+     "label": "이미지 수",
+     "type": "number",
+     "default": 1
+    },
+    {
+     "id": "fullbleed",
+     "label": "화면 폭에 꽉 채우기",
+     "type": "toggle",
+     "default": true
+    },
+    {
+     "id": "link_on",
+     "label": "누르면 이동",
+     "type": "toggle",
+     "default": false
+    }
+   ],
+   "evidence": {
+    "count": 7,
+    "pages": 5,
+    "components": {
+     "image": 1.0
+    },
+    "cols": {},
+    "carousel": 0,
+    "fullbleed": 6,
+    "examples": [
+     {
+      "site": "shv4",
+      "sec": 4,
+      "title": "신세계V 아르마니 데이 (브랜드데이 기획전)",
+      "label": "카운트다운 타이머(시:분:초) + 프로모션 이미지",
+      "role": "benefit_overview"
+     },
+     {
+      "site": "shv4",
+      "sec": 3,
+      "title": "신세계V 아르마니 데이 (브랜드데이 기획전)",
+      "label": "프로모션 안내 이미지 3장",
+      "role": "brand_story"
+     },
+     {
+      "site": "friend",
+      "sec": 2,
+      "title": "컬리 · 친구 초대 · 모바일",
+      "label": "통이미지 중단: 참여 방법 · 혜택 상세(이미지)",
+      "role": "benefit_overview"
+     }
+    ]
+   },
+   "wire": {
+    "site": "shv4",
+    "sec": 4
+   }
+  },
+  {
+   "id": "promo-cards",
+   "type": "promo_cards",
+   "name": "기획전·콘텐츠 카드",
+   "status": "new",
+   "existing_layout": null,
+   "roles": [
+    "related_promotions",
+    "editorial_story"
+   ],
+   "summary": "다른 기획전·콘텐츠로 보내는 이미지 카드 묶음 (2열 2×2 등).",
+   "slots": [
+    {
+     "id": "title",
+     "name": "구좌 제목",
+     "kind": "text",
+     "required": true
+    },
+    {
+     "id": "tabs",
+     "name": "탭",
+     "kind": "chips",
+     "required": false,
+     "repeat": [
+      2,
+      4
+     ]
+    },
+    {
+     "id": "card",
+     "name": "카드 (이미지 + 배지 + 제목 + 설명)",
+     "kind": "card",
+     "required": true,
+     "repeat": [
+      2,
+      8
+     ]
+    },
+    {
+     "id": "more",
+     "name": "더보기",
+     "kind": "button",
+     "required": false
+    }
+   ],
+   "options": [
+    {
+     "id": "cols",
+     "label": "열 수",
+     "type": "select",
+     "default": 2,
+     "choices": [
+      1,
+      2
+     ]
+    },
+    {
+     "id": "ratio",
+     "label": "이미지 비율",
+     "type": "select",
+     "default": "3:4",
+     "choices": [
+      "1:1",
+      "3:4",
+      "16:9"
+     ]
+    },
+    {
+     "id": "badge_on",
+     "label": "배지 (진행 중·Special)",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "desc_on",
+     "label": "설명 문구",
+     "type": "toggle",
+     "default": true
+    },
+    {
+     "id": "tabs_on",
+     "label": "탭",
+     "type": "toggle",
+     "default": false
+    }
+   ],
+   "evidence": {
+    "count": 8,
+    "pages": 6,
+    "components": {
+     "image": 1.0,
+     "title": 0.88,
+     "name": 0.38,
+     "brand": 0.38,
+     "badge": 0.38
+    },
+    "cols": {
+     "1": 1,
+     "2": 3
+    },
+    "carousel": 0,
+    "fullbleed": 1,
+    "examples": [
+     {
+      "site": "shv3",
+      "sec": 10,
+      "title": "신세계V 2026 쓱데이 (이벤트 허브)",
+      "label": "브랜드 기획전 모아보기: 탭 3개 + 2열 기획전 카드",
+      "role": "related_promotions"
+     },
+     {
+      "site": "paris",
+      "sec": 4,
+      "title": "파리바게뜨 · 파란라벨 신제품 · 모바일",
+      "label": "YOU MAY ALSO LIKE — 진행 중 프로모션 카드 4개",
+      "role": "related_promotions"
+     },
+     {
+      "site": "kolon1",
+      "sec": 14,
+      "title": "코오롱몰 블랙프라이데이 '큼' (게임 포함) · 모바일",
+      "label": "이런 기획전도 놓치지 마세요: 2×2 기획전 카드",
+      "role": "related_promotions"
+     }
+    ]
+   },
+   "wire": {
+    "site": "shv3",
+    "sec": 10
+   }
+  },
+  {
+   "id": "nav-tabs",
+   "type": "nav_tabs",
+   "name": "앵커·탭 내비",
+   "status": "new",
+   "existing_layout": null,
+   "roles": [
+    "section_navigation"
+   ],
+   "summary": "페이지 안 다른 구좌로 이동하는 탭 줄. 가로로 넘기거나 상단에 고정한다.",
+   "slots": [
+    {
+     "id": "tab",
+     "name": "탭 이름",
+     "kind": "chips",
+     "required": true,
+     "repeat": [
+      3,
+      7
+     ]
+    },
+    {
+     "id": "target",
+     "name": "이동할 구좌",
+     "kind": "group",
+     "required": false,
+     "note": "탭마다 이동할 구좌를 연결"
+    }
+   ],
+   "options": [
+    {
+     "id": "sticky",
+     "label": "상단 고정",
+     "type": "toggle",
+     "default": true
+    },
+    {
+     "id": "scroll",
+     "label": "가로 스크롤",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "style",
+     "label": "모양",
+     "type": "select",
+     "default": "chip",
+     "choices": [
+      "chip",
+      "underline",
+      "box"
+     ]
+    }
+   ],
+   "evidence": {
+    "count": 9,
+    "pages": 8,
+    "components": {
+     "image": 0.89,
+     "body": 0.67,
+     "button": 0.78
+    },
+    "cols": {},
+    "carousel": 2,
+    "fullbleed": 1,
+    "examples": [
+     {
+      "site": "shv1",
+      "sec": 0,
+      "title": "신세계V 쓱데이 첫구매 혜택 (이벤트 상세)",
+      "label": "헤더 + 혜택 4탭(앵커 내비)",
+      "role": "section_navigation"
+     },
+     {
+      "site": "shv3",
+      "sec": 0,
+      "title": "신세계V 2026 쓱데이 (이벤트 허브)",
+      "label": "헤더 + 4탭(앵커 내비)",
+      "role": "section_navigation"
+     },
+     {
+      "site": "shv2",
+      "sec": 0,
+      "title": "신세계V 시그니처 갤러리 (매거진 상세)",
+      "label": "헤더 + 4탭 내비",
+      "role": "section_navigation"
+     }
+    ]
+   },
+   "wire": {
+    "site": "shv1",
+    "sec": 0
+   }
+  },
+  {
+   "id": "share-bar",
+   "type": "share_bar",
+   "name": "공유·고정 CTA 바",
+   "status": "new",
+   "existing_layout": null,
+   "roles": [
+    "share"
+   ],
+   "summary": "하단에 고정된 버튼 바(친구 초대·공유·찜·기간).",
+   "slots": [
+    {
+     "id": "cta",
+     "name": "주 버튼",
+     "kind": "button",
+     "required": true
+    },
+    {
+     "id": "icons",
+     "name": "공유 아이콘",
+     "kind": "group",
+     "required": false,
+     "repeat": [
+      1,
+      6
+     ]
+    },
+    {
+     "id": "period",
+     "name": "기간",
+     "kind": "text",
+     "required": false
+    },
+    {
+     "id": "like",
+     "name": "찜",
+     "kind": "toggle",
+     "required": false
+    }
+   ],
+   "options": [
+    {
+     "id": "fixed",
+     "label": "하단 고정",
+     "type": "toggle",
+     "default": true
+    },
+    {
+     "id": "like_on",
+     "label": "찜 버튼",
+     "type": "toggle",
+     "default": false
+    },
+    {
+     "id": "period_on",
+     "label": "기간 표기",
+     "type": "toggle",
+     "default": false
+    }
+   ],
+   "evidence": {
+    "count": 3,
+    "pages": 3,
+    "components": {
+     "image": 1.0,
+     "body": 0.67,
+     "button": 0.67,
+     "box": 0.33
+    },
+    "cols": {},
+    "carousel": 0,
+    "fullbleed": 0,
+    "examples": [
+     {
+      "site": "friend",
+      "sec": 4,
+      "title": "컬리 · 친구 초대 · 모바일",
+      "label": "하단 고정 CTA 바: 공유 + 친구 초대하기 버튼",
+      "role": "share"
+     },
+     {
+      "site": "paris",
+      "sec": 3,
+      "title": "파리바게뜨 · 파란라벨 신제품 · 모바일",
+      "label": "공유 아이콘 6개",
+      "role": "share"
+     },
+     {
+      "site": "kologame",
+      "sec": 3,
+      "title": "코오롱몰 게임 페이지 '믹스매치' (카드 짝 맞추기) · 모바일",
+      "label": "하단 고정 바: 찜 + 기간 + 공유",
+      "role": "share"
+     }
+    ]
+   },
+   "wire": {
+    "site": "friend",
+    "sec": 4
+   }
+  },
+  {
+   "id": "app-banner",
+   "type": "app_banner",
+   "name": "앱 설치 유도 배너",
+   "status": "new",
+   "existing_layout": null,
+   "roles": [
+    "app_promo"
+   ],
+   "summary": "상단 한 줄 배너: 앱 아이콘 + 혜택 문구 + 앱 열기 버튼.",
+   "slots": [
+    {
+     "id": "message",
+     "name": "문구",
+     "kind": "text",
+     "required": true
+    },
+    {
+     "id": "button",
+     "name": "앱 열기 버튼",
+     "kind": "button",
+     "required": true
+    },
+    {
+     "id": "icon",
+     "name": "앱 아이콘",
+     "kind": "image",
+     "required": false
+    }
+   ],
+   "options": [
+    {
+     "id": "sticky",
+     "label": "상단 고정",
+     "type": "toggle",
+     "default": true
+    },
+    {
+     "id": "closable",
+     "label": "닫기 버튼",
+     "type": "toggle",
+     "default": true
+    }
+   ],
+   "evidence": {
+    "count": 1,
+    "pages": 1,
+    "components": {
+     "image": 1.0,
+     "body": 1.0,
+     "button": 1.0
+    },
+    "cols": {},
+    "carousel": 0,
+    "fullbleed": 0,
+    "examples": [
+     {
+      "site": "kologame",
+      "sec": 0,
+      "title": "코오롱몰 게임 페이지 '믹스매치' (카드 짝 맞추기) · 모바일",
+      "label": "앱 유도 배너 + 네비 + 탭 3개",
+      "role": "section_navigation"
+     }
+    ]
+   },
+   "wire": {
+    "site": "kologame",
+    "sec": 0
+   }
+  },
+  {
+   "id": "notice",
+   "type": "notice",
+   "name": "유의사항 (옵션 추가)",
+   "status": "extend",
+   "existing_layout": [
+    "notice"
+   ],
+   "roles": [
+    "terms_notice"
+   ],
+   "summary": "지금의 유의사항. 접고 펼치는 아코디언, 이미지형을 옵션으로 더한다.",
+   "slots": [
+    {
+     "id": "title",
+     "name": "제목",
+     "kind": "text",
+     "required": true
+    },
+    {
+     "id": "item",
+     "name": "항목",
+     "kind": "text",
+     "required": true,
+     "repeat": [
+      3,
+      12
+     ]
+    }
+   ],
+   "options": [
+    {
+     "id": "accordion",
+     "label": "접고 펼치기",
+     "type": "toggle",
+     "default": true
+    },
+    {
+     "id": "as_image",
+     "label": "이미지로 대체",
+     "type": "toggle",
+     "default": false
+    }
+   ],
+   "evidence": {
+    "count": 5,
+    "pages": 5,
+    "components": {
+     "image": 0.4,
+     "body": 0.4,
+     "box": 0.4
+    },
+    "cols": {},
+    "carousel": 0,
+    "fullbleed": 0,
+    "examples": [
+     {
+      "site": "firstbeauty",
+      "sec": 4,
+      "title": "컬리 뷰티 · 첫 구매 혜택 · 모바일",
+      "label": "유의사항 (쿠폰 조건 8줄)",
+      "role": "terms_notice"
+     },
+     {
+      "site": "kologame",
+      "sec": 4,
+      "title": "코오롱몰 게임 페이지 '믹스매치' (카드 짝 맞추기) · 모바일",
+      "label": "꼭 읽어주세요! (유의사항 아코디언, 접힘)",
+      "role": "terms_notice"
+     },
+     {
+      "site": "shv3",
+      "sec": 12,
+      "title": "신세계V 2026 쓱데이 (이벤트 허브)",
+      "label": "이벤트 유의사항 보기",
+      "role": "terms_notice"
+     }
+    ]
+   },
+   "wire": {
+    "site": "firstbeauty",
+    "sec": 4
+   }
+  }
+ ],
+ "unassigned": {
+  "countdown_bar": {
+   "count": 1,
+   "pages": 1,
+   "components": {
+    "body": 1.0
+   },
+   "cols": {},
+   "carousel": 0,
+   "fullbleed": 0,
+   "examples": [
+    {
+     "site": "blackweek",
+     "sec": 0,
+     "title": "컬리 블랙위크 · 모바일",
+     "label": "종료 카운트다운",
+     "role": "section_navigation"
+    }
+   ]
+  }
+ }
+}
