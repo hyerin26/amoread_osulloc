@@ -39,9 +39,62 @@ const Cap = (() => {
     const s = bw / W, hh = Math.min(h * s, bh);
     const clip = document.createElement('span'); clip.className = 'cclip'; px(clip, { width: bw, height: hh, top: (bh - hh) / 2 });
     const inner = document.createElement('span'); inner.className = 'cinner'; px(inner, { width: W });
-    inner.style.transform = `scale(${s}) translateY(${-y}px)`;
     clip.append(inner); el.append(clip);
-    await mount(inner, id); el.style.background = '#fff';   // 그려진 뒤에야 밑그림(글 카드)을 가린다
+    const c = await load(id), part = await slice(id, c, y, h);
+    const sh = inner.shadowRoot || inner.attachShadow({ mode: 'open' }); sh.adoptedStyleSheets = [c.sheet];
+    if (!part) { inner.style.transform = `scale(${s}) translateY(${-y}px)`; await mount(inner, id); el.style.background = '#fff'; return; }
+    sh.replaceChildren(part.wrap);
+    part.wrap.querySelectorAll('[data-cs]').forEach(e => { e.style.cssText = c.sty[+e.dataset.cs]; });
+    const first = part.wrap.querySelector('[data-first]'), ir = inner.getBoundingClientRect();
+    const top = first.getBoundingClientRect().top - ir.top;   // 앞 형제를 뺀 만큼 올라간 자리 (아직 크기 변환 전이라 원래 px)
+    inner.style.transform = `scale(${s}) translateY(${-(top + y - part.top)}px)`;
+    el.style.background = '#fff';   // 그려진 뒤에야 밑그림(글 카드)을 가린다
+  }
+  // 구좌 하나만 그리기: 페이지를 화면 밖에 한 번 그려 요소마다 세로 위치를 재 두고(페이지당 한 번), 구좌 띠(y~y+h)에 걸친 요소만 남긴 사본을 만든다.
+  // 예전엔 크롭마다 페이지 전체(요소 수천 개)를 그려 크롭 하나에 50ms 넘게 걸리고 스크롤할수록 화면이 무거워졌다. 못 줄이면 null → 전체를 그린다
+  const geo = new Map();
+  async function measure(id, c) {
+    if (!geo.has(id)) geo.set(id, (async () => {
+      const host = document.createElement('div');
+      host.style.position = 'absolute'; host.style.left = '-9999px'; host.style.top = '0'; host.style.width = W + 'px'; host.style.visibility = 'hidden'; host.style.contain = 'layout paint';
+      document.body.append(host);
+      try {
+        const sh = host.attachShadow({ mode: 'open' }); sh.adoptedStyleSheets = [c.sheet];
+        const wrap = document.createElement('div'); wrap.className = `cbody ${c.doc.body.className}`;
+        wrap.append(...[...c.doc.body.childNodes].map(n => document.importNode(n, true))); sh.append(wrap);
+        wrap.querySelectorAll('[data-cs]').forEach(e => { e.style.cssText = c.sty[+e.dataset.cs]; });
+        const hr = host.getBoundingClientRect(), src = [...c.doc.body.querySelectorAll('*')], out = [...wrap.querySelectorAll('*')], pos = new Map();
+        if (src.length !== out.length) return null;
+        out.forEach((e, i) => { const r = e.getBoundingClientRect(); pos.set(src[i], [r.top - hr.top, r.bottom - hr.top, r.height > 0 || r.width > 0]); });
+        return pos;
+      } catch (e) { return null; } finally { host.remove(); }
+    })());
+    return geo.get(id);
+  }
+  // 구좌 글로 원본 화면 속 위치(y·h) 찾기: 띠에 제목이 연결되지 않은 페이지, 같은 제목 구좌가 여럿인 페이지에서 '이 구좌 위치'를 표시할 때 쓴다
+  async function locate(id, text, tl) {
+    const c = await load(id), t = findEl(c, text, tl); if (!t) return null;
+    const pos = await measure(id, c), p = pos && pos.get(t);
+    return p && p[1] - p[0] >= 24 ? { y: p[0], h: p[1] - p[0] } : null;
+  }
+  async function slice(id, c, y, h) {
+    const pos = await measure(id, c); if (!pos) return null;
+    const y2 = y + h, hit = n => { const p = pos.get(n); return p && p[2] && p[1] > y && p[0] < y2; };
+    let node = c.doc.body;
+    for (;;) {   // 띠를 혼자 다 덮는 자식이 있으면 그 안으로 내려간다
+      const kids = [...node.children].filter(hit);
+      if (kids.length !== 1) break;
+      const p = pos.get(kids[0]); if (p[0] > y + 1 || p[1] < y2 - 1) break;
+      node = kids[0];
+    }
+    const kids = [...node.children], idx = kids.map((k, i) => (hit(k) ? i : -1)).filter(i => i >= 0);
+    if (!idx.length || node === c.doc.body && idx.length === kids.length) return null;
+    const keep = kids.slice(idx[0], idx[idx.length - 1] + 1);
+    const path = []; for (let n = node; n && n !== c.doc.body; n = n.parentElement) path.unshift(n);
+    const wrap = document.createElement('div'); wrap.className = `cbody ${c.doc.body.className}`; let cur = wrap;
+    path.forEach(n => { const k = document.importNode(n, false); cur.append(k); cur = k; });
+    keep.forEach((n, i) => { const k = document.importNode(n, true); if (!i) k.setAttribute('data-first', ''); cur.append(k); });
+    return { wrap, top: pos.get(keep[0])[0] };
   }
 
   // ---- 요소 단위 잘라 보기: 위치(y)로 못 자르는 구좌(옆으로 넘기는 슬라이드, 쪼개진 상품 목록)용 ----
@@ -125,13 +178,17 @@ const Cap = (() => {
   const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => { es.forEach(e => { if (e.isIntersecting) { io.unobserve(e.target); queue.push(e.target); } }); pump(); }, { rootMargin: '200px' }) : null;
   function lazy(root = document) { root.querySelectorAll('[data-crop]:not([data-done])').forEach(el => { if (io) io.observe(el); else { queue.push(el); } }); if (!io) pump(); }
   // 원본 전체 페이지 + 구좌 띠 박스. mark = 강조할 구좌 이름(구좌 제목)
-  async function whole(host, id, layout, mark) {
+  async function whole(host, id, layout, mark, sx) {   // sx = {t: 구좌 글 앞부분, n: 글 길이} — 띠로 못 찾을 때 글로 자리를 찾는다
     const mb = band(layout, mark), bands = (layout.bands || []).filter(b => b.h >= 8 && (b.st || b.role || b === mb)), n = { i: 0 };
     host.innerHTML = `<div class="wv"><div class="wvf" aria-label="수집 당시 화면"></div>${bands.map(b => { const tag = b.st || b.role; n.i++; const used = mb && b === mb;
       return `<div class="wb ${used ? 'used' : ''}" data-y="${b.y}" data-h="${b.h}"><div class="wbt"><span>${n.i}. ${esc(String(tag).slice(0, 22))}</span>${used ? '<b class="here">가져온 구좌</b>' : ''}</div></div>`; }).join('')}</div>`;
     const wv = host.querySelector('.wv'), f = host.querySelector('.wvf'); px(wv, { height: layout.ph }); px(f, { height: layout.ph });
     host.querySelectorAll('.wb').forEach(e => px(e, { top: +e.dataset.y, height: +e.dataset.h }));
     try { await mount(f, id); } catch (e) { f.textContent = `화면을 불러오지 못했어요: ${e.message}`; }
+    if (mark && !mb && sx?.t) {
+      const at = await locate(id, sx.t, sx.n || 0).catch(() => null);
+      if (at && wv.isConnected) { wv.insertAdjacentHTML('beforeend', `<div class="wb used"><div class="wbt"><span>${esc(String(mark).slice(0, 22))}</span><b class="here">가져온 구좌</b></div></div>`); px(wv.lastElementChild, { top: at.y, height: at.h }); }
+    }
     host.querySelector('.wb.used')?.scrollIntoView({ block: 'center' });
   }
   // 구좌 제목이 띠에 연결돼 있으면 그 띠, 아니면 띠의 앞쪽 글에 제목·본문 첫머리가 들어 있는 띠 (연결이 빠진 구좌용)
@@ -143,5 +200,5 @@ const Cap = (() => {
     if (taken.has(title)) return null;
     return bs.find(b => !b.st && b.txt && ((t.length >= 4 && nz(b.txt).includes(t)) || (x.length >= 8 && nz(b.txt).includes(x)))) || null;
   }
-  return { mount, crop, cropEl, cols, lazy, whole, band, load };
+  return { mount, crop, cropEl, cols, lazy, whole, band, load, locate };
 })();

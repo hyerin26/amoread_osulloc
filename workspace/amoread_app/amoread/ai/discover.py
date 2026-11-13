@@ -320,8 +320,28 @@ def score(x: dict) -> tuple[int | None, list[str]]:
     return max(0, min(100, sc)), why
 
 
+_view_cache: dict = {}
+
+
+def _mt(p) -> float:
+    try:
+        return p.stat().st_mtime
+    except OSError:
+        return 0.0
+
+
 def view() -> list[dict]:
-    """마켓별 마지막 확인 결과를 지금 라이브러리와 내용으로 비교한 것 (신규/내용 바뀜/이미 있음/끝남)."""
+    """마켓별 마지막 확인 결과를 지금 라이브러리와 내용으로 비교한 것 (신규/내용 바뀜/이미 있음/끝남).
+    비교는 0.5초 넘게 걸려서, 확인 결과·라이브러리 파일이 그대로면 지난 계산을 그대로 돌려준다 (창을 열 때마다 기다리지 않게)."""
+    key = (str(_file()), _mt(_file()), _mt(refs.USER_DIR / "sections.jsonl"), _mt(refs.USER_DIR / "pages.json"))
+    if _view_cache.get("key") == key:
+        return json.loads(_view_cache["out"])   # 받은 쪽이 고쳐도 저장해 둔 값이 안 바뀌게 사본을 준다
+    out = _view()
+    _view_cache.update(key=key, out=json.dumps(out, ensure_ascii=False))
+    return out
+
+
+def _view() -> list[dict]:
     db, out = _load(), []
     lib = _library()
     urls = {u for _n, _g, u in lib if u}

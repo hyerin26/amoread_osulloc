@@ -61,6 +61,9 @@ class Guard(BaseHTTPMiddleware):
 
 
 app.add_middleware(Guard)
+# 큰 JSON(레퍼런스 목록 650KB, 수집 화면 450KB)을 줄여 보낸다. 레퍼런스가 늘어도 화면이 느려지지 않게
+from starlette.middleware.gzip import GZipMiddleware  # noqa: E402
+app.add_middleware(GZipMiddleware, minimum_size=2048)
 
 
 @app.exception_handler(Exception)
@@ -701,6 +704,13 @@ def main():
                "error": f"AI 데이터 점검: 고쳐야 할 문제 {s['counts']['error']}건 (python -m amoread.ai.selfcheck 로 자세히)"}[s["status"]])
     except Exception:
         pass
+    def _warm():   # '신규 프로모션 찾기' 비교(0.7초)를 미리 해 둔다: 창을 처음 열 때도 바로 뜨게. 실패해도 무시
+        try:
+            from amoread.ai import discover
+            discover.view()
+        except Exception:
+            pass
+    threading.Thread(target=_warm, daemon=True).start()
     uvicorn.run(app, host=config.SERVER_HOST, port=config.SERVER_PORT, log_level="warning")
 
 

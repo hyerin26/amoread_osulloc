@@ -52,6 +52,21 @@ def main() -> int:
                         st = pg.evaluate("(() => { const a = [...document.querySelectorAll('[data-crop]')].filter(e => { const r = e.getBoundingClientRect(); return r.top < innerHeight && r.bottom > 0; }); return [a.length, a.filter(e => e.dataset.done).length]; })()")
                         if st[0] and st[0] != st[1]:
                             errs.append(f"보이는 크롭 {st[0]}개 중 {st[1]}개만 처리됐어요")
+                        # '이 페이지의 구좌 N개' 버튼: 직접 추가한 페이지에서 오류로 멈추던 것 (2026-11-14)
+                        bad_kids = pg.evaluate("""async () => {
+                          const sl = ms => new Promise(r => setTimeout(r, ms)), out = [];
+                          document.querySelector('[data-tab="page"]').click(); await sl(50);
+                          for (const id of [...document.querySelectorAll('#grid [data-open]')].slice(0, 12).map(b => b.dataset.open)) {
+                            document.querySelector('[data-tab="page"]').click(); await sl(20);
+                            document.querySelector(`#grid [data-open="${CSS.escape(id)}"]`).click(); await sl(20);
+                            const k = document.querySelector('#drawer [data-kids]'); if (!k) continue;
+                            const want = +k.textContent.match(/\\d+/)[0]; k.click(); await sl(20);
+                            const got = [...document.querySelectorAll('#tabs [data-tab]')].filter(b => b.dataset.tab !== 'pin').reduce((a, b) => a + +b.querySelector('.n').textContent, 0);
+                            if (got !== want) out.push(`${id}: ${want}개여야 하는데 ${got}개`);
+                            document.querySelector('[data-f^="page|"]')?.click(); await sl(10);
+                          }
+                          return out; }""")
+                        errs.extend(f"구좌 N개 버튼: {x}" for x in bad_kids)
                     for e in errs:
                         bad.append(f"{w}px {path}: {e}")
                 pg.close()

@@ -87,3 +87,12 @@ class JsSyntax(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LibraryLookups(unittest.TestCase):
+    def test_library_finds_items_by_id_in_both_lists(self):
+        """레퍼런스 화면은 직접 추가한 것(OWN)과 수집본(R) 두 목록을 함께 쓴다. id로 찾을 때 R만 보면 직접 추가한 페이지에서 오류로 멈춘다
+        ('이 페이지의 구좌 N개' 버튼이 안 눌리던 문제, 2026-11-14) → byId()/all()로만 찾아야 한다."""
+        src = read(V2 / "library.js")
+        bad = [ln for ln in src.splitlines() if re.search(r"\bR\.(find|findIndex|some)\(", ln)]
+        self.assertEqual(bad, [], "library.js에서 R.find 대신 byId(id)나 all()을 쓰세요")

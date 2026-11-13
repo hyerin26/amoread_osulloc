@@ -313,7 +313,7 @@ const cardsCsv = () => '﻿' + cardTables().map(t => t.tsv.split('\n').map(l => 
 async function exportLive(k, files) {
   const base = safeName(META.title);
   if (k === 'promo') {
-    const res = await fetch('/api/am/export', { method: 'POST', headers: { 'x-planner-token': V2_TOKEN, 'Content-Type': 'application/json' },
+    const res = await v2fetch('/api/am/export', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: META.title, brief: [META.myeongbun, META.concept].filter(Boolean).join(' · ').slice(0, 4000), rationale: (PLAN.doc.rationale || '').slice(0, 20000), source: '새 버전', rows: ROWS }) });
     if (!res.ok) { let m = `서버 오류 (${res.status})`; try { m = (await res.json()).error || m; } catch { /* 빈 응답 */ } throw new Error(m); }
     saveBlob(await res.blob(), `${base}_PROMO_WORK_${today()}.xlsx`); return 'PROMO_WORK 붙여넣기 (엑셀)';

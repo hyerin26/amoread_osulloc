@@ -56,8 +56,11 @@ let OWN = [], FAV = new Set(), BOARDS = [], PINS = [], libState = 'loading', lib
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 const uniq = a => [...new Set(a.filter(Boolean))];
-const all = () => [...OWN, ...R];
-const byId = id => all().find(x => x.id === id);
+// 목록·id 찾기는 OWN·R이 바뀔 때만 다시 만든다 (그리기 한 번에 수만 번 불려서 매번 배열을 새로 만들면 느렸음)
+let ALL = null, IDX = null, ALL_KEY = null;
+const all = () => { if (!ALL || ALL_KEY[0] !== OWN || ALL_KEY[1] !== OWN.length || ALL_KEY[2] !== R.length) { ALL = [...OWN, ...R]; IDX = null; ALL_KEY = [OWN, OWN.length, R.length]; } return ALL; };
+const dirty = () => { ALL = null; };
+const byId = id => { const a = all(); if (!IDX) IDX = new Map(a.map(x => [x.id, x])); return IDX.get(id); };
 const tk = r => (r.kind === 'etc' ? `etc:${r.kind_label}` : r.kind);           // 탭 열쇠: 직접 입력한 종류는 자기 탭
 const kindName = r => (r.kind === 'etc' ? r.kind_label : KIND_N[r.kind] || r.kind);
 const clsName = o => CLSN[o] || o;
@@ -148,7 +151,7 @@ const cropOf = r => { if (r.kind !== 'sec' || r.img) return ''; const p = pageOf
   return `<span class="cropbox">${textCard(r)}<span class="crop" data-crop data-id="${esc(p.id)}" ${at}></span></span>`; };
 const thumb = r => (cropOf(r) || (r.kind === 'sec' && !r.img && r.ai ? `<span class="cropbox">${textCard(r)}</span>` : thumb0(r)));
 const thumb0 = r => (r.img ? `<img src="${esc(r.img)}" alt="" loading="lazy">` : shapeThumb(r) || (r.link ? '<span class="cap">링크만 있어요</span>' : demoImg(r.r[0], r.r[1])));
-const pageOf = r => (r.page ? all().find(x => x.id === r.page) : null);
+const pageOf = r => (r.page ? byId(r.page) || null : null);
 
 // 서버에 저장된 항목 → 화면용 (출처·이미지 주소를 붙임)
 function view(x) {
@@ -164,7 +167,7 @@ function bodyOf(r) {
   if (!o.id) delete o.id;
   return o;
 }
-function upsert(x) { const v = view(x), i = OWN.findIndex(y => y.id === x.id); if (i >= 0) OWN[i] = v; else OWN.unshift(v); return v; }
+function upsert(x) { const v = view(x), i = OWN.findIndex(y => y.id === x.id); if (i >= 0) OWN[i] = v; else OWN.unshift(v); dirty(); return v; }
 
 // 한 레퍼런스가 필터에 맞는지: 그룹 안은 하나만 고름, 그룹끼리는 모두 맞아야 (안 고른 그룹은 통과)
 function match(r, filters = f, kind = tab) {
@@ -200,10 +203,11 @@ function tabsList() {
 
 // ================= 그리기 =================
 function render() {
+  dirty();
   const pinsOn = tab === 'pin';
   const tabs = tabsList();
   if (!pinsOn && !tabs.some(t => t[0] === tab)) tab = 'page';
-  $('#tabs').innerHTML = tabs.map(([k, n]) => `<button role="tab" data-tab="${esc(k)}" aria-selected="${tab === k}">${esc(n)}<span class="n">${all().filter(r => match(r, k === tab ? f : {}, k)).length}</span></button>`).join('')
+  $('#tabs').innerHTML = tabs.map(([k, n]) => `<button role="tab" data-tab="${esc(k)}" aria-selected="${tab === k}">${esc(n)}<span class="n">${all().filter(r => match(r, k === tab ? f : f.page ? { page: f.page } : {}, k)).length}</span></button>`).join('')
     + `<button role="tab" data-tab="pin" aria-selected="${pinsOn}" class="pin-tab">${PIN_LOGO}Pinterest 보드<span class="n">${BOARDS.length ? `${BOARDS.length}개 보드` : '연결 전'}</span></button>`;
   $('#favOnly').setAttribute('aria-pressed', String(favOnly));
   $('#favOnly').hidden = pinsOn;
@@ -212,7 +216,8 @@ function render() {
   $('#q').placeholder = pinsOn ? '핀 제목·보드 이름으로 찾기' : '명분·키워드·페이지 이름으로 찾기 (예: 봄, 피크닉, 보자기)';
   if (pinsOn) { renderPins(); renderDrawer(); return; }
   // 필터 칩 옆 숫자 = 그 칩을 고르면 남는 개수 (나머지 필터·검색은 그대로)
-  $('#filters').innerHTML = groups().map(([k, label, opts, note]) => `<div class="fg"><span>${label}</span><div class="chips-row">${opts.map(o => { const n = all().filter(r => match(r, { ...f, [k]: o })).length;
+  const pf = f.page && byId(f.page);
+  $('#filters').innerHTML = (pf ? `<div class="fg"><span>페이지</span><div class="chips-row"><button class="chip" data-f="page|${esc(f.page)}" aria-pressed="true" aria-label="${esc(pf.name)} 페이지 거르기 끄기">${esc(pf.name)} ✕</button></div></div>` : '') + groups().map(([k, label, opts, note]) => `<div class="fg"><span>${label}</span><div class="chips-row">${opts.map(o => { const n = all().filter(r => match(r, { ...f, [k]: o })).length;
     return `<button class="chip" data-f="${esc(k)}|${esc(o)}" aria-pressed="${f[k] === o}" ${n || f[k] === o ? '' : 'disabled'}>${esc(k === 'cls' ? clsName(o) : o)}<span class="n">${n}</span></button>`; }).join('')}${note ? `<span class="note">${note}</span>` : ''}</div></div>`).join('');
   const list = all().filter(r => match(r));
   const any = q || favOnly || Object.values(f).some(Boolean);
@@ -369,16 +374,32 @@ function wholePage(id, mark, mode) {
 }
 // 수집한 페이지를 원본 모양 그대로(칸 안) 보여 주고, 그 위에 구좌 띠마다 박스를 얹는다 (위치·높이는 수집 때 잰 값)
 function wholeVisual(p, mark) {
-  const L = p.layout, linked = L.bands.some(b => b.st || b.role), bands = linked ? L.bands.filter(b => b.h >= 8) : [], k = t => (t ? all().find(x => x.page === p.id && x.psec === t) : null);
+  const L = p.layout, k = t => (t ? all().find(x => x.page === p.id && x.psec === t) : null);
+  // 표시할 구좌: 지금 보던 구좌(cur)가 이 페이지 것이면 그것, 아니면 제목으로. 띠는 크롭과 같은 방법(제목 → 띠 앞 글)으로 찾는다 (제목이 띠에 연결 안 된 구좌도 위치가 보이게)
+  const me = mark ? (byId(cur)?.page === p.id && byId(cur).psec === mark ? byId(cur) : k(mark)) : null;
+  const same = mark ? all().filter(x => x.page === p.id && x.psec === mark) : [], sameB = L.bands.filter(b => b.h >= 8 && b.st === mark);
+  const mb = !mark ? null : same.length > 1 && sameB.length === same.length && me ? sameB[same.indexOf(me)] : Cap.band(L, mark, me?.summary);   // 같은 제목 구좌가 여럿이면 순서대로 짝짓는다
+  const linked = L.bands.some(b => b.st || b.role) || !!mb, bands = linked ? L.bands.filter(b => b.h >= 8) : [];
   let n = 0;
   $('#dlgB').innerHTML = `<div class="wv" data-h="${L.ph}"><div class="wvf" aria-label="수집 당시 화면"></div>`
-    + bands.map(b => { const kk = k(b.st), tag = b.st || ROLE_KO[b.role] || ''; if (tag) n++;
-      return `<div class="wb ${tag ? '' : 'none'} ${b.st && b.st === mark ? 'used' : ''}" data-y="${b.y}" data-h="${b.h}"><div class="wbt"><span>${tag ? `${n}. ${esc(tag.slice(0, 22))}` : '상단·기타'}</span>${kk ? `<button class="btn xs" data-open="${kk.id}" data-fromdlg>이 구좌 보기</button>` : ''}</div></div>`; }).join('') + '</div>';
+    + bands.map(b => { const used = mb && b === mb, kk = used ? me : k(b.st), tag = (used ? mark : b.st) || ROLE_KO[b.role] || ''; if (tag) n++;
+      return `<div class="wb ${tag ? '' : 'none'} ${used ? 'used' : ''}" data-y="${b.y}" data-h="${b.h}"><div class="wbt"><span>${tag ? `${n}. ${esc(tag.slice(0, 22))}` : '상단·기타'}</span>${used ? '<b class="here">지금 보는 구좌</b>' : ''}${kk ? `<button class="btn xs" data-open="${kk.id}" data-fromdlg>이 구좌 보기</button>` : ''}</div></div>`; }).join('') + '</div>';
   if (!linked) $('#dlgB').insertAdjacentHTML('afterbegin', '<p class="hint">이 페이지는 띠를 구좌에 연결하지 못해 박스를 그리지 않았어요 (예전 수집분과 내용이 많이 달라졌거나 상품 목록 위주일 때 그래요).</p>');
   const px = (el, o) => { for (const [a, v] of Object.entries(o)) el.style[a] = v + 'px'; };   // 위치는 CSSOM으로 (화면 보안 설정이 태그 안 style을 막아서)
   px($('#dlgB .wv'), { height: L.ph }); px($('#dlgB .wvf'), { height: L.ph });
   mountCapture($('#dlgB .wvf'), p.id);
   $('#dlgB').querySelectorAll('.wb').forEach(e => px(e, { top: +e.dataset.y, height: +e.dataset.h }));
+  if (mark && !mb) markByText(p, mark, me);
+}
+// 띠로 못 찾은 구좌: 원본 화면에서 구좌 글이 든 요소를 찾아 그 자리에 박스를 얹는다. 그래도 없으면 안내만
+async function markByText(p, mark, me) {
+  const wv = $('#dlgB .wv'), at = me ? await Cap.locate(p.id, me.summary || mark, me.tl || 0).catch(() => null) : null;
+  if (!wv || !wv.isConnected || $('#dlgB .wv') !== wv) return;   // 그사이 다른 화면으로 바뀜
+  if (!at) { $('#dlgB').insertAdjacentHTML('afterbegin', `<p class="hint">'${esc(mark)}' 구좌의 자리를 이 화면에서 찾지 못했어요 (수집 뒤 내용이 바뀐 페이지일 수 있어요). [목록으로 보기]에서는 표시돼요.</p>`); return; }
+  wv.querySelector('.wb.used')?.classList.remove('used'); $('#dlgB > .hint')?.remove();   // '박스를 그리지 않았어요' 안내는 이제 틀린 말
+  wv.insertAdjacentHTML('beforeend', `<div class="wb used"><div class="wbt"><span>${esc(mark.slice(0, 22))}</span><b class="here">지금 보는 구좌</b></div></div>`);
+  const box = wv.lastElementChild; box.style.top = at.y + 'px'; box.style.height = at.h + 'px';
+  box.scrollIntoView({ block: 'center' });
 }
 
 // ---------- 추가·고치기 창 (종류·분류·명분·시즌·참고할 것은 '직접 입력' 가능) ----------
@@ -637,6 +658,14 @@ async function toggleFav(id) {
   try { FAV = new Set((await v2api('/api/am/references/favorite', { id, on })).favorites); }
   catch (e) { on ? FAV.delete(id) : FAV.add(id); render(); toast(`즐겨찾기를 저장하지 못했어요: ${e.message}`); }
 }
+// '이 페이지의 구좌 N개': 페이지 id로 거른다 (이름 검색은 이름이 겹치거나 직접 추가한 페이지에서 틀렸음). 구좌가 가장 많은 탭으로 옮긴다
+function showKids(id) {
+  const p = byId(id); if (!p) return;
+  const kids = all().filter(x => x.page === id); if (!kids.length) return;
+  const n = {}; kids.forEach(x => { n[tk(x)] = (n[tk(x)] || 0) + 1; });
+  tab = Object.keys(n).sort((a, b) => n[b] - n[a])[0]; f = { page: id }; q = ''; $('#q').value = ''; favOnly = false; cur = null; render();
+  toast(`'${p.name}'의 구좌 ${n[tab]}개만 보여요${Object.keys(n).length > 1 ? ` (다른 탭에 ${kids.length - n[tab]}개 더)` : ''}`);
+}
 let memoT;
 function saveMemo(id, text) {
   const r = byId(id); if (!r) return; r.memo = text;
@@ -649,7 +678,7 @@ function saveMemo(id, text) {
 document.addEventListener('change', e => { if (e.target.classList?.contains('dsel')) discCount(); });
 document.addEventListener('click', e => {
   const t = e.target, d = k => t.closest(`[data-${k}]`), v = k => d(k)?.dataset[k];
-  if (d('tab')) { const k = v('tab'); if (k === tab) return; tab = k; f = {}; cur = null; if (tab === 'pin' && pinState === 'idle') loadPins(); render(); document.querySelector(`[data-tab="${CSS.escape(tab)}"]`)?.focus(); return; }
+  if (d('tab')) { const k = v('tab'); if (k === tab) return; tab = k; f = f.page ? { page: f.page } : {}; cur = null; if (tab === 'pin' && pinState === 'idle') loadPins(); render(); document.querySelector(`[data-tab="${CSS.escape(tab)}"]`)?.focus(); return; }
   if (d('f')) { const [k, ...rest] = v('f').split('|'), o = rest.join('|'); f[k] = f[k] === o ? '' : o; render(); document.querySelector(`[data-f="${CSS.escape(`${k}|${o}`)}"]`)?.focus(); return; }
   if (d('clearall') || t.closest('#clearAll')) { f = {}; q = ''; favOnly = false; $('#q').value = ''; render(); return; }
   if (t.closest('#favOnly')) { favOnly = !favOnly; render(); return; }
@@ -661,7 +690,7 @@ document.addEventListener('click', e => {
   if (d('colgo')) { startCollect(d('colgo')); return; }
   if (d('snap')) { snapView(v('snap')); return; }
   if (d('whole')) { wholePage(v('whole'), d('whole').dataset.mark, d('whole').dataset.wmode === 'list' ? 'list' : ''); return; }
-  if (d('kids')) { const id = v('kids'), p = R.find(x => x.id === id); tab = 'sec'; f = {}; q = p.name; $('#q').value = q; cur = null; render(); toast(`'${p.name}'의 구좌만 보여요`); return; }
+  if (d('kids')) { showKids(v('kids')); return; }
   if (d('edit')) { openAdd(byId(v('edit'))); return; }
   if (d('del')) { delRef(v('del')); return; }
   if (d('addpt')) { const b = d('addpt'); b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); return; }

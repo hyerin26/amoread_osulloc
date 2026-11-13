@@ -249,7 +249,8 @@ function openOrig(pageKey, mark) {
   if (p.cap) {   // 수집해 둔 화면이 있으면 원본 모양 그대로 + 가져온 구좌 위치 강조
     $('#origSub').textContent = `${p.from} · 수집 당시 모습 그대로예요. 초록 실선 박스가 이번 구성에 가져온 구좌예요 (이미지는 파일을 저장하지 않아 회색 칸)`;
     $('#origNote').textContent = '';
-    Cap.whole($('#origBody'), pageKey, p.layout, mark);
+    const sx = mark ? CANDS.flatMap(k => k.secs).map(s => s[3]).find(g => g?.src && g.src[0] === pageKey && g.src[1] === mark)?.sx : null;
+    Cap.whole($('#origBody'), pageKey, p.layout, mark, sx);
     $('#origDlg').showModal(); return;
   }
 
