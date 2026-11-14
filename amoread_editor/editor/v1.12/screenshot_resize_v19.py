@@ -1,0 +1,27 @@
+from pathlib import Path
+from playwright.sync_api import sync_playwright
+D=Path(__file__).parent
+with sync_playwright() as p:
+ b=p.chromium.launch(executable_path='/usr/bin/chromium' if Path('/usr/bin/chromium').exists() else None,headless=True,args=['--no-sandbox'])
+ page=b.new_page(viewport={'width':1520,'height':940},device_scale_factor=1)
+ page.set_content((D/'index.html').read_text('utf8'))
+ page.evaluate('''() => {const m=new Map();Object.defineProperty(window,'localStorage',{configurable:true,value:{getItem:k=>m.get(k)||null,setItem:(k,v)=>m.set(k,String(v)),removeItem:k=>m.delete(k),clear:()=>m.clear()}})}''')
+ for f in ['tokens.demo.css','styles.css','composable.css','editor-spacing.css','layout-integrity.css','custom-section.css']: page.add_style_tag(content=(D/f).read_text('utf8'))
+ for f in ['catalog.js','components.js','flows.js','composable.js','app.js']:page.add_script_tag(content=(D/f).read_text('utf8'))
+ page.locator('#addSection').click();page.locator('[data-picker-id="custom"]').click();page.locator('#pickerApply').click()
+ page.locator('[data-tab="items"]').click()
+ page.locator('[data-choice="custom.mode"][data-value="blocks"]').click()
+ page.locator('[data-bind="custom.purpose"]').fill('브랜드 키 메시지와 상품 추천을 자유롭게 조합하는 신규 구좌')
+ page.locator('[data-cb-rail="library"]').click();page.locator('[data-cb-add="productCard"]').click()
+ page.locator('[data-cb-field="productId"]').select_option('D001')
+ page.locator('[data-cb-back]').click()
+ page.locator('[data-cb-add="text"]').click()
+ page.locator('[data-cb-field="text"]').fill('지금 전하고 싶은 차 한 잔의 이야기\n상품 추천 문구와 이미지, 버튼을 자유롭게 조합해보세요.')
+ page.locator('#page .preview-block.active h3').click()
+ page.locator('[data-tab="items"]').click()
+ page.locator('#customHeightInput').fill('580');page.locator('#customHeightInput').press('Tab')
+ page.locator('[data-cb-rail="sections"]').click()
+ page.locator('#page .preview-block.active [data-custom-resize]').scroll_into_view_if_needed()
+ page.wait_for_timeout(100)
+ page.screenshot(path=str(D/'screenshot_resize_frame_v19.png'),full_page=False)
+ b.close()

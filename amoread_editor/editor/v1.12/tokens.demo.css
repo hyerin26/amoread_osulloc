@@ -1,0 +1,13 @@
+/* UI LAB ONLY: provided Green UI v2.5.1 semantic reference values. Do not copy this file over the app's canonical tokens.css. */
+:root{
+--font:Inter,'Pretendard Variable',Pretendard,'Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+--bg:#fafafa;--surface:#fff;--sunken:#f3f3f3;--hover:#f3f3f3;
+--ink:#141414;--ink2:#484848;--mute:#666;--line:#dedede;--line-sub:#ebebeb;--line-strong:#adadad;
+--accent:#007a46;--accent-ink:#fff;--accent-soft:#eef5ef;--sel-line:rgba(0,122,70,.32);--sel-fill:transparent;
+--price:#b52e10;--ok:#007a46;--ok-soft:#eef5ef;--warn:#484848;--warn-soft:#fff8e0;--err:#b52e10;--err-soft:#fff0ec;--err-line:#ff5a36;
+--shade:rgba(20,20,20,.08);--scrim:rgba(20,20,20,.28);
+--fs-cap:12px;--fs-sm:13px;--fs-body:14px;--fs-h2:16px;--fs-h1:20px;--fs-masthead:28px;--lh-cap:18px;--lh-sm:20px;--lh-body:22px;--lh-h2:24px;--lh-h1:28px;
+--fw-regular:400;--fw-medium:500;--fw-strong:600;--fw-title:700;
+--s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;--s-panel:20px;--s-card:24px;
+--r:12px;--r2:8px;--control-sm:32px;--control-md:36px;--control-lg:44px;--hit:32px;
+}

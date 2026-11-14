@@ -1,0 +1,109 @@
+/* AMOREAD Editor Layout Recipes v1.7
+   Green UI v2.5.1 colors/type/radius are owned by tokens.demo.css.
+   Spacing aliases are local to editor. Values reuse --s1..--s6 (4/8/12/16/24/32).
+   Related content stays close; disjoint groups receive more breathing room. */
+.workspace{
+ --ed-space-inline:var(--s1);
+ --ed-space-element:var(--s2);
+ --ed-space-card:var(--s3);
+ --ed-space-section:var(--s4);
+ --ed-space-group:var(--s5);
+ --ed-space-canvas:var(--s6);
+ --ed-radius:var(--r2);
+ --ed-stroke:var(--line-sub);
+}
+/* Repeated editor fields and labels */
+.inspector .am-ed-group{margin:0 0 var(--ed-space-group);padding-bottom:var(--ed-space-section);border-bottom:1px solid var(--ed-stroke)}
+.inspector .am-ed-group__title{margin-bottom:var(--ed-space-element)}
+.inspector .am-ed-group__description{margin:0 0 var(--ed-space-card);line-height:1.55}
+.inspector .am-ed-stack{display:grid;gap:var(--ed-space-card)}
+.inspector .am-ed-field{margin-top:var(--ed-space-card);margin-bottom:var(--ed-space-card)}
+.inspector .am-ed-label{display:block;margin-bottom:var(--ed-space-element)}
+/* Maintain vertical rhythm across the mobile full-page wireframe */
+.preview-block{padding:var(--ed-space-section);}
+.preview-block>h3{margin-bottom:var(--ed-space-inline)}
+.preview-block>p{margin-bottom:var(--ed-space-element);line-height:1.55}
+.preview-extra-line{margin:var(--ed-space-element) 0}
+.mock-product{gap:var(--ed-space-inline);padding:var(--ed-space-element);border-radius:var(--ed-radius);min-width:0}
+.mock-product .mock-el{margin:0}
+.mock-product .mock-product-image,.mock-product .mock-image{margin-bottom:var(--ed-space-element)}
+.mock-products{gap:var(--ed-space-element);margin-top:var(--ed-space-card)}
+.mock-products.am-cols-1{grid-template-columns:minmax(0,1fr)}
+.mock-products.am-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.mock-products.am-cols-3{grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--ed-space-inline)}
+.mock-products.am-cols-3 .mock-product{padding:6px}
+/* Product views: all use the same product renderer, so visibility/order follows the card controls. */
+.mock-products.am-product-view-list{display:grid;grid-template-columns:1fr;gap:var(--ed-space-element)}
+.am-product-view-list .mock-product{display:grid;grid-template-columns:88px minmax(0,1fr);gap:var(--ed-space-inline) var(--ed-space-card);align-content:start}
+.am-product-view-list .mock-product .mock-el--img,.am-product-view-list .mock-product .mock-product-image,.am-product-view-list .mock-product .mock-image{grid-column:1;grid-row:1/span 12;align-self:start;margin:0}
+.am-product-view-list .mock-product>.mock-el:not(.mock-el--img){grid-column:2}
+.am-product-view-list .mock-product>.mock-el--img+.mock-el{margin-top:0}
+.mock-products.am-product-view-card{grid-template-columns:1fr;gap:var(--ed-space-card)}
+.am-product-view-card .mock-product{padding:var(--ed-space-card);box-shadow:0 2px 12px var(--shade)}
+.am-product-view-card .mock-product .mock-product-image{min-height:136px}
+.mock-products.am-product-view-carousel{display:flex;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scroll-padding:var(--ed-space-element);gap:var(--ed-space-element);padding:0 var(--ed-space-inline) var(--ed-space-card);scrollbar-width:thin}
+.am-product-view-carousel>.mock-product{flex:0 0 74%;max-width:74%;scroll-snap-align:start}
+.mock-products.am-product-view-masonry{display:block;columns:2;column-gap:var(--ed-space-element)}
+.am-product-view-masonry>.mock-product{break-inside:avoid;display:flex;margin:0 0 var(--ed-space-element);width:100%}
+/* Masonry media heights are resolved from each product ratio in the section renderer.
+   Do not reintroduce nth-child fixed heights: they conflict with the image ratio engine. */
+.am-product-view-list.mock-products--featured>.mock-product:first-child,
+.am-product-view-card.mock-products--featured>.mock-product:first-child{grid-column:auto}
+/* Visually inspectable product-layout choices in inspector */
+.am-ed-product-layouts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--ed-space-element)}
+.am-ed-product-layout-option{text-align:left;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:var(--ed-radius);padding:var(--ed-space-element);display:grid;gap:var(--ed-space-inline);min-width:0;cursor:pointer}
+.am-ed-product-layout-option[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--accent-soft)}
+.am-ed-product-layout-option b{font-size:var(--fs-sm)}
+.am-ed-product-layout-option small{font-size:11px;color:var(--mute);line-height:1.3}
+.am-ed-layout-visual{display:grid;grid-template-columns:1fr 1fr;gap:4px;height:43px;padding:4px;border:1px solid var(--line-sub);border-radius:6px;background:var(--sunken);overflow:hidden}
+.am-ed-layout-visual i{display:block;border-radius:3px;background:var(--line-strong)}
+.am-ed-layout-list{grid-template-columns:26px 1fr;grid-template-rows:repeat(2,1fr)}
+.am-ed-layout-list i:nth-child(n+3){display:none}
+.am-ed-layout-card{grid-template-columns:1fr 1fr;gap:6px}
+.am-ed-layout-carousel{display:flex;gap:5px}
+.am-ed-layout-carousel i{width:63%;flex:0 0 63%}
+.am-ed-layout-masonry{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.am-ed-layout-masonry i:nth-child(1){grid-row:span 2}
+.am-ed-layout-masonry i:nth-child(4){display:none}
+/* One/two/three column selector */
+.am-ed-column-picker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--ed-space-element)}
+.am-ed-column-option{padding:var(--ed-space-element);border:1px solid var(--line);border-radius:var(--ed-radius);background:var(--surface);display:grid;gap:4px;justify-items:center;cursor:pointer;min-width:0}
+.am-ed-column-option[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.am-ed-column-option strong{font-size:var(--fs-sm)}
+.am-ed-column-option small{font-size:10px;color:var(--mute);text-align:center}
+.am-ed-column-thumb{height:37px;display:grid;gap:4px;width:100%;padding:5px;border-radius:6px;background:var(--sunken)}
+.am-ed-column-thumb.cols-1{grid-template-columns:1fr}.am-ed-column-thumb.cols-2{grid-template-columns:repeat(2,1fr)}.am-ed-column-thumb.cols-3{grid-template-columns:repeat(3,1fr)}
+.am-ed-column-thumb i{background:var(--line-strong);border-radius:3px}
+/* Section-local info layouts; retain original 1-column story layout by default. */
+.am-flow-info-list--story.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.am-flow-info-list--story.cols-2>.am-flow-info-item{grid-template-columns:1fr}
+.am-flow-info-list--story.cols-2 .am-flow-img-ghost{min-height:80px}
+.am-flow-info-list--timeline.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.am-flow-info-list--timeline.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.am-flow-info-list--detail.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.am-flow-info-list .am-flow-info-item{gap:var(--ed-space-element);padding:var(--ed-space-card)}
+.am-flow-info-list .am-flow-info-item>div:last-child{gap:var(--ed-space-inline)}
+.mock-review-shell.cards.am-cols-1 .mock-review-grid,.mock-review-shell.text.am-cols-1 .mock-review-grid{grid-template-columns:1fr}
+.mock-review-shell.cards.am-cols-2 .mock-review-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.mock-review-shell.cards.am-cols-3 .mock-review-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.mock-review-shell.text.am-cols-2 .mock-review-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+/* Interactive legal/shipping/participation accordions; summaries are the collapsed copy. */
+.am-ed-accordion-list{display:grid;gap:var(--ed-space-element);margin:var(--ed-space-card) 0}
+.am-ed-accordion{border:1px solid var(--line);border-radius:var(--ed-radius);background:var(--surface);overflow:hidden}
+.am-ed-accordion summary{display:flex;align-items:center;gap:var(--ed-space-element);justify-content:space-between;padding:var(--ed-space-card);cursor:pointer;font-size:var(--fs-sm);font-weight:var(--fw-strong);list-style:none;min-height:44px}
+.am-ed-accordion summary::-webkit-details-marker{display:none}
+.am-ed-accordion summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.am-ed-accordion-icon{width:9px;height:9px;flex-shrink:0;border-right:1.5px solid var(--ink2);border-bottom:1.5px solid var(--ink2);transform:rotate(45deg);transition:transform .14s ease}
+.am-ed-accordion[open] .am-ed-accordion-icon{transform:rotate(225deg)}
+.am-ed-accordion-content{padding:0 var(--ed-space-card) var(--ed-space-card);display:grid;gap:var(--ed-space-element);border-top:1px solid var(--line-sub)}
+.am-ed-accordion-content p{padding-top:var(--ed-space-element);font-size:var(--fs-cap);line-height:1.55;white-space:pre-wrap}
+.am-ed-accordion-content small{font-size:var(--fs-cap);color:var(--mute);line-height:1.45;white-space:pre-wrap}
+/* Instead of a permanent instruction over the section content, keep a quiet insertion target. */
+.cb-drop-spot{height:18px;border:1px dashed var(--line);border-radius:var(--ed-radius);opacity:.45}
+.cb-dropzone:has(.cb-drop-spot){margin-top:var(--ed-space-element);padding:4px;background:transparent}
+.cb-dropzone:has(.cb-drop-spot)::before{display:none}
+.cb-dropzone:has(.cb-drop-spot):hover .cb-drop-spot,.cb-dropzone.cb-drag-over .cb-drop-spot{opacity:1;border-color:var(--accent);background:var(--accent-soft)}
+.cb-rail [data-tip]{position:relative}
+.cb-rail [data-tip]:hover::after,.cb-rail [data-tip]:focus-visible::after{content:attr(data-tip);position:absolute;z-index:60;left:calc(100% + 10px);top:0;width:max-content;max-width:190px;padding:8px 10px;background:var(--ink);color:var(--surface);border-radius:var(--ed-radius);font-size:var(--fs-cap);font-weight:400;line-height:1.5;white-space:normal;box-shadow:0 2px 14px var(--shade)}
+@media (max-width:820px){.cb-rail [data-tip]:hover::after,.cb-rail [data-tip]:focus-visible::after{left:0;top:calc(100% + 6px)}}
+@media (prefers-reduced-motion:reduce){.am-ed-accordion-icon{transition:none}}

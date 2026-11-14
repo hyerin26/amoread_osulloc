@@ -10,7 +10,7 @@ const PLAN = (() => {
   // 기획안 안의 화면으로 가는 링크에 id를 붙여 같은 기획안으로 이동
   const tagLinks = () => document.querySelectorAll('a[href^="/v2/"]').forEach(a => {
     const u = new URL(a.getAttribute('href'), location.origin);
-    if (!STEPS.includes(u.pathname.split('/').pop())) return;
+    if (![...STEPS, 'editor-next'].includes(u.pathname.split('/').pop())) return;   // editor-next: 신규 구좌편집기 (단계 저장 대상은 아님)
     u.searchParams.set('id', st.id);
     a.setAttribute('href', u.pathname + u.search + u.hash);
   });
@@ -57,11 +57,17 @@ const PLAN = (() => {
   };
   // 고친 뒤 부른다. 0.7초 모아서 한 번에, 저장은 차례로 (응답이 와도 그 사이 고친 내용을 덮지 않음)
   let timer = null, chain = Promise.resolve();
+  // 보낼 값: base_updated_at = 마지막으로 받은 저장 시각 (그 사이 다른 화면이 저장했으면 서버가 409로 막아 덮어쓰지 않음)
+  // editor_next(신규 구좌편집기 값)는 그 화면만 보낸다 (st.sendEditorNext). 안 보내면 서버가 저장된 값을 그대로 둔다
+  st.body = () => {
+    const { editor_next, ...rest } = st.doc;
+    return { ...rest, base_updated_at: st.doc.updated_at || null, ...(st.sendEditorNext ? { editor_next } : {}) };
+  };
   const run = () => {
     timer = null;
-    chain = chain.then(() => v2api('/api/am/projects', st.doc)
-      .then(d => { st.doc.updated_at = d.updated_at; say(`저장했어요 ${String(d.updated_at).slice(11, 16)}`); st.progress(); })
-      .catch(e => say(`저장 못 했어요: ${e.message}`)));
+    chain = chain.then(() => v2api('/api/am/projects', st.body())
+      .then(d => { st.doc.updated_at = d.updated_at; say(`저장했어요 ${String(d.updated_at).slice(11, 16)}`); st.progress(); dispatchEvent(new CustomEvent('plan:saved', { detail: { ok: true } })); })
+      .catch(e => { say(`저장 못 했어요: ${e.message}`); dispatchEvent(new CustomEvent('plan:saved', { detail: { ok: false, error: e.message } })); }));
   };
   st.save = (mutate, now = false) => {
     if (!st.doc) return;
@@ -77,7 +83,7 @@ const PLAN = (() => {
   addEventListener('beforeunload', e => {
     if (!timer || !st.doc) return;
     clearTimeout(timer); timer = null;
-    const body = JSON.stringify(st.doc);
+    const body = JSON.stringify(st.body());
     if (body.length < 60000) {
       try { fetch('/api/am/projects', { method: 'POST', keepalive: true, headers: { 'x-planner-token': V2_TOKEN, 'Content-Type': 'application/json' }, body }); return; } catch { /* 아래 확인으로 */ }
     }

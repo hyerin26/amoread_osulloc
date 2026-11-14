@@ -1,0 +1,506 @@
+{
+  "version": "1.12",
+  "scope": "AMOREAD editor chrome, not Osulloc storefront",
+  "canonical_tokens": "Green UI v2.5.1 (unchanged)",
+  "spacing_aliases": {
+    "space-1": "--s1/4",
+    "space-2": "--s2/8",
+    "space-3": "--s3/12",
+    "space-4": "--s4/16",
+    "space-5": "--s5/24",
+    "space-6": "--s6/32"
+  },
+  "components": [
+    {
+      "category": "navigation",
+      "name": "WorkRail",
+      "purpose": "구성·추가·자료 1차 모드 전환",
+      "selectors": ".cb-rail [data-cb-rail]",
+      "states": [
+        "rest",
+        "hover",
+        "selected",
+        "focus",
+        "disabled"
+      ],
+      "spacing": "상하 8px; 버튼 높이 60px(좁은 화면 44px)",
+      "usage_rule": "현재 선택은 aria-pressed; 아이콘+라벨"
+    },
+    {
+      "category": "navigation",
+      "name": "SectionTree",
+      "purpose": "구좌·요소 계층과 선택",
+      "selectors": ".ia-tree-section,.ia-tree-node",
+      "states": [
+        "rest",
+        "hover",
+        "selected",
+        "focus",
+        "disabled",
+        "expanded",
+        "drag"
+      ],
+      "spacing": "트리 줄 38~44px; 들여쓰기 12~16px; 행간 4px",
+      "usage_rule": "펴기/접기는 별도 버튼과 aria-expanded"
+    },
+    {
+      "category": "navigation",
+      "name": "PrimaryTabs",
+      "purpose": "내용·배치·동작 등 상위 작업영역",
+      "selectors": ".ia-groups.am-kit-primary-nav",
+      "states": [
+        "rest",
+        "hover",
+        "selected",
+        "focus",
+        "disabled"
+      ],
+      "spacing": "높이 43px; 가로 간격 2px; 하단선 3px",
+      "usage_rule": "탭은 밑줄, 선택된 탭 aria-selected"
+    },
+    {
+      "category": "navigation",
+      "name": "SecondaryTabs",
+      "purpose": "상위 영역 내 복수 항목",
+      "selectors": ".ia-subtabs.am-kit-subnav",
+      "states": [
+        "rest",
+        "hover",
+        "selected",
+        "focus",
+        "disabled"
+      ],
+      "spacing": "패널 배경, 항목 사이 6px, 하위 28px",
+      "usage_rule": "하위 하나일 때 버튼 대신 제목"
+    },
+    {
+      "category": "navigation",
+      "name": "Breadcrumb",
+      "purpose": "구좌/블록 위치 및 상위 이동",
+      "selectors": ".ia-breadcrumb",
+      "states": [
+        "rest",
+        "hover",
+        "focus"
+      ],
+      "spacing": "항목 간격 5px; 인스펙터 헤더와 8px",
+      "usage_rule": "현재 대상 마지막 텍스트"
+    },
+    {
+      "category": "action",
+      "name": "Button",
+      "purpose": "주요·보조·위험 실행",
+      "selectors": ".am-ed-button",
+      "states": [
+        "rest",
+        "hover",
+        "pressed",
+        "focus",
+        "disabled",
+        "loading"
+      ],
+      "spacing": "32/36/44px; 아이콘 간격 8px; 내부 가로 12px",
+      "usage_rule": "primary 1개/컨텍스트, secondary·subtle 단계"
+    },
+    {
+      "category": "action",
+      "name": "IconButton",
+      "purpose": "복제·삭제·순서·닫기",
+      "selectors": ".am-ed-icon-btn,.outline-entry-actions button",
+      "states": [
+        "rest",
+        "hover",
+        "pressed",
+        "focus",
+        "disabled"
+      ],
+      "spacing": "32~36px 정사각형; glyph 16/20px",
+      "usage_rule": "명시적 aria-label 필수"
+    },
+    {
+      "category": "action",
+      "name": "DragHandle",
+      "purpose": "구좌·블록 재정렬 핸들",
+      "selectors": "[draggable],.am-custom-resize-handle",
+      "states": [
+        "rest",
+        "hover",
+        "dragging",
+        "focus",
+        "disabled"
+      ],
+      "spacing": "누를 곳 최소 32px; 인접 버튼 8px",
+      "usage_rule": "클릭/키보드 이동 대체 경로 유지"
+    },
+    {
+      "category": "input",
+      "name": "TextField",
+      "purpose": "한 줄 입력",
+      "selectors": ".am-ed-field .am-ed-input",
+      "states": [
+        "rest",
+        "hover",
+        "focus",
+        "disabled",
+        "readonly",
+        "invalid"
+      ],
+      "spacing": "label→field 4px; field→helper 4px; 다음 field 12px",
+      "usage_rule": "label+helper+counter+error"
+    },
+    {
+      "category": "input",
+      "name": "TextArea",
+      "purpose": "여러 줄 문구·메모",
+      "selectors": ".am-ed-textarea",
+      "states": [
+        "rest",
+        "hover",
+        "focus",
+        "disabled",
+        "readonly",
+        "invalid"
+      ],
+      "spacing": "상하 8px; field group 12px",
+      "usage_rule": "Enter를 그대로 미리보기 반영"
+    },
+    {
+      "category": "input",
+      "name": "Select",
+      "purpose": "상품·옵션 등의 단일 선택",
+      "selectors": ".am-ed-select,select.am-ed-input",
+      "states": [
+        "rest",
+        "hover",
+        "focus",
+        "disabled",
+        "invalid"
+      ],
+      "spacing": "44px; 하단 helper 4px",
+      "usage_rule": "라벨과 목적 설명 포함"
+    },
+    {
+      "category": "input",
+      "name": "SearchField",
+      "purpose": "구좌·상품·후기 검색",
+      "selectors": "#pickerSearch,.ia-data-results",
+      "states": [
+        "rest",
+        "focus",
+        "loading",
+        "empty",
+        "results"
+      ],
+      "spacing": "검색필드 44px; 결과 행 8px",
+      "usage_rule": "검색 지연/비활성 상태 별도"
+    },
+    {
+      "category": "input",
+      "name": "Checkbox",
+      "purpose": "여러 카드·후기 선택",
+      "selectors": ".am-ed-element-row input[type=checkbox],.am-ed-product-row input[type=checkbox]",
+      "states": [
+        "checked",
+        "unchecked",
+        "focus",
+        "disabled",
+        "indeterminate"
+      ],
+      "spacing": "체크 16px; 라벨 간격 8px",
+      "usage_rule": "다중 선택은 스위치 사용하지 않음"
+    },
+    {
+      "category": "input",
+      "name": "Switch",
+      "purpose": "즉시 반영되는 표시·숨김",
+      "selectors": ".am-ed-toggle input[role=switch]",
+      "states": [
+        "on",
+        "off",
+        "focus",
+        "disabled"
+      ],
+      "spacing": "38×22px; 라벨 간격 12px",
+      "usage_rule": "즉시 반영; 연결/저장 대기용 체크에는 미사용"
+    },
+    {
+      "category": "input",
+      "name": "ChoiceGroup",
+      "purpose": "열 수·이미지 비율 단일 선택",
+      "selectors": ".am-ed-choice,.am-ed-column-picker",
+      "states": [
+        "rest",
+        "hover",
+        "selected",
+        "focus",
+        "disabled"
+      ],
+      "spacing": "항목 간격 8px; 높이 36px",
+      "usage_rule": "의미 없는 옵션 숨김, 저장된 값은 보존"
+    },
+    {
+      "category": "input",
+      "name": "FilterChip",
+      "purpose": "카테고리·유형 필터",
+      "selectors": ".am-ed-picker-cats button,.ia-library-choose button",
+      "states": [
+        "rest",
+        "hover",
+        "selected",
+        "focus",
+        "disabled"
+      ],
+      "spacing": "높이 ≥32px; 칩 간격 6px",
+      "usage_rule": "탭과 달리 필터링 동작, aria-pressed"
+    },
+    {
+      "category": "input",
+      "name": "FileInput",
+      "purpose": "레퍼런스·후기 CSV 첨부",
+      "selectors": "input[type=file]",
+      "states": [
+        "rest",
+        "focus",
+        "disabled",
+        "invalid",
+        "uploaded"
+      ],
+      "spacing": "항목 전후 12px; 안내 4px",
+      "usage_rule": "형식·크기·이용 범위 표시"
+    },
+    {
+      "category": "surface",
+      "name": "InspectorGroup",
+      "purpose": "설정 항목의 의미별 묶음",
+      "selectors": ".am-ed-group",
+      "states": [
+        "rest"
+      ],
+      "spacing": "그룹 바깥 24px; 설명 끝 16px",
+      "usage_rule": "섹션 사이 경계선은 보조"
+    },
+    {
+      "category": "surface",
+      "name": "RepeatItem",
+      "purpose": "문구/혜택/질문 등 반복 컨텐츠",
+      "selectors": ".am-ed-repeat",
+      "states": [
+        "rest",
+        "hover",
+        "focus"
+      ],
+      "spacing": "카드 padding 12px; 카드 간 8px",
+      "usage_rule": "순서/복제/삭제의 아이콘 버튼"
+    },
+    {
+      "category": "surface",
+      "name": "ProductDataRow",
+      "purpose": "상품 정보·선택",
+      "selectors": ".am-ed-product-row",
+      "states": [
+        "rest",
+        "hover",
+        "selected",
+        "disabled"
+      ],
+      "spacing": "카드 padding 8/12px, 내부 gap 8px",
+      "usage_rule": "선택 UI와 편집 이동 분리"
+    },
+    {
+      "category": "surface",
+      "name": "ReferenceCard",
+      "purpose": "첨부된 레퍼런스와 메모",
+      "selectors": ".am-ed-ref",
+      "states": [
+        "rest",
+        "hover",
+        "focus"
+      ],
+      "spacing": "padding 12px; 이미지와 글 간 12px",
+      "usage_rule": "원본과 기획 요청 분리"
+    },
+    {
+      "category": "surface",
+      "name": "SelectionCard",
+      "purpose": "구좌 유형 썸네일 선택",
+      "selectors": ".am-ed-picker-card",
+      "states": [
+        "rest",
+        "hover",
+        "selected",
+        "focus",
+        "disabled"
+      ],
+      "spacing": "padding 12px; 썸네일/설명 8px; 카드 간 12px",
+      "usage_rule": "원본 비율 미리보기, 높이 계산"
+    },
+    {
+      "category": "surface",
+      "name": "Accordion",
+      "purpose": "고급 옵션·규정 안내 접기",
+      "selectors": ".ia-advanced,details.am-ed-accordion",
+      "states": [
+        "collapsed",
+        "expanded",
+        "hover",
+        "focus",
+        "disabled"
+      ],
+      "spacing": "제목 padding 12px; 콘텐츠 12px",
+      "usage_rule": "열림 aria-expanded/details; 필수는 접지 않음"
+    },
+    {
+      "category": "surface",
+      "name": "Dialog",
+      "purpose": "구좌 선택/미리보기/검수",
+      "selectors": "#typeDialog,#fullPreviewDialog,#ia-qa-dialog",
+      "states": [
+        "closed",
+        "open",
+        "focus",
+        "loading"
+      ],
+      "spacing": "상단·본문·하단 12~24px, 독립 스크롤",
+      "usage_rule": "showModal, focus-return, ESC"
+    },
+    {
+      "category": "feedback",
+      "name": "InlineValidation",
+      "purpose": "필드별 오류와 도움말",
+      "selectors": "[aria-invalid],.am-ed-note--warning",
+      "states": [
+        "default",
+        "warning",
+        "error",
+        "success"
+      ],
+      "spacing": "컨트롤과 메시지 간 4px",
+      "usage_rule": "색상+문구, 가능한 해결 동작"
+    },
+    {
+      "category": "feedback",
+      "name": "Toast",
+      "purpose": "저장·추가·오류의 짧은 피드백",
+      "selectors": "#toast",
+      "states": [
+        "hidden",
+        "visible",
+        "actionable"
+      ],
+      "spacing": "viewport 가장자리 20px; 최대 380px",
+      "usage_rule": "aria-live, 자동 닫힘; 중요 오류는 인라인"
+    },
+    {
+      "category": "feedback",
+      "name": "ValidationHub",
+      "purpose": "전체 기획안 검수 및 위치 이동",
+      "selectors": "#ia-qa-items,.ia-qa-item",
+      "states": [
+        "idle",
+        "issues",
+        "empty",
+        "focus"
+      ],
+      "spacing": "행 사이 8px; padding 12px",
+      "usage_rule": "문제 구좌로 이동; 필드 이동은 미구현"
+    },
+    {
+      "category": "feedback",
+      "name": "Skeleton",
+      "purpose": "상품/후기 데이터 로딩 표현",
+      "selectors": ".am-kit-skeleton",
+      "states": [
+        "loading",
+        "reduced-motion"
+      ],
+      "spacing": "중첩 영역 공백 8px; 반지름 8px",
+      "usage_rule": "실제 로딩 상태에만 사용, 미연동과 구별"
+    },
+    {
+      "category": "feedback",
+      "name": "EmptyState",
+      "purpose": "연결된 콘텐츠 없는 경우",
+      "selectors": ".am-kit-empty,.ia-tree-empty",
+      "states": [
+        "empty",
+        "actionable"
+      ],
+      "spacing": "padding 24px; 아이콘/문구 간 8px",
+      "usage_rule": "명시적 다음 행동"
+    },
+    {
+      "category": "canvas",
+      "name": "DropZone",
+      "purpose": "블록 삽입 가능 영역",
+      "selectors": ".cb-dropzone",
+      "states": [
+        "idle",
+        "hover",
+        "dragover",
+        "invalid"
+      ],
+      "spacing": "상하 10px; padding 8px",
+      "usage_rule": "드래그 오버 강조 + 버튼 대체"
+    },
+    {
+      "category": "canvas",
+      "name": "ResizeHandle",
+      "purpose": "자유 기획 프레임 높이",
+      "selectors": ".am-custom-resize-handle",
+      "states": [
+        "rest",
+        "hover",
+        "dragging",
+        "focus",
+        "disabled"
+      ],
+      "spacing": "높이 조절 20px 단위, 대체 숫자 입력",
+      "usage_rule": "px/콘텐츠 맞춤/Undo 보존"
+    },
+    {
+      "category": "canvas",
+      "name": "PreviewSelection",
+      "purpose": "중앙에서 구좌 및 블록 선택",
+      "selectors": "#page [data-page],#page [data-cb-node]",
+      "states": [
+        "rest",
+        "selected",
+        "hover",
+        "focus",
+        "scroll-target"
+      ],
+      "spacing": "선택 링 2px, scroll-margin 16px",
+      "usage_rule": "구좌 선택 시 해당 위치로 스크롤"
+    },
+    {
+      "category": "data",
+      "name": "ProductCard",
+      "purpose": "프로모션 결과에 배치되는 상품 구성",
+      "selectors": ".mock-product,.cb-product-card",
+      "states": [
+        "default",
+        "focused",
+        "compact",
+        "grid",
+        "masonry"
+      ],
+      "spacing": "레이아웃별 gap/line-height 별도 규칙",
+      "usage_rule": "에디터 조작 컴포넌트와 고객 카드 구분"
+    },
+    {
+      "category": "data",
+      "name": "CTA",
+      "purpose": "고객용 CTA 와이어프레임",
+      "selectors": ".mock-cta,.cb-action",
+      "states": [
+        "filled",
+        "outline",
+        "text",
+        "wide",
+        "disabled"
+      ],
+      "spacing": "본문/CTA 사이 ≥12px",
+      "usage_rule": "고객용 CTA vs 편집기 액션 버튼 분리"
+    }
+  ]
+}

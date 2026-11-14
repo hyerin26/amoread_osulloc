@@ -35,7 +35,8 @@ export function payload(p) {
   else b.period = { start: b.period.start, end: b.period.end && b.period.end >= b.period.start ? b.period.end : b.period.start };
   const page = p.page ? { sections: (p.page.sections || []).map((s, i) => ({ ...s, order: i + 1 })) } : null;
   return { id: p.id, title: p.title || '', status: p.status || 'planning', origin: p.origin || { type: 'brief', ref: '' },
-    brief: b, promo_rows: p.promo_rows || [], deal_plan: p.deal_plan ? dealPlanOf(p) : null, pool: (p.pool || []).slice(0, 100), page, links: p.links || null, rationale: p.rationale || '' };
+    brief: b, promo_rows: p.promo_rows || [], deal_plan: p.deal_plan ? dealPlanOf(p) : null, pool: (p.pool || []).slice(0, 100), page, links: p.links || null, rationale: p.rationale || '',
+    base_updated_at: p.updated_at || null };   // 그 사이 다른 화면이 저장했으면 서버가 409로 막음 (덮어쓰지 않음)
 }
 
 let inflight = null, again = false, timer = null;

@@ -212,6 +212,17 @@ class ProjectReq(BaseModel):
     page: Page | None = None
     links: Links | None = None
     rationale: str = Field(default="", max_length=20000)
+    # 신규 구좌편집기(v1.12) 값. 기존 편집기의 page.sections와 따로 둔다(서로 덮지 않게). 모양은 편집기가 정하고 여기서는 크기만 막는다.
+    # 안 보내면 저장된 값을 그대로 둔다 (store.save)
+    editor_next: dict[str, Any] | None = None
+    # 동시 수정 확인: 화면이 마지막으로 받은 updated_at. 보내면 저장된 값과 다를 때 409. 안 보내면 예전처럼 저장
+    base_updated_at: str | None = Field(default=None, max_length=19)
+
+    @model_validator(mode="after")
+    def _editor_next_size(self):
+        if self.editor_next is not None and len(json.dumps(self.editor_next, ensure_ascii=False)) > 1_500_000:
+            raise ValueError("신규 편집기 값이 너무 커요")
+        return self
 
 
 class SeasonAddReq(BaseModel):
@@ -273,7 +284,11 @@ def get_project(pid: str):
 
 @router.post("/projects")
 def save_project(req: ProjectReq):
-    return store.save(req.model_dump())
+    try:
+        return store.save(req.model_dump())
+    except store.Conflict as e:
+        return JSONResponse({"error": "다른 화면에서 이 기획안이 먼저 저장됐어요. 새로고침해서 최신 내용을 확인해 주세요.",
+                             "code": "conflict", "updated_at": e.updated_at}, status_code=409)
 
 
 @router.post("/projects/{pid}/confirm")
