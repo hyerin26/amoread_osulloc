@@ -307,3 +307,7 @@ document.addEventListener('keydown', e => {
 });
 
 loadDeck().then(() => { if (location.hash === '#saved') show('saved'); });
+// 아침 자동 확인이 꺼져 있으면 알려 준다 (켜 두어야 매일 새 카드와 화면 사진이 미리 준비된다)
+v2api('/api/am/ai/auto').then(s => { const el = $('#autoNote'); if (!el) return;
+  el.innerHTML = s.on ? `매일 ${esc(s.at)}에 새 프로모션과 화면을 미리 받아 둬요.${s.last_run ? ` 마지막 확인 ${esc(s.last_run.slice(5))}` : ''}` : '아침 자동 확인이 꺼져 있어요. 켜 두면 매일 새 카드와 화면이 미리 준비돼요. <a href="/v2/settings#auto">설정에서 켜기</a>';
+  el.hidden = false; }).catch(() => {});

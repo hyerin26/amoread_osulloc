@@ -181,3 +181,6 @@ mark { background: #ffe27a; color: inherit; padding: 1px 3px; border-radius: 3px
   .act.undo span { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .icard.is-top, .icard.fly, .prog .bar i { transition: none; } }
+
+.autonote { padding-top: 12px; border-top: 1px solid var(--line-sub); line-height: var(--lh-cap); }
+.autonote a { color: var(--ink); font-weight: var(--fw-medium); text-underline-offset: 3px; }

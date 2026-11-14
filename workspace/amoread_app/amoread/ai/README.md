@@ -155,6 +155,8 @@ DB 없이 파일로 쓰는 환경용. **수집·처리(쓰기)는 한 PC에서�
 - 업로드 중 반쯤 쓴 파일을 남이 받지 않도록 `.partial`로 쓰고 끝나면 이름을 바꾼다.
 
 ## 매일 자동 확인 (`daily.py`, `register_daily.ps1`)
+
+**켜는 법: 설정 화면 › 매일 아침 자동 확인 › [켜기]** (`autostart.py`). 시각을 고르고 누르면 이 PC의 예약 작업으로 등록된다 — Windows는 작업 스케줄러(`register_daily.ps1`을 그대로 부름), Mac은 로그인 계정의 LaunchAgents. [끄기]로 지우고, [지금 한 번 확인]으로 바로 돌릴 수 있다. 마지막 확인 시각·마켓별 결과도 그 자리에 나온다. 아래 명령은 화면을 못 쓸 때만.
 - `python -m amoread.ai.daily` : 모든 마켓의 신규 프로모션을 확인해 목록만 갱신한다(레퍼런스에 추가는 사람이 화면에서). 끝나면 `AMOREAD_SNAPSHOT_DIR`가 있을 때 스냅샷도 올린다.
 - 꺼져 있던 날·오프라인을 견디게: 인터넷이 없으면 종료코드 2로 끝나 스케줄러가 재시도, 마지막 성공 후 20시간 안이면 건너뜀(하루 한 번만), 마켓 하나가 실패해도 나머지 진행. `--force`, `--markets a,b`, `--min-hours N`. 일부 마켓만 돌린 실행은 '오늘 완료'로 치지 않는다.
 - Windows 등록: `powershell -ExecutionPolicy Bypass -File register_daily.ps1 -At 09:30` → 매일 지정 시각 + 로그인 시 실행, 놓치면 켜진 직후 실행, 네트워크 있을 때만, 실패 시 30분 간격 3회 재시도. (Windows에서 직접 돌려 보지 못함 — 처음 한 번 `Start-ScheduledTask -TaskName AMOREAD_daily`로 확인)

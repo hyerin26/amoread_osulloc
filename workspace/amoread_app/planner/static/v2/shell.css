@@ -107,6 +107,11 @@ input[type=checkbox], input[type=radio] { width: 18px; height: 18px; margin: 0; 
 .btn.primary:active:not(:disabled), .v2btn.primary:active { filter: brightness(.88); }   /* 같은 그린에서 밝기만 낮춰 눌림 표현 */
 .btn:active:not(:disabled), .v2btn:active, .v2space:active { transform: translateY(1px); }
 .price, .pp, .fin, .sale, .sp, .pct, .op { font-variant-numeric: tabular-nums; }   /* 가격 숫자 비교: 고정폭 숫자 */
+/* 메뉴가 3개(홈·레퍼런스·오늘의 영감)로 늘어 좁은 창에서 글자가 세로로 꺾였다 → 메뉴·로고는 줄바꿈하지 않고, 덜 중요한 것부터 숨긴다 */
+.v2nav a, .v2logo, .v2old { white-space: nowrap; }
+.v2nav { flex: none; }
+@media (max-width: 1000px) { .v2date { display: none; } .v2top { gap: var(--s3); } }
+@media (max-width: 860px) { .v2old { display: none; } }
 @media (max-width: 720px) { .v2top { gap: var(--s3); padding: 0 var(--s3); } .v2date { display: none; } .v2plan { position: static; } .v2nav a { padding: 0 10px; } }
 /* 폰 폭: 로고 글자·예전 화면 링크를 숨기고, 출처 표시는 점만 (누르면 원래 문구 창이 열림) → 윗줄이 화면 밖으로 밀리지 않게 */
 @media (max-width: 480px) {

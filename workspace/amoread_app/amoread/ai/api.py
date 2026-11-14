@@ -323,3 +323,27 @@ def inspire_prefetch():
 def inspire_prefetch_status():
     from . import inspire
     return inspire.prefetch_status()
+
+
+# ---------------- 매일 아침 자동 확인 켜기·끄기 (설정 화면) ----------------
+class AutoReq(BaseModel):
+    on: bool
+    at: str = Field(default="09:30", pattern=r"^\d{2}:\d{2}$")
+
+
+@router.get("/auto")
+def auto_status():
+    from . import autostart
+    return autostart.status()
+
+
+@router.post("/auto")
+def auto_set(req: AutoReq):
+    from . import autostart
+    return autostart.enable(req.at) if req.on else autostart.disable()
+
+
+@router.post("/auto/run")
+def auto_run():
+    from . import autostart
+    return autostart.run_now()
