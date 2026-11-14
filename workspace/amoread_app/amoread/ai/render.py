@@ -116,8 +116,9 @@ def _css_text(txt: str) -> str:
     return txt[:1_500_000]
 
 
-def capture(url: str) -> dict:
-    """주소 하나를 그려서 {ok, final_url, title, html, layout, meta} 를 돌려준다. 실패하면 {ok: False, reason}."""
+def capture(url: str, extra=None) -> dict:
+    """주소 하나를 그려서 {ok, final_url, title, html, layout, meta} 를 돌려준다. 실패하면 {ok: False, reason}.
+    extra(pg): 페이지가 다 그려진 뒤 그 페이지로 더 할 일(화면 사진 찍기 등). 돌려준 값은 결과의 "extra"에 담긴다. 실패해도 수집은 그대로."""
     if not available():
         return {"ok": False, "reason": "브라우저 수집 도구(playwright·Chrome)가 없어요"}
     u = urllib.parse.urlsplit(url.strip())
@@ -175,6 +176,12 @@ def capture(url: str) -> dict:
                     except Exception:
                         pass
             layout = pg.evaluate(_LAYOUT_JS)
+            ex = None
+            if extra:   # 저장용으로 문서를 손보기(_CLEAN_JS) 전에, 보이는 그대로일 때 한다
+                try:
+                    ex = extra(pg)
+                except Exception:
+                    ex = None
             html = pg.evaluate(_CLEAN_JS, sheets)
         except Exception as e:
             return {"ok": False, "reason": f"그리는 중 오류: {type(e).__name__}"}
@@ -183,7 +190,7 @@ def capture(url: str) -> dict:
     if len(html.encode("utf-8", "ignore")) > MAX_HTML:
         return {"ok": False, "reason": "페이지가 너무 커요"}
     text = layout.get("full", "")
-    return {"ok": True, "final_url": final, "title": title, "html": html, "layout": layout, "text": layout.pop("full", ""),
+    return {"ok": True, "final_url": final, "title": title, "html": html, "layout": layout, "text": layout.pop("full", ""), "extra": ex,
             "meta": {"captured_at": datetime.now().strftime("%Y-%m-%d %H:%M"), "viewport": [VIEW_W, VIEW_H], "final_url": final, "title": title, "css_files": len(sheets),
                      "css_bytes": sum(len(v) for v in sheets.values()), "html_bytes": len(html.encode("utf-8", "ignore")), "page_h": layout["ph"], "bands": len(layout["bands"]),
                      "content_hash": hashlib.sha1(text.encode("utf-8")).hexdigest()[:16], "seconds": round(time.time() - t0, 1)}}

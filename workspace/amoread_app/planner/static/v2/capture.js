@@ -11,13 +11,18 @@ const Cap = (() => {
         const safe = String(d.html || '').replace(/<style\b/gi, '<script type="text/x-css"').replace(/<\/style\s*>/gi, '</script>')   // <style> 요소도 파싱만으로 CSP 위반이 기록되므로 실행되지 않는 글 덩어리로 바꿔 둔다
           .replace(/(\s)style\s*=\s*("([^"]*)"|'([^']*)')/gi, (m, sp, q, a, b) => `${sp}data-sty="${String(a ?? b).replace(/"/g, '&quot;')}"`);
         const doc = new DOMParser().parseFromString(safe, 'text/html');
+        if (d.slim) {   // 반복 목록(상품 카드 수백 개)은 앞의 몇 개만 남긴다: 구성을 보는 데는 충분하고, 그리는 시간이 수십 초 → 1초 안쪽으로 준다
+          for (const max of [16, 8, 4]) { if (doc.body.querySelectorAll('*').length < 4000) break;
+            doc.body.querySelectorAll('*').forEach(e => { while (e.children.length > max) e.lastElementChild.remove(); }); }
+        }
         const css = [...doc.querySelectorAll('script[type="text/x-css"]')].map(x => x.textContent).join('\n'); doc.querySelectorAll('script[type="text/x-css"]').forEach(x => x.remove());
         const noUrl = v => v.replace(/url\(\s*(['"]?)(?!data:|#)[^)]*?\1\s*\)/gi, 'url("data:,")');
         const sty = []; doc.body.querySelectorAll('[data-sty]').forEach(e => { e.dataset.cs = sty.length; sty.push(noUrl(e.getAttribute('data-sty'))); e.removeAttribute('data-sty'); });
         doc.querySelectorAll('img,source,video,audio,image,use,link').forEach(e => ['src', 'srcset', 'poster', 'href', 'xlink:href'].forEach(a => { if (/^(?!data:|#|\s*$)/i.test(e.getAttribute(a) || '')) e.removeAttribute(a); }));   // 이미지 파일은 저장하지 않으므로 바깥 주소는 지운다 (회색 자리만 보임)
         const sheet = new CSSStyleSheet();
         sheet.replaceSync(css.replace(/url\(\s*(['"]?)(?!data:|#)[^)]*?\1\s*\)/gi, 'url("data:,")')   // 이미지·글꼴 주소는 모두 비운다: 파일을 저장하지 않아 어차피 안 뜨고, 남겨 두면 바깥 주소는 CSP 오류로, 안쪽 주소(/kr/…)는 우리 서버 404로 콘솔에 쌓인다
-          .replace(/:root/g, ':host').replace(/(^|[},\s])html(?=[\s,{.:#\[>+~])/g, '$1:host').replace(/(^|[},\s])body(?=[\s,{.:#\[>+~])/g, '$1.cbody'));
+          .replace(/:root/g, ':host').replace(/(^|[},\s])html(?=[\s,{.:#\[>+~])/g, '$1:host').replace(/(^|[},\s])body(?=[\s,{.:#\[>+~])/g, '$1.cbody')
+          + '\n.dim,.dimmed,.dimm,[class*="dimmed"],[class*="modal-backdrop"],[class*="popup-dim"]{display:none!important}');   // 수집 순간 떠 있던 팝업의 어두운 가림막은 걷어 낸다 (본문이 어둡게 덮여 보였음)
         return { doc, sty, sheet };
       }).catch(e => { cache.delete(id); throw e; }));
     }
@@ -72,10 +77,24 @@ const Cap = (() => {
     return geo.get(id);
   }
   // 구좌 글로 원본 화면 속 위치(y·h) 찾기: 띠에 제목이 연결되지 않은 페이지, 같은 제목 구좌가 여럿인 페이지에서 '이 구좌 위치'를 표시할 때 쓴다
-  async function locate(id, text, tl) {
+  async function locate(id, text, tl, minH = 24) {
     const c = await load(id), t = findEl(c, text, tl); if (!t) return null;
     const pos = await measure(id, c), p = pos && pos.get(t);
-    return p && p[1] - p[0] >= 24 ? { y: p[0], h: p[1] - p[0] } : null;
+    return p && p[1] - p[0] >= minH ? { y: p[0], h: p[1] - p[0] } : null;
+  }
+  // 원본 화면에서 글(text)이 있는 자리를 찾아, 그 주변을 틀(el)에 가득 보여 주고 그 자리에 형광 표시를 얹는다 (오늘의 영감: '실제로 이렇게 쓰였어요').
+  // 못 찾으면 fallback(구좌 글)으로 한 번 더 찾고, 그래도 없으면 페이지 맨 위를 표시 없이 보여 준다. 돌려주는 값: { y, h, found }
+  async function spot(el, id, text, fallback) {
+    const bw = el.clientWidth, bh = el.clientHeight; if (!bw || !bh) return null;
+    const s = bw / W, viewH = bh / s;
+    let at = null;   // text는 글 하나 또는 여러 개(앞의 것부터 찾아 본다)
+    for (const t of [].concat(text || []).filter(Boolean)) { at = await locate(id, t, Math.max(12, t.length), 8).catch(() => null); if (at && at.h <= viewH * 1.5) break; at = null; }
+    const exact = !!at;
+    if (!at && fallback?.t) at = await locate(id, fallback.t, fallback.n || 0, 8).catch(() => null);
+    const y0 = at ? Math.max(0, at.y - Math.max(48, (viewH - at.h) / 2.4)) : 0;
+    await crop(el, id, y0, viewH);
+    if (at) { const hl = document.createElement('span'); hl.className = `hl${exact ? '' : ' wide'}`; px(hl, { top: (at.y - y0) * s - 3, height: Math.min(at.h, viewH) * s + 6 }); el.append(hl); }
+    return { y: at ? at.y : 0, h: at ? at.h : 0, found: !!at, exact };
   }
   async function slice(id, c, y, h) {
     const pos = await measure(id, c); if (!pos) return null;
@@ -200,5 +219,5 @@ const Cap = (() => {
     if (taken.has(title)) return null;
     return bs.find(b => !b.st && b.txt && ((t.length >= 4 && nz(b.txt).includes(t)) || (x.length >= 8 && nz(b.txt).includes(x)))) || null;
   }
-  return { mount, crop, cropEl, cols, lazy, whole, band, load, locate };
+  return { mount, crop, cropEl, cols, lazy, whole, band, load, locate, spot };
 })();

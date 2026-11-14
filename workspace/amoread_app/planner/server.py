@@ -99,7 +99,7 @@ def favicon():
 
 
 # 새 버전 (plans/20 재설계 화면). 예전 화면(/)은 그대로 두고 /v2/ 아래에 따로. 정해진 이름만 열어 준다
-V2_PAGES = {"home", "brief", "compose", "editor", "preview", "deals", "library", "settings"}
+V2_PAGES = {"home", "brief", "compose", "editor", "preview", "deals", "library", "settings", "inspire"}
 
 
 @app.get("/v2", response_class=HTMLResponse)
@@ -125,6 +125,16 @@ def refimg_own(name: str):
     if not p:
         raise HTTPException(404, "이미지가 없어요")
     return FileResponse(p)
+
+
+@app.get("/refimg/inspire/{sid}")
+def refimg_inspire(sid: str):
+    """오늘의 영감 카드의 실제 페이지 사진 (이 PC에 받아 둔 것만). 없으면 404."""
+    from amoread.ai import inspire
+    f = inspire.shot_file(sid)
+    if not f:
+        raise HTTPException(404, "없는 화면입니다.")
+    return FileResponse(f, media_type="image/jpeg", headers={"Cache-Control": "private, max-age=86400"})
 
 
 @app.get("/refimg/pin")
@@ -708,6 +718,8 @@ def main():
         try:
             from amoread.ai import discover
             discover.view()
+            from amoread.ai import inspire
+            inspire.candidates()   # 오늘의 영감 카드 후보도 미리 계산
         except Exception:
             pass
     threading.Thread(target=_warm, daemon=True).start()

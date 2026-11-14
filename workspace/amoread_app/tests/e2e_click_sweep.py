@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PORT = 9731
 KNOWN = ("409 (Conflict)",)
 SKIP = ("삭제", "수집 시작", "신규 확인", "다시 확인", "보드 추가", "선택한", "로그아웃", "초기화", "예전 화면", "PDF", "인쇄")
-PAGES = ("home", "brief", "compose", "editor", "preview", "deals", "settings", "library")
+PAGES = ("home", "brief", "compose", "editor", "preview", "deals", "settings", "library", "inspire")
 SEL = "button, [role=tab], summary, [data-open], a[href^='#']"
 
 JS_LIST = """(sel) => [...document.querySelectorAll(sel)].map((e, i) => { const r = e.getBoundingClientRect(), s = getComputedStyle(e);
@@ -66,7 +66,7 @@ def main() -> int:
         br = p.chromium.launch(channel="chrome")
         for page in PAGES:
             for mode, q in (("예시", ""), ("기획안", f"?id={pid}" if pid else None)):
-                if q is None or (q and page in ("home", "settings", "library")):
+                if q is None or (q and page in ("home", "settings", "library", "inspire")):
                     continue
                 pg = br.new_page(viewport={"width": 1440, "height": 900})
                 n[f"{page}/{mode}"] = sweep(pg, f"http://127.0.0.1:{PORT}/v2/{page}{q}", f"{page}({mode})", out)
