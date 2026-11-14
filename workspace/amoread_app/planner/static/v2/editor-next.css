@@ -2,85 +2,12 @@
    색·글자·간격은 /static/tokens.css + v2/shell.css 값을 그대로 쓴다 (v1.12의 tokens.demo.css는 읽지 않음).
    --v2-head-h: shell.js가 계산하는 고정 머리막대 높이 */
 body.en-host { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); }
+.en-host .en-tools { min-height: 0; padding: var(--s2) var(--s5); justify-content: flex-end; }
+.en-host .en-tools .topstatus { margin-left: auto; }
+.en-host .guardrail { padding: var(--s2) var(--s5); }
+.en-host .guardrail.is-error { background: var(--err-soft); color: var(--err); }
 .en-host .workspace { min-height: calc(100vh - var(--v2-head-h, 120px)); max-width: none; }
 .en-host .inspector { top: var(--v2-head-h, 120px); max-height: calc(100vh - var(--v2-head-h, 120px)); }
 /* 폰 머리의 고정 문구(OSULLOC · PAGE BLUEPRINT)는 편집할 수 없는 장식이라 비워 둔다 */
 .en-host .phone-head:empty { display: none; }
 
-/* ── 도구 줄: 상태 한 줄 + 도구. 예전엔 도구 줄과 노란 안내 띠가 따로 두 줄을 차지했다 ── */
-.en-host .en-tools { display: flex; align-items: center; gap: var(--s4); min-height: 0; padding: var(--s3) var(--s5) 0; flex-wrap: nowrap; }
-.en-host .en-tools .topstatus { display: flex; align-items: center; flex: none; margin-left: auto; flex-wrap: nowrap; }
-.en-host .en-sep { width: 1px; height: 20px; background: var(--line); flex: none; }
-.en-host .en-tools .en-ib { width: var(--control-md); padding: 0; }
-.en-host .en-ib .ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-
-/* 상태: 기본은 한 줄(넘치면 말줄임), [자세히]로 펼친다. 안내라서 노란 띠(주의 색)를 쓰지 않는다 */
-.en-host .guardrail { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--s2); margin: 0; padding: 0;
-  background: transparent; border: 0; color: var(--ink2); font-size: var(--fs-sm); line-height: var(--lh-sm); }
-.en-host .guardrail::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
-.en-host .guardrail .en-lead { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--ink); }
-.en-host .guardrail .en-more { display: none; }
-.en-host .guardrail .en-toggle { flex: none; padding: 2px 4px; border: 0; background: transparent; color: var(--accent);
-  font: inherit; font-weight: var(--fw-strong); cursor: pointer; border-radius: 4px; }
-.en-host .guardrail .en-toggle:hover { text-decoration: underline; text-underline-offset: 3px; }
-.en-host .guardrail .en-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-/* 펼친 상태와 오류: 줄바꿈해서 전부 보인다 */
-.en-host .guardrail.is-open, .en-host .guardrail.is-error { flex-wrap: wrap; align-items: baseline; }
-.en-host .guardrail.is-open .en-lead, .en-host .guardrail.is-error .en-lead { white-space: normal; overflow: visible; }
-.en-host .guardrail.is-open .en-more { display: inline; color: var(--ink2); }
-.en-host .guardrail.is-open::before { align-self: center; }
-.en-host .guardrail.is-error { padding: var(--s2) var(--s3); border-radius: var(--r2); background: var(--err-soft); color: var(--err); }
-.en-host .guardrail.is-error::before { background: var(--err); align-self: center; }
-.en-host .guardrail.is-error .en-lead { color: var(--err); }
-
-/* ── 제목 중복 정리: 기획안 이름은 위 기획안 막대에 있으므로 가운데 큰 제목은 화면 읽기 프로그램용으로만 ── */
-.en-host .en-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-.en-host .center-head { padding-bottom: 0; }
-.en-host .center-head p { margin: 0; color: var(--mute); font-size: var(--fs-cap); line-height: var(--lh-cap); }
-
-/* 편집 패널 머리: 구좌 이름 + 순서(1/6)를 한 줄로 */
-.en-host .en-ins-title { display: flex; align-items: baseline; gap: var(--s2); min-width: 0; }
-.en-host .en-ins-title h2 { margin: 0; min-width: 0; overflow-wrap: anywhere; }
-.en-host .en-pos { flex: none; color: var(--mute); font-size: var(--fs-cap); font-variant-numeric: tabular-nums; }
-/* "현재 구좌 전체의 기본 설정을 편집합니다" 회색 상자는 기본 상태에선 당연한 말이라 숨긴다.
-   요소 하나를 고른 때(경로 끝에 <b>)만 "선택한 요소 1개에만 적용" 안내를 보인다 */
-.en-host .ia-breadcrumb:not(:has(b)) + .ia-scope { display: none; }
-
-/* ── 구좌 목록: 위·아래·복제·삭제 버튼이 모든 구좌 밑에 늘 한 줄씩 있어 목록이 길고 산만했다.
-   고른 구좌는 그대로 아래 줄에 보이고, 나머지는 줄을 차지하지 않고 마우스를 올리거나
-   키보드 초점이 들어올 때만 항목 오른쪽 아래에 겹쳐 뜬다. 터치 화면(hover 없음)은 v1.12 그대로 늘 보인다 ── */
-@media (hover: hover) {
-  .en-host #section-list .outline-entry:not(:has(.outline-item[aria-current=true])) .outline-entry-actions {
-    position: absolute; right: 6px; bottom: 9px; padding: 2px; gap: 2px;
-    background: var(--surface); border-radius: var(--r2); box-shadow: 0 1px 6px var(--shade);
-    opacity: 0; transition: opacity .12s ease-out; }
-  .en-host #section-list .outline-entry:hover .outline-entry-actions,
-  .en-host #section-list .outline-entry:focus-within .outline-entry-actions { opacity: 1; }
-}
-@media (prefers-reduced-motion: reduce) { .en-host #section-list .outline-entry-actions { transition: none; } }
-
-/* ── 821~1100px: 네 칸 최소 폭 합이 화면보다 커서 편집 패널이 오른쪽 밖으로 잘렸다 (v1.12 원래 문제).
-   목록·편집 패널을 줄이고 가운데 미리보기(폰 틀은 max-width:100%)가 남는 폭을 쓴다. 820px 이하는 v1.12의 한 줄 쌓기 ── */
-@media (min-width: 821px) and (max-width: 1100px) {
-  .en-host .workspace.cb-has-rail { grid-template-columns: 44px 180px minmax(0, 1fr) minmax(280px, 300px); gap: var(--s3); padding: var(--s3) var(--s4); }
-  .en-host .outline { padding: var(--s3); }
-  .en-host .ia-tree-section .outline-entry { grid-template-columns: 20px minmax(0, 1fr); column-gap: 2px; }
-  .en-host .ia-tree-section { margin-left: 0; }
-}
-@media (min-width: 821px) and (max-width: 960px) {
-  .en-host .workspace.cb-has-rail { grid-template-columns: 44px 160px minmax(0, 1fr) 296px; }
-  .en-host .outline-desc { display: none; }
-}
-/* 편집 영역 탭(내용·배치·표시·참고·인계·검수)이 좁은 패널에서 잘리지 않고 옆으로 넘겨 보이게 */
-.en-host .ia-groups.am-kit-primary-nav { overflow-x: auto; scrollbar-width: none; }
-.en-host .ia-groups.am-kit-primary-nav .ia-group-btn { flex: none; white-space: nowrap; }
-
-/* ── 좁은 화면: 상태 줄이 한 줄을 다 쓰고 도구는 다음 줄로 ── */
-@media (max-width: 1100px) {
-  .en-host .en-tools { flex-wrap: wrap; row-gap: var(--s2); }
-  .en-host .guardrail { flex-basis: 100%; }
-  .en-host .en-tools .topstatus { margin-left: 0; flex-wrap: wrap; row-gap: var(--s2); }
-}
-@media (max-width: 480px) {
-  .en-host .en-tools { padding: var(--s3) var(--s4) 0; }
-}
