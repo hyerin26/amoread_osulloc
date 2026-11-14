@@ -151,7 +151,7 @@ function customPreview(s){
  const customHeight=customManualHeight(c),visibleHeight=customHeight||customPresetHeight(c);
  const heightAttr=customHeight?` data-am-style="--am-custom-height:${customHeight}px"`:'';
  const showResize=!window.AM_CB_STATIC_EXPORT&&s.id===current;
- const embedded=AMBlocks.renderSlot(s,'section:after',blockContext(),{staticView:!!window.AM_CB_STATIC_EXPORT,showEmpty:cbRailMode==='library'&&showResize});
+ const embedded=AMBlocks.renderSlot(s,'section:after',blockContext(),{staticView:!!window.AM_CB_STATIC_EXPORT,showEmpty:(cbRailMode==='library'||!!window.AM_EN_PALETTE)&&showResize});
  const resize=showResize?`<button type="button" role="slider" class="am-custom-resize-handle" data-custom-resize="${E(s.id)}" aria-label="자유 기획 구좌 높이 조절, 위아래 화살표로 20픽셀 변경" aria-orientation="vertical" aria-valuemin="${CUSTOM_SIZE_MIN}" aria-valuemax="${CUSTOM_SIZE_MAX}" aria-valuenow="${visibleHeight}" aria-valuetext="${visibleHeight}픽셀" title="끌어서 프레임 높이 변경 · ↑↓ 20px, Shift+↑↓ 100px"><span class="am-custom-resize-lines" aria-hidden="true"></span><span class="am-custom-resize-readout" aria-hidden="true">${visibleHeight}px</span></button>`:'';
  const imageMarkup=image?`<img class="am-custom-reference-image" src="${E(image)}" alt="첨부한 레퍼런스 이미지">`:'';
  const empty=`<div class="am-custom-art-placeholder"><span>▧</span><strong>구좌 구성 미정 · 공간 확보</strong><small>좌측 ‘요소’에서 이미지·상품 카드·텍스트 등을 추가할 수 있어요.</small></div>`;
@@ -389,7 +389,7 @@ function reviewPreview(s){
 function preview(s){
  const active=s.id===current?' active':'';
  const title=(s.layout==='text-cta'?'':`<h3>${E(s.name)}</h3>`)+(s.layout==='text-cta'||s.layout==='split'?'':s.role?`<p>${E(s.role)}</p>`:'')+s.lines.map(x=>x.text?`<p class="preview-extra-line">${E(x.text)}</p>`:'').join('');
- return `<section class="preview-block${active} am-align-${E(s.align||'left')} am-gap-${E(s.gap||'normal')}" role="button" tabindex="0" aria-label="${E(s.name)} 구좌 편집" aria-pressed="${s.id===current}" data-page="${E(s.id)}" data-image-ratio="${E(imageRatio(s))}" data-am-style="--am-section-image-aspect:${E(imageRatioCss(s))}">${title}${demoInner(s)}${s.layout==='ev-quiz'||s.layout==='custom'?'':AMBlocks.renderSlot(s,'section:after',blockContext(),{staticView:!!window.AM_CB_STATIC_EXPORT,showEmpty:cbRailMode==='library'&&s.id===current&&!window.AM_CB_STATIC_EXPORT})}${ctaMarkup(s)}</section>`;
+ return `<section class="preview-block${active} am-align-${E(s.align||'left')} am-gap-${E(s.gap||'normal')}" role="button" tabindex="0" aria-label="${E(s.name)} 구좌 편집" aria-pressed="${s.id===current}" data-page="${E(s.id)}" data-image-ratio="${E(imageRatio(s))}" data-am-style="--am-section-image-aspect:${E(imageRatioCss(s))}">${title}${demoInner(s)}${s.layout==='ev-quiz'||s.layout==='custom'?'':AMBlocks.renderSlot(s,'section:after',blockContext(),{staticView:!!window.AM_CB_STATIC_EXPORT,showEmpty:(cbRailMode==='library'||!!window.AM_EN_PALETTE)&&s.id===current&&!window.AM_CB_STATIC_EXPORT})}${ctaMarkup(s)}</section>`;
 }
 
 function renderPage(){
@@ -579,10 +579,11 @@ function renderCbRail(){
  document.querySelectorAll('[data-cb-rail]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.cbRail===cbRailMode)));
  const adding=cbRailMode==='library',usingData=cbRailMode==='data';
  $('section-list').hidden=cbRailMode!=='sections';$('addSection').hidden=cbRailMode!=='sections';
- $('component-library').hidden=!adding;$('data-library').hidden=!usingData;
+ $('component-library').hidden=!(adding||window.AM_EN_PALETTE);   // AM_EN_PALETTE: 앱(editor-next)에서 요소 팔레트를 늘 보임
+ $('data-library').hidden=!usingData;
  $('cb-outline-title').innerHTML=adding?'추가 <small>구좌·요소 라이브러리</small>':usingData?'자료 <small>원본 연결</small>':'구성 <small>페이지 구조</small>';
  $('cb-outline-desc').textContent=adding?'새 구좌를 만들거나 선택한 구좌에 요소를 추가합니다.':usingData?'상품·후기·레퍼런스를 찾아 현재 편집 대상에 연결합니다.':'페이지의 구좌와 내부 요소를 펼쳐서 선택하세요.';
- if(adding){
+ if(adding||window.AM_EN_PALETTE){
   const quiz=section().layout==='ev-quiz',can=canInsertHere();
   const switcher=`<div class="ia-library-choose"><button type="button" data-ia-library="sections" aria-pressed="${iaLibraryMode==='sections'}">구좌 추가</button><button type="button" data-ia-library="blocks" aria-pressed="${iaLibraryMode==='blocks'}">요소 추가</button></div>`;
   if(iaLibraryMode==='sections')$('component-library').innerHTML=switcher+`<div class="ia-library-intro">서로 다른 와이어프레임을 확인하면서 구좌를 고를 수 있어요.</div><button type="button" class="am-ed-button am-ed-button--primary ia-open-catalog" data-ia-picker="1">＋ 구좌 유형 라이브러리 열기</button><div class="ia-library-categories">${['상품','안내·이야기','이벤트','후기'].map(k=>`<button type="button" data-ia-picker-cat="${E(k)}">${E(k)} 구좌 보기 ↗</button>`).join('')}</div>`;

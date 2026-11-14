@@ -47,6 +47,11 @@
   <div class="panel-head"><h1 id="cb-outline-title">구성</h1><p class="outline-desc" id="cb-outline-desc"></p></div>
   <div class="en-listhead"><h2>페이지 구좌</h2><button class="am-ed-button am-ed-button--subtle am-ed-add" id="addSection">＋ 구좌 추가</button></div>
   <div id="section-list"></div>
+  <!-- 넣을 것(요소)은 페이지 목록과 같은 왼쪽에, 모드 없이 늘. 넣은 뒤 바로 오른쪽에서 속성을 고친다 (Figma Assets·Relume 방식) -->
+  <section class="en-palette" aria-labelledby="enPalH">
+   <div class="en-palhead"><h2 id="enPalH">넣을 요소</h2><small>끌어 놓거나 누르면 고른 구좌에 들어가요</small></div>
+   <div id="component-library" hidden></div>
+  </section>
  </aside>
  <section class="center" aria-label="페이지 미리보기">
   <div class="en-canvasbar">
@@ -74,13 +79,13 @@
  <aside class="inspector" aria-label="고른 구좌 편집">
   <div class="inspector-head">
    <div class="en-ins-title"><h2 id="insTitle"></h2><span class="en-pos" id="position"></span>
-    <nav class="cb-rail" aria-label="오른쪽 칸 보기"><button type="button" data-cb-rail="library" aria-pressed="false" title="고른 구좌에 요소 넣기"><svg class="am-kit-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#am-kit-blocks"></use></svg><span>요소 추가</span></button><button type="button" data-cb-rail="data" aria-pressed="false" title="고른 구좌·요소에 상품·후기·레퍼런스 연결"><svg class="am-kit-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#am-kit-database"></use></svg><span>자료 연결</span></button><button type="button" data-cb-rail="sections" aria-pressed="true" class="en-done">완료</button></nav>
+    <nav class="cb-rail" aria-label="오른쪽 칸 보기"><button type="button" data-cb-rail="data" aria-pressed="false" title="고른 구좌·요소에 상품·후기·레퍼런스 연결"><svg class="am-kit-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#am-kit-database"></use></svg><span>자료 연결</span></button><button type="button" data-cb-rail="sections" aria-pressed="true" class="en-done">완료</button></nav>
    </div>
    <nav id="ia-breadcrumb" class="ia-breadcrumb" aria-label="현재 편집 위치"></nav><div id="ia-edit-scope" class="ia-scope" role="status"></div>
    <button type="button" id="changeLayout" class="am-ed-layout-trigger"><span class="en-type"><small>유형</small><strong id="layoutLabel"></strong></span><span class="en-type-act">유형 변경</span></button>
   </div>
   <div id="tabbar" class="tabbar" role="tablist" aria-label="구좌 편집 탭"></div><div id="panel-body" class="panel-body"></div>
-  <div id="component-library" class="en-mode-body" hidden></div><div id="data-library" class="en-mode-body" hidden></div>
+  <div id="data-library" class="en-mode-body" hidden></div>
  </aside>
 </main>
 <dialog class="am-ed-picker" id="typeDialog" aria-labelledby="pickerTitle"><div class="am-ed-picker-head"><div><h2 id="pickerTitle">구좌 유형 선택</h2><p id="pickerSubtitle">선택한 구좌의 내용과 구성 차이를 확인하세요.</p></div><button type="button" class="am-ed-icon-btn" id="pickerClose" aria-label="선택기 닫기">×</button></div><div class="am-ed-picker-controls"><input type="search" id="pickerSearch" class="am-ed-input" placeholder="구좌 이름·역할 검색" aria-label="구좌 검색"><div id="pickerCats" class="am-ed-picker-cats" role="group" aria-label="구좌 분류"></div></div><div class="am-ed-picker-main"><div id="pickerResults" class="am-ed-picker-results"></div><div class="am-ed-picker-summary"><h3 id="selectedType">구좌를 선택해주세요</h3><p id="selectedDesc"></p><div id="selectedPreview" class="am-ed-selected-preview"></div><div class="am-ed-note" id="impactNote">기존 문구·메모·레퍼런스는 유지됩니다.</div></div></div><div class="am-ed-picker-foot"><div class="am-ed-picker-foot-info"><span id="pickerCount"></span><button type="button" id="pickerZoom" class="am-ed-button am-ed-button--subtle am-ed-button--sm">원래 비율로 전체 보기 ↗</button></div><div class="am-ed-actionrow"><button class="am-ed-button am-ed-button--subtle" id="pickerCancel">취소</button><button class="am-ed-button am-ed-button--primary" id="pickerApply">적용</button></div></div></dialog>

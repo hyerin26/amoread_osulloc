@@ -124,7 +124,7 @@ def test_canvas_selection_reveals_inspector(page, server, plan):
 def test_card_elements(page, server, plan):
     open_editor_next(page, server, plan["id"])
     page.locator("#page [data-page=\"e2\"]").click()
-    page.locator("[data-cb-rail=\"library\"]").click()   # 오른쪽 칸 [요소 추가] → 요소 목록부터 (plans/27 §9)
+    # 요소 팔레트는 왼쪽 칸 아래에 늘 보임 (plans/27 §10) → 바로 누름
     page.locator("[data-cb-add=\"productCard\"]").click()
     card = page.locator('#page [data-page="e2"] .cb-node--productCard').first
     card.click(position={"x": 3, "y": 3})

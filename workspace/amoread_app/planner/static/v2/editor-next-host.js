@@ -3,6 +3,8 @@
 
 // 1) 외부 저장 모드: v1.12가 브라우저 저장소(localStorage) 대신 이 화면이 주는 기획안 값을 쓰고, 새 구좌에 가상 상품·후기를 넣지 않는다.
 window.AMOREAD_EDITOR_OPTIONS = { persistence: 'external' };
+// 1-1) 요소 팔레트를 왼쪽 칸 아래에 늘 보인다 (보기 전환 없이 끌어 놓기·누르기. 고른 구좌에 빈 놓을 자리도 늘 표시). plans/27 §10
+window.AM_EN_PALETTE = true;
 
 // 2) 기획안·상품·후기 연결. v1.12 스크립트가 모두 실행된 뒤(DOMContentLoaded) 시작한다.
 //    - 기획안: v2/plan.js의 PLAN (주소 ?id=, /api/am/projects). 신규 편집기 값은 doc.editor_next에만 쓴다
@@ -143,6 +145,19 @@ document.addEventListener('DOMContentLoaded', () => {
   new MutationObserver(sync).observe(n, { childList: true, characterData: true, subtree: true });
   sync();
 })();
+
+// 5) 요소 팔레트 타일은 2열이라 설명 줄을 숨김 → 마우스를 올리면 "이름 — 설명"
+document.addEventListener('DOMContentLoaded', () => {
+  const lib = document.getElementById('component-library');
+  if (!lib) return;
+  const tip = () => lib.querySelectorAll('.cb-library-card').forEach(c => {
+    if (c.title) return;
+    const b = c.querySelector('b'), s = c.querySelector('small');
+    c.title = [b && b.textContent.trim(), s && s.textContent.trim()].filter(Boolean).join(' — ');
+  });
+  new MutationObserver(tip).observe(lib, { childList: true, subtree: true });
+  tip();
+});
 
 // 3) 미리보기 칸 도구 줄의 [내보내기] 메뉴(<details>): 하나 고르면 닫고, 바깥을 누르거나 Esc면 닫는다
 (() => {
