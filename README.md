@@ -117,24 +117,26 @@ $env:PYTHONUTF8 = "1"
 
 ## 6. 앱 실행 및 종료
 
-같은 `amoread_app` 폴더에서 실행합니다.
+같은 `amoread_app` 폴더의 PowerShell에서 아래 명령어를 한 줄씩 실행합니다. 서버는 별도 창에서 실행되고, 기본 브라우저에서 **v2 화면**을 엽니다.
 
 ```powershell
 $env:PYTHONUTF8 = "1"
 $env:PLANNER_PORT = "9751"
-.\.venv\Scripts\python.exe -m planner.server
+Start-Process -FilePath ".\.venv\Scripts\python.exe" -ArgumentList "-m", "planner.server", "--no-browser" -WorkingDirectory (Get-Location).Path
+Start-Sleep -Seconds 3
+Start-Process "http://127.0.0.1:9751/v2/"
 ```
 
-크롬에서 **[http://127.0.0.1:9751/v2/](http://127.0.0.1:9751/v2/)** 를 열어 주세요. 브라우저가 자동으로 열려도 주소 끝이 `/v2/`인지 확인합니다.
+접속 주소는 **[http://127.0.0.1:9751/v2/](http://127.0.0.1:9751/v2/)** 입니다. 기본 브라우저가 Chrome이 아니면 이 주소를 Chrome에서 열어 주세요. 서버 시작에 시간이 걸려 연결 오류가 보이면 서버 창에 실행 안내가 나온 뒤 페이지를 새로고침합니다.
 
-- **사용 중에는 PowerShell 창을 열어두세요.** 창을 닫으면 서버도 종료됩니다.
-- 종료: PowerShell 창에서 **Ctrl + C**
+- **사용 중에는 새로 열린 Python 서버 창을 열어두세요.** 이 창을 닫으면 서버도 종료됩니다.
+- 종료: Python 서버 창에서 **Ctrl + C**
 - 각자 PC에서 실행하는 앱이므로 이 주소를 다른 사람에게 보내도 담당자님 PC에 접속되지는 않습니다.
 - `PLANNER_PORT`를 지정하지 않으면 기본 포트는 9731입니다. 이 문서는 9751로 통일합니다.
 
 ### 다음부터 실행할 때
 
-파일 탐색기에서 `osulloc-ai\workspace\amoread_app` 폴더를 열고 주소창에 `powershell`을 입력합니다. **6번의 세 줄만 다시 실행**하면 됩니다. 설치는 매번 하지 않아도 됩니다. 원천 데이터가 바뀐 경우에는 5번을 먼저 진행하세요.
+파일 탐색기에서 `osulloc-ai\workspace\amoread_app` 폴더를 열고 주소창에 `powershell`을 입력합니다. **6번의 다섯 줄만 다시 실행**하면 됩니다. 설치는 매번 하지 않아도 됩니다. 원천 데이터가 바뀐 경우에는 5번을 먼저 진행하세요.
 
 ### 실행 후 확인
 
@@ -170,7 +172,7 @@ $env:PLANNER_PORT = "9751"
 | 패키지 설치 중 SSL·인증서 오류 | `pip-system-certs` 설치 단계 확인. 계속 실패하면 오류 메시지를 전달하고 사내 인증서·네트워크 설정 확인 |
 | 원천 파일이 없다는 오류 | 3번의 위치·원본 파일명 확인 후 5번 재실행 |
 | 상품·실적 화면에 데이터 없음 | 5번 변환이 오류 없이 완료되어 `planner\data\planner_data.json`이 생성되었는지 확인 |
-| 포트가 이미 사용 중 | `$env:PLANNER_PORT = "9761"`로 바꿔 실행하고 접속 주소도 `http://127.0.0.1:9761/v2/`로 변경 |
+| 포트가 이미 사용 중 | 6번의 `$env:PLANNER_PORT = "9751"`을 `"9761"`로 바꾸고, `Start-Process`의 접속 주소도 `http://127.0.0.1:9761/v2/`로 변경한 뒤 실행 |
 | 인증 토큰이 없다는 안내 | 서버 재실행 후 페이지 새로고침 |
 | 한글이 깨짐 | 실행·변환 전에 `$env:PYTHONUTF8 = "1"` 설정 |
 | AI 카피 추천 실패 | Claude 인증·모델 권한 확인. 패키지가 설치되어 있다는 상태만으로 인증 성공을 보장하지 않음 |
