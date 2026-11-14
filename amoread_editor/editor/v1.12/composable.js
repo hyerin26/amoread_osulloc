@@ -91,7 +91,7 @@ function cardElementSettings(p,key){
  return '';
 }
 const CARD_INPUT_KEYS=['img','label','pill','appeal','tag','copy','btn'];
-function inspector(s,id,ctx){const found=find(s,id),n=found?.item;if(!n)return '';const p=n.props;let h='<div class="cb-inspector-header"><strong>'+({productCard:'상품 카드',text:'텍스트',image:'이미지',cta:'CTA 버튼',review:'후기',benefit:'혜택',notice:'유의사항',group:'그룹',productGrid:'상품 카드 묶음'}[n.type])+' · 개별 인스턴스</strong><button class="am-ed-button am-ed-button--subtle am-ed-button--sm" data-cb-action="back">구좌 편집으로</button></div><div class="cb-inspector-actions">'+[['up','위로'],['down','아래로'],['clone','복제'],['delete','삭제'],...(['group','productGrid'].includes(n.type)?[['ungroup','묶음 해제']]:[['wrap-next','다음 요소와 2열로 묶기']])].map(([op,l])=>'<button class="am-ed-button am-ed-button--subtle am-ed-button--sm" data-cb-action="'+op+'">'+l+'</button>').join('')+'</div>';
+function inspector(s,id,ctx){const found=find(s,id),n=found?.item;if(!n)return '';const p=n.props;let h='<div class="cb-inspector-header"><strong>'+({productCard:'상품 카드',text:'텍스트',image:'이미지',cta:'CTA 버튼',review:'후기',benefit:'혜택',notice:'유의사항',group:'그룹',productGrid:'상품 카드 묶음'}[n.type])+'</strong><button class="am-ed-button am-ed-button--subtle am-ed-button--sm" data-cb-action="back">구좌 편집으로</button></div><div class="cb-inspector-actions">'+[['up','위로'],['down','아래로'],['clone','복제'],['delete','삭제'],...(['group','productGrid'].includes(n.type)?[['ungroup','묶음 해제']]:[['wrap-next','다음 요소와 2열로 묶기']])].map(([op,l])=>'<button class="am-ed-button am-ed-button--subtle am-ed-button--sm" data-cb-action="'+op+'">'+l+'</button>').join('')+'</div>';
  if(n.type==='productCard'){
   h+=select('productId','연결 상품',p.productId,[['','상품 미정'],...ctx.products.map(x=>[x.id,x.name])]);
   h+=select('compact','상품 카드 밀도',String(!!p.compact),[['false','기본 크기'],['true','작은 카드 / 여러 열에 적합']]);
@@ -136,6 +136,6 @@ function reorderCard(s,id,source,target,after=false){const n=find(s,id)?.item;if
 function changeCardOrder(s,id,key,d){const n=find(s,id)?.item;if(n?.type!=='productCard')return false;const list=n.props.card.order,i=list.indexOf(key),j=i+d;if(i<0||j<0||j>=list.length)return false;
  const imageVisible=!!n.props.card.on?.img,locked=k=>k==='ai'||(imageVisible&&k==='label');
  if(locked(key)||locked(list[j]))return false;[list[i],list[j]]=[list[j],list[i]];return true}
-function issues(s,ctx){const problems=[];for(const [k,list] of Object.entries(ensure(s).slots)){const check=n=>{if(n.type==='productCard'&&!ctx.products.some(p=>p.id===n.props.productId))problems.push(k+': 상품 선택 필요');if(n.type==='cta'&&n.props.targetType!=='none'&&!n.props.target)problems.push(k+': CTA 목적지 미입력');(n.children||[]).forEach(check)};list.forEach(check)}return problems}
+function issues(s,ctx){const problems=[];for(const [k,list] of Object.entries(ensure(s).slots)){const check=n=>{if(n.type==='productCard'&&!ctx.products.some(p=>p.id===n.props.productId))problems.push('상품 카드에 연결할 상품을 골라 주세요');if(n.type==='cta'&&n.props.targetType!=='none'&&!n.props.target)problems.push('CTA 버튼이 이동할 곳을 입력해 주세요');(n.children||[]).forEach(check)};list.forEach(check)}return problems}
 return {TYPES,ensure,slot,find,create,insert,remove,move,duplicate,wrapNext,unwrap,slotKey,visibleSlots,renderSlot,catalogHTML,inspector,setField,changeCardOrder,reorderCard,reorderBlock,issues};
 })();

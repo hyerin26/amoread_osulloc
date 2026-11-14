@@ -73,9 +73,14 @@ def test_green_ui_tokens_applied(page, server, plan):
     css = lambda sel, prop: page.locator(sel).first.evaluate(f"el => getComputedStyle(el).getPropertyValue('{prop}')")
     root = lambda name: page.evaluate(f"() => getComputedStyle(document.documentElement).getPropertyValue('{name}').trim()")
     assert root("--accent") == "#007a46" and root("--fs-body") == "15px"   # v2/shell.css 읽기 크기
-    assert css("#exportDemo", "background-color") == "rgb(243, 243, 243)" and css("#exportDemo", "height") == "36px"
-    assert css(".ia-group-btn[aria-selected=true]", "background-color") == "rgb(238, 245, 239)"
-    assert css("aside.inspector", "border-top-left-radius") == "12px"
+    # 2026-11-15 UX 재배치 (plans/27): 페이지 도구는 미리보기 위 도구 줄(버튼 36px), 내보내기는 메뉴 안,
+    # 편집 탭은 밑줄 탭(선택 = 그린 밑줄), 세 칸은 카드 대신 1px 선으로 나뉨
+    assert css("#iaCheckAll", "height") == "36px"
+    assert page.locator(".en-menu #exportDemo").count() == 1 and page.locator(".en-menu #exportHandoff").count() == 1
+    assert css(".ia-group-btn[aria-selected=true]", "border-bottom-color") == "rgb(0, 122, 70)"
+    assert css("aside.inspector", "border-left-width") == "1px" and css("aside.inspector", "border-top-left-radius") == "0px"
+    tops = page.evaluate("() => ['.outline>.cb-rail', '.en-canvasbar', '.en-ins-title'].map(q => Math.round(document.querySelector(q).getBoundingClientRect().top))")
+    assert len(set(tops)) == 1, tops   # 세 칸 첫 줄 높이 맞춤
     assert page.errors == [], page.errors
 
 
