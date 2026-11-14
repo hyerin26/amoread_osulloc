@@ -13,20 +13,17 @@
 <link rel="stylesheet" href="/static/v2/preview.css">
 </head>
 <body>
-<header class="v2top">
-  <a class="v2logo" href="/v2/home"><i aria-hidden="true">a</i>AMOREAD</a>
-  <nav class="v2nav" aria-label="메뉴"><a href="/v2/home">홈</a><a href="/v2/library">레퍼런스</a></nav>
-  <span class="v2grow"></span><span class="v2date" id="v2date">새 버전 · 시험 중</span>
-  <a class="v2old" href="/">예전 화면</a>
-  <a class="v2gear" href="/v2/settings" aria-label="설정·데이터"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
-</header>
-<div class="v2plan" aria-label="기획안 막대">
+<header class="v2top v2one" aria-label="기획안 막대">
+  <a class="v2logo" href="/v2/home" aria-label="AMOREAD 홈"><i aria-hidden="true">a</i>AMOREAD</a>
   <a class="v2ident" href="/v2/home" title="기획안 목록으로">봄 · 피크닉에서 누리는 차 한 잔의 여유</a>
   <nav class="v2steps" aria-label="단계"><a href="/v2/brief">01 브리프</a><a href="/v2/compose">02 구좌 구성</a><a href="/v2/editor">03 구좌 편집</a><a href="/v2/preview" aria-current="step">04 미리보기·내보내기</a></nav>
   <a class="v2space" href="/v2/deals">상품·할인</a>
   <span class="v2saved" id="v2saved" aria-live="polite"></span>
-  <span class="v2grow"></span><a class="v2btn v2prev" href="/v2/editor"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>이전: 구좌 편집</a><a class="v2btn primary v2next" href="#exp">내보내기</a>
-</div>
+  <span class="v2grow"></span>
+  <a class="v2btn v2prev" href="/v2/editor"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>이전: 구좌 편집</a><a class="v2btn primary v2next" href="#exp">내보내기</a>
+  <a class="v2tool" href="/v2/library" aria-label="레퍼런스 라이브러리" title="레퍼런스 라이브러리"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2z"/><path d="M6 21h13v-3"/><path d="M9 7h6"/></svg></a>
+  <a class="v2gear" href="/v2/settings" aria-label="설정·데이터"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
+</header>
 <main class="page">
   <p class="demo"><b>예시 화면이에요.</b> 구좌 편집 목업과 같은 예시 기획안이에요. 상품, 가격, 후기, 레퍼런스는 모두 가상의 값이에요.</p>
   <div class="head"><div class="grow"><h1>디자이너에게 보낼 기획안</h1>

@@ -9,21 +9,26 @@ document.addEventListener('click', e => {
 // 고정 패널·'그 구좌로 이동'이 막대 밑에 가리지 않게. 좁은 화면에서 기획안 막대가 고정이 아니면 윗줄만 셈
 (() => {
   const top = document.querySelector('.v2top'), plan = document.querySelector('.v2plan');
+  const sticky = el => !!el && getComputedStyle(el).position === 'sticky';
+  // 한 줄 머리(.v2one, 2026-11-15)는 폰 폭에서 고정을 풀므로 고정일 때만 센다
   const set = () => {
-    const h = (top?.offsetHeight || 0) + (plan && getComputedStyle(plan).position === 'sticky' ? plan.offsetHeight : 0);
+    const h = (sticky(top) ? top.offsetHeight : 0) + (sticky(plan) ? plan.offsetHeight : 0);
     document.documentElement.style.setProperty('--v2-head-h', `${h}px`);
   };
   set(); addEventListener('resize', set);
   if (window.ResizeObserver) { const ro = new ResizeObserver(set); [top, plan].forEach(el => el && ro.observe(el)); }
 })();
 
+// 한 줄 머리에서 [이전]은 화살표만 보이므로 마우스를 올리면 이름이 뜨게 (글자는 읽어 주기용으로 그대로 남아 있음)
+document.querySelectorAll('.v2one .v2prev').forEach(a => { if (!a.title) a.title = a.textContent.trim(); });
+
 // 기획안 막대의 [다음: …] 하나로 앞으로 간다 (2026-11-10 길잡이 정리).
 // 화면마다 원래 있던 다음 버튼(#nextBtn: 저장 마치기·반영 안 한 할인 확인 등)을 대신 눌러 같은 동작을 쓴다. 화면 안의 그 버튼은 CSS로 숨김.
 // plan.js의 '저장 기다렸다 이동' 처리보다 먼저 받아서 두 번 이동하지 않게 한다.
 document.addEventListener('click', e => {
-  const nb = e.target.closest('.v2plan .v2next');
+  const nb = e.target.closest(':is(.v2plan, .v2one) .v2next');
   if (!nb || e.ctrlKey || e.metaKey || e.shiftKey) return;
-  const inPage = document.querySelector('.v2plan ~ main #nextBtn');
+  const inPage = document.querySelector(':is(.v2plan, .v2one) ~ main #nextBtn');
   if (!inPage) return;
   e.preventDefault();
   e.stopImmediatePropagation();
