@@ -198,7 +198,7 @@ function customQualityPanel(s){const c=ensureCustom(s);const warnings=[];
 function defaults(){const a=[makeSection('hero','s1','봄을 전하는 차 한 잔','이번 시즌을 위한 선물 제안'),makeSection('benefit','s2','이번 프로모션 혜택','놓치지 말아야 할 혜택'),makeSection('grid2','s3','선물 취향별 추천','선물받는 분의 취향에 따라 골라보세요'),makeSection('service','s4','선물 포장 서비스','마음을 전하는 포장'),makeSection('ev-ugc','s5','티타임 사진 인증','댓글 또는 사진으로 참여하세요'),makeSection('review','s6','구매자가 먼저 전하는 이야기','선택에 도움이 되는 후기')];a[1].items=[{label:'시즌 할인',text:'일부 대상 상품 할인'},{label:'선물 포장',text:'조건 충족 시 제공'}];a[2].num=false;a[2].scope='선물 세트';a[2].cat='';a[2].lines=[{text:'취향별로 가볍게 둘러보세요'}];a[2].ctaOn=true;a[2].cta='상품 더 보기';a[2].ctaTo='선물 상품 목록';a[3].items=[{label:'선물 포장',text:'선물할 때 이용 가능한 옵션'},{label:'쇼핑백',text:'해당 제품에 한해 제공'}];a[4].ev={how:'티타임 사진 또는 댓글 등록',reward:'포인트',rewardText:'추첨 제공',pick:'추첨',count:'50',when:'행사 기간 내',login:true,notice:'자세한 조건 확인 필요'};return a}
 let cbRailMode='sections',cbSelected=null,cbEditStart=null,canvasTarget=null,cbCardOpenField=null,cbCardOpenNode=null,cbCardDetailsOpen=false;
 // IA v1.11: only navigation state; never modify stored section/block schemas.
-let iaGroup='content',iaLibraryMode='sections',iaDataMode='products',iaSelectedChild=null;
+let iaGroup='content',iaLibraryMode='blocks',iaDataMode='products',iaSelectedChild=null;
 const iaTreeOpen=new Set(['s3']);
 const IA_BLOCK_NAMES={productCard:'상품 카드',productGrid:'상품 카드 묶음',text:'텍스트',image:'이미지',cta:'CTA 버튼',review:'후기 카드',benefit:'혜택',notice:'유의사항',group:'요소 묶음'};
 const IA_GROUPS={content:'내용',layout:'배치·표시',operation:'동작·조건',handoff:'참고·인계',check:'검수'};
@@ -255,7 +255,7 @@ function iaTreeChildren(s){
  return out;
 }
 function renderList(){ $('section-list').innerHTML=sections.map((s,i)=>{
- const expanded=iaTreeOpen.has(s.id), children=iaTreeChildren(s);
+ const expanded=true, children=iaTreeChildren(s);   // 2026-11-15: 접기 없이 늘 펼침 (plans/27 §9)
  return `<div class="ia-tree-section"><div class="outline-entry" draggable="true" data-drag-id="${E(s.id)}"><button type="button" class="ia-tree-toggle" data-ia-toggle="${E(s.id)}" aria-label="${E(s.name)} 구성 ${expanded?'접기':'펼치기'}" aria-expanded="${expanded}">${AMEditorKit.icon('chevron-right')}</button><button type="button" class="outline-item" data-section="${E(s.id)}" aria-current="${current===s.id&&!cbSelected}"><span>${String(i+1).padStart(2,'0')} · ${E(s.name)}</span><small>${E(LAYOUTS[s.layout][0])}</small></button><div class="outline-entry-actions"><button type="button" data-list-action="up:${E(s.id)}" aria-label="위로" ${i===0?'disabled':''}>${AMEditorKit.icon('arrow-up','am-kit-icon--sm')}</button><button type="button" data-list-action="down:${E(s.id)}" aria-label="아래로" ${i===sections.length-1?'disabled':''}>${AMEditorKit.icon('arrow-down','am-kit-icon--sm')}</button><button type="button" data-list-action="clone:${E(s.id)}" aria-label="복제">${AMEditorKit.icon('copy','am-kit-icon--sm')}</button><button type="button" data-list-action="delete:${E(s.id)}" aria-label="삭제" ${sections.length===1?'disabled':''}>${AMEditorKit.icon('trash','am-kit-icon--sm')}</button></div></div>${expanded?`<div class="ia-tree-children">${children||'<small class="ia-tree-empty">이 구좌에는 아직 별도 요소가 없어요.</small>'}</div>`:''}</div>`
  }).join('');}
 
@@ -569,7 +569,7 @@ function canInsertHere(s=section()){
 function renderIaDataLibrary(){
  const s=section();const prod=iaDataMode==='products',review=iaDataMode==='reviews',ref=iaDataMode==='refs';
  const modes=[['products','상품'],['reviews','후기'],['refs','레퍼런스']];
- let body='<div class="ia-data-note">자료는 연결할 원본입니다. 새로운 상품 카드를 추가하려면 ‘추가 > 요소’를 사용하세요. '+(CATALOG_NOTE?'현재 목록은 이 기획안의 앱 데이터예요.':'현재 목록은 예시 상품이에요.')+'</div>';
+ let body='<div class="ia-data-note">고른 구좌나 요소에 연결할 자료예요. 새 상품 카드는 [요소 추가]에서 넣어요. '+(CATALOG_NOTE?'현재 목록은 이 기획안의 앱 데이터예요.':'현재 목록은 예시 상품이에요.')+'</div>';
  if(prod)body+='<div class="ia-data-results">'+PRODUCTS.map(p=>`<button type="button" class="ia-data-item" data-ia-bind-product="${E(p.id)}"><b>${E(p.name)}</b><small>${E(p.id)} · 선택한 요소/구좌에 연결</small></button>`).join('')+'</div>';
  else if(review)body+='<div class="ia-data-results">'+REVIEWS.slice(0,60).map(r=>`<button type="button" class="ia-data-item" data-ia-bind-review="${E(r.id)}"><b>★ ${E(String(r.rating||'·'))} · ${E(r.productId||'상품 미정')}</b><small>${E(String(r.text||'후기 내용').slice(0,56))}</small></button>`).join('')+'</div>';
  else if(ref)body+='<div class="ia-data-results">'+(s.refs||[]).map((r,i)=>`<button type="button" class="ia-data-item" data-ia-bind-ref="${i}"><b>${E(r.name)}</b><small>${E(r.from||'참고자료')} · 이 구좌에 첨부</small></button>`).join('')+'</div>';

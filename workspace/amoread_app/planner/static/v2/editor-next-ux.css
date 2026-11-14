@@ -35,10 +35,14 @@
 .en-host .outline > .cb-rail button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 /* 칸 제목("구성 페이지 구조")과 설명은 위 탭과 같은 말이라 화면에서 뺌 (읽어 주기용으로만 남김) */
 .en-host .outline > .panel-head { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-/* 목록 머리: 구좌 추가는 목록 맨 아래(스크롤하면 사라짐) → 목록 바로 위 오른쪽 (Figma 레이어 패널의 +) */
-.en-host .en-listhead { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 12px 6px 16px; }
-.en-host .en-listhead > span { font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: var(--fw-strong); color: var(--mute); }
-.en-host .en-listhead:has(#addSection[hidden]) { display: none; }
+/* 목록 머리 = 왼쪽 칸 첫 줄(세 칸 기준선): "페이지 구좌 ……… ＋ 구좌 추가" (Figma 레이어 패널의 +).
+   구성·추가·자료 탭은 없앰(2026-11-15 2차, plans/27 §9): 왼쪽은 무엇을 골랐든 같은 '페이지 전체'만 다룸 */
+.en-host .en-listhead { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; height: var(--en-bar); padding: 0 12px 0 16px; border-bottom: 1px solid var(--line-sub); }
+.en-host .en-listhead > h2 { margin: 0; font-size: var(--fs-sm); line-height: var(--lh-sm); font-weight: var(--fw-strong); color: var(--ink); }
+/* v1.12는 보기를 바꾸면 목록과 [구좌 추가]를 숨긴다. 이제 보기 전환은 오른쪽 칸 일이라 왼쪽은 늘 보임 */
+.en-host #section-list[hidden] { display: block !important; }
+.en-host #addSection[hidden] { display: inline-flex !important; }
+.en-host #section-list { padding-top: 8px !important; }
 .en-host .en-listhead #addSection { width: auto; min-height: var(--hit); margin: 0; padding: 0 8px; background: transparent; color: var(--accent); font-size: var(--fs-sm); }
 .en-host .en-listhead #addSection:hover { background: var(--accent-soft); }
 .en-host .workspace.cb-has-rail > .outline > #section-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 8px 24px; scrollbar-gutter: auto; }
@@ -53,9 +57,9 @@
 .en-host .ia-tree-section .outline-entry:hover { --row-bg: var(--hover); }
 .en-host .ia-tree-section .outline-entry:has(.outline-item[aria-current=true]) { --row-bg: var(--accent-soft); }
 .en-host .ia-tree-section .outline-entry:focus-within { border: 0; }
-.en-host .ia-tree-toggle { grid-column: 1; grid-row: 1; width: 24px; height: 32px; padding: 0; display: grid; place-items: center; color: var(--mute); border-radius: 6px; }
-.en-host .ia-tree-toggle .am-kit-icon, .en-host .ia-tree-toggle svg { width: 14px; height: 14px; }
-.en-host .ia-tree-toggle:hover { background: var(--line-sub); color: var(--ink); }
+/* 접기·펼치기 화살표 없앰: 구좌 안에 넣은 요소는 늘 펼쳐 보임 (app.js renderList expanded=true). 대부분 구좌는 요소가 없어 목록은 평평 */
+.en-host .ia-tree-toggle { display: none; }
+.en-host .ia-tree-section .outline-entry { grid-template-columns: 12px minmax(0, 1fr) !important; }
 .en-host .ia-tree-section .outline-item { grid-column: 2; grid-row: 1; min-width: 0; max-width: none; min-height: 52px; display: flex; flex-direction: column; justify-content: center; gap: 2px;
   padding: 8px 8px 8px 2px; border: 0; border-radius: 0; background: transparent; text-align: left; }
 .en-host .ia-tree-section .outline-item:hover, .en-host .ia-tree-section .outline-item[aria-current=true] { background: transparent; border: 0; }
@@ -160,6 +164,25 @@
 .en-host .en-ins-title { display: flex; align-items: center; gap: 8px; min-width: 0; height: var(--en-bar); margin: 0 calc(-1 * var(--en-pad)) 12px; padding: 0 var(--en-pad); border-bottom: 1px solid var(--line-sub); }
 .en-host .en-ins-title h2 { min-width: 0; margin: 0; font-size: var(--fs-h2); line-height: var(--lh-h2); font-weight: var(--fw-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .en-host .en-pos { flex: none; color: var(--mute); font-size: var(--fs-cap); font-variant-numeric: tabular-nums; }
+/* 제목 줄 오른쪽: [요소 추가] [자료 연결] — 고른 구좌에 하는 일이라 오른쪽 칸에. 누르면 이 칸이 그 화면으로 바뀌고 [완료]가 생김 */
+.en-host .en-ins-title .cb-rail:has([aria-pressed=true]:not(.en-done)) button:not([aria-pressed=true]):not(.en-done) { display: none; }   /* 보기 안에선 지금 보기 + [완료]만 */
+.en-host .en-ins-title .cb-rail { display: flex; flex-direction: row; align-items: center; gap: 2px; margin: 0 -8px 0 auto; padding: 0; flex: none; background: transparent; border: 0; position: static; }
+.en-host .en-ins-title .cb-rail button { display: inline-flex; flex-direction: row; align-items: center; gap: 4px; min-height: var(--hit); min-width: 0; padding: 0 8px;
+  border: 0; border-radius: var(--r2); background: transparent; color: var(--ink2); font-size: var(--fs-cap); font-weight: var(--fw-strong); line-height: 1; white-space: nowrap; }
+.en-host .en-ins-title .cb-rail button .am-kit-icon { width: 16px; height: 16px; flex: none; }
+.en-host .en-ins-title .cb-rail button:hover { background: var(--hover); color: var(--ink); }
+.en-host .en-ins-title .cb-rail button[aria-pressed=true] { background: var(--accent-soft); color: var(--accent); }
+.en-host .en-ins-title .cb-rail button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.en-host .en-ins-title .cb-rail .en-done { display: none; }
+.en-host .en-ins-title .cb-rail:has([aria-pressed=true]:not(.en-done)) .en-done { display: inline-flex; margin-left: 4px; padding: 0 12px; background: var(--accent); color: var(--accent-ink); }
+.en-host .en-ins-title .cb-rail:has([aria-pressed=true]:not(.en-done)) .en-done:hover { filter: brightness(.94); }
+/* 요소 추가·자료 연결 보기: 편집 탭·속성 대신 그 목록이 칸을 채움 */
+.en-host .inspector:has(.cb-rail [aria-pressed=true]:not(.en-done)) :is(#tabbar, #panel-body, #changeLayout, #ia-breadcrumb, #ia-edit-scope) { display: none !important; }
+.en-host .inspector:has(.cb-rail [aria-pressed=true]:not(.en-done)) .inspector-head { padding-bottom: 0; }
+.en-host .inspector .en-mode-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 4px var(--en-pad) 32px; }
+.en-host .inspector .en-mode-body[hidden] { display: none; }
+/* 요소 추가 안의 '구좌 추가/요소 추가' 전환: 구좌 추가는 왼쪽 목록 [＋ 구좌 추가]와 같은 일이라 숨기고 요소부터 (app.js 기본값 blocks) */
+.en-host #component-library > .ia-library-choose { display: none; }
 /* 경로(페이지 › 02 베이킹)는 제목과 같은 말 → 요소 하나를 골랐을 때만. 범위 안내 상자도 그때만 */
 .en-host .ia-breadcrumb { margin: 0 0 8px; font-size: var(--fs-cap); }
 .en-host .ia-breadcrumb:not(:has(b)) { display: none; }
@@ -223,8 +246,7 @@
 @media (min-width: 821px) and (max-width: 1279px) { .en-host { --en-left: 232px; --en-right: 320px; --en-pad: 16px; } }
 @media (min-width: 821px) and (max-width: 1023px) {
   .en-host { --en-left: 208px; --en-right: 296px; }
-  .en-host .outline > .cb-rail button span { font-size: var(--fs-cap); }
-  .en-host .outline > .cb-rail button .am-kit-icon { display: none; }
+  .en-host .en-ins-title .cb-rail button:not(.en-done) span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }   /* 좁으면 아이콘만 (이름은 title·읽어 주기) */
   /* 요지가 한두 글자만 남아 읽을 수 없으므로 [상태 보기] 하나로 (누르면 같은 설명 창) */
   .en-host .en-canvasbar .guardrail:not(.is-error) .en-lead { display: none; }
   .en-host .en-canvasbar .guardrail:not(.is-error) .en-toggle { font-size: 0; }

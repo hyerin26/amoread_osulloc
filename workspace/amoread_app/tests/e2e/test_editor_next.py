@@ -79,7 +79,7 @@ def test_green_ui_tokens_applied(page, server, plan):
     assert page.locator(".en-menu #exportDemo").count() == 1 and page.locator(".en-menu #exportHandoff").count() == 1
     assert css(".ia-group-btn[aria-selected=true]", "border-bottom-color") == "rgb(0, 122, 70)"
     assert css("aside.inspector", "border-left-width") == "1px" and css("aside.inspector", "border-top-left-radius") == "0px"
-    tops = page.evaluate("() => ['.outline>.cb-rail', '.en-canvasbar', '.en-ins-title'].map(q => Math.round(document.querySelector(q).getBoundingClientRect().top))")
+    tops = page.evaluate("() => ['.en-listhead', '.en-canvasbar', '.en-ins-title'].map(q => Math.round(document.querySelector(q).getBoundingClientRect().top))")
     assert len(set(tops)) == 1, tops   # 세 칸 첫 줄 높이 맞춤
     assert page.errors == [], page.errors
 
@@ -124,8 +124,7 @@ def test_canvas_selection_reveals_inspector(page, server, plan):
 def test_card_elements(page, server, plan):
     open_editor_next(page, server, plan["id"])
     page.locator("#page [data-page=\"e2\"]").click()
-    page.locator("[data-cb-rail=\"library\"]").click()
-    page.locator("[data-ia-library=\"blocks\"]").click()
+    page.locator("[data-cb-rail=\"library\"]").click()   # 오른쪽 칸 [요소 추가] → 요소 목록부터 (plans/27 §9)
     page.locator("[data-cb-add=\"productCard\"]").click()
     card = page.locator('#page [data-page="e2"] .cb-node--productCard').first
     card.click(position={"x": 3, "y": 3})
