@@ -72,7 +72,7 @@
 .body { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink2); word-break: keep-all; max-width: 44ch; }
 .used { margin: 0; display: grid; gap: 4px; padding: 12px 14px; border-radius: var(--r2); background: var(--sunken); }
 .used figcaption { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); font-weight: var(--fw-medium); }
-.used blockquote { margin: 0; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); word-break: keep-all; overflow-wrap: anywhere; user-select: text; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.used blockquote { margin: 0; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); word-break: keep-all; overflow-wrap: anywhere; user-select: text; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 mark { background: #ffe27a; color: inherit; padding: 1px 3px; border-radius: 3px; font-weight: var(--fw-strong); }
 .also { font-size: var(--fs-sm); line-height: var(--lh-sm); color: var(--mute); }
 .also b { color: var(--ink2); font-weight: var(--fw-medium); margin-left: 4px; }
@@ -189,3 +189,13 @@ mark { background: #ffe27a; color: inherit; padding: 1px 3px; border-radius: 3px
 .tiles { position: relative; }
 .tiles img { position: absolute; left: 0; width: 100%; height: auto; display: block; user-select: none; -webkit-user-drag: none; }
 .sthumb .pgimg { width: 100%; }
+
+/* 참고 포인트: 왜 볼 만한가 / 오설록이라면 */
+.note { display: grid; gap: 6px; padding-left: 12px; border-left: 1px solid var(--line-strong); }
+.note p { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 8px; font-size: var(--fs-sm); line-height: var(--lh-sm); color: var(--ink); word-break: keep-all; }
+.note b { font-weight: var(--fw-medium); color: var(--mute); }
+.info { gap: 12px; }
+
+/* 사진 비율 고정: 장마다 원래 비율 그대로(폭에 맞춰 높이 자동), 창 크기가 바뀌어도 찌그러지지 않는다 */
+.tiles img { height: auto !important; }
+.pgwrap.tiles { width: 390px; max-width: 100%; }

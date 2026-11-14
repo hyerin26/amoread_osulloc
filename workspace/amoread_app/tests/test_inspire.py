@@ -61,6 +61,21 @@ class Explain(unittest.TestCase):
         hit = next(h for h in inspire.mech_hits(real) if h["name"] == "라이브")
         self.assertIn("방송에서만", hit["snip"], "같은 낱말이 메뉴에도 있으면 설명하는 문장 쪽을 써요")
 
+    def test_comment_says_why_and_what_to_try(self):
+        c = {"kind": "mech", "hits": [{"name": "구매금액별 혜택", "hit": "3만원 이상 구매", "snip": "3만원 이상 구매 시 최대 5천원 할인"}], "signals": [{"t": "오설록 페이지에는 아직 없는 방식", "good": True}]}
+        n = inspire.comment(c, {"txt": "온라인 2026.11.01 ~ 2026.11.28 3만원 이상 구매 시 최대 5천원 할인 3장"})
+        self.assertIn("아직 안 써 본", n["why"]); self.assertIn("3만원 이상", n["why"])
+        self.assertEqual(inspire.facts("오푸스 그라인더 29% 280,000"), [], "할인율·가격은 조건이 아니에요")
+        self.assertEqual(inspire.facts("20만원 이상 구매 고객 중 추첨 10분 증정"), ["20만원 이상", "10명"])
+        self.assertTrue(n["do"])
+        self.assertNotIn("2026", " ".join(n["facts"]), "날짜는 조건 숫자가 아니에요")
+        own = inspire.comment(dict(c, signals=[{"t": "오설록도 써 본 방식", "good": False}]), None)
+        self.assertIn("써 본 방식", own["why"])
+        self.assertIn("맞세워", inspire.comment({"kind": "copy", "phrases": ["뿌리는 향에서 바르는 향으로"]})["why"])
+
+    def test_every_real_mechanic_has_a_try_line(self):
+        self.assertEqual(set(inspire.MECH) - inspire.COMMON, set(inspire.MECH_TRY), "MECH에 기법을 더하면 MECH_TRY에 '오설록이라면' 한 줄도 넣어 주세요")
+
     def test_every_mechanic_has_a_description(self):
         self.assertEqual(set(inspire.MECH), set(inspire.MECH_DESC), "MECH에 기법을 더하면 MECH_DESC에 한 줄 설명도 넣어 주세요")
 

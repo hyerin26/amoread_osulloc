@@ -71,6 +71,71 @@ MECH_DESC = {
     "사은품": "구매하면 덤을 주는 방식",
     "단독·한정": "여기서만, 지금만 살 수 있다는 점을 내세우는 방식",
 }
+# 기법마다 '오설록이라면 이렇게 옮겨 볼 수 있다' 한 줄 (카드의 참고 포인트). 정답이 아니라 생각의 출발점으로 쓴다
+MECH_TRY = {
+    "미니게임·뽑기": "찻잎 뽑기로 '오늘의 티'를 정해 주고, 뽑은 티에 쿠폰을 붙여 보기",
+    "출석·스탬프": "행사 기간에 매일 한 잔 스탬프를 찍고, 다 모으면 티백 샘플을 주기",
+    "응모·래플": "구매 고객 중 추첨으로 다구 세트처럼 평소 사기 어려운 것을 걸기",
+    "퀴즈·투표": "'내 취향 티 찾기' 테스트로 상품을 읽게 하고, 결과에 맞는 티를 권하기",
+    "선착순·타임딜": "하루 한 품목만 시간 정해 여는 특가로 하루특가와 엮기",
+    "구매금액별 혜택": "3·5·7만원 구간마다 사은품을 달리해 한 번에 더 담게 하기",
+    "친구 초대·공유": "선물하기를 공유하면 보낸 사람·받은 사람 모두에게 쿠폰 주기",
+    "후기·인증": "티타임 사진 인증 이벤트로 후기와 사진이 쌓이게 하기",
+    "라이브": "티 클래스 방송 시간에만 여는 구성·쿠폰 만들기",
+    "골라담기·묶음": "티백을 직접 골라 담는 세트로 객단가 올리기",
+    "얼리버드·사전예약": "시즌 한정 티를 미리 알림 신청받고, 신청자에게 먼저 열어 주기",
+    "콜라보": "작가·브랜드와 함께 만든 한정 패키지로 선물 수요 잡기",
+    "미션·챌린지": "7일 티 루틴 챌린지처럼 며칠 이어 가는 참여 만들기",
+}
+_FACT = re.compile(r"\d[\d,.]*\s*(?:만\s*원|천\s*원|원)\s*이상|선착순\s*\d+\s*명|\d+\s*(?:명|분)(?=[에께 ]|$)|\d+\s*(?:개|장|회|일)\s*(?:를|을|이상|모으|연속)")   # 조건·규모만 (할인율·가격은 조건이 아니다)
+
+
+def facts(text: str, n: int = 3) -> list[str]:
+    """화면 글에서 조건·규모를 보여 주는 숫자 (3만원 이상, 5명, 30%…) — 남의 기획을 볼 때 가장 먼저 궁금한 것."""
+    out = []
+    for m in _FACT.finditer(text or ""):
+        v = re.sub(r"\s+", " ", m.group(0)).strip()
+        v = re.sub(r"(\d)\s*분$", r"\1명", re.sub(r"\s*(를|을|모으|연속)$", "", v))   # '10분'(사람)은 '10명'으로 맞춰 같은 것을 두 번 세지 않는다
+        if v not in out and not re.fullmatch(r"20\d\d.*", v):
+            out.append(v)
+    return out[:n]
+
+
+def _copy_point(p: str) -> str:
+    """문장이 어떤 방식으로 쓰였는지 한마디 (워딩 카드의 참고 포인트)."""
+    if re.search(r"보다|대신|아닌|에서 .+으로", p):
+        return "둘을 맞세워서 차이를 또렷하게 하는 문장이에요"
+    if re.search(r"하면|할 때|한 날|하는 날|순간", p):
+        return "쓰는 장면을 먼저 그려 주는 문장이에요"
+    if re.search(r"포근|부드럽|따뜻|촉촉|은은|향|결|온기|가볍", p):
+        return "기능을 감각 낱말로 옮긴 문장이에요"
+    if "," in p or re.search(r"[가-힣]고\s", p):
+        return "장점 두 가지를 한 문장에 이어 붙였어요"
+    return "짧게 한 가지만 말하는 문장이에요"
+
+
+def comment(c: dict, spot: dict | None = None) -> dict:
+    """카드의 참고 포인트: {why: 왜 볼 만한지 한 문장, do: 오설록이라면 한 문장, facts: 조건·규모 숫자}.
+    규칙으로 만든 글이다(판단 근거 = _enrich의 signals, 화면에서 읽은 글). 사실처럼 단정하지 않고 '해 볼 만한 것'으로 쓴다."""
+    seen = (spot or {}).get("txt") or ""
+    k = c.get("kind")
+    if k == "mech":
+        h = (c.get("hits") or [{}])[0]
+        sig_t = [x["t"] for x in c.get("signals") or []]
+        fx = facts(seen or h.get("snip") or "")
+        new = "오설록 페이지에는 아직 없는 방식" in sig_t
+        why = ("오설록이 아직 안 써 본 방식이라 새로 시도해 볼 거리예요." if new else "오설록도 써 본 방식이에요. 조건을 어떻게 걸었는지 견줘 보세요.")
+        if fx:
+            why += f" 이 페이지의 조건: {' · '.join(fx)}."
+        return {"why": why, "do": MECH_TRY.get(h.get("name"), ""), "facts": fx}
+    if k == "copy":
+        p = (c.get("phrases") or [""])[0]
+        return {"why": _copy_point(p), "do": "같은 틀에 우리 상품의 장점을 넣어 한 줄 써 보기", "facts": []}
+    if k == "struct":
+        return {"why": "혜택을 단계로 나눠, 내려갈수록 하나씩 보여 주는 짜임이에요.", "do": "우리 혜택도 중요한 순서대로 번호를 매겨 나눠 보기", "facts": []}
+    return {"why": "글보다 화면 구성으로 말하는 구좌예요.", "do": "", "facts": []}
+
+
 COMMON = {"사은품", "단독·한정"}   # 어디에나 있어서 이것만으로는 '판매 기법 카드'로 치지 않는다 (태그로만 붙임)
 _MECH_RX = {k: re.compile(v, re.I) for k, v in MECH.items()}
 _STRUCT = re.compile(r"(?:BENEFIT|EVENT|STEP|POINT|혜택|이벤트)\s*0?([1-9])(?!\d)", re.I)
@@ -567,7 +632,7 @@ def _card(c: dict) -> dict:
     return {k: c.get(k) for k in ("id", "src", "brand", "title", "campaign", "url", "text", "kind", "kinds", "phrases", "struct", "steps", "hits", "desc", "focus", "focus_alt", "why", "psec", "tl", "role", "ref",
                                   "first_seen", "signals", "grade")} | {
         "tags": list(c["mech"]), "kind_name": KIND_KO.get(c["kind"], ""), "grade_name": GRADE_KO.get(c.get("grade", 1), ""), "page": sid, **shot_info(c)} | {
-        "cap": bool(sid or shot_info(c)), "spot": evidence(c)[1], "claim": claim(c)}
+        "cap": bool(sid or shot_info(c)), "spot": evidence(c)[1], "claim": claim(c), "note": comment(c, evidence(c)[1])}
 
 
 # ---------------- 실제 화면 ----------------

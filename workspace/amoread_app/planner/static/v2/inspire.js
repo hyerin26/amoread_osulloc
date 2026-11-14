@@ -43,8 +43,13 @@ function lead(c) {
     <ol class="steps">${(c.steps || []).map((s, i) => `<li><b>${i + 1}</b><span>${esc(s)}</span></li>`).join('')}</ol>`;
   return `<p class="body">화면 구성과 분위기를 참고해 보세요.</p>${(c.phrases || []).length ? `<ul class="lines">${c.phrases.slice(0, 2).map(p => `<li>${esc(p)}</li>`).join('')}</ul>` : ''}`;
 }
+// 참고 포인트: 왜 볼 만한지 + 오설록이라면 (서버가 규칙으로 만든 한두 줄)
+function note(c) {
+  const n = c.note; if (!n || (!n.why && !n.do)) return '';
+  return `<div class="note">${n.why ? `<p><b>왜 볼 만한가</b>${esc(n.why)}</p>` : ''}${n.do ? `<p><b>오설록이라면</b>${esc(n.do)}</p>` : ''}</div>`;
+}
 function signals(c) {
-  const s = c.signals || [];
+  const s = (c.signals || []).filter(x => !(c.note?.why && /^오설록/.test(x.t)));   // '오설록이 써 봤나'는 참고 포인트가 이미 말한다
   return s.length ? `<ul class="sig">${s.map(x => `<li class="${x.good ? 'good' : ''}">${x.good ? CHECK : '<i></i>'}${esc(x.t)}</li>`).join('')}</ul>` : '';
 }
 // 왼쪽: 실제 페이지. 사진이 있으면 그 사진을 그대로(안에서 위아래로 넘겨 볼 수 있음), 없으면 수집본을 다시 그린 화면(이미지 없음), 그것도 없으면 안내
@@ -57,9 +62,18 @@ function shot(c, live = true) {
 // 사진은 화면 높이만큼씩 나눠 찍은 여러 장이다 → y 위치에 차례로 쌓는다 (자리·크기는 placeTiles가 폭에 맞춰 정함)
 const tilesOf = c => (c.tiles && c.tiles.length ? c.tiles : c.shot ? [{ src: c.shot, y: 0, h: c.shot_h || 0 }] : []);
 const tilesHtml = (c, lazy = false) => tilesOf(c).map(t => `<img src="${esc(t.src)}" alt="" draggable="false" data-y="${t.y}" data-h="${t.h}"${lazy ? ' loading="lazy"' : ''}>`).join('');
-function placeTiles(wrap, c, k) {
-  wrap.style.height = `${(c.shot_h || 0) * k}px`;
-  wrap.querySelectorAll('img').forEach(im => { im.style.top = `${+im.dataset.y * k}px`; if (+im.dataset.h) im.style.height = `${+im.dataset.h * k}px`; });
+// 자리·크기는 전부 비율(%)로 준다: 창 크기가 바뀌어도 사진이 찌그러지지 않고 표시도 같이 따라간다 (px로 고정하면 폭만 늘어나 가로로 늘어졌음)
+function placeTiles(wrap, c) {
+  const H = c.shot_h || 1;
+  wrap.style.aspectRatio = `390 / ${H}`; wrap.style.height = '';
+  wrap.querySelectorAll('img').forEach(im => { im.style.top = `${+im.dataset.y / H * 100}%`; im.style.height = ''; });
+}
+function markSpot(wrap, c, pad = 4) {
+  wrap.querySelector('.hl')?.remove();
+  if (!c.spot) return;
+  const H = c.shot_h || 1, hl = document.createElement('span'); hl.className = 'hl';
+  hl.style.top = `calc(${c.spot.y / H * 100}% - ${pad}px)`; hl.style.height = `calc(${c.spot.h / H * 100}% + ${pad * 2}px)`;
+  wrap.append(hl);
 }
 function metaLine(c) {
   const fresh = isNew(c) ? dayLabel(c.first_seen) : '모아 둔 구좌';
@@ -73,6 +87,7 @@ function cardHtml(c, cls = '') {
       <div class="kline"><span class="kind">${icon(c.kind)}${esc(c.kind_name)}</span>${c.kind !== 'design' && c.grade ? `<span class="grade g${c.grade}">${c.grade === 3 ? '★ ' : ''}${esc(c.grade_name)}</span>` : ''}</div>
       <h2>${esc(headline(c))}</h2>
       ${lead(c)}
+      ${note(c)}
       ${signals(c)}
       <div class="foot">${metaLine(c)}${c.url ? `<a class="orig" href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">원본 열기 ↗</a>` : ''}</div>
     </div></article>`;
@@ -81,10 +96,9 @@ function cardHtml(c, cls = '') {
 function placeShot(box, c) {
   const img = box.querySelector('img'), wrap = box.querySelector('.pgimg'); if (!img || !wrap) return;
   const go = () => {
-    const k = wrap.clientWidth / 390; wrap.querySelector('.hl')?.remove();
-    placeTiles(wrap, c, k);
-    if (c.spot) { const hl = document.createElement('span'); hl.className = 'hl'; hl.style.top = `${c.spot.y * k - 4}px`; hl.style.height = `${c.spot.h * k + 8}px`; wrap.append(hl);
-      box.scrollTop = Math.max(0, c.spot.y * k - Math.max(40, (box.clientHeight - c.spot.h * k) / 2.6)); }
+    const k = wrap.clientWidth / 390;
+    placeTiles(wrap, c); markSpot(wrap, c);
+    if (c.spot) box.scrollTop = Math.max(0, c.spot.y * k - Math.max(40, (box.clientHeight - c.spot.h * k) / 2.6));
   };
   go();
   img.addEventListener('error', () => { box.innerHTML = '<span class="noscr">화면을 불러오지 못했어요</span>'; }, { once: true });
@@ -106,9 +120,8 @@ async function openWhole(id) {
   const body = $('#pgB');
   $('#pgDlg').showModal();
   if (c.shot) {
-    body.innerHTML = `<div class="pgwrap tiles">${tilesHtml(c)}</div>`; placeTiles(body.querySelector('.pgwrap'), c, 1);
-    if (c.spot) { const hl = document.createElement('span'); hl.className = 'hl'; hl.style.top = `${c.spot.y - 4}px`; hl.style.height = `${c.spot.h + 8}px`; body.querySelector('.pgwrap').append(hl);
-      body.scrollTop = Math.max(0, c.spot.y - 160); }
+    body.innerHTML = `<div class="pgwrap tiles">${tilesHtml(c)}</div>`; placeTiles(body.querySelector('.pgwrap'), c); markSpot(body.querySelector('.pgwrap'), c);
+    if (c.spot) body.scrollTop = Math.max(0, c.spot.y * (body.querySelector('.pgwrap').clientWidth / 390) - 160);
     return;
   }
   body.innerHTML = '<div class="pgwrap"><div class="pgframe"></div></div>';
@@ -235,6 +248,7 @@ function renderSaved() {
         <div class="kline"><span class="kind">${icon(c.kind)}${esc(c.kind_name)}</span><span class="cap">${esc((c.saved_at || '').slice(5, 10))} 저장</span></div>
         <h2>${esc(headline(c))}</h2>
         ${lead(c)}
+        ${note(c)}
         ${metaLine(c)}
         <label class="memo"><span class="cap">메모</span><textarea rows="2" maxlength="300" data-memo="${esc(c.id)}" placeholder="예) 룰렛 → 우리는 찻잎 뽑기로">${esc(c.memo || '')}</textarea></label>
         <div class="row">${c.url ? `<a class="btn xs" href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">원본 ↗</a>` : ''}
@@ -245,9 +259,8 @@ function renderSaved() {
     : `<div class="iempty">${SAVED.length ? '이 종류로 저장한 카드가 없어요.' : '<b>아직 저장한 카드가 없어요</b>오늘의 카드에서 오른쪽으로 밀면 여기에 모여요.'}${SAVED.length ? '' : '<button class="btn sm primary" data-goto="deck">오늘의 카드 보기</button>'}</div>`;
   // 보관함 썸네일: 사진에서 표시한 자리가 보이게 올려 둔다
   document.querySelectorAll('#sgrid [data-sthumb]').forEach(w => { const c = SAVED.find(x => x.id === w.dataset.sthumb); if (!c) return;
-    const k = w.clientWidth / 390; placeTiles(w, c, k); if (!c.spot) return;
-    w.style.transform = `translateY(${-Math.max(0, c.spot.y * k - 50)}px)`;
-    const hl = document.createElement('span'); hl.className = 'hl'; hl.style.top = `${c.spot.y * k - 3}px`; hl.style.height = `${c.spot.h * k + 6}px`; w.append(hl); });
+    placeTiles(w, c); markSpot(w, c, 3); if (!c.spot) return;
+    w.style.transform = `translateY(${-Math.max(0, c.spot.y / (c.shot_h || 1) * 100 - 4)}%)`; });
 }
 async function loadSaved() {
   try { const d = await v2api('/api/am/ai/inspire/saved'); SAVED = d.items; KINDS = d.kinds; $('#savedN').textContent = SAVED.length; }
