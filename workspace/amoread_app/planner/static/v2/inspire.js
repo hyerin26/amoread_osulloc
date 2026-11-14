@@ -17,11 +17,9 @@ const ICON = {
 };
 const KIND_SAY = { mech: '할인 말고 다른 방법으로 파는 방식', copy: '참고할 만한 문장', struct: '혜택을 나눠 보여 주는 짜임', design: '화면 구성·분위기' };
 const icon = k => `<svg class="kic" viewBox="0 0 24 24" aria-hidden="true">${ICON[k] || ICON.design}</svg>`;
-// 글 안에서 찾은 낱말만 형광으로
-const markHit = (text, hit) => { const i = hit ? text.indexOf(hit) : -1; return i < 0 ? esc(text) : `${esc(text.slice(0, i))}<mark>${esc(hit)}</mark>${esc(text.slice(i + hit.length))}`; };
 
 // ---------- 카드 한 장 ----------
-// 오른쪽 글: 제목 하나(이 카드가 말하는 것) → 설명 → 이 페이지에서 쓴 문장 → 판단 근거. 한 화면에 강조는 제목 하나뿐
+// 오른쪽 글: 제목 하나(이 카드가 말하는 것) → 설명 → 참고 포인트 → 판단 근거. 근거 글은 왼쪽 사진의 표시가 보여 준다(글로 다시 옮기면 잘려서 뜻을 알 수 없었다). 한 화면에 강조는 제목 하나뿐
 const CHECK = '<svg class="ck" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 function headline(c) {
   if (c.kind === 'mech') return (c.hits || [])[0]?.name || (c.tags || [])[0] || c.title;
@@ -29,13 +27,10 @@ function headline(c) {
   if (c.kind === 'struct') return c.struct || c.title;
   return c.title;
 }
-// 인용문은 표시한 자리에서 실제로 읽은 화면 글을 쓴다 → 오른쪽에 적힌 글과 왼쪽에 표시한 자리가 늘 같은 곳이다
-const seenText = c => { const t = c.spot?.txt || ''; return t.length > 150 ? `${t.slice(0, 150)}…` : t; };
 function lead(c) {
   if (c.kind === 'mech') {
     const hs = c.hits || [], more = hs.slice(1).map(h => h.name);
     return `${c.desc ? `<p class="body">${esc(c.desc)}</p>` : ''}
-      ${hs[0] ? `<figure class="used"><figcaption>이 페이지에서는</figcaption><blockquote>${markHit(seenText(c) || hs[0].snip, hs[0].hit)}</blockquote></figure>` : ''}
       ${more.length ? `<p class="also">함께 쓴 방식 <b>${more.map(esc).join(', ')}</b></p>` : ''}`;
   }
   if (c.kind === 'copy') { const rest = (c.phrases || []).slice(1, 3); return rest.length ? `<ul class="lines">${rest.map(p => `<li>${esc(p)}</li>`).join('')}</ul>` : ''; }
@@ -252,7 +247,7 @@ function renderSaved() {
         ${metaLine(c)}
         <label class="memo"><span class="cap">메모</span><textarea rows="2" maxlength="300" data-memo="${esc(c.id)}" placeholder="예) 룰렛 → 우리는 찻잎 뽑기로">${esc(c.memo || '')}</textarea></label>
         <div class="row">${c.url ? `<a class="btn xs" href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">원본 ↗</a>` : ''}
-          ${c.src === 'new' && c.url ? `<button class="btn xs" data-collect="${esc(c.id)}" title="화면까지 받아 레퍼런스 라이브러리에 넣어요">라이브러리에 수집</button>` : c.src !== 'new' ? '<a class="btn xs" href="/v2/library">레퍼런스에서 보기</a>' : ''}
+          ${c.src === 'new' && c.url ? `<button class="btn xs" data-collect="${esc(c.id)}" title="화면까지 받아 레퍼런스 라이브러리에 넣어요">라이브러리에 수집</button>` : c.ref ? `<a class="btn xs" href="/v2/library#open=${encodeURIComponent(c.ref)}" title="레퍼런스 라이브러리에서 이 구좌를 열어요">레퍼런스에서 보기</a>` : ''}
           <span class="grow"></span><button class="btn xs ghost" data-unsave="${esc(c.id)}">빼기</button></div>
       </div>
     </article>`).join('')

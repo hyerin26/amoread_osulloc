@@ -169,14 +169,27 @@ def _around(text: str, a: int, b: int) -> str:
 _SENTENCE = re.compile(r"[가-힣](을|를|는|은|에게|에서|으로|하면|하고|하여|해요|세요|니다|어요|아요|드려|받아|받으|까지|부터|마다)(?![가-힣])|\s시\s|\d\s*(원|%|명|개|장|일)|이벤트|참여")
 
 
+# 상품 목록의 한 줄인지: 할인율 뒤에 가격('15% 56,430'), 상품 카드의 버튼·배송 표시, '(택1)' 같은 옵션. 이런 곳의 낱말은 상품 하나의 딱지일 뿐 페이지의 기획이 아니다
+_PRODUCT_ROW = re.compile(r"\d{1,2}\s*%\s*\d{1,3},\d{3}|\d{1,3},\d{3}\s*원\s*\d{1,2}\s*%|찜하기|장바구니|자세히\s*보기|전체\s*보기|더\s*보러|샛별배송|판매자배송|\(\s*택\s*\d")
+_FINEPRINT = re.compile(r"소진\s*시|사전\s*고지|종료\s*될|될\s*수\s*있습니다|자동\s*종료")   # 유의사항 문장 ('사은품은 한정 수량으로 소진 시 종료')은 기획 설명이 아니다
+
+
+def _in_badge(text: str, a: int, b: int) -> bool:
+    """낱말이 상품 이름 앞의 딱지 '[프리오더]', '[29CM 단독/얼리버드 특가]' 안에 들어 있는가."""
+    lo = text.rfind("[", max(0, a - 30), a)
+    hi = text.find("]", b, b + 30)
+    return lo >= 0 and hi >= 0 and "]" not in text[lo:a] and "[" not in text[b:hi]
+
+
 def mech_hits(text: str) -> list[dict]:
-    """기법마다 {name, hit(걸린 낱말), snip(그 낱말이 든 문장)} — 카드에서 '이 페이지에서는 이렇게 썼어요'로 보여 준다.
-    낱말이 여러 번 나오면 설명하는 문장 속에 든 첫 번째 것을 쓴다. 메뉴·탭 이름에서만 걸리면 그 기법은 버린다 (근거를 보여 줄 수 없다)."""
+    """기법마다 {name, hit(걸린 낱말), snip(그 낱말이 든 문장)} — 화면에서 표시할 자리를 찾는 데 쓴다.
+    낱말이 여러 번 나오면 설명하는 문장 속에 든 첫 번째 것을 쓴다. 메뉴·탭 이름이나 상품 목록에서만 걸리면 그 기법은 버린다 (근거를 보여 줄 수 없다).
+    상품 목록 예: '에이햅스 [프리오더] 포피 플리스 팬츠 15% 56,430' → 그 페이지가 사전예약 기획인 것이 아니다 (2026-11-14 담당자 지적)."""
     out = []
     for k, rx in _MECH_RX.items():
         for m in rx.finditer(text or ""):
             ctx = text[max(0, m.start() - 28):m.end() + 28]
-            if not _SENTENCE.search(ctx):
+            if not _SENTENCE.search(ctx) or _FINEPRINT.search(ctx) or _in_badge(text, m.start(), m.end()) or _PRODUCT_ROW.search(text[max(0, m.start() - 40):m.end() + 40]):
                 continue
             out.append({"name": k, "hit": m.group(0).strip(), "snip": _around(text, m.start(), m.end()),
                         "near": re.sub(r"\s+", " ", text[max(0, m.start() - 10):m.end() + 10]).strip()})   # 문장째로 화면에서 못 찾을 때 쓰는 짧은 토막
@@ -544,6 +557,8 @@ def evidence(c: dict) -> tuple[str, dict | None]:
     want = _nz(claim(c))
     if not spot or len(want) < 2 or want not in _nz(spot.get("txt") or ""):
         return "rejected", None
+    if c.get("kind") == "mech" and (spot.get("h") or 0) > SPOT_MAX_H:
+        return "rejected", None   # 표시가 상품 목록·구역 통째로 잡혔다 → 낱말이 그 안 어딘가에 있을 뿐, 어디를 보라는지 알 수 없다
     return "ok", spot
 
 
@@ -645,7 +660,8 @@ def _card(c: dict) -> dict:
 PREVIEW_KEEP_DAYS = 14
 SHOT_MAX_H = 14000     # 사진 세로 한도(px). 그보다 긴 페이지는 위에서부터 이만큼만
 SHOT_QUALITY = 60
-BLANK_BYTES = 7000     # 화면 한 장(390×844 JPEG)이 이보다 작으면 거의 빈 화면으로 본다 (그 자리에는 표시를 붙이지 않는다)
+SPOT_MAX_H = 420       # 판매 기법 카드의 표시 자리 세로 한도(px, 폭 390 기준 화면 절반). 그보다 크면 문장이 아니라 덩어리가 잡힌 것
+BLANK_BYTES = 7000    # 화면 한 장(390×844 JPEG)이 이보다 작으면 거의 빈 화면으로 본다 (그 자리에는 표시를 붙이지 않는다)
 
 
 def _pdir() -> Path:

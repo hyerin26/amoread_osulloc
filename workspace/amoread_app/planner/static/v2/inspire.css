@@ -70,10 +70,6 @@
 .info h2 { font-size: 22px; line-height: 30px; font-weight: var(--fw-title); letter-spacing: -0.015em; color: var(--ink); word-break: keep-all; overflow-wrap: anywhere; text-wrap: balance; margin-top: -4px; }
 .k-copy .info h2 { font-size: 20px; line-height: 30px; font-weight: var(--fw-strong); }
 .body { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink2); word-break: keep-all; max-width: 44ch; }
-.used { margin: 0; display: grid; gap: 4px; padding: 12px 14px; border-radius: var(--r2); background: var(--sunken); }
-.used figcaption { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); font-weight: var(--fw-medium); }
-.used blockquote { margin: 0; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); word-break: keep-all; overflow-wrap: anywhere; user-select: text; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-mark { background: #ffe27a; color: inherit; padding: 1px 3px; border-radius: 3px; font-weight: var(--fw-strong); }
 .also { font-size: var(--fs-sm); line-height: var(--lh-sm); color: var(--mute); }
 .also b { color: var(--ink2); font-weight: var(--fw-medium); margin-left: 4px; }
 .lines { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }

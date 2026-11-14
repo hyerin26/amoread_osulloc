@@ -61,6 +61,16 @@ class Explain(unittest.TestCase):
         hit = next(h for h in inspire.mech_hits(real) if h["name"] == "라이브")
         self.assertIn("방송에서만", hit["snip"], "같은 낱말이 메뉴에도 있으면 설명하는 문장 쪽을 써요")
 
+    def test_product_labels_are_not_the_page_mechanic(self):
+        """상품 이름의 딱지·상품 목록 줄·유의사항에서 걸린 낱말은 그 페이지의 기획이 아니다 (2026-11-14 담당자 지적: 상품 목록이 '사전예약'·'골라담기' 카드로 나옴)."""
+        rows = ("에이햅스 [프리오더] 포피 플리스 오브 팬츠 15% 56,430 223 포근한 타월 테리 점프수트 얇은 스모킹사로 한 줄 한 줄 잡았어요. "
+                "니코트 르블랑 파스타볼 세트 2P MADE IN JAPAN 37% 18,040 1,431 니코트 [1+1] 니코트 르블랑 달항아리 둥근 면기 MADE IN JAPAN 38% 21,000 "
+                "[퓨리나] 팬시피스트 주식용 습식캔 9종 골라담기 (택5) 엄선된 원료를 담은 습식캔이에요. 사은품은 한정 수량으로 재고 소진 시 종료될 수 있습니다.")
+        self.assertEqual([m for m in inspire.mechanics(rows) if m not in inspire.COMMON], [])
+        real = rows + " 시즌 한정 티를 11월 20일까지 사전 예약으로 먼저 만나 보세요."
+        hit = next(h for h in inspire.mech_hits(real) if h["name"] == "얼리버드·사전예약")
+        self.assertIn("먼저 만나", hit["snip"], "같은 페이지에 기획을 설명하는 문장이 있으면 그쪽을 써요")
+
     def test_comment_says_why_and_what_to_try(self):
         c = {"kind": "mech", "hits": [{"name": "구매금액별 혜택", "hit": "3만원 이상 구매", "snip": "3만원 이상 구매 시 최대 5천원 할인"}], "signals": [{"t": "오설록 페이지에는 아직 없는 방식", "good": True}]}
         n = inspire.comment(c, {"txt": "온라인 2026.11.01 ~ 2026.11.28 3만원 이상 구매 시 최대 5천원 할인 3장"})
@@ -265,6 +275,10 @@ class Evidence(unittest.TestCase):
 
     def test_marked_place_says_something_else_is_rejected(self):   # 엉뚱한 자리
         self.put(self.c, {"y": 100, "h": 40, "txt": "BENEFIT 1 단독 선발매 상품"})
+        self.assertEqual(inspire.evidence(self.c), ("rejected", None))
+
+    def test_whole_block_is_not_a_place_to_point_at(self):   # 상품 목록 통째로 표시
+        self.put(self.c, {"y": 100, "h": inspire.SPOT_MAX_H + 200, "txt": "포피 플리스 오브 팬츠 가볍지만 따뜻해요 … 스탬프 …"})
         self.assertEqual(inspire.evidence(self.c), ("rejected", None))
 
     def test_nothing_found_on_screen_is_rejected(self):   # 메뉴에서만 걸렸거나 숨은 글
