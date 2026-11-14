@@ -77,6 +77,7 @@ _STRUCT = re.compile(r"(?:BENEFIT|EVENT|STEP|POINT|혜택|이벤트)\s*0?([1-9])
 _NOISE = re.compile(r"유의사항|확인해|확인하세요|주문|상품\s*보기|더\s*보기|바로가기|증정|드립니다|적립|환불|교환|품절|로그인|쿠폰|다운로드|배송|고객센터|종료되었|화면을|밀어보세요|^\s*확인"
                     r"|금융|권리|소비자|법률|적합성|운영상|종합적|해제됨|카테고리|콘텐츠를|찜해|필터|약관|상품설명서|보러가기|랭킹|브랜드를\s*찜"
                     r"|불가|않습니다|없습니다|경우|순서입니다|스크롤|알림\s*신청|알려드릴|의무|변제|제외|적용|안내|당첨|응모|ID\s*당|1인|기간|이후|이내|한정|수량|혜택은|포인트|캐시백|결제|카드|할인|특가|세일|원\b|[*※]|^\s*-|\(\d|\d{4}")
+_UI_NOISE = re.compile(r"댓글|로그인|전체\s*보기|더\s*보기|필터|정렬|장바구니|이전|다음|공유하기|목록")   # 구좌 제목이 화면 조작 글이면 내용 있는 구좌가 아니다
 SKIP_ROLES = {"terms_notice", "section_navigation", "related_promotions", "app_promo", "share", "content", "ui_noise", "empty"}
 VISUAL_ROLES = {"hero", "lookbook", "visual_gallery", "brand_intro", "brand_story", "editorial_story", "image_block"}
 
@@ -87,7 +88,7 @@ def _now() -> str:
 
 # ---------------- 글 분석 ----------------
 def mechanics(text: str) -> list[str]:
-    return [k for k, rx in _MECH_RX.items() if rx.search(text or "")]
+    return [h["name"] for h in mech_hits(text)]
 
 
 def _around(text: str, a: int, b: int) -> str:
@@ -99,14 +100,22 @@ def _around(text: str, a: int, b: int) -> str:
     return re.sub(r"\s+", " ", text[lo:hi]).strip()
 
 
+# 설명하는 글인지: 조사·어미·조건(~ 시)·금액이 둘레에 있어야 한다. 메뉴·탭 이름처럼 낱말만 늘어선 곳('릴레이 세일 라이브 특가 다다익선')은 근거가 못 된다
+_SENTENCE = re.compile(r"[가-힣](을|를|는|은|에게|에서|으로|하면|하고|하여|해요|세요|니다|어요|아요|드려|받아|받으|까지|부터|마다)(?![가-힣])|\s시\s|\d\s*(원|%|명|개|장|일)|이벤트|참여")
+
+
 def mech_hits(text: str) -> list[dict]:
-    """기법마다 {name, hit(걸린 낱말), snip(그 낱말이 든 문장)} — 카드에서 '이 페이지에서는 이렇게 썼어요'로 보여 준다."""
+    """기법마다 {name, hit(걸린 낱말), snip(그 낱말이 든 문장)} — 카드에서 '이 페이지에서는 이렇게 썼어요'로 보여 준다.
+    낱말이 여러 번 나오면 설명하는 문장 속에 든 첫 번째 것을 쓴다. 메뉴·탭 이름에서만 걸리면 그 기법은 버린다 (근거를 보여 줄 수 없다)."""
     out = []
     for k, rx in _MECH_RX.items():
-        m = rx.search(text or "")
-        if m:
+        for m in rx.finditer(text or ""):
+            ctx = text[max(0, m.start() - 28):m.end() + 28]
+            if not _SENTENCE.search(ctx):
+                continue
             out.append({"name": k, "hit": m.group(0).strip(), "snip": _around(text, m.start(), m.end()),
                         "near": re.sub(r"\s+", " ", text[max(0, m.start() - 10):m.end() + 10]).strip()})   # 문장째로 화면에서 못 찾을 때 쓰는 짧은 토막
+            break
     return out
 
 
@@ -218,9 +227,26 @@ def _drop_templates(cands: list[dict]) -> list[dict]:
         for h in c.get("hits") or []:
             k = (c["brand"], h["name"], h["hit"])
             cnt[k] = cnt.get(k, 0) + 1
+    # 구조도 마찬가지: 한 마켓의 기획전이 전부 같은 '혜택 1·2·3' 틀이면 그 페이지만의 구성이 아니다
+    st_n: dict = {}
+    for c in cands:
+        if c.get("struct"):
+            st_n[c["brand"]] = st_n.get(c["brand"], 0) + 1
     out = []
     for c in cands:
         tpl = {h["name"] for h in c.get("hits") or [] if cnt.get((c["brand"], h["name"], h["hit"]), 0) >= TEMPLATE_MIN}
+        st_tpl = bool(c.get("struct")) and st_n.get(c["brand"], 0) >= TEMPLATE_MIN and not c.get("own")
+        if st_tpl:
+            c = dict(c, struct="", steps=[], kinds=[k for k in c["kinds"] if k != "struct"])
+            if c["kind"] == "struct":
+                if not c["kinds"] and c["phrases"]:
+                    c["kinds"] = ["copy"]
+                if not c["kinds"]:
+                    continue
+                c["kind"] = c["kinds"][0]
+                c["why"] = {"mech": c["why"], "copy": "참고할 만한 문장이 있어요", "design": "화면 구성을 볼 수 있어요"}[c["kind"]]
+                if c["kind"] != "mech":
+                    c["focus"], c["focus_alt"] = (c["phrases"][0] if c["phrases"] else "")[:120], c["phrases"][1:3]
         if not tpl or c.get("own"):
             out.append(c); continue
         c = dict(c)
@@ -330,7 +356,7 @@ def _sections() -> list[dict]:
             continue
         r = json.loads(l)
         text, pid = r.get("text") or "", r.get("page_id")
-        if r.get("role") in SKIP_ROLES or len(text) < 30 or pid in hidden or pid not in pages:
+        if r.get("role") in SKIP_ROLES or len(text) < 30 or pid in hidden or pid not in pages or _UI_NOISE.search((r.get("title") or "")[:30]):
             continue
         cap = bool(refs.capture_info(pid))
         a = analyze(r.get("title") or "", text, r.get("role") or "", cap)
@@ -411,16 +437,61 @@ def _base(c: dict, df: dict, n: int, today: date) -> float:
     s += min(28.0, sum(math.log(n / (1 + df.get(m, 0))) * 5 for m in c["mech"] if m not in COMMON))   # 드문 기법일수록 높게
     s += len(c["phrases"]) * 3 + (6 if c["struct"] else 0)
     s += (c.get("grade", 1) - 1) * 8          # 평가가 높은 카드를 앞에
-    s += 18 if shot_info(c) else 6 if screen_id(c) else 0   # 실제 화면(사진)을 보여 줄 수 있는 카드를 앞에 (화면 없는 카드는 글만 보여서 판단이 어렵다)
     return s
 
 
+# ---------------- 근거 검증 ----------------
+# 원칙 하나 (2026-11-14): **카드가 말하는 글이, 표시한 자리의 실제 화면 글 안에 들어 있을 때만 카드로 낸다.**
+# 지금까지 따로따로 나온 문제(빈 화면에 표시, 메뉴 낱말을 기법으로 잡음, 분류가 바뀐 뒤 남은 옛 표시, 엉뚱한 자리 표시)는 전부 이 검사 하나에서 걸린다.
+#   ok       사진이 있고, 표시 자리의 화면 글에 카드의 핵심 글(claim)이 들어 있다 → 덱에 낸다
+#   pending  아직 사진으로 확인하지 못했다 (사진 없음·옛 방식 사진·분석 규칙이 바뀌어 다시 봐야 함) → 덱에 내지 않고 '확인 전 후보'로 센다
+#   rejected 확인했는데 화면에서 근거를 못 찾았다 → 내지 않는다
+def _nz(t: str) -> str:
+    return re.sub(r"[^0-9a-zㄱ-ㆎ가-힣]", "", (t or "").lower())
+
+
+def claim(c: dict) -> str:
+    """이 카드가 화면에서 꼭 보여야 하는 글: 기법은 걸린 낱말, 워딩은 첫 문장, 구조는 첫 단계, 디자인은 구좌 글 앞부분."""
+    k = c.get("kind")
+    if k == "mech":
+        return ((c.get("hits") or [{}])[0].get("hit") or "")
+    if k == "copy":
+        return ((c.get("phrases") or [""])[0])[:16]
+    if k == "struct":
+        return ((c.get("steps") or [""])[0])[:12]
+    return (c.get("psec") or c.get("text") or "")[:10]
+
+
+def sig(c: dict) -> str:
+    """무엇을 찾아 확인했는지의 지문. 분석 규칙이나 분류가 바뀌어 찾을 글이 달라지면 지문도 달라져, 옛 확인 결과를 다시 쓰지 않는다."""
+    return hashlib.sha1("|".join([c.get("kind") or "", claim(c), *_texts(c)]).encode("utf-8")).hexdigest()[:10]
+
+
+def evidence(c: dict) -> tuple[str, dict | None]:
+    """(상태, 표시 자리). 상태는 ok / pending / rejected."""
+    info = shot_info(c)
+    if not info or info.get("old_shot"):
+        return "pending", None
+    m = _meta(shot_id(c))
+    if (m.get("tried") or {}).get(c["id"]) != sig(c):
+        return "pending", None   # 이 카드(지금 내용)로는 아직 확인한 적이 없다
+    spot = info.get("spot")
+    want = _nz(claim(c))
+    if not spot or len(want) < 2 or want not in _nz(spot.get("txt") or ""):
+        return "rejected", None
+    return "ok", spot
+
+
 def deck(n: int = DECK, today: date | None = None) -> dict:
-    """오늘 볼 카드 n장 (안 본 것만). 점수순으로 고르되 같은 브랜드·분류가 몰리지 않게 하고, 몇 장은 취향과 상관없이 넣는다."""
+    """오늘 볼 카드 n장 (안 본 것, 화면에서 근거가 확인된 것만). 점수순으로 고르되 같은 브랜드·분류가 몰리지 않게 하고, 몇 장은 취향과 상관없이 넣는다."""
     today = today or date.today()
     state = _load()
     cands = candidates()
-    pool = [c for c in cands if c["id"] not in state["seen"] and not c.get("own")]   # 우리 페이지는 '써 본 방식' 판단에만 쓰고 카드로는 내지 않는다 (영감은 밖에서)
+    # 우리 페이지는 '써 본 방식' 판단에만 쓰고 카드로는 내지 않는다 (영감은 밖에서)
+    fresh = [c for c in cands if c["id"] not in state["seen"] and not c.get("own")]
+    ev = {c["id"]: evidence(c) for c in fresh}
+    pool = [c for c in fresh if ev[c["id"]][0] == "ok"]
+    pending = sum(1 for c in fresh if ev[c["id"]][0] == "pending")
     df: dict = {}
     for c in cands:
         for m in c["mech"]:
@@ -437,7 +508,7 @@ def deck(n: int = DECK, today: date | None = None) -> dict:
         tired = min(20.0, shown.get((c.get("hits") or [{}])[0].get("name"), 0) * 5.0) if c["kind"] == "mech" else 0.0
         scored.append((_base(c, df, len(cands), today) - tired, pref, c))
     picked, brand_n, kind_n, mech_seen, page_seen = [], {}, {}, set(), set()
-    lead_of = lambda c: (c.get("hits") or [{}])[0].get("name") if c["kind"] == "mech" else None   # 같은 기법은 하루에 한 장만 (같은 얘기를 여러 번 보지 않게)
+    lead_of = lambda c: (c.get("hits") or [{}])[0].get("name") if c["kind"] == "mech" else "구조" if c["kind"] == "struct" else None   # 같은 기법은 하루에 한 장만 (같은 얘기를 여러 번 보지 않게)
     # 분류마다 고르게(기본 n/3장), 자주 저장한 분류는 조금 더·자주 넘긴 분류는 조금 덜 (그래도 1장은 남긴다)
     cap = {k: max(1, round(n / 3 + max(-2.0, min(2.0, w.get(f"kind:{k}", 0) * 3)))) for k in KIND_KO}
 
@@ -462,7 +533,33 @@ def deck(n: int = DECK, today: date | None = None) -> dict:
                 picked.append(c); mech_seen.add(lead_of(c))
     cards = [_card(c) for c in picked]
     return {"cards": cards, "left": len(pool) - len(picked), "total": len(cands), "taste": taste(state), "saved_n": len(state["saved"]),
-            "kinds": KIND_KO, "today": today.isoformat(), "no_screen": sum(1 for c in cards if not c.get("shot"))}
+            "kinds": KIND_KO, "today": today.isoformat(), "pending": pending, "no_screen": 0}
+
+
+def to_verify(n: int) -> list[dict]:
+    """아직 화면으로 확인하지 못한 후보 중 먼저 확인할 것 n개 (점수순, 같은 페이지는 한 번). 화면 받기가 이 목록을 받아 확인한다."""
+    state, today = _load(), date.today()
+    cands = candidates()
+    df: dict = {}
+    for c in cands:
+        for m in c["mech"]:
+            df[m] = df.get(m, 0) + 1
+    w = weights(state)
+    rows = []
+    for c in cands:
+        if c["id"] in state["seen"] or c.get("own") or not c.get("url") or evidence(c)[0] != "pending":
+            continue
+        rows.append((_base(c, df, len(cands), today) + max(-18.0, min(18.0, sum(w.get(f, 0) for f in feats(c)) * 7)), c))
+    out, seen_sid, kind_n = [], set(), {}
+    for _sc, c in sorted(rows, key=lambda x: -x[0]):
+        sid = shot_id(c)
+        if sid in seen_sid or kind_n.get(c["kind"], 0) >= max(2, n // 2):   # 한 분류만 확인하지 않게
+            continue
+        seen_sid.add(sid); kind_n[c["kind"]] = kind_n.get(c["kind"], 0) + 1
+        out.append(c)
+        if len(out) >= n:
+            break
+    return out
 
 
 def _card(c: dict) -> dict:
@@ -470,7 +567,7 @@ def _card(c: dict) -> dict:
     return {k: c.get(k) for k in ("id", "src", "brand", "title", "campaign", "url", "text", "kind", "kinds", "phrases", "struct", "steps", "hits", "desc", "focus", "focus_alt", "why", "psec", "tl", "role", "ref",
                                   "first_seen", "signals", "grade")} | {
         "tags": list(c["mech"]), "kind_name": KIND_KO.get(c["kind"], ""), "grade_name": GRADE_KO.get(c.get("grade", 1), ""), "page": sid, **shot_info(c)} | {
-        "cap": bool(sid or shot_info(c))}
+        "cap": bool(sid or shot_info(c)), "spot": evidence(c)[1], "claim": claim(c)}
 
 
 # ---------------- 실제 화면 ----------------
@@ -483,6 +580,7 @@ def _card(c: dict) -> dict:
 PREVIEW_KEEP_DAYS = 14
 SHOT_MAX_H = 14000     # 사진 세로 한도(px). 그보다 긴 페이지는 위에서부터 이만큼만
 SHOT_QUALITY = 60
+BLANK_BYTES = 7000     # 화면 한 장(390×844 JPEG)이 이보다 작으면 거의 빈 화면으로 본다 (그 자리에는 표시를 붙이지 않는다)
 
 
 def _pdir() -> Path:
@@ -504,19 +602,31 @@ def _meta(sid: str) -> dict:
 
 
 def shot_info(c: dict) -> dict:
-    """카드에 붙일 화면 정보: {shot: 이미지 주소, shot_h: 세로 px(폭 390 기준), spot: {y, h} | None}. 사진이 없으면 {}."""
+    """카드에 붙일 화면 정보: {shot: 첫 장 주소, tiles: [{src, y, h}], shot_h: 전체 세로 px(폭 390 기준), spot: {y, h} | None}. 사진이 없으면 {}.
+    사진은 화면 높이만큼씩 내려가며 나눠 찍은 여러 장이다(tiles). 화면이 y 위치에 차례로 쌓아 한 장처럼 보여 준다."""
     sid = shot_id(c)
-    f = _pdir() / sid / "shot.jpg"
-    if not f.exists():
-        return {}
+    d = _pdir() / sid
     m = _meta(sid)
-    return {"shot": f"/refimg/inspire/{sid}?v={int(f.stat().st_mtime)}", "shot_h": m.get("h") or 0, "spot": (m.get("spots") or {}).get(c["id"])}
+    tiles = m.get("tiles")
+    if not tiles and (d / "shot.jpg").exists():   # 예전에 통째로 한 장 찍어 둔 것
+        tiles = [{"n": 0, "y": 0, "h": m.get("h") or 0, "bytes": BLANK_BYTES}]
+    if not tiles or not shot_file(sid, tiles[0]["n"]):
+        return {}
+    v = int(m.get("v") or 0) or int((d / "meta.json").stat().st_mtime if (d / "meta.json").exists() else 0)
+    out = [{"src": f"/refimg/inspire/{sid}/{t['n']}?v={v}", "y": t["y"], "h": t["h"]} for t in tiles]
+    spot = (m.get("spots") or {}).get(c["id"])
+    if spot and any(t["y"] <= spot["y"] < t["y"] + t["h"] and t.get("bytes", BLANK_BYTES) < BLANK_BYTES for t in tiles):
+        spot = None   # 그 자리가 사진에서 비어 있다 (스크롤해도 안 그려진 구역) → 엉뚱한 흰 칸에 표시하지 않는다
+    return {"shot": out[0]["src"], "tiles": out, "shot_h": m.get("h") or 0, "spot": spot} | ({} if m.get("tiles") else {"old_shot": True})
 
 
-def shot_file(sid: str) -> Path | None:
-    if not re.fullmatch(r"[dp][0-9a-f]{12}", sid or ""):
+def shot_file(sid: str, n: int = 0) -> Path | None:
+    if not re.fullmatch(r"[dp][0-9a-f]{12}", sid or "") or not 0 <= int(n) < 40:
         return None
-    f = _pdir() / sid / "shot.jpg"
+    d = _pdir() / sid
+    f = d / f"shot_{int(n)}.jpg"
+    if not f.exists() and int(n) == 0:
+        f = d / "shot.jpg"
     return f if f.exists() else None
 
 
@@ -541,6 +651,8 @@ _FIND_JS = r"""(want) => {
   const nz = t => String(t || '').toLowerCase().replace(/[^0-9a-zㄱ-ㆎ가-힣]/g, '');
   const els = [...document.body.querySelectorAll('*')].filter(e => !/^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/.test(e.tagName));
   const txt = new Map(els.map(e => [e, nz(e.textContent)]));
+  // 눈에 보이는 요소만: 접혀 있거나 투명한(아직 안 나타난) 글에 표시하면 사진에서는 빈 자리다
+  const seen = e => { for (let n = e; n && n !== document.body; n = n.parentElement) { const c = getComputedStyle(n); if (c.display === 'none' || c.visibility === 'hidden' || +c.opacity < 0.2) return false; } const r = e.getBoundingClientRect(); return r.left < innerWidth && r.right > 0; };
   const out = {};
   for (const [id, texts] of Object.entries(want)) {
     for (const t of texts) {
@@ -548,14 +660,14 @@ _FIND_JS = r"""(want) => {
       const keys = [full.slice(0, 22), full.slice(Math.max(0, Math.floor(full.length / 2) - 8), Math.floor(full.length / 2) + 8), full.slice(-14)].filter(k => k.length >= 4);
       let best = null;
       for (const k of keys) {
-        for (const e of els) { const s = txt.get(e); if (!s.includes(k)) continue; const r = e.getBoundingClientRect(); if (r.height < 8 || r.width < 20) continue; if (!best || s.length < txt.get(best).length) best = e; }
+        for (const e of els) { const s = txt.get(e); if (!s.includes(k)) continue; const r = e.getBoundingClientRect(); if (r.height < 8 || r.width < 20 || !seen(e)) continue; if (!best || s.length < txt.get(best).length) best = e; }
         if (best) break;
       }
       if (!best) continue;
       while (best.parentElement && best.getBoundingClientRect().height < 28 && txt.get(best.parentElement).length < full.length * 3 + 60) best = best.parentElement;   // 한 줄짜리 글은 그 묶음까지
       const r = best.getBoundingClientRect();
       if (r.height > 900) continue;   // 페이지 통째로 잡힌 것은 표시로 쓸모가 없다
-      out[id] = { y: Math.round(r.top + scrollY), h: Math.round(r.height) }; break;
+      out[id] = { y: Math.round(r.top + scrollY), h: Math.round(r.height), t: t.slice(0, 80), txt: String(best.innerText || best.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 240) }; break;
     }
   }
   return out;
@@ -571,7 +683,7 @@ def _texts(c: dict) -> list[str]:
 
 
 def prefetch(n: int = DECK, pause: float = 2.0, job: dict | None = None) -> dict:
-    """곧 보여 줄 카드 중 화면 사진이 없는 것 n장을 받아 둔다. 실패한 것은 건너뛴다 (그 카드는 글만으로 나온다)."""
+    """아직 화면으로 확인하지 못한 후보 n개의 실제 화면을 받아, 카드가 말하는 글이 그 화면에 보이는지 확인한다. 확인된 것만 덱에 나온다."""
     import time
     from . import render
     job = job if job is not None else {}
@@ -580,25 +692,42 @@ def prefetch(n: int = DECK, pause: float = 2.0, job: dict | None = None) -> dict
         return job
     cands = {c["id"]: c for c in candidates()}
     todo: dict = {}   # 화면 id → 주소 (같은 페이지는 한 번만)
-    for card in deck(max(n * 2, 24))["cards"]:
-        c = cands.get(card["id"])
-        if c and c.get("url") and not card.get("shot") and len(todo) < n:
-            todo.setdefault(shot_id(c), c["url"])
+    for c in to_verify(n):
+        todo.setdefault(shot_id(c), c["url"])
     job.update(state="running", total=len(todo), done=0, ok=0, msg="")
     for sid, url in todo.items():
         d = _pdir() / sid
         want = {c["id"]: _texts(c) for c in cands.values() if shot_id(c) == sid}   # 이 사진을 같이 쓰는 카드 전부의 자리를 한 번에 잰다
 
         def grab(pg, d=d, want=want):
+            """화면 높이만큼씩 내려가며 한 장씩 찍는다. 한 번에 통째로 찍으면 스크롤해야 나타나는 구역이 빈 채로 찍혔다 (2026-11-14)."""
+            import shutil
+            shutil.rmtree(d, ignore_errors=True)
             d.mkdir(parents=True, exist_ok=True)
+            vh = render.VIEW_H
             h = int(min(pg.evaluate("document.documentElement.scrollHeight"), SHOT_MAX_H))
+            tiles, y, n = [], 0, 0
+            while y < h and n < 40:
+                pg.evaluate(f"window.scrollTo(0,{y})")
+                pg.wait_for_timeout(380)   # 스크롤로 나타나는 구역이 다 그려질 때까지
+                at = int(pg.evaluate("scrollY"))
+                if n == 1:   # 둘째 장부터는 화면에 붙어 다니는 머리띠·버튼을 숨긴다 (장마다 되풀이돼 찍히지 않게)
+                    pg.evaluate("[...document.querySelectorAll('*')].forEach(e => { const p = getComputedStyle(e).position; if (p === 'fixed' || p === 'sticky') e.style.setProperty('visibility', 'hidden', 'important'); })")
+                    pg.wait_for_timeout(60)
+                f = d / f"shot_{n}.jpg"
+                pg.screenshot(path=str(f), type="jpeg", quality=SHOT_QUALITY)
+                tiles.append({"n": n, "y": at, "h": vh, "bytes": f.stat().st_size})
+                if at + vh >= h or at < y:   # 끝까지 왔다
+                    break
+                y += vh; n += 1
+            h = min(h, tiles[-1]["y"] + vh)
             spots = pg.evaluate(_FIND_JS, want)
-            pg.screenshot(path=str(d / "shot.jpg"), type="jpeg", quality=SHOT_QUALITY, full_page=True, clip={"x": 0, "y": 0, "width": render.VIEW_W, "height": h})
-            return {"h": h, "spots": {k: v for k, v in spots.items() if v["y"] < h}}
+            return {"h": h, "tiles": tiles, "v": int(time.time()), "spots": {k: v for k, v in spots.items() if v["y"] < h},
+                    "tried": {k: sig(cands[k]) for k in want}}   # 이 카드들을 이 내용으로 확인해 봤다는 기록 (못 찾은 것도 남겨, 같은 것을 되풀이해 받지 않는다)
         try:
             res = render.capture(url, extra=grab)
             ex = res.get("extra") if res.get("ok") else None
-            if ex and (d / "shot.jpg").exists():
+            if ex and ex.get("tiles"):
                 (d / "meta.json").write_text(json.dumps({"url": url, "captured_at": _now(), **ex}, ensure_ascii=False), encoding="utf-8")
                 job["ok"] = job.get("ok", 0) + 1
         except Exception:
@@ -606,7 +735,7 @@ def prefetch(n: int = DECK, pause: float = 2.0, job: dict | None = None) -> dict
         job["done"] = job.get("done", 0) + 1
         time.sleep(pause)
     _prune_previews()
-    job.update(state="done", msg=f"{job.get('ok', 0)}개 화면을 받았어요" if todo else "받을 화면이 없어요")
+    job.update(state="done", msg=f"{job.get('ok', 0)}개 화면을 확인했어요" if todo else "확인할 후보가 없어요")
     return job
 
 
@@ -683,9 +812,11 @@ def saved() -> dict:
     state = _load()
     items = sorted(state["saved"].values(), key=lambda x: x["saved_at"], reverse=True)
     for it in items:   # 저장한 뒤에 화면을 받았을 수도 있으므로 지금 기준으로 다시 본다
-        for k in ("shot", "shot_h", "spot"):
+        keep = it.get("spot")   # 저장할 때 확인된 표시 자리는 그대로 둔다 (지금 다시 잰 값으로 바꾸지 않는다)
+        for k in ("shot", "tiles", "shot_h", "spot", "old_shot"):
             it.pop(k, None)
         it.update(shot_info(it))
+        it["spot"] = keep if it.get("shot") and not it.get("old_shot") else None
         it["cap"] = bool(it.get("page") or it.get("shot"))
     return {"items": items, "kinds": KIND_KO, "taste": taste(state)}
 

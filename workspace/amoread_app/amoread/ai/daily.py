@@ -109,7 +109,7 @@ def run(force: bool = False, markets: list[str] | None = None, min_hours: float 
         _write(st)
         try:   # 오늘의 영감: 아침에 볼 카드의 실제 화면을 미리 받아 둔다 (실패해도 신규 확인 결과에는 영향 없음)
             from . import inspire
-            st["inspire"] = {"at": now(), "msg": inspire.prefetch().get("msg", "")}
+            st["inspire"] = {"at": now(), "msg": inspire.prefetch(20).get("msg", "")}   # 확인에서 떨어지는 후보가 있어 12장보다 넉넉히 본다
             _write(st)
         except Exception:
             pass

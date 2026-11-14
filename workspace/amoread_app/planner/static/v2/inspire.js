@@ -3,7 +3,7 @@
 // 손이 덜 가게: 밀기·버튼·키보드(←/→/Z) 모두 되고, 누를 때마다 바로 서버에 기록한다 (창을 닫아도 본 데까지 남는다)
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
-let CARDS = [], idx = 0, total = 0, left = 0, last = null, busy = false, view = 'deck', SAVED = [], KINDS = {}, sKind = '', state = 'loading', err = '', noScreen = 0, fetching = false;
+let CARDS = [], idx = 0, total = 0, left = 0, last = null, busy = false, view = 'deck', SAVED = [], KINDS = {}, sKind = '', state = 'loading', err = '', pending = 0, fetching = false;
 let toastT;
 function toast(m) { const el = $('#toast'); el.textContent = m; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600); }
 const isNew = c => c.src === 'new';
@@ -29,11 +29,13 @@ function headline(c) {
   if (c.kind === 'struct') return c.struct || c.title;
   return c.title;
 }
+// 인용문은 표시한 자리에서 실제로 읽은 화면 글을 쓴다 → 오른쪽에 적힌 글과 왼쪽에 표시한 자리가 늘 같은 곳이다
+const seenText = c => { const t = c.spot?.txt || ''; return t.length > 150 ? `${t.slice(0, 150)}…` : t; };
 function lead(c) {
   if (c.kind === 'mech') {
     const hs = c.hits || [], more = hs.slice(1).map(h => h.name);
     return `${c.desc ? `<p class="body">${esc(c.desc)}</p>` : ''}
-      ${hs[0] ? `<figure class="used"><figcaption>이 페이지에서는</figcaption><blockquote>${markHit(hs[0].snip, hs[0].hit)}</blockquote></figure>` : ''}
+      ${hs[0] ? `<figure class="used"><figcaption>이 페이지에서는</figcaption><blockquote>${markHit(seenText(c) || hs[0].snip, hs[0].hit)}</blockquote></figure>` : ''}
       ${more.length ? `<p class="also">함께 쓴 방식 <b>${more.map(esc).join(', ')}</b></p>` : ''}`;
   }
   if (c.kind === 'copy') { const rest = (c.phrases || []).slice(1, 3); return rest.length ? `<ul class="lines">${rest.map(p => `<li>${esc(p)}</li>`).join('')}</ul>` : ''; }
@@ -48,9 +50,16 @@ function signals(c) {
 // 왼쪽: 실제 페이지. 사진이 있으면 그 사진을 그대로(안에서 위아래로 넘겨 볼 수 있음), 없으면 수집본을 다시 그린 화면(이미지 없음), 그것도 없으면 안내
 function shot(c, live = true) {
   const cap = `<div class="shotcap"><span>실제 페이지</span>${c.shot || c.page ? `<button class="lnk" data-whole="${esc(c.id)}">크게 보기</button>` : ''}</div>`;
-  if (c.shot) return `<div class="shot">${cap}<div class="phone scroll" ${live ? `data-shot="${esc(c.id)}"` : ''} tabindex="0" aria-label="실제 페이지 화면 (위아래로 넘겨 볼 수 있어요)"><div class="pgimg">${live ? `<img src="${esc(c.shot)}" alt="" draggable="false">` : ''}</div></div></div>`;
+  if (c.shot) return `<div class="shot">${cap}<div class="phone scroll" ${live ? `data-shot="${esc(c.id)}"` : ''} tabindex="0" aria-label="실제 페이지 화면 (위아래로 넘겨 볼 수 있어요)"><div class="pgimg tiles">${live ? tilesHtml(c) : ''}</div></div></div>`;
   if (c.page) return `<div class="shot">${cap}<div class="phone"><span class="crop"${live ? ' data-spot' : ''}></span></div><p class="shotnote">이미지 없이 다시 그린 화면이에요</p></div>`;
   return `<div class="shot">${cap}<div class="phone"><span class="noscr"><b>아직 화면을 안 받았어요</b>오른쪽의 [화면 받아 오기]를 누르면 실제 모습을 볼 수 있어요.${c.url ? `<a class="btn xs" href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">원본에서 보기 ↗</a>` : ''}</span></div></div>`;
+}
+// 사진은 화면 높이만큼씩 나눠 찍은 여러 장이다 → y 위치에 차례로 쌓는다 (자리·크기는 placeTiles가 폭에 맞춰 정함)
+const tilesOf = c => (c.tiles && c.tiles.length ? c.tiles : c.shot ? [{ src: c.shot, y: 0, h: c.shot_h || 0 }] : []);
+const tilesHtml = (c, lazy = false) => tilesOf(c).map(t => `<img src="${esc(t.src)}" alt="" draggable="false" data-y="${t.y}" data-h="${t.h}"${lazy ? ' loading="lazy"' : ''}>`).join('');
+function placeTiles(wrap, c, k) {
+  wrap.style.height = `${(c.shot_h || 0) * k}px`;
+  wrap.querySelectorAll('img').forEach(im => { im.style.top = `${+im.dataset.y * k}px`; if (+im.dataset.h) im.style.height = `${+im.dataset.h * k}px`; });
 }
 function metaLine(c) {
   const fresh = isNew(c) ? dayLabel(c.first_seen) : '모아 둔 구좌';
@@ -73,11 +82,11 @@ function placeShot(box, c) {
   const img = box.querySelector('img'), wrap = box.querySelector('.pgimg'); if (!img || !wrap) return;
   const go = () => {
     const k = wrap.clientWidth / 390; wrap.querySelector('.hl')?.remove();
-    if (c.shot_h) wrap.style.height = `${c.shot_h * k}px`;
+    placeTiles(wrap, c, k);
     if (c.spot) { const hl = document.createElement('span'); hl.className = 'hl'; hl.style.top = `${c.spot.y * k - 4}px`; hl.style.height = `${c.spot.h * k + 8}px`; wrap.append(hl);
       box.scrollTop = Math.max(0, c.spot.y * k - Math.max(40, (box.clientHeight - c.spot.h * k) / 2.6)); }
   };
-  go(); if (!img.complete) img.addEventListener('load', go, { once: true });
+  go();
   img.addEventListener('error', () => { box.innerHTML = '<span class="noscr">화면을 불러오지 못했어요</span>'; }, { once: true });
 }
 // 사진이 없는 카드: 수집본을 다시 그려 그 자리를 보여 준다 (이미지는 회색 칸)
@@ -97,7 +106,7 @@ async function openWhole(id) {
   const body = $('#pgB');
   $('#pgDlg').showModal();
   if (c.shot) {
-    body.innerHTML = `<div class="pgwrap"><img src="${esc(c.shot)}" alt="" width="390"></div>`;
+    body.innerHTML = `<div class="pgwrap tiles">${tilesHtml(c)}</div>`; placeTiles(body.querySelector('.pgwrap'), c, 1);
     if (c.spot) { const hl = document.createElement('span'); hl.className = 'hl'; hl.style.top = `${c.spot.y - 4}px`; hl.style.height = `${c.spot.h + 8}px`; body.querySelector('.pgwrap').append(hl);
       body.scrollTop = Math.max(0, c.spot.y - 160); }
     return;
@@ -119,11 +128,12 @@ function renderDeck() {
   $('#progT').textContent = state !== 'ok' ? '' : done ? `오늘 ${CARDS.length}장을 다 봤어요` : `${idx + 1} / ${CARDS.length}`;
   $('#progB').style.width = CARDS.length ? `${Math.min(100, idx / CARDS.length * 100)}%` : '0';
   const nb = $('#noscr');
-  nb.hidden = state !== 'ok' || done || !noScreen;
-  if (!nb.hidden) nb.innerHTML = fetching ? '<span>새 프로모션 화면을 받아 오는 중이에요… <b id="pfT"></b> 끝나면 카드가 새로 채워져요.</span>'
-    : `<span>오늘 카드 중 <b>${noScreen}장</b>은 아직 실제 화면 사진이 없어요.</span><button class="btn xs" data-prefetch>화면 받아 오기 (${Math.max(1, Math.round(noScreen / 2))}분쯤)</button>`;
+  nb.hidden = state !== 'ok' || (!pending && !fetching);
+  if (!nb.hidden) nb.innerHTML = fetching ? '<span>후보의 실제 화면을 받아 확인하는 중이에요… <b id="pfT"></b> 끝나면 확인된 카드가 채워져요.</span>'
+    : `<span>화면으로 아직 확인하지 않은 후보가 <b>${pending}개</b> 있어요. 확인된 것만 카드로 보여 드려요.</span><button class="btn xs" data-prefetch>12개 더 확인하기 (6분쯤)</button>`;
   if (state === 'loading') { st.innerHTML = '<div class="iempty">카드를 고르는 중이에요…</div>'; return; }
   if (state === 'err') { st.innerHTML = `<div class="iempty warn">카드를 불러오지 못했어요 (${esc(err)}).<button class="btn sm" data-reload>다시 불러오기</button></div>`; return; }
+  if (!CARDS.length && pending) { st.innerHTML = `<div class="iempty"><b>확인된 카드가 아직 없어요</b>카드는 실제 화면에서 근거가 보이는 것만 보여 드려요. 후보 ${pending}개가 확인을 기다리고 있어요.${fetching ? '<span>확인하는 중이에요…</span>' : '<button class="btn sm primary" data-prefetch>후보 12개 확인하기 (6분쯤)</button>'}</div>`; return; }
   if (!CARDS.length) { st.innerHTML = `<div class="iempty"><b>지금 보여 드릴 새 카드가 없어요</b>${total ? '모아 둔 것을 전부 보셨어요. 내일 아침 새 프로모션이 올라오면 다시 채워져요.' : '레퍼런스 화면의 [신규 프로모션 찾기]나 [수집]으로 모으면 여기에 카드가 생겨요.'}<a class="btn sm" href="/v2/library">레퍼런스로 가기</a></div>`; return; }
   if (done) {
     const n = CARDS.filter(c => c._act === 'save').length;
@@ -152,7 +162,7 @@ async function loadDeck() {
   state = 'loading'; renderDeck();
   try {
     const d = await v2api('/api/am/ai/inspire/deck');
-    CARDS = d.cards; idx = 0; last = null; total = d.total; left = d.left; KINDS = d.kinds; noScreen = d.no_screen || 0; state = 'ok';
+    CARDS = d.cards; idx = 0; last = null; total = d.total; left = d.left; KINDS = d.kinds; pending = d.pending || 0; state = 'ok';
     $('#savedN').textContent = d.saved_n; renderTaste(d.taste);
   } catch (e) { state = 'err'; err = e.message; }
   renderDeck();
@@ -220,7 +230,7 @@ function renderSaved() {
   $('#sfilters').innerHTML = [['', '전체'], ...Object.entries(KINDS)].map(([k, name]) => `<button class="chip ${k ? `k-${k}` : ''}" data-skind="${esc(k)}" aria-pressed="${sKind === k}" ${n(k) || sKind === k ? '' : 'disabled'}>${k ? icon(k) : ''}${esc(name)}<span class="n">${n(k)}</span></button>`).join('');
   const list = SAVED.filter(x => !sKind || (x.kinds || [x.kind]).includes(sKind));
   $('#sgrid').innerHTML = list.length ? list.map(c => `<article class="scard k-${esc(c.kind)}" data-id="${esc(c.id)}">
-      ${c.shot ? `<button class="sthumb" data-whole="${esc(c.id)}" aria-label="실제 페이지 크게 보기"><span class="pgimg" data-sthumb="${esc(c.id)}"><img src="${esc(c.shot)}" alt="" loading="lazy"></span></button>` : ''}
+      ${c.shot ? `<button class="sthumb" data-whole="${esc(c.id)}" aria-label="실제 페이지 크게 보기"><span class="pgimg tiles" data-sthumb="${esc(c.id)}">${tilesHtml(c, true)}</span></button>` : ''}
       <div class="info">
         <div class="kline"><span class="kind">${icon(c.kind)}${esc(c.kind_name)}</span><span class="cap">${esc((c.saved_at || '').slice(5, 10))} 저장</span></div>
         <h2>${esc(headline(c))}</h2>
@@ -234,8 +244,9 @@ function renderSaved() {
     </article>`).join('')
     : `<div class="iempty">${SAVED.length ? '이 종류로 저장한 카드가 없어요.' : '<b>아직 저장한 카드가 없어요</b>오늘의 카드에서 오른쪽으로 밀면 여기에 모여요.'}${SAVED.length ? '' : '<button class="btn sm primary" data-goto="deck">오늘의 카드 보기</button>'}</div>`;
   // 보관함 썸네일: 사진에서 표시한 자리가 보이게 올려 둔다
-  document.querySelectorAll('#sgrid [data-sthumb]').forEach(w => { const c = SAVED.find(x => x.id === w.dataset.sthumb); if (!c?.spot) return;
-    const k = w.clientWidth / 390; w.style.transform = `translateY(${-Math.max(0, c.spot.y * k - 50)}px)`;
+  document.querySelectorAll('#sgrid [data-sthumb]').forEach(w => { const c = SAVED.find(x => x.id === w.dataset.sthumb); if (!c) return;
+    const k = w.clientWidth / 390; placeTiles(w, c, k); if (!c.spot) return;
+    w.style.transform = `translateY(${-Math.max(0, c.spot.y * k - 50)}px)`;
     const hl = document.createElement('span'); hl.className = 'hl'; hl.style.top = `${c.spot.y * k - 3}px`; hl.style.height = `${c.spot.h * k + 6}px`; w.append(hl); });
 }
 async function loadSaved() {

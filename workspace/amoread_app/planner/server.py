@@ -128,10 +128,11 @@ def refimg_own(name: str):
 
 
 @app.get("/refimg/inspire/{sid}")
-def refimg_inspire(sid: str):
-    """오늘의 영감 카드의 실제 페이지 사진 (이 PC에 받아 둔 것만). 없으면 404."""
+@app.get("/refimg/inspire/{sid}/{n}")
+def refimg_inspire(sid: str, n: int = 0):
+    """오늘의 영감 카드의 실제 페이지 사진 (이 PC에 받아 둔 것만, 화면 높이만큼씩 나눠 찍은 n번째 장). 없으면 404."""
     from amoread.ai import inspire
-    f = inspire.shot_file(sid)
+    f = inspire.shot_file(sid, n) if 0 <= n < 40 else None
     if not f:
         raise HTTPException(404, "없는 화면입니다.")
     return FileResponse(f, media_type="image/jpeg", headers={"Cache-Control": "private, max-age=86400"})

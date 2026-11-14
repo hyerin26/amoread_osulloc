@@ -53,6 +53,14 @@ class Explain(unittest.TestCase):
         self.assertTrue(a["desc"], "기법 설명 한 줄이 있어야 이름만 보고도 뭔지 알아요")
         self.assertEqual(a["focus"], a["hits"][0]["snip"][:120], "화면에서 표시할 자리는 그 문장")
 
+    def test_menu_labels_are_not_evidence(self):
+        """메뉴·탭 이름에서만 걸린 기법은 버린다 (2026-11-14: 탭 이름 '라이브 특가' 때문에 '라이브' 카드가 나왔는데 화면에는 근거가 없었음)."""
+        nav = "겨울 방한템 모아보기 베스트 천원의 행복 크리에이터 PICK 에블린 릴레이 세일 라이브 특가 다다익선 직잭단독 최저가 카테고리 특가"
+        self.assertNotIn("라이브", inspire.mechanics(nav))
+        real = nav + " 11월 12일 19시 라이브 방송에서만 최대 30% 쿠폰을 드려요."
+        hit = next(h for h in inspire.mech_hits(real) if h["name"] == "라이브")
+        self.assertIn("방송에서만", hit["snip"], "같은 낱말이 메뉴에도 있으면 설명하는 문장 쪽을 써요")
+
     def test_every_mechanic_has_a_description(self):
         self.assertEqual(set(inspire.MECH), set(inspire.MECH_DESC), "MECH에 기법을 더하면 MECH_DESC에 한 줄 설명도 넣어 주세요")
 
@@ -94,9 +102,16 @@ class NoRepeats(unittest.TestCase):
         self.assertEqual({c["kind"] for c in out}, {"copy"})
         self.assertEqual(out[0]["focus"], "포근하고 세련된 분위기를 동시에 담았어요")
 
+    def test_market_template_structure_is_not_an_insight(self):
+        mk = lambda i, brand: dict(self.mk(i, brand, "x"), kind="struct", kinds=["struct"], mech=[], hits=[], struct="혜택·이벤트를 3단계로 나눈 구성", steps=["a", "b", "c"], phrases=["포근하고 세련된 분위기를 담았어요"])
+        out = inspire._drop_templates([mk(i, "29CM") for i in range(inspire.TEMPLATE_MIN)] + [mk(99, "컬리")])
+        self.assertEqual([c["id"] for c in out if c["kind"] == "struct"], ["t99"], "기획전마다 같은 틀이면 구조 카드로 내지 않아요")
+        self.assertTrue(all(c["kind"] == "copy" and not c["struct"] for c in out if c["brand"] == "29CM"))
+
     def test_one_card_per_mechanic_and_per_page_in_a_deck(self):
         cands = [self.mk(i, f"B{i % 5}", f"hit{i}") for i in range(10)] + [dict(self.mk(50 + i, "C", f"q{i}", "미니게임·뽑기"), url="https://same.test/p") for i in range(3)]
-        with tempfile.TemporaryDirectory() as t, mock.patch.object(inspire, "DIR", Path(t)), mock.patch.object(inspire, "candidates", return_value=inspire._enrich(cands)):
+        with tempfile.TemporaryDirectory() as t, mock.patch.object(inspire, "DIR", Path(t)), mock.patch.object(inspire, "candidates", return_value=inspire._enrich(cands)), \
+                mock.patch.object(inspire, "evidence", return_value=("ok", {"y": 1, "h": 2, "txt": ""})):
             names = [c["hits"][0]["name"] for c in inspire.deck()["cards"]]
         self.assertEqual(sorted(names), sorted(set(names)))
 
@@ -105,7 +120,9 @@ class Deck(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         cands = [cand(i, "mech", "A") for i in range(20)] + [cand(100 + i, "copy", "B") for i in range(20)] + [cand(200 + i, "design", "C", src="lib") for i in range(20)]
-        self.ps = [mock.patch.object(inspire, "DIR", Path(self.tmp.name)), mock.patch.object(inspire, "candidates", return_value=cands), mock.patch.object(inspire, "_favorite")]
+        # 이 묶음은 덱 구성 규칙을 본다: 근거 확인은 통과한 것으로 둔다 (근거 확인 자체는 Evidence 묶음에서)
+        self.ps = [mock.patch.object(inspire, "DIR", Path(self.tmp.name)), mock.patch.object(inspire, "candidates", return_value=cands), mock.patch.object(inspire, "_favorite"),
+                   mock.patch.object(inspire, "evidence", return_value=("ok", {"y": 1, "h": 2, "txt": ""}))]
         for p in self.ps:
             p.start()
 
@@ -140,13 +157,20 @@ class Deck(unittest.TestCase):
         with mock.patch.object(inspire, "candidates", return_value=[mine, cand(1)]):
             self.assertEqual([c["id"] for c in inspire.deck()["cards"]], ["c1"])
 
-    def test_cards_with_a_real_screen_come_first(self):
-        a, b = cand(1), cand(2)
-        with mock.patch.object(inspire, "candidates", return_value=[a, b]), mock.patch.object(inspire, "shot_info", side_effect=lambda c: {"shot": "/refimg/inspire/x", "shot_h": 900, "spot": {"y": 10, "h": 20}} if c["id"] == "c2" else {}):
-            d = inspire.deck()
-        self.assertEqual(d["cards"][0]["id"], "c2")
-        self.assertTrue(d["cards"][0]["cap"]); self.assertEqual(d["no_screen"], 1)
-        self.assertEqual(d["cards"][0]["spot"], {"y": 10, "h": 20})
+    def test_blank_part_of_the_picture_gets_no_mark(self):
+        """사진에서 비어 있는 자리(스크롤해도 안 그려진 구역)에는 표시를 붙이지 않는다 (2026-11-14: 흰 칸에 노란 표시만 떴음)."""
+        import json
+        c = {"id": "d0123456789ab", "src": "new"}
+        d = Path(self.tmp.name) / "capture" / c["id"]; d.mkdir(parents=True)
+        for n in range(3):
+            (d / f"shot_{n}.jpg").write_bytes(b"x")
+        meta = {"h": 2532, "v": 1, "tiles": [{"n": 0, "y": 0, "h": 844, "bytes": 60000}, {"n": 1, "y": 844, "h": 844, "bytes": 3000}, {"n": 2, "y": 1688, "h": 844, "bytes": 50000}]}
+        for y, want in ((900, None), (1800, {"y": 1800, "h": 40})):
+            (d / "meta.json").write_text(json.dumps({**meta, "spots": {c["id"]: {"y": y, "h": 40}}}), encoding="utf-8")
+            info = inspire.shot_info(c)
+            self.assertEqual(info["spot"], want)
+            self.assertEqual([t["y"] for t in info["tiles"]], [0, 844, 1688])
+        self.assertTrue(inspire.shot_file(c["id"], 2)); self.assertIsNone(inspire.shot_file(c["id"], 9)); self.assertIsNone(inspire.shot_file(c["id"], 99))
 
     def test_shot_file_only_serves_known_ids(self):
         self.assertIsNone(inspire.shot_file("../../x"))
@@ -191,10 +215,73 @@ class Deck(unittest.TestCase):
             fav.assert_called_with("sec-1", True)
 
 
+class Evidence(unittest.TestCase):
+    """원칙: 카드가 말하는 글이, 표시한 자리의 실제 화면 글 안에 들어 있을 때만 카드로 낸다 (2026-11-14).
+    빈 화면에 표시 / 메뉴 낱말을 기법으로 / 분류가 바뀐 뒤 남은 옛 표시 / 엉뚱한 자리 — 전부 이 검사에서 걸려야 한다."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.p = mock.patch.object(inspire, "DIR", Path(self.tmp.name)); self.p.start()
+        self.c = {"id": "d0123456789ab", "src": "new", "brand": "A", "url": "https://x.test/1", "title": "t", "text": "", "first_seen": "2026-11-13", "score": 60, "low": False, "own": False,
+                  "kind": "mech", "kinds": ["mech"], "mech": ["출석·스탬프"], "hits": [{"name": "출석·스탬프", "hit": "스탬프", "snip": "스탬프 4개를 모으면 적립금을 드려요", "near": "스탬프 4개를"}],
+                  "phrases": [], "steps": [], "struct": "", "desc": "", "why": "", "focus": "스탬프 4개를 모으면 적립금을 드려요", "focus_alt": ["스탬프 4개를"]}
+
+    def tearDown(self):
+        self.p.stop(); self.tmp.cleanup()
+
+    def put(self, c, spot, tried=True, tiles=None, old=False):
+        import json
+        d = Path(self.tmp.name) / "capture" / inspire.shot_id(c); d.mkdir(parents=True, exist_ok=True)
+        (d / ("shot.jpg" if old else "shot_0.jpg")).write_bytes(b"x")
+        meta = {"h": 844, "v": 1, "spots": {c["id"]: spot} if spot else {}, "tried": {c["id"]: inspire.sig(c)} if tried else {}}
+        if not old:
+            meta["tiles"] = tiles or [{"n": 0, "y": 0, "h": 844, "bytes": 60000}]
+        (d / "meta.json").write_text(json.dumps(meta), encoding="utf-8")
+
+    def test_ok_when_the_marked_place_really_says_it(self):
+        self.put(self.c, {"y": 100, "h": 40, "txt": "스탬프 챌린지를 완수하면 응모권을 드려요"})
+        st, spot = inspire.evidence(self.c)
+        self.assertEqual(st, "ok"); self.assertEqual(spot["y"], 100)
+
+    def test_no_picture_or_old_picture_is_pending(self):
+        self.assertEqual(inspire.evidence(self.c)[0], "pending")
+        self.put(self.c, {"y": 1, "h": 2, "txt": "스탬프"}, old=True)
+        self.assertEqual(inspire.evidence(self.c)[0], "pending")
+
+    def test_marked_place_says_something_else_is_rejected(self):   # 엉뚱한 자리
+        self.put(self.c, {"y": 100, "h": 40, "txt": "BENEFIT 1 단독 선발매 상품"})
+        self.assertEqual(inspire.evidence(self.c), ("rejected", None))
+
+    def test_nothing_found_on_screen_is_rejected(self):   # 메뉴에서만 걸렸거나 숨은 글
+        self.put(self.c, None)
+        self.assertEqual(inspire.evidence(self.c)[0], "rejected")
+
+    def test_blank_part_of_the_picture_is_rejected(self):   # 빈 화면에 표시
+        self.put(self.c, {"y": 900, "h": 40, "txt": "스탬프"}, tiles=[{"n": 0, "y": 0, "h": 844, "bytes": 60000}, {"n": 1, "y": 844, "h": 844, "bytes": 2000}])
+        self.assertEqual(inspire.evidence(self.c)[0], "rejected")
+
+    def test_stale_mark_after_the_card_changed_is_not_reused(self):   # 분류가 바뀐 뒤 남은 옛 표시
+        self.put(self.c, {"y": 100, "h": 40, "txt": "단독 선발매 상품"})
+        copy = dict(self.c, kind="copy", kinds=["copy"], hits=[], phrases=["여유로운 루즈핏으로 감각적인 레이어드 스타일을 연출할 수 있어요"], focus="여유로운 루즈핏으로 감각적인 레이어드 스타일을 연출할 수 있어요", focus_alt=[])
+        self.assertEqual(inspire.evidence(copy)[0], "pending", "찾을 글이 달라졌으면 옛 확인 결과를 쓰지 않고 다시 확인해요")
+
+    def test_deck_shows_only_verified_cards_and_counts_the_rest(self):
+        good, bad, wait = self.c, dict(self.c, id="d1111111111aa", url="https://x.test/2"), dict(self.c, id="d2222222222bb", url="https://x.test/3")
+        self.put(good, {"y": 100, "h": 40, "txt": "스탬프를 모으면 드려요"})
+        self.put(bad, {"y": 100, "h": 40, "txt": "전혀 다른 글"})
+        with mock.patch.object(inspire, "candidates", return_value=inspire._enrich([good, bad, wait])):
+            d = inspire.deck()
+            self.assertEqual([x["id"] for x in d["cards"]], [good["id"]])
+            self.assertEqual(d["pending"], 1)
+            self.assertEqual([x["id"] for x in inspire.to_verify(12)], [wait["id"]], "확인할 차례는 아직 안 본 후보뿐 (떨어진 것을 되풀이해 받지 않아요)")
+            self.assertEqual(d["cards"][0]["spot"]["txt"], "스탬프를 모으면 드려요")
+
+
 class RealData(unittest.TestCase):
     def test_real_candidates_have_what_the_screen_needs(self):
-        with tempfile.TemporaryDirectory() as t, mock.patch.object(inspire, "DIR", Path(t)):
+        with tempfile.TemporaryDirectory() as t, mock.patch.object(inspire, "DIR", Path(t)), mock.patch.object(inspire, "evidence", return_value=("ok", {"y": 1, "h": 2, "txt": ""})):
             d = inspire.deck()
+        self.assertEqual(len(d["cards"]), inspire.DECK)
         for c in d["cards"]:
             self.assertTrue(c["id"] and c["title"] and c["kind"] in inspire.KIND_KO and c["why"], c)
             self.assertLessEqual(len(c["text"]), 320)
