@@ -133,17 +133,47 @@ function connectProducts() {
   }
 }
 
-// 지도: 가운데는 늘 명분. 펼친 키워드(opened)의 가지는 바깥쪽 줄에 함께 그리고, 접기 전까지 남는다 (탐색한 키워드로 돌아가도 유지)
-// 간격 (2026-11-16 다듬기: 38·44px로 붙어 있어 '옹졸하게' 보였다)
-//   ROW1 = 1단 가지 한 칸 높이, ROW = 하위 가지 한 칸, GAP1 = 가운데 → 1단, GAPN = 부모 → 자식, ARC = 부채꼴 휨(가운데 줄이 위아래보다 이만큼 바깥)
-//   펼친 가지가 있으면 가로가 길어지므로 휨·간격을 줄여 카드 폭 안에 들게 한다 (spacing())
-const MAX_DEPTH = 3, KIDS_MAX = 8, ROW1 = 50, ROW = 36;
-const spacing = () => (opened.size ? { GAP1: 60, GAPN: 40, ARC: 36 } : { GAP1: 76, GAPN: 48, ARC: 72 });
+// 지도: 가운데는 늘 명분. 펼친 키워드(opened)의 가지는 바깥 고리에 함께 그리고, 접기 전까지 남는다 (탐색한 키워드로 돌아가도 유지)
+// 모양 (2026-11-16, 참고: 방사형 원 마인드맵): 가운데 큰 원 → 1단 중간 원이 둘레에 → 펼친 가지는 작은 원으로 바깥 고리. 원끼리 직선.
+//   각도는 가지 수(펼친 가지의 잎 수)에 비례해 나눠 가진다 → 펼친 키워드 쪽이 넓게, 접힌 키워드는 촘촘하지 않게.
+//   고르기(브리프에 담기)는 원 오른쪽 위 작은 배지: 원 안에 넣으면 글자와 겹치고 원이 커져 모양이 무너진다 (사진 선택 표시와 같은 방식)
+const MAX_DEPTH = 3, KIDS_MAX = 8;
+const RAD = { 0: 54, 1: 40, 2: 31, 3: 31 };    // 원 반지름: 가운데 · 1단 · 하위
+const FONT = { 0: 15, 1: 13, 2: 12, 3: 12 };
 const parentOf = new Map();   // 지도에 그린 키워드 → 부모 (펼치기·접기·탐색 경로용)
 function chainOf(k) {
   const out = [k];
   for (let p = parentOf.get(k), n = 0; p && n < 10; p = parentOf.get(p), n++) out.unshift(p);
   return out[0] === ROOT ? out : [ROOT];
+}
+// 원 안 글자 줄 나누기: 띄어쓰기 단위로, 한 단어가 길면 글자 단위로. 3줄까지, 넘치면 …
+let measureEl = null;
+function textWidth(s, size, weight) {
+  if (!measureEl) {   // 지도 밖 숨은 SVG에서 잰다 (지도 안에 두면 지도 크기 계산이 틀어짐)
+    const box = svgEl('svg', { width: 0, height: 0, 'aria-hidden': 'true', class: 'map-measure' });   // 인라인 style은 CSP가 막음 → brief.css
+    measureEl = svgEl('text', { class: 'lbl' }); box.append(measureEl); document.body.append(box);
+  }
+  measureEl.setAttribute('font-size', size); measureEl.setAttribute('font-weight', weight);
+  measureEl.textContent = s;
+  return measureEl.getComputedTextLength();
+}
+function wrapLabel(k, r, size, weight) {
+  const max = r * 1.55, lines = [];
+  let cur = '';
+  const push = w => {
+    const next = cur ? `${cur} ${w}` : w;
+    if (textWidth(next, size, weight) <= max) { cur = next; return; }
+    if (cur) lines.push(cur);
+    cur = '';
+    for (const ch of w) {   // 한 단어가 원보다 넓으면 글자 단위로
+      if (textWidth(cur + ch, size, weight) > max && cur) { lines.push(cur); cur = ''; }
+      cur += ch;
+    }
+  };
+  k.split(' ').forEach(push);
+  if (cur) lines.push(cur);
+  if (lines.length > 3) { lines.length = 3; lines[2] = lines[2].slice(0, -1) + '…'; }
+  return lines;
 }
 
 function renderMap() {
@@ -159,12 +189,11 @@ function renderMap() {
     gN = svgEl('g', {});
   svg.append(gE, gN);
 
-  // 노드 = [고르기 동그라미] [키워드] 알약. 출처·관심 신호는 툴팁으로. 가운데 노드 오른쪽에는 명분 고치기 연필
-  // anchor: 'c' 가운데 기준, 'r' 오른쪽 끝을 x에(왼쪽 가지), 'l' 왼쪽 끝을 x에(오른쪽 가지)
-  function node(k, x, y, root = false, anchor = 'c', depth = 0) {
-    const source = info(k).source,
+  // 노드 = 원 + 가운데 글자(1~3줄) + 오른쪽 위 고르기 배지. 출처·관심 신호는 툴팁으로. 가운데 원 안 아래에는 명분 고치기 연필
+  function node(k, x, y, depth) {
+    const root = depth === 0, source = info(k).source,
       signal = BK.trend(dataFor(k), k),
-      isPicked = picked.includes(k);
+      isPicked = picked.includes(k), r = RAD[depth];
     const tip = root ? '' :
       `${sourceName(source)}${signal.change!==null ? signal.change>=.2?', 관심 상승':signal.change<=-.2?', 관심 하락':'' : ''}`;
     const g = svgEl('g', {
@@ -175,101 +204,83 @@ function renderMap() {
       'aria-label': `${k}${isPicked?', 고름':''}${tip?', '+tip:''}. Enter로 근거 보기, Space로 브리프에 담기`
     });
     if (tip) g.dataset.tip = tip;
-    // 칩 규격 (Material 3 입력 칩, Atlassian·Toss 칩과 같은 8px 그리드): [여백][동그라미][8px][글자][(연필 자리)][여백]
-    //   키워드: 높이 28 · 왼쪽 10 · 동그라미 12 · 간격 8 · 글자 · 오른쪽 12
-    //   명분:   높이 36 · 왼쪽 12 · 동그라미 14 · 간격 8 · 글자 · 간격 4 · 연필 버튼 24(아이콘 14) · 오른쪽 6
-    //   1단 키워드는 한 단계 크게(높이 32) → 가운데·1단·하위 세 단계가 크기로 구분된다 (2026-11-16)
-    const S = root ? { h: 40, l: 14, d: 14, gap: 8, r: 8, btn: 24, btnGap: 4 }
-      : depth <= 1 ? { h: 32, l: 12, d: 12, gap: 8, r: 14, btn: 0, btnGap: 0 } : { h: 28, l: 10, d: 12, gap: 8, r: 12, btn: 0, btnGap: 0 };
-    const t = svgEl('text', { x, y, class: 'lbl' });
-    t.textContent = k.length > 14 ? k.slice(0, 13) + '…' : k;
+    g.append(svgEl('circle', { class: 'bub', cx: x, cy: y, r }));
+    const fs = FONT[depth], fw = root ? 600 : depth === 1 ? 500 : 400;
+    const lines = wrapLabel(k, root ? r * .92 : r, fs, fw), lh = fs + 3;
+    const t = svgEl('text', { x, y: y - (lines.length - 1) * lh / 2 - (root ? 6 : 0), class: 'lbl' });
+    lines.forEach((ln, i) => { const sp = svgEl('tspan', { x, dy: i ? lh : 0 }); sp.textContent = ln; t.append(sp); });
     g.append(t);
-    gN.append(g);
-    const tw = t.getComputedTextLength(),
-      w = S.l + S.d + S.gap + tw + (root ? S.btnGap + S.btn + S.r : S.r),
-      h = S.h,
-      cx = anchor === 'r' ? x - w / 2 : anchor === 'l' ? x + w / 2 : x,
-      x0 = cx - w / 2,
-      dc = x0 + S.l + S.d / 2;   // 동그라미 가운데
-    t.setAttribute('x', x0 + S.l + S.d + S.gap);
-    g.insertBefore(svgEl('rect', { x: x0, y: y - h / 2, width: w, height: h, rx: h / 2 }), t);   // 알약 모양 (끝이 둥근 칩)
+    // 고르기 배지: 원 둘레 오른쪽 위(45°). 지름 18, 누르는 자리 28
+    const bx = x + r * .72, by = y - r * .72;
     const ck = svgEl('g', { class: `ck${isPicked ? ' on' : ''}`, 'data-pickk': k });
-    ck.append(svgEl('rect', { class: 'hit', x: dc - 12, y: y - 12, width: 24, height: 24, rx: 6 }));   // 누르는 자리 24px
-    ck.append(svgEl('circle', { cx: dc, cy: y, r: S.d / 2 }));
-    if (isPicked) { const q = S.d / 12; ck.append(svgEl('path', { d: `M${dc - 3 * q} ${y}l${2.2 * q} ${2.2 * q} ${3.8 * q}-${4.4 * q}` })); }
+    const ckTitle = svgEl('title', {}); ckTitle.textContent = isPicked ? '브리프에서 빼기' : '브리프에 담기';
+    ck.append(ckTitle, svgEl('rect', { class: 'hit', x: bx - 14, y: by - 14, width: 28, height: 28, rx: 14 }), svgEl('circle', { cx: bx, cy: by, r: 9 }));
+    if (isPicked) ck.append(svgEl('path', { d: `M${bx - 4} ${by}l2.8 2.8 5-5.6` }));
     g.append(ck);
+    gN.append(g);
     if (root) {
       const ed = svgEl('g', { class: 'root-edit-btn', tabindex: 0, role: 'button', 'data-root-edit': '', 'aria-label': `명분 '${k}' 고치기` });
-      const bx = x0 + w - S.r - S.btn, ex = bx + S.btn / 2;   // 버튼 왼쪽 끝, 아이콘 가운데
-      ed.append(svgEl('rect', { class: 'hit', x: bx, y: y - S.btn / 2, width: S.btn, height: S.btn, rx: 6 }));
-      // 연필: 디자인 시스템 아이콘 규격(24 그리드, 선 1.75)을 14px로. 세트에 '고치기' 아이콘이 없어 같은 규격으로 추가
-      ed.append(svgEl('path', { d: 'M17 3.5a2.1 2.1 0 0 1 3 3L7.5 19 3 20.5 4.5 16Z M15 5.5l3 3', transform: `translate(${ex - 7} ${y - 7}) scale(${14 / 24})` }));
-      const title = svgEl('title', {});
-      title.textContent = '명분 고치기';
-      ed.append(title);
+      const ey = y + r * .48;
+      ed.append(svgEl('rect', { class: 'hit', x: x - 12, y: ey - 12, width: 24, height: 24, rx: 12 }));
+      // 연필: 디자인 시스템 아이콘 규격(24 그리드, 선 1.75)을 14px로
+      ed.append(svgEl('path', { d: 'M17 3.5a2.1 2.1 0 0 1 3 3L7.5 19 3 20.5 4.5 16Z M15 5.5l3 3', transform: `translate(${x - 7} ${ey - 7}) scale(${14 / 24})` }));
+      const title = svgEl('title', {}); title.textContent = '명분 고치기'; ed.append(title);
       gN.append(ed);
     }
-    return { w, cx };
   }
 
-  // 1) 무엇을 그릴지: 가운데(명분) → 1줄(명분의 가지, 12개씩 나눠 보기) → 펼친 키워드의 가지 (줄마다 최대 8개, 3줄까지)
+  // 1) 무엇을 그릴지: 가운데(명분) → 1고리(명분의 가지, 12개씩 나눠 보기) → 펼친 키워드의 가지 (가지마다 최대 8개, 3고리까지)
   parentOf.clear();
-  const drawn = new Set([ROOT, ...shown]), tree = new Map(), H = new Map();
+  const drawn = new Set([ROOT, ...shown]), tree = new Map(), leaves = new Map();
   shown.forEach(k => parentOf.set(k, ROOT));
   function grow(k, depth) {
     const kids = depth < MAX_DEPTH && opened.has(k) ? branchWords(k).filter(w => !drawn.has(w)).slice(0, KIDS_MAX) : [];
     kids.forEach(w => { drawn.add(w); parentOf.set(w, k); });
     tree.set(k, kids);
-    H.set(k, Math.max(depth <= 1 ? ROW1 : ROW, kids.reduce((a, c) => a + grow(c, depth + 1), 0)));
-    return H.get(k);
+    leaves.set(k, Math.max(1, kids.reduce((a, c) => a + grow(c, depth + 1), 0)));
+    return leaves.get(k);
   }
   shown.forEach(k => grow(k, 1));
-  // 2) 자리: 왼쪽·오른쪽에 번갈아. 펼친 키워드는 자기 가지 높이만큼 자리를 차지한다
-  const CX = 550, CY = 320, spots = [];
-  for (const side of [-1, 1]) {
-    const items = shown.filter((_, i) => (i % 2 === 0) === (side < 0));
-    let y = CY - items.reduce((a, k) => a + H.get(k), 0) / 2;
-    const place = (k, depth, y0) => {
-      spots.push({ k, depth, side, y: y0 + H.get(k) / 2 });
-      let yy = y0;
-      for (const c of tree.get(k)) { place(c, depth + 1, yy); yy += H.get(c); }
-    };
-    for (const k of items) { place(k, 1, y); y += H.get(k); }
+  // 2) 자리: 고리 반지름은 그 고리에 놓일 원들이 겹치지 않을 만큼 (둘레 = 잎 수 × (지름 + 여백)), 가지 사이는 최소 거리 확보
+  //    각도 몫 = 1 + (잎 수 − 1) × 0.5: 펼친 가지가 잎 수만큼 다 가져가면 나머지가 반원에 몰려 한쪽으로 쏠렸다
+  const CX = 550, CY = 320, weight = k => 1 + (leaves.get(k) - 1) * .5;
+  const total = shown.reduce((a, k) => a + weight(k), 0) || 1;
+  // 1차: 각도만 나눈다. 첫 가지는 오른쪽 위(시계 2시)에서 시작해 시계 방향 — 오른쪽부터 읽는 눈 흐름
+  const span = new Map(), depthOf = new Map([[ROOT, 0]]);
+  const split = (k, depth, a0, a1) => {
+    span.set(k, [a0, a1]); depthOf.set(k, depth);
+    const kids = tree.get(k), sum = kids.reduce((a, c) => a + weight(c), 0);
+    let s = a0;
+    for (const c of kids) { const e = s + (a1 - a0) * weight(c) / sum; split(c, depth + 1, s, e); s = e; }
+  };
+  let a = -Math.PI / 3;
+  for (const k of shown) { const w = 2 * Math.PI * weight(k) / total; split(k, 1, a, a + w); a += w; }
+  // 2차: 고리 반지름 = 안쪽 고리보다 충분히 바깥 + 그 고리에서 가장 좁은 각도 몫에도 원이 겹치지 않을 만큼 (호 길이 ≥ 지름 + 여백)
+  const ring = [0];
+  for (let d = 1; d <= MAX_DEPTH; d++) {
+    const narrow = Math.min(Math.PI, ...[...span].filter(([k]) => depthOf.get(k) === d).map(([, [s, e]]) => e - s));
+    const inner = d === 1 ? RAD[0] + RAD[1] + 64 : ring[d - 1] + RAD[d - 1] + RAD[d] + 40;
+    ring[d] = Math.max(inner, (2 * RAD[d] + (d === 1 ? 22 : 12)) / narrow);   // 1단은 여백 22 (붙어 보이지 않게)
   }
-  // 3) 그리기: 가운데 먼저(너비를 알아야 선을 이음), 그다음 줄마다 (앞 줄의 가장 넓은 알약만큼 바깥으로)
-  let rootHalf;
+  const spots = [...span].map(([k, [s, e]]) => { const d = depthOf.get(k), m = (s + e) / 2; return { k, depth: d, x: CX + ring[d] * Math.cos(m), y: CY + ring[d] * Math.sin(m) }; });
+  // 3) 그리기: 선(원 가장자리끼리 직선) → 원. 가운데 → 지금 보고 있는 키워드까지의 선은 강조
+  const at = new Map([[ROOT, { x: CX, y: CY, r: RAD[0] }], ...spots.map(s => [s.k, { x: s.x, y: s.y, r: RAD[s.depth] }])]);
+  const onPath = new Set(chainOf(focus));
+  for (const s of spots) {
+    const p = at.get(parentOf.get(s.k)), c = at.get(s.k), dx = c.x - p.x, dy = c.y - p.y, d = Math.hypot(dx, dy) || 1;
+    gE.append(svgEl('line', { class: `edge d${Math.min(s.depth, 2)}${onPath.has(s.k) && focus !== ROOT ? ' on' : ''}`,
+      x1: p.x + dx / d * p.r, y1: p.y + dy / d * p.r, x2: c.x - dx / d * c.r, y2: c.y - dy / d * c.r }));
+  }
   if (rootEditing) {
-    rootHalf = 140;
     const fo = svgEl('foreignObject', { x: CX - 140, y: CY - 22, width: 280, height: 44, class: 'root-edit' });
     fo.innerHTML = `<form xmlns="http://www.w3.org/1999/xhtml" id="rootForm" class="root-edit-form"><input type="text" id="rootInput" maxlength="20" required pattern="[가-힣A-Za-z0-9 ]{1,20}" aria-label="명분 (한글, 영문, 숫자, 공백 20자 이내)" value="${esc(ROOT)}"><button type="submit" class="btn sm primary">확인</button><button type="button" class="btn sm" data-root-cancel>취소</button></form>`;
     gN.append(fo);
-  } else rootHalf = node(ROOT, CX, CY, true).w / 2;
-  // 1단은 가운데 노드를 둘러싼 부채꼴: 가운데 높이 줄이 가장 바깥(ARC), 위아래 끝으로 갈수록 안쪽 → 둥글게 퍼진 지도.
-  // 하위 가지는 부모 알약 바로 바깥(GAPN)에서 자라 가지마다 따로 뻗는다 (예전엔 깊이마다 한 세로줄에 모여 표처럼 보였음).
-  // 가운데 → 지금 보고 있는 키워드까지의 선은 강조 (어디서 뻗어 나온 말인지 보이게)
-  const onPath = new Set(chainOf(focus)), spotOf = new Map(spots.map(s => [s.k, s])), { GAP1, GAPN, ARC } = spacing();
-  const edge = (x1, y1, x2, y2, depth, on) => {
-    const mid = x1 + (x2 - x1) * .55;
-    gE.append(svgEl('path', { class: `edge d${Math.min(depth, 2)}${on ? ' on' : ''}`, d: `M${x1},${y1} C${mid},${y1} ${mid},${y2} ${x2},${y2}` }));
-  };
-  const draw = (s, inner, py, px) => {
-    const left = s.side < 0, { w, cx } = node(s.k, inner, s.y, false, left ? 'r' : 'l', s.depth);
-    const near = left ? cx + w / 2 : cx - w / 2, outer = left ? cx - w / 2 : cx + w / 2;
-    edge(px, py, near, s.y, s.depth, onPath.has(s.k) && focus !== ROOT);
-    for (const c of tree.get(s.k) || []) draw(spotOf.get(c), outer + s.side * GAPN, s.y, outer);
-  };
-  for (const side of [-1, 1]) {
-    const firsts = spots.filter(s => s.depth === 1 && s.side === side);
-    const maxDy = Math.max(1, ...firsts.map(s => Math.abs(s.y - CY)));
-    for (const s of firsts) {
-      const t = Math.abs(s.y - CY) / maxDy;
-      draw(s, CX + side * (rootHalf + GAP1 + ARC * (1 - t * t)), CY, CX + side * rootHalf);
-    }
-  }
+  } else node(ROOT, CX, CY, 0);
+  for (const s of spots) node(s.k, s.x, s.y, s.depth);
   // 가지가 없을 때: 네이버로 찾는 중이면 그 안내, 다 찾았는데 비었으면 그때만 AI를 권한다 (AI는 자동으로 돌지 않음)
   const loading = LIVE.get(ROOT)?.state === 'loading', empty = !shown.length && !rootEditing;
   if (empty && loading) {
-    const msg = svgEl('text', { class: 'map-empty', x: CX, y: CY + 60 });
+    const msg = svgEl('text', { class: 'map-empty', x: CX, y: CY + RAD[0] + 30 });
     msg.textContent = '네이버에서 연관어를 찾고 있어요.';
     svg.append(msg);
   }

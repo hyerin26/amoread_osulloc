@@ -227,3 +227,32 @@ select { min-height:var(--control-lg); padding:0 10px; border:1px solid var(--li
 .moods > .mwrap { flex: none; scroll-snap-align: start; }
 .mood .fr { height: 104px; }
 .mood .mn { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+
+/* ── 방사형 원 마인드맵 (2026-11-16, 참고 이미지 3번 모양 · 색은 Green UI) ──
+   가운데: 진한 초록 원 + 흰 글자 / 1단: 연한 초록 원 / 하위: 흰 원 + 회색 테두리 / 선: 원끼리 직선, 고른 길은 초록
+   고르기: 원 오른쪽 위 배지 (빈 원 → 초록 체크) */
+.map .edge { stroke: var(--line-strong); stroke-width: 1.25; fill: none; }
+.map .edge.d1 { stroke: var(--line-strong); stroke-width: 1.5; }
+.map .edge.d2 { stroke: var(--line); stroke-width: 1.25; }
+.map .edge.on { stroke: var(--accent); stroke-width: 2.25; }
+.map .node .bub { fill: var(--surface); stroke: var(--line); stroke-width: 1.25; transition: stroke .12s, fill .12s; }
+.map .node.d1 .bub { fill: var(--accent-soft); stroke: var(--sel-line); }
+.map .node.root .bub { fill: var(--accent); stroke: var(--accent); }
+.map .node text.lbl { text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.map .node.d1 > text.lbl { font-size: 13px; font-weight: var(--fw-medium); fill: var(--ink); }
+.map .node.d2 > text.lbl { font-size: 12px; font-weight: var(--fw-regular, 400); fill: var(--ink2); }
+.map .node.root > text.lbl { font-size: 15px; font-weight: var(--fw-strong); fill: var(--accent-ink); }
+.map .node.keyword:hover .bub { stroke: var(--accent); }
+.map .node.open .bub { stroke: var(--accent); stroke-width: 1.75; }
+.map .node.focus .bub { stroke: var(--accent); stroke-width: 2.5; }
+.map .node:focus-visible .bub { stroke: var(--accent); stroke-width: 3; }
+.map .node.keyword.picked > text.lbl { fill: var(--accent); font-weight: var(--fw-strong); }
+.map .node .ck circle { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1.5; }
+.map .node .ck:hover circle { stroke: var(--accent); }
+.map .node .ck.on circle { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+.map .node .ck path { fill: none; stroke: var(--accent-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.map .node.root .ck circle { stroke: var(--surface); }
+.map .root-edit-btn path { stroke: var(--accent-ink); }
+.map .root-edit-btn:hover .hit { fill: rgba(255, 255, 255, .18); }
+.map .root-edit-btn:hover path { stroke: var(--accent-ink); }
+.map-measure { position: absolute; width: 0; height: 0; overflow: hidden; visibility: hidden; }   /* 원 안 글자 폭 재기용 숨은 SVG */
