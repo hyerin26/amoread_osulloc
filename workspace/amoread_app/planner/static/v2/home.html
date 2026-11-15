@@ -80,6 +80,16 @@
   </section>
 </main>
 
+<dialog id="delDlg" aria-labelledby="delH" aria-describedby="delP">
+  <form method="dialog">
+    <h2 id="delH">기획안을 삭제할까요?</h2>
+    <p id="delP" class="del-msg"><b id="delName"></b>의 브리프, 구좌 구성, 구좌 편집, 할인 행이 모두 지워져요. 삭제한 기획안은 되돌릴 수 없어요.</p>
+    <div class="foot">
+      <button class="btn" value="cancel" autofocus>취소</button>
+      <button class="btn danger" value="del" id="delGo">삭제</button>
+    </div>
+  </form>
+</dialog>
 <dialog id="startDlg" aria-labelledby="dlgH">
   <form method="dialog" id="startForm">
     <h2 id="dlgH">새 기획안</h2>

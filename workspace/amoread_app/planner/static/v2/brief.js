@@ -171,27 +171,32 @@ function renderMap() {
       'aria-label': `${k}${isPicked?', 고름':''}${tip?', '+tip:''}. Enter로 근거 보기, Space로 브리프에 담기`
     });
     if (tip) g.dataset.tip = tip;
-    const t = svgEl('text', { x, y });
+    // 칩 규격 (Material 3 입력 칩, Atlassian·Toss 칩과 같은 8px 그리드): [여백][동그라미][8px][글자][(연필 자리)][여백]
+    //   키워드: 높이 28 · 왼쪽 10 · 동그라미 12 · 간격 8 · 글자 · 오른쪽 12
+    //   명분:   높이 36 · 왼쪽 12 · 동그라미 14 · 간격 8 · 글자 · 간격 4 · 연필 버튼 24(아이콘 14) · 오른쪽 6
+    const S = root ? { h: 36, l: 12, d: 14, gap: 8, r: 6, btn: 24, btnGap: 4 } : { h: 28, l: 10, d: 12, gap: 8, r: 12, btn: 0, btnGap: 0 };
+    const t = svgEl('text', { x, y, class: 'lbl' });
     t.textContent = k.length > 14 ? k.slice(0, 13) + '…' : k;
     g.append(t);
     gN.append(g);
-    const pad = root ? 60 : 38,   // 왼쪽 동그라미 자리 (+ 가운데 노드는 오른쪽 연필 자리)
-      w = Math.max(56, t.getComputedTextLength() + pad),
-      h = root ? 34 : 28,
+    const tw = t.getComputedTextLength(),
+      w = S.l + S.d + S.gap + tw + (root ? S.btnGap + S.btn + S.r : S.r),
+      h = S.h,
       cx = anchor === 'r' ? x - w / 2 : anchor === 'l' ? x + w / 2 : x,
-      x0 = cx - w / 2;
-    t.setAttribute('x', cx + (root ? -2 : 8));
+      x0 = cx - w / 2,
+      dc = x0 + S.l + S.d / 2;   // 동그라미 가운데
+    t.setAttribute('x', x0 + S.l + S.d + S.gap);
     g.insertBefore(svgEl('rect', { x: x0, y: y - h / 2, width: w, height: h, rx: 8 }), t);
     const ck = svgEl('g', { class: `ck${isPicked ? ' on' : ''}`, 'data-pickk': k });
-    ck.append(svgEl('rect', { class: 'hit', x: x0 + 1, y: y - 12, width: 24, height: 24, rx: 6 }));
-    ck.append(svgEl('circle', { cx: x0 + 13, cy: y, r: 6 }));
-    if (isPicked) ck.append(svgEl('path', { d: `M${x0 + 10} ${y}l2.2 2.2 3.8-4.4` }));
+    ck.append(svgEl('rect', { class: 'hit', x: dc - 12, y: y - 12, width: 24, height: 24, rx: 6 }));   // 누르는 자리 24px
+    ck.append(svgEl('circle', { cx: dc, cy: y, r: S.d / 2 }));
+    if (isPicked) { const q = S.d / 12; ck.append(svgEl('path', { d: `M${dc - 3 * q} ${y}l${2.2 * q} ${2.2 * q} ${3.8 * q}-${4.4 * q}` })); }
     g.append(ck);
     if (root) {
       const ed = svgEl('g', { class: 'root-edit-btn', tabindex: 0, role: 'button', 'data-root-edit': '', 'aria-label': `명분 '${k}' 고치기` });
-      const ex = x0 + w - 18;
-      ed.append(svgEl('rect', { class: 'hit', x: ex - 12, y: y - 12, width: 24, height: 24, rx: 6 }));
-      // 연필: 디자인 시스템 아이콘 규격(24 그리드, 선 1.75)으로 14px. 세트에 '고치기' 아이콘이 없어 같은 규격으로 추가
+      const bx = x0 + w - S.r - S.btn, ex = bx + S.btn / 2;   // 버튼 왼쪽 끝, 아이콘 가운데
+      ed.append(svgEl('rect', { class: 'hit', x: bx, y: y - S.btn / 2, width: S.btn, height: S.btn, rx: 6 }));
+      // 연필: 디자인 시스템 아이콘 규격(24 그리드, 선 1.75)을 14px로. 세트에 '고치기' 아이콘이 없어 같은 규격으로 추가
       ed.append(svgEl('path', { d: 'M17 3.5a2.1 2.1 0 0 1 3 3L7.5 19 3 20.5 4.5 16Z M15 5.5l3 3', transform: `translate(${ex - 7} ${y - 7}) scale(${14 / 24})` }));
       const title = svgEl('title', {});
       title.textContent = '명분 고치기';

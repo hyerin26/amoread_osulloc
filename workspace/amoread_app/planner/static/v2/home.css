@@ -277,3 +277,11 @@ input:disabled { background: var(--sunken); color: var(--mute); }
 .picked-prods .pk { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; padding: 0 4px 0 10px; border-radius: var(--r2); background: var(--accent-soft); color: var(--accent); font-size: var(--fs-cap); font-weight: var(--fw-strong); }
 .picked-prods .pk button { all: unset; cursor: pointer; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 4px; }
 .picked-prods .pk button:hover { background: var(--hover); }
+/* 기획안 삭제: 위험한 행동은 레드(fg-critical), 목록에서는 보조 버튼 (2026-11-16) */
+.btn.danger { background: var(--err); color: #fff; }
+.btn.danger:hover { filter: brightness(.94); }
+.btn.ghost.del { color: var(--mute); }
+.btn.ghost.del:hover { color: var(--err); background: var(--err-soft); }
+.prow > span:last-child { display: inline-flex; gap: 4px; justify-content: flex-end; }
+.del-msg { color: var(--ink2); }
+.del-msg b { color: var(--ink); }

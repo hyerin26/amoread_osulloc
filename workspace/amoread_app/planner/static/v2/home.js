@@ -231,7 +231,7 @@ function renderPlans() {
   const row = p => `<li class="prow"><span class="nm"><button class="linkbtn" data-openplan="${p.id}">${esc(p.name)}</button><span class="tag cls c-${p.cls}">${esc(clsName(p.cls))}</span></span>
       <span>${p.s ? `${md(p.s)} ~ ${md(p.e)}` : '<span class="cap">날짜 미정</span>'}</span><span><span class="tag">${p.state}</span></span>
       <span>${p.next ? `${esc(p.next[0])} ${md(p.next[1])} <span class="dd ${diff(TODAY, p.next[1]) > 7 ? 'calm' : ''}">D-${diff(TODAY, p.next[1])}</span>` : p.step ? `<span class="cap">${esc(p.step)}</span>` : '<span class="cap">-</span>'}</span>
-      <span>${p.legacy ? `<button class="btn xs" data-import="${p.id}">가져오기</button>` : p.state === '지난 기획안' && p.real ? `<button class="btn xs" data-reuse="${p.id}">다시 쓰기</button>` : `<button class="btn xs" data-openplan="${p.id}">${p.state === '지난 기획안' ? '다시 쓰기' : '열기'}</button>`}</span></li>`;
+      <span>${p.legacy ? `<button class="btn xs" data-import="${p.id}">가져오기</button>` : p.state === '지난 기획안' && p.real ? `<button class="btn xs" data-reuse="${p.id}">다시 쓰기</button>` : `<button class="btn xs" data-openplan="${p.id}">${p.state === '지난 기획안' ? '다시 쓰기' : '열기'}</button>`}${p.real && !p.legacy ? `<button class="btn xs ghost del" data-delplan="${p.id}" aria-label="${esc(p.name)} 삭제">삭제</button>` : ''}</span></li>`;
   const now = all.filter(p => p.state !== '지난 기획안' && ok(p)), past = all.filter(p => p.state === '지난 기획안' && ok(p));
   const nHit = now.length + past.length;
   $('#plMeta').textContent = plq ? (nHit ? `${nHit}개 찾았어요` : '') : '';
@@ -273,7 +273,7 @@ function renderSide() {
     el.innerHTML = `${back}<div class="overline">내 기획안 · ${esc(clsName(p.cls))}</div><h2>${esc(p.name)}</h2>
       <dl class="facts"><dt>기간</dt><dd>${p.s ? `${md(p.s)} ~ ${md(p.e)}` : '날짜 미정'}</dd><dt>지금 단계</dt><dd>${esc(p.step)}</dd>
         <dt>다음 마감</dt><dd>${p.next ? `${esc(p.next[0])} ${md(p.next[1])} <span class="dd">D-${diff(TODAY, p.next[1])}</span>` : '기간을 정하면 계산해요'}</dd></dl>
-      <div class="acts"><button class="btn primary" data-open="${p.id}">이어서 하기 →</button></div>`;
+      <div class="acts"><button class="btn primary" data-open="${p.id}">이어서 하기 →</button>${p.real ? `<button class="btn ghost del" data-delplan="${p.id}">삭제</button>` : ''}</div>`;
     return;
   }
   if (selected?.type === 'ev') {
@@ -468,6 +468,25 @@ function loadPlans() {
   }).catch(e => toast(`기획안 목록을 불러오지 못했어요: ${e.message}`));
 }
 loadPlans();
+// ---------------- 기획안 삭제 ----------------
+let delId = null, delFrom = null;
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-delplan]'); if (!b) return;
+  const p = PLANS.find(x => x.id === b.dataset.delplan && x.real); if (!p) return;
+  delId = p.id; delFrom = b;
+  $('#delName').textContent = p.name;
+  $('#delGo').disabled = false;
+  $('#delDlg').showModal();
+});
+$('#delDlg').addEventListener('close', () => {
+  const dlg = $('#delDlg'), id = delId;
+  delId = null;
+  if (dlg.returnValue !== 'del' || !id) { if (delFrom?.isConnected) delFrom.focus(); return; }
+  const name = PLANS.find(x => x.id === id)?.name || '기획안';
+  v2api(`/api/am/projects/${encodeURIComponent(id)}/delete`, {})
+    .then(() => { if (selected?.type === 'plan' && selected.id === id) selected = null; toast(`‘${name}’을 삭제했어요`); loadPlans(); $('#plq')?.focus(); })
+    .catch(err => toast(`삭제하지 못했어요. ${err.message}`));
+});
 
 let HOME_LIVE = false;
 render();

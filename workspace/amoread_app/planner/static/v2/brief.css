@@ -206,3 +206,5 @@ select { min-height:var(--control-lg); padding:0 10px; border:1px solid var(--li
 .map .node .ck circle { stroke-width: 1.25; }
 .map .node .ck path { stroke-width: 1.6; }
 .map .node.open rect { stroke: var(--line-strong); stroke-width: 1; }   /* 펼친 키워드: 진한 1px 선 (덧칠 없음) */
+/* 칩 글자는 왼쪽 정렬로 쌓는다 (가운데 정렬 + 보정값 대신 정해진 간격) */
+.map .node text.lbl { text-anchor: start; }
