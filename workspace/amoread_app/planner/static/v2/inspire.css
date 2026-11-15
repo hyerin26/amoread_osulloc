@@ -195,3 +195,31 @@
 /* 사진 비율 고정: 장마다 원래 비율 그대로(폭에 맞춰 높이 자동), 창 크기가 바뀌어도 찌그러지지 않는다 */
 .tiles img { height: auto !important; }
 .pgwrap.tiles { width: 390px; max-width: 100%; }
+
+/* ---------- 2026-11-16 UI 다듬기 (동작·데이터는 그대로) ---------- */
+/* 실제 페이지: 왼쪽 칸 전체를 사진이 채우고, 위쪽 글자 자리에만 흰색 그라데이션을 살짝 깐다.
+   글자는 ink2(#484848, 흰 바탕 대비 약 9:1)·ink(#141414)라 WCAG AA(4.5:1)를 넉넉히 넘는다. 그라데이션은 누르기·스크롤을 막지 않음 */
+.shot { position: relative; grid-template-rows: minmax(0, 1fr) auto; gap: 0; padding: 0; background: #fff; }
+.shotcap { position: absolute; top: 0; left: 0; right: 0; z-index: 3; padding: 12px 16px 32px; pointer-events: none;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, .95) 0%, rgba(255, 255, 255, .85) 50%, rgba(255, 255, 255, 0) 100%); }
+.shotcap span { color: var(--ink2); font-weight: var(--fw-strong); }
+.shotcap .lnk { pointer-events: auto; color: var(--ink); font-weight: var(--fw-strong); }
+.phone { border: 0; border-radius: 0; }
+.phone.scroll:focus-visible { outline-offset: -2px; }
+.shotnote { padding: 8px 16px; border-top: 1px solid var(--line-sub); }
+
+/* 버튼: 홈 화면 버튼과 같은 규칙 (높이 44 · 라운드 8 · 테두리 없음 · 보조는 회색 면, 주요는 그린, 되돌리기는 글자 버튼 · 아이콘 16px) */
+.act { height: var(--control-lg); padding: 0 16px; gap: 6px; border: 0; background: var(--sunken); color: var(--ink); line-height: var(--lh-label); }
+.act svg { width: 16px; height: 16px; }
+.act:hover { background: var(--line-sub); }
+.act:active { transform: none; }
+.act.save { background: var(--accent); color: var(--accent-ink); }
+.act.save:hover { background: var(--accent); filter: brightness(.94); }
+.act.save:active:not(:disabled) { filter: brightness(.88); }
+.act.undo { padding: 0 12px; background: transparent; color: var(--ink2); font-weight: var(--fw-strong); }
+.act.undo:hover { background: var(--hover); }
+.act:disabled, .act:disabled:hover { opacity: 1; color: var(--mute); background: transparent; cursor: default; }
+.act.pass:disabled, .act.save:disabled { background: var(--sunken); filter: none; }
+.iacts .keys { display: inline-flex; align-items: center; gap: 4px; margin-left: 4px; font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); }
+.iacts .keys kbd { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 4px; margin-left: 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--ink2); font: inherit; font-weight: var(--fw-medium); }
+.iacts .keys kbd:first-child { margin-left: 0; }
