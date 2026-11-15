@@ -33,7 +33,8 @@ def doc(server):
 def _secs(server, pid):
     st, d = server.api(f"/api/am/projects/{pid}")
     assert st == 200, d
-    return {s["sectionId"]: s for s in d["page"]["sections"]}, [s["sectionId"] for s in sorted(d["page"]["sections"], key=lambda s: s["order"])]
+    secs = (d.get("page") or {}).get("sections") or []   # 첫 저장 전에는 page가 비어 있음
+    return {s["sectionId"]: s for s in secs}, [s["sectionId"] for s in sorted(secs, key=lambda s: s["order"])]
 
 
 def _until(server, pid, cond, what):
@@ -113,3 +114,24 @@ def test_compose_tab_editing(page, server, doc):
     # PROMO_WORK 데이터가 없는 PC에서는 지난 행사(/api/review)가 409 — 화면은 B안 없이 그대로 동작
     errors = [e for e in page.errors if "/api/review" not in e and "status of 409" not in e]
     assert not errors, errors
+
+
+def test_recommended_tab_section_from_rule(page, server):
+    """4단계: 선물 브리프의 A안에 가격대 탭 구좌가 나오고, 고르면 탭 구좌로 들어온다 (레퍼런스 색인이 있을 때)."""
+    st, saved = server.api("/api/am/projects", {"title": "추석 선물세트", "status": "planning", "brief": {"myeongbun": "추석", "purpose": "선물 수요"},
+                                                 "v2": {"stage": "compose", "cls": "season", "keywords": ["선물"]}})
+    assert st == 200, saved
+    try:
+        page.goto(f"{server.base}/v2/compose?id={saved['id']}", wait_until="networkidle")
+        page.wait_for_selector('[data-choose="A"]', timeout=30000)
+        card = page.locator('article.cand:has([data-choose="A"])')
+        if "탭 3" not in card.inner_text():
+            pytest.skip("서버 AI 추천이 꺼져 있음 (레퍼런스 색인 없음) — A안이 화면 규칙으로 나옴")
+        page.click('[data-choose="A"]')
+        page.wait_for_selector('[data-tlabel]')
+        labels = page.eval_on_selector_all('[data-tlabel]', "els => els.map(e => e.value)")
+        assert labels == ["1만원대", "2만원대", "3만원 이상"]
+        assert "선물 유형 규칙" in page.locator(".r:has([data-tlabel]) .grp").inner_text()
+        _until(server, saved["id"], lambda s, o: any([t["label"] for t in x.get("tabs") or []] == labels for x in s.values()), "추천 탭 구좌 저장")
+    finally:
+        server.api(f"/api/am/projects/{saved['id']}/delete", {})
