@@ -27,9 +27,11 @@ def test_existing_app_guard_generation_and_persistence(tmp_path,monkeypatch):
         headers={'x-planner-token':server.TOKEN}
         assert client.get('/api/am/copy/status',headers=headers).status_code==200
         assert client.get('/api/am/copy/status',headers={**headers,'host':'evil.example'}).status_code==403
-        page=client.get('/v2/editor')
+        # 2026-11-15: 03 구좌 편집 = 신규 구좌편집기(/v2/editor는 /v2/editor-next로 넘어감). 추천 화면은 v2/editor-next-ai.js
+        page=client.get('/v2/editor',follow_redirects=True)
         assert page.status_code==200 and "script-src 'self'" in page.headers['content-security-policy']
-        assert '/copy-recommender-assets/editor-plugin.js' in page.text
+        assert '/static/v2/editor-next-ai.js' in page.text
+        assert client.get('/static/v2/editor-next-ai.js').status_code==200
         for file in ['core.js','editor-plugin.js','editor.css']:
             assert client.get('/copy-recommender-assets/'+file).status_code==200
         saved=client.post('/api/am/projects',json={**copy.deepcopy(PROJECT),'title':'통합 테스트'},headers=headers)

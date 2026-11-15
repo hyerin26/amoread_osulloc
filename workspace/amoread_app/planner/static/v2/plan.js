@@ -3,7 +3,9 @@
 // id가 없으면 '예시 기획안'으로 보여 주고 저장하지 않는다.
 const PLAN = (() => {
   const STEPS = ['brief', 'compose', 'editor', 'preview', 'deals'];
-  const here = location.pathname.split('/').pop();
+  // 신규 구좌편집기(editor-next)가 03 구좌 편집 단계 (2026-11-15: /v2/editor는 서버가 editor-next로 넘김)
+  const stepOf = p => (p === 'editor-next' ? 'editor' : p);
+  const here = stepOf(location.pathname.split('/').pop());
   const raw = new URLSearchParams(location.search).get('id') || '';
   const st = { id: /^[0-9a-f]{32}$/.test(raw) ? raw : null, doc: null };
   const say = t => { const el = document.getElementById('v2saved'); if (el) el.textContent = t; };
@@ -51,7 +53,7 @@ const PLAN = (() => {
       editor: !secs.length ? null : left ? { note: `남은 구좌 ${left}` } : { done: true },
     };
     document.querySelectorAll('.v2steps a').forEach(a => {
-      const k = new URL(a.getAttribute('href'), location.origin).pathname.split('/').pop();
+      const k = stepOf(new URL(a.getAttribute('href'), location.origin).pathname.split('/').pop());
       const s = S[k];
       a.classList.toggle('is-done', !!(s && s.done));
       a.querySelectorAll('.v2stn, .v2sr').forEach(x => x.remove());

@@ -110,7 +110,13 @@ _EDITOR_NEXT_FILE = re.compile(r"^[A-Za-z0-9_.-]+\.(js|css)$")   # 편집기 폴
 @app.get("/v2", response_class=HTMLResponse)
 @app.get("/v2/", response_class=HTMLResponse)
 @app.get("/v2/{page}", response_class=HTMLResponse)
-def v2_page(page: str = "home"):
+def v2_page(request: Request, page: str = "home"):
+    # 03 구좌 편집 = 신규 구좌편집기 하나 (2026-11-15, plans/27 §12). 옛 주소·단계 링크(/v2/editor?id=…)는 그대로 넘겨 준다.
+    # 편집기 파일이 없거나 AMOREAD_EDITOR_NEXT=0이면 예전 편집기(editor.html)를 그대로 연다
+    if page == "editor" and EDITOR_NEXT_ON:
+        from fastapi.responses import RedirectResponse
+        q = request.url.query
+        return RedirectResponse(f"/v2/editor-next{'?' + q if q else ''}", status_code=307)
     if page not in V2_PAGES and not (page == "editor-next" and EDITOR_NEXT_ON):
         raise HTTPException(404, "없는 화면입니다.")
     html = (STATIC_DIR / "v2" / f"{page}.html").read_text(encoding="utf-8")
@@ -169,16 +175,20 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 from amoread.api import router as amoread_router  # noqa: E402
 app.include_router(amoread_router)
 
-# 멘트추천기능: 기존 app/Guard를 재사용하는 선택 모듈 (새 서버 없음).
+# 멘트추천기능 (AI 카피 추천): 같은 app·Guard를 쓰는 선택 모듈 (새 서버 없음).
+# 폴더(저장소 루트/멘트추천기능)가 없으면 건너뛴다. 화면 쪽은 v2/editor-next-ai.js(신규 편집기), copy-recommender-assets(브리프·예전 편집기)
 from importlib.util import spec_from_file_location, module_from_spec  # noqa: E402
 _copy_dir = Path(__file__).resolve().parents[3] / "멘트추천기능"
 if (_copy_dir / "__init__.py").is_file():
-    _copy_spec = spec_from_file_location("osulloc_copy_recommender", _copy_dir / "__init__.py",
-                                         submodule_search_locations=[str(_copy_dir)])
-    _copy_module = module_from_spec(_copy_spec)
-    sys.modules[_copy_spec.name] = _copy_module
-    _copy_spec.loader.exec_module(_copy_module)
-    _copy_module.install(app)
+    try:
+        _copy_spec = spec_from_file_location("osulloc_copy_recommender", _copy_dir / "__init__.py",
+                                             submodule_search_locations=[str(_copy_dir)])
+        _copy_module = module_from_spec(_copy_spec)
+        sys.modules[_copy_spec.name] = _copy_module
+        _copy_spec.loader.exec_module(_copy_module)
+        _copy_module.install(app)
+    except Exception:   # 모듈 문제로 앱 전체가 안 켜지는 일은 막는다 (AI 버튼만 '연결 안 됨')
+        log.exception("멘트추천기능을 불러오지 못했어요")
 
 
 # ----------------------------------------------------------------------
