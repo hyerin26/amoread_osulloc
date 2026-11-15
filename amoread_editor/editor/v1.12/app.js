@@ -151,7 +151,7 @@ function customPreview(s){
  const customHeight=customManualHeight(c),visibleHeight=customHeight||customPresetHeight(c);
  const heightAttr=customHeight?` data-am-style="--am-custom-height:${customHeight}px"`:'';
  const showResize=!window.AM_CB_STATIC_EXPORT&&s.id===current;
- const embedded=AMBlocks.renderSlot(s,'section:after',blockContext(),{staticView:!!window.AM_CB_STATIC_EXPORT,showEmpty:(cbRailMode==='library'||!!window.AM_EN_PALETTE)&&showResize});
+ const embedded=AMBlocks.renderSlot(s,'section:after',blockContext(),{staticView:!!window.AM_CB_STATIC_EXPORT,showEmpty:cbRailMode==='library'&&showResize});
  const resize=showResize?`<button type="button" role="slider" class="am-custom-resize-handle" data-custom-resize="${E(s.id)}" aria-label="자유 기획 구좌 높이 조절, 위아래 화살표로 20픽셀 변경" aria-orientation="vertical" aria-valuemin="${CUSTOM_SIZE_MIN}" aria-valuemax="${CUSTOM_SIZE_MAX}" aria-valuenow="${visibleHeight}" aria-valuetext="${visibleHeight}픽셀" title="끌어서 프레임 높이 변경 · ↑↓ 20px, Shift+↑↓ 100px"><span class="am-custom-resize-lines" aria-hidden="true"></span><span class="am-custom-resize-readout" aria-hidden="true">${visibleHeight}px</span></button>`:'';
  const imageMarkup=image?`<img class="am-custom-reference-image" src="${E(image)}" alt="첨부한 레퍼런스 이미지">`:'';
  const empty=`<div class="am-custom-art-placeholder"><span>▧</span><strong>구좌 구성 미정 · 공간 확보</strong><small>좌측 ‘요소’에서 이미지·상품 카드·텍스트 등을 추가할 수 있어요.</small></div>`;
@@ -389,7 +389,7 @@ function reviewPreview(s){
 function preview(s){
  const active=s.id===current?' active':'';
  const title=(s.layout==='text-cta'?'':`<h3>${E(s.name)}</h3>`)+(s.layout==='text-cta'||s.layout==='split'?'':s.role?`<p>${E(s.role)}</p>`:'')+s.lines.map(x=>x.text?`<p class="preview-extra-line">${E(x.text)}</p>`:'').join('');
- return `<section class="preview-block${active} am-align-${E(s.align||'left')} am-gap-${E(s.gap||'normal')}" role="button" tabindex="0" aria-label="${E(s.name)} 구좌 편집" aria-pressed="${s.id===current}" data-page="${E(s.id)}" data-image-ratio="${E(imageRatio(s))}" data-am-style="--am-section-image-aspect:${E(imageRatioCss(s))}">${title}${demoInner(s)}${s.layout==='ev-quiz'||s.layout==='custom'?'':AMBlocks.renderSlot(s,'section:after',blockContext(),{staticView:!!window.AM_CB_STATIC_EXPORT,showEmpty:(cbRailMode==='library'||!!window.AM_EN_PALETTE)&&s.id===current&&!window.AM_CB_STATIC_EXPORT})}${ctaMarkup(s)}</section>`;
+ return `<section class="preview-block${active} am-align-${E(s.align||'left')} am-gap-${E(s.gap||'normal')}" role="button" tabindex="0" aria-label="${E(s.name)} 구좌 편집" aria-pressed="${s.id===current}" data-page="${E(s.id)}" data-image-ratio="${E(imageRatio(s))}" data-am-style="--am-section-image-aspect:${E(imageRatioCss(s))}">${title}${demoInner(s)}${s.layout==='ev-quiz'||s.layout==='custom'?'':AMBlocks.renderSlot(s,'section:after',blockContext(),{staticView:!!window.AM_CB_STATIC_EXPORT,showEmpty:cbRailMode==='library'&&s.id===current&&!window.AM_CB_STATIC_EXPORT})}${ctaMarkup(s)}</section>`;
 }
 
 function renderPage(){
@@ -452,7 +452,7 @@ function shapePanel(s){
 function productPanel(s){
  const content=PRODUCTS.map(p=>`<label class="am-ed-product-row"><div class="thumb">IMG</div><div class="txt"><b>${E(p.name)}</b><small>${E(p.id)} · ${E(p.priceNote||'최종가')} ${MONEY(priced(p).sale)}</small></div><input type="checkbox" data-product="${E(p.id)}" ${s.productIds.includes(p.id)?'checked':''}></label>`).join('');
  const appeals=s.productIds.map(id=>PRODUCTS.find(p=>p.id===id)).filter(Boolean).map(p=>F('appeals.'+p.id,p.name+' · 상품별 소구문구',s.appeals[p.id]||'',{max:80,area:true,rows:2,help:'한 상품에 하나의 소구문구. 카드 요소를 켜면 미리보기에 반영됩니다.'})).join('');
- return nativeCardVisibilityPanel(s)+G('상품 선택',CATALOG_NOTE?'이 기획안에 담은 상품이에요. 체크하면 이 구좌에 보여요.':'예시 상품이에요. 체크하면 이 구좌에 보여요.',content)+G('상품별 소구문구','카드 모양 탭의 소구문구 표시 요소와 연결됩니다.',appeals||'<div class="am-ed-note">상품을 먼저 선택해주세요.</div>')+G('기존 구좌 편집기에서만 되는 것','아래는 아직 신규 편집기에 없어요. 필요하면 위의 [기존 구좌 편집기로]에서 하세요.',`<div class="am-ed-note">탭별 상품 배치 · 빈 자리 · 카드별 라벨·문구 · 1단 할인율 임시 변경과 되돌리기 · 판정 근거 · 상품 추천</div>`);
+ return nativeCardVisibilityPanel(s)+G('상품 선택',CATALOG_NOTE?'이 기획안에 담은 상품이에요. 체크하면 이 구좌에 보여요.':'예시 상품이에요. 체크하면 이 구좌에 보여요.',content)+G('상품별 소구문구','카드 모양 탭의 소구문구 표시 요소와 연결됩니다.',appeals||'<div class="am-ed-note">상품을 먼저 선택해주세요.</div>')+G('다른 곳에서 하는 것','할인율·판정 근거는 상품·할인 단계에서 고쳐요. 탭별 상품 배치·카드별 라벨은 아직 준비 중이에요.','');
 }
 function eventPanel(s){
  const e=s.ev,ui=eventUI(s);
@@ -579,11 +579,10 @@ function renderCbRail(){
  document.querySelectorAll('[data-cb-rail]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.cbRail===cbRailMode)));
  const adding=cbRailMode==='library',usingData=cbRailMode==='data';
  $('section-list').hidden=cbRailMode!=='sections';$('addSection').hidden=cbRailMode!=='sections';
- $('component-library').hidden=!(adding||window.AM_EN_PALETTE);   // AM_EN_PALETTE: 앱(editor-next)에서 요소 팔레트를 늘 보임
- $('data-library').hidden=!usingData;
+ $('component-library').hidden=!adding;$('data-library').hidden=!usingData;
  $('cb-outline-title').innerHTML=adding?'추가 <small>구좌·요소 라이브러리</small>':usingData?'자료 <small>원본 연결</small>':'구성 <small>페이지 구조</small>';
  $('cb-outline-desc').textContent=adding?'새 구좌를 만들거나 선택한 구좌에 요소를 추가합니다.':usingData?'상품·후기·레퍼런스를 찾아 현재 편집 대상에 연결합니다.':'페이지의 구좌와 내부 요소를 펼쳐서 선택하세요.';
- if(adding||window.AM_EN_PALETTE){
+ if(adding){
   const quiz=section().layout==='ev-quiz',can=canInsertHere();
   const switcher=`<div class="ia-library-choose"><button type="button" data-ia-library="sections" aria-pressed="${iaLibraryMode==='sections'}">구좌 추가</button><button type="button" data-ia-library="blocks" aria-pressed="${iaLibraryMode==='blocks'}">요소 추가</button></div>`;
   if(iaLibraryMode==='sections')$('component-library').innerHTML=switcher+`<div class="ia-library-intro">서로 다른 와이어프레임을 확인하면서 구좌를 고를 수 있어요.</div><button type="button" class="am-ed-button am-ed-button--primary ia-open-catalog" data-ia-picker="1">＋ 구좌 유형 라이브러리 열기</button><div class="ia-library-categories">${['상품','안내·이야기','이벤트','후기'].map(k=>`<button type="button" data-ia-picker-cat="${E(k)}">${E(k)} 구좌 보기 ↗</button>`).join('')}</div>`;

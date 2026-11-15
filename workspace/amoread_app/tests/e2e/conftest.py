@@ -121,7 +121,8 @@ def plan(server, products):
 @pytest.fixture(scope="session")
 def browser():
     with sync_playwright() as p:
-        b = p.chromium.launch()
+        # E2E_BROWSER_CHANNEL=msedge: Chromium을 따로 받지 않고 이 PC의 Edge로 (사내망에서 playwright install이 막힐 때)
+        b = p.chromium.launch(channel=os.environ.get("E2E_BROWSER_CHANNEL") or None)
         yield b
         b.close()
 

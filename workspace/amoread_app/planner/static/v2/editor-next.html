@@ -34,7 +34,7 @@
   <a class="v2space" href="/v2/deals">상품·할인</a>
   <span class="v2saved" id="v2saved" aria-live="polite"></span>
   <span class="v2grow"></span>
-  <a class="v2btn" id="enBack" href="/v2/editor"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>기존 구좌 편집기로</a>
+  <a class="v2btn v2prev" href="/v2/compose"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>이전: 구좌 구성</a><a class="v2btn primary v2next" href="/v2/preview">다음: 미리보기<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
   <a class="v2tool" href="/v2/library" aria-label="레퍼런스 라이브러리" title="레퍼런스 라이브러리"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2z"/><path d="M6 21h13v-3"/><path d="M9 7h6"/></svg></a>
   <a class="v2gear" href="/v2/settings" aria-label="설정·데이터"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
 </header>
@@ -45,14 +45,17 @@
  <!-- 왼쪽 = 페이지 전체(어떤 구좌가 어떤 순서로). 무엇을 골랐든 같은 내용이라 탭 없이 목록 하나 -->
  <aside class="outline" aria-label="페이지 구좌 목록">
   <div class="panel-head"><h1 id="cb-outline-title">구성</h1><p class="outline-desc" id="cb-outline-desc"></p></div>
-  <div class="en-listhead"><h2>페이지 구좌</h2><button class="am-ed-button am-ed-button--subtle am-ed-add" id="addSection">＋ 구좌 추가</button></div>
+  <div class="en-listhead"><h2>페이지 구좌</h2>
+   <div class="en-listacts"><button class="am-ed-button am-ed-button--subtle am-ed-add" id="addSection" title="구좌 유형을 골라 고른 구좌 아래에 추가">＋ 구좌</button><button type="button" class="am-ed-button am-ed-button--subtle" id="enInsertOpen" aria-controls="enInsert" aria-expanded="false" title="고른 구좌 안에 요소(상품 카드·텍스트·이미지 등) 넣기">＋ 요소</button></div>
+  </div>
   <div id="section-list"></div>
-  <!-- 넣을 것(요소)은 페이지 목록과 같은 왼쪽에, 모드 없이 늘. 넣은 뒤 바로 오른쪽에서 속성을 고친다 (Figma Assets·Relume 방식) -->
-  <section class="en-palette" aria-labelledby="enPalH">
-   <div class="en-palhead"><h2 id="enPalH">넣을 요소</h2><small>끌어 놓거나 누르면 고른 구좌에 들어가요</small></div>
-   <div id="component-library" hidden></div>
-  </section>
  </aside>
+ <!-- 요소 넣기 패널: [＋ 요소]를 눌렀을 때만 왼쪽 칸 옆에 한 칸 열린다 (plans/27 §11).
+      왼쪽 칸(264px)은 구좌 목록 하나만 — 가끔 쓰는 넣기 목록이 늘 자리를 나눠 갖지 않게 -->
+ <section class="en-insert" id="enInsert" aria-labelledby="enInsertH">
+  <div class="en-inserthead"><div><h2 id="enInsertH">요소 넣기</h2><p id="enInsertTo"></p></div><button type="button" class="am-ed-icon-btn" id="enInsertClose" aria-label="요소 넣기 닫기">×</button></div>
+  <div id="component-library" hidden></div>
+ </section>
  <section class="center" aria-label="페이지 미리보기">
   <div class="en-canvasbar">
    <div class="guardrail" id="enNotice" role="status">데이터를 불러오는 중이에요.</div>
@@ -79,7 +82,7 @@
  <aside class="inspector" aria-label="고른 구좌 편집">
   <div class="inspector-head">
    <div class="en-ins-title"><h2 id="insTitle"></h2><span class="en-pos" id="position"></span>
-    <nav class="cb-rail" aria-label="오른쪽 칸 보기"><button type="button" data-cb-rail="data" aria-pressed="false" title="고른 구좌·요소에 상품·후기·레퍼런스 연결"><svg class="am-kit-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#am-kit-database"></use></svg><span>자료 연결</span></button><button type="button" data-cb-rail="sections" aria-pressed="true" class="en-done">완료</button></nav>
+    <nav class="cb-rail" aria-label="오른쪽 칸 보기"><button type="button" data-cb-rail="library" aria-pressed="false" class="en-lib" tabindex="-1" aria-hidden="true">요소</button><button type="button" data-cb-rail="data" aria-pressed="false" title="고른 구좌·요소에 상품·후기·레퍼런스 연결"><svg class="am-kit-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#am-kit-database"></use></svg><span>자료 연결</span></button><button type="button" data-cb-rail="sections" aria-pressed="true" class="en-done">완료</button></nav>
    </div>
    <nav id="ia-breadcrumb" class="ia-breadcrumb" aria-label="현재 편집 위치"></nav><div id="ia-edit-scope" class="ia-scope" role="status"></div>
    <button type="button" id="changeLayout" class="am-ed-layout-trigger"><span class="en-type"><small>유형</small><strong id="layoutLabel"></strong></span><span class="en-type-act">유형 변경</span></button>
@@ -104,5 +107,6 @@
 <script src="/v2/editor-next/flows.js"></script>
 <script src="/v2/editor-next/composable.js"></script>
 <script src="/v2/editor-next/app.js"></script>
+<script src="/static/v2/editor-next-ai.js"></script>
 </body>
 </html>

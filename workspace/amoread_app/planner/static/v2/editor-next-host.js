@@ -3,12 +3,10 @@
 
 // 1) 외부 저장 모드: v1.12가 브라우저 저장소(localStorage) 대신 이 화면이 주는 기획안 값을 쓰고, 새 구좌에 가상 상품·후기를 넣지 않는다.
 window.AMOREAD_EDITOR_OPTIONS = { persistence: 'external' };
-// 1-1) 요소 팔레트를 왼쪽 칸 아래에 늘 보인다 (보기 전환 없이 끌어 놓기·누르기. 고른 구좌에 빈 놓을 자리도 늘 표시). plans/27 §10
-window.AM_EN_PALETTE = true;
 
 // 2) 기획안·상품·후기 연결. v1.12 스크립트가 모두 실행된 뒤(DOMContentLoaded) 시작한다.
-//    - 기획안: v2/plan.js의 PLAN (주소 ?id=, /api/am/projects). 신규 편집기 값은 doc.editor_next에만 쓴다
-//      (기존 편집기의 page.sections·미리보기(04)와 섞지 않음. 처음 열 때만 page.sections를 한 방향으로 가져옴)
+//    - 기획안: v2/plan.js의 PLAN (주소 ?id=, /api/am/projects). 편집기 값 전체는 doc.editor_next, 같은 내용을 표준 형식 page.sections에도 쓴다
+//      (2026-11-15부터 이 편집기가 03 구좌 편집의 유일한 편집기. 04 미리보기·내보내기·AI 추천이 page.sections를 읽음. 아래 enToLegacy)
 //    - 상품: /api/products + /api/product/{seq} (v2/products.js PRODUCTS_API·extraPrice). 이 기획안의 상품만 (할인 행·후보 상품·기존 구좌 상품 칸)
 //    - 가격: 정가 → 1단(기획안 할인 행 할인율, 10원 단위) → 2단(추가 혜택, api.js extraPrice). 기존 편집기·미리보기·상품·할인과 같은 식
 //    - 후기: /api/product/{seq}의 상품별 요약(건수·평균·발췌 2개). 개별 별점·제목은 없어서 비워 둔다
@@ -85,30 +83,89 @@ async function enCatalog(doc) {
   return { products, reviews, failed: details.filter(d => d === null).length };
 }
 
+// ── 표준 형식(page.sections)과 잇기 (2026-11-15, plans/27 §12) ─────────────────────────────
+// 이 편집기가 03 구좌 편집의 유일한 편집기다. 저장할 때마다 편집기 값(editor_next.snapshot)을 앱 표준 형식 page.sections로도 써서
+// 04 미리보기·내보내기·AI 카피 추천(서버가 page.sections에서 구좌를 찾음)이 같은 내용을 본다.
+// 편집기가 모르는 값(탭, 가격 표시, 레이아웃 출처, 디자이너 레퍼런스, 묶음 상품 등)은 이전 page.sections에서 그대로 이어 받는다.
+const EN_PRODUCT_LAYOUTS = ['grid2', 'grid3', 'feat', 'deal-banner'];
+window.EN_AI_META = window.EN_AI_META || {};   // 구좌별 AI 카피 적용 기록 → v2.copyRecommendation (editor-next-ai.js가 채움)
+const enCut = (v, n) => String(v ?? '').slice(0, n);
+const enSlotId = () => `slot-${Math.random().toString(36).slice(2, 10)}`;
+function enToLegacy(snapshot, prevSections, knownSeqs) {
+  const prev = new Map((Array.isArray(prevSections) ? prevSections : []).filter(x => x && x.sectionId).map(x => [x.sectionId, x]));
+  return (snapshot.sections || []).slice(0, 40).map((s, i) => {
+    const p = prev.get(s.id) || {}, pv = p.v2 && typeof p.v2 === 'object' ? p.v2 : {};
+    const pSlots = Array.isArray(p.slots) ? p.slots : [], firstTab = (p.tabs && p.tabs[0] && p.tabs[0].tabId) || null;
+    const bySeq = new Map(pSlots.filter(x => x && x.seq).map(x => [String(x.seq), x]));
+    // 편집기가 모르는 칸(카탈로그에 없는 SEQ, 묶음 상품)은 지우지 않고 남긴다
+    const foreign = pSlots.filter(x => x && ((x.items && x.items.length) || (x.seq && !knownSeqs.has(String(x.seq)))));
+    let slots = pSlots;
+    if (EN_PRODUCT_LAYOUTS.includes(s.layout)) {
+      const ids = (s.productIds || []).map(String).filter(seq => /^\d{1,12}$/.test(seq));
+      const picked = ids.map(seq => bySeq.get(seq) || { slotId: enSlotId(), tabId: firstTab, seq, items: null, placeholderStatus: 'AVAILABLE', customCopy: '' });
+      const empty = ids.length ? [] : pSlots.filter(x => x && !x.seq && !(x.items && x.items.length));   // 상품을 아직 안 고른 자리는 유지
+      slots = [...picked, ...foreign.filter(x => !picked.includes(x)), ...empty].slice(0, 40);
+    }
+    const lines = (s.lines || []).slice(0, 10).map((l, k) => ({ id: (pv.lines && pv.lines[k] && pv.lines[k].id) || `l${k + 1}`, text: enCut(l && l.text, 120) }));
+    const ai = window.EN_AI_META[s.id] || pv.copyRecommendation;
+    return {
+      ...p, sectionId: s.id, order: i, name: enCut(s.name, 40), headline: enCut(s.name, 120), subhead: enCut(s.role, 400),
+      cta: enCut(s.cta, 40), layoutId: s.layout, zone_tag: enCut(s.cat, 40), designNotes: enCut(s.notes, 2000), slots,
+      v2: { ...pv, scope: enCut(s.scope, 200), num: !!s.num, ctaOn: !!s.ctaOn, ctaTo: enCut(s.ctaTo, 60), lines,
+        ...(s.card ? { card: { order: s.card.order, on: s.card.on, def: s.card.def } } : {}), ...(ai ? { copyRecommendation: ai } : {}) },
+    };
+  });
+}
+// page.sections가 이 편집기 밖(02 구좌 구성 등)에서 바뀌었는지 알아보는 지문 (구좌 id·유형·제목·설명·상품 SEQ만)
+function enLegacyMark(sections) {
+  const s = JSON.stringify((Array.isArray(sections) ? sections : []).map(x => [x.sectionId, x.layoutId, x.headline || '', x.subhead || '', (x.slots || []).map(y => y.seq || '')]));
+  let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+  return `${s.length}:${h.toString(36)}`;
+}
+
 async function enConnect() {
   const API = window.AMOREAD_EDITOR_API;
   const doc = await PLAN.ready;
   if (!doc) {
-    enNotice('예시 기획안이에요 · 저장하지 않아요', { detail: '상품·후기는 편집기에 들어 있는 가상 데이터예요. 홈에서 기획안을 열고 기존 구좌 편집기의 [신규 편집기로 열기]로 들어오면 실제 데이터와 저장이 연결돼요.' });
+    enNotice('예시 기획안이에요 · 저장하지 않아요', { detail: '상품·후기는 편집기에 들어 있는 가상 데이터예요. 홈에서 기획안을 열면 그 기획안의 상품·할인과 저장이 연결돼요.' });
     return;
   }
   let cat, catError = '';
   try { cat = await enCatalog(doc); } catch (e) { cat = { products: [], reviews: [], failed: 0 }; catError = e.message; }
   API.setCatalog({ products: cat.products, reviews: cat.reviews, note: `앱 후기 요약 발췌 ${cat.reviews.length}건 (상품 ${cat.products.length}개)` });
+  const known = new Set(cat.products.map(p => p.id));
 
-  const saved = doc.editor_next && doc.editor_next.schema === EN_SCHEMA ? doc.editor_next.snapshot : null;
+  const en = doc.editor_next && doc.editor_next.schema === EN_SCHEMA ? doc.editor_next : null;
+  const legacy = (doc.page && doc.page.sections) || [];
+  // 어떤 값을 열지: ① 편집기 저장본이 있고 page.sections가 그 뒤로 안 바뀌었으면 저장본
+  //               ② 02 구좌 구성 등에서 page.sections가 바뀌었으면 page.sections를 기준으로 다시 맞춤 (같은 구좌 id는 편집기 세부값 유지)
+  //               ③ 저장본이 없으면 page.sections에서 가져옴
+  let start, how;
   try {
-    API.importSnapshot(saved || API.fromLegacyPage(doc.page));
+    if (en && en.snapshot && (!en.synced || en.synced === enLegacyMark(legacy) || !legacy.length)) { start = en.snapshot; how = 'saved'; }
+    else {
+      const fresh = API.fromLegacyPage(doc.page);
+      if (en && en.snapshot) {
+        const old = new Map((en.snapshot.sections || []).map(s => [s.id, s]));
+        fresh.sections = fresh.sections.map(f => {
+          const o = old.get(f.id);
+          return o && o.layout === f.layout ? { ...o, name: f.name, role: f.role, productIds: EN_PRODUCT_LAYOUTS.includes(f.layout) ? f.productIds : o.productIds, notes: f.notes } : f;
+        });
+        how = 'resynced';
+      } else how = 'imported';
+      start = fresh;
+    }
+    API.importSnapshot(start);
   } catch (e) {
     // 저장본을 열 수 없으면 덮어쓰지 않도록 저장을 연결하지 않는다
-    enNotice(`신규 편집기 저장본을 열지 못했어요(${e.message}). 저장된 값을 지키기 위해 이 화면의 저장을 껐어요. 담당자에게 알려 주세요.`, { error: true });
+    enNotice(`구좌 편집 저장본을 열지 못했어요(${e.message}). 저장된 값을 지키기 위해 이 화면의 저장을 껐어요. 담당자에게 알려 주세요.`, { error: true });
     return;
   }
-  const base = saved
-    ? `신규 편집기 저장본을 열었어요 (마지막 저장 ${String(doc.updated_at || '').slice(5, 16)})`
-    : `기존 구좌 편집기의 구좌 ${((doc.page && doc.page.sections) || []).length}개를 가져왔어요`;
+  const base = { saved: `저장본을 열었어요 (마지막 저장 ${String(doc.updated_at || '').slice(5, 16)})`,
+    resynced: `02 구좌 구성에서 바뀐 구좌 ${legacy.length}개에 맞춰 다시 가져왔어요`,
+    imported: `구좌 ${legacy.length}개를 가져왔어요` }[how];
   const lead = `${base} · 상품 ${cat.products.length}개${cat.failed ? ` (후기 못 불러옴 ${cat.failed}개)` : ''}`;
-  const detail = `${saved ? '' : '처음 한 번만, 한 방향으로 가져와요. '}여기서 고친 내용은 신규 편집기 저장본에만 저장되고 기존 편집기·미리보기(04)는 바뀌지 않아요. 가격은 이 기획안의 할인 행 기준이고, 이미지는 앱 데이터에 없어 자리만 표시해요.`;
+  const detail = '여기서 고친 문구·상품·순서는 04 미리보기·내보내기와 AI 카피 추천에 그대로 이어져요. 가격은 이 기획안의 할인 행 기준이고, 이미지는 앱 데이터에 없어 자리만 표시해요.';
   if (catError) enNotice(`상품·후기를 불러오지 못했어요: ${catError}. 상품 없이 편집할 수 있어요.`, { error: true });
   else enNotice(lead, { detail });
 
@@ -122,9 +179,18 @@ async function enConnect() {
   let last = null;
   const push = snapshot => {
     last = snapshot;
-    PLAN.save(d => { d.editor_next = { schema: EN_SCHEMA, version: 1, editor: API.version, snapshot }; });
+    PLAN.save(d => {
+      const sections = enToLegacy(snapshot, d.page && d.page.sections, known);
+      d.page = { ...(d.page || {}), sections };
+      d.editor_next = { schema: EN_SCHEMA, version: 1, editor: API.version, snapshot, synced: enLegacyMark(sections) };
+    });
   };
+  window.EN_PUSH_NOW = () => push(API.exportSnapshot());   // AI 카피 적용 기록처럼 편집기 밖 값이 바뀌었을 때
   API.subscribe(push);
+  // 처음 열었을 때 page.sections가 편집기 값과 다르면(처음 가져옴·다시 맞춤·옛 저장본) 한 번 맞춰 둔다
+  //  → 고치지 않고 바로 04 미리보기나 AI 추천으로 가도 같은 내용
+  const now = API.exportSnapshot();
+  if (how !== 'saved' || !en.synced || enLegacyMark(enToLegacy(now, legacy, known)) !== enLegacyMark(legacy)) push(now);
   addEventListener('plan:saved', e => {
     if (e.detail.ok) { enDraft.clear(doc.id); return; }
     const kept = last && enDraft.write(doc.id, last);
@@ -146,17 +212,27 @@ document.addEventListener('DOMContentLoaded', () => {
   sync();
 })();
 
-// 5) 요소 팔레트 타일은 2열이라 설명 줄을 숨김 → 마우스를 올리면 "이름 — 설명"
+// 5) 요소 넣기 패널 (plans/27 §11): 목록 머리 [＋ 요소] → v1.12의 '추가' 보기(library)를 켜고 왼쪽 칸 옆 패널로 보인다.
+//    닫기(×·Esc·다시 누르기) → 편집 보기(sections). 패널 머리에 어느 구좌에 들어가는지 표시
 document.addEventListener('DOMContentLoaded', () => {
   const lib = document.getElementById('component-library');
-  if (!lib) return;
-  const tip = () => lib.querySelectorAll('.cb-library-card').forEach(c => {
-    if (c.title) return;
-    const b = c.querySelector('b'), s = c.querySelector('small');
-    c.title = [b && b.textContent.trim(), s && s.textContent.trim()].filter(Boolean).join(' — ');
+  const openBtn = document.getElementById('enInsertOpen'), to = document.getElementById('enInsertTo');
+  const rail = m => document.querySelector(`.cb-rail [data-cb-rail="${m}"]`);
+  if (!lib || !openBtn) return;
+  const isOpen = () => !lib.hidden;
+  const sync = () => {
+    openBtn.setAttribute('aria-expanded', String(isOpen()));
+    const t = document.getElementById('insTitle');
+    if (to) to.textContent = isOpen() && t && t.textContent ? `‘${t.textContent}’에 넣어요` : '';
+  };
+  openBtn.addEventListener('click', () => { rail(isOpen() ? 'sections' : 'library')?.click(); });
+  document.getElementById('enInsertClose')?.addEventListener('click', () => { rail('sections')?.click(); openBtn.focus(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && isOpen() && !document.querySelector('dialog[open]')) { rail('sections')?.click(); openBtn.focus(); }
   });
-  new MutationObserver(tip).observe(lib, { childList: true, subtree: true });
-  tip();
+  new MutationObserver(sync).observe(lib, { attributes: true, attributeFilter: ['hidden'] });
+  const ins = document.getElementById('insTitle'); if (ins) new MutationObserver(sync).observe(ins, { childList: true, characterData: true, subtree: true });
+  sync();
 });
 
 // 3) 미리보기 칸 도구 줄의 [내보내기] 메뉴(<details>): 하나 고르면 닫고, 바깥을 누르거나 Esc면 닫는다

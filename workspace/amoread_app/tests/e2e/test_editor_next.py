@@ -14,27 +14,31 @@ def r10(n):
     return int(round(n / 10.0)) * 10   # JS Math.round와 같은 결과가 나오는 범위(양수)
 
 
-# 1. 기존 편집기 정상 실행 (새 화면 /v2/editor, 예전 화면 /)
-def test_existing_editors_still_work(page, server, plan):
+# 1. 03 구좌 편집 = 신규 편집기 하나 (2026-11-15, plans/27 §12): 옛 주소 /v2/editor는 같은 기획안 id로 넘어간다. 예전 화면 /는 그대로
+def test_editor_route_opens_new_editor(page, server, plan):
     page.goto(f"{server.base}/v2/editor?id={plan['id']}", wait_until="networkidle")
-    page.wait_for_function("() => document.querySelectorAll('#secList li').length === 3")
-    assert "E2E 상품" in page.locator("#secList").inner_text()
+    page.wait_for_url(f"**/v2/editor-next?id={plan['id']}")
+    page.wait_for_function("() => /가져왔어요/.test(document.getElementById('enNotice').textContent)")
+    assert page.locator(".v2steps a[aria-current=step]").inner_text().startswith("03")
     page.goto(f"{server.base}/", wait_until="networkidle")
     assert page.title()
     assert page.errors == [], page.errors
 
 
-# 2. 신규 편집기 진입 → 기존 편집기로 복귀 (같은 기획안 id)
-def test_enter_and_return(page, server, plan):
-    page.goto(f"{server.base}/v2/editor?id={plan['id']}", wait_until="networkidle")
-    link = page.locator("#editorNextLink")
-    assert link.get_attribute("href") == f"/v2/editor-next?id={plan['id']}"
-    link.click()
-    page.wait_for_url(f"**/v2/editor-next?id={plan['id']}")
-    page.wait_for_function("() => /가져왔어요/.test(document.getElementById('enNotice').textContent)")
-    page.locator("#enBack").click()
-    page.wait_for_url(f"**/v2/editor?id={plan['id']}")
-    assert page.locator("#editorNextLink").count() == 1
+# 2. 처음 열면 page.sections(표준 형식)가 편집기 값과 맞춰지고, 고친 내용이 04 미리보기에 나온다
+def test_sections_sync_to_page_and_preview(page, server, plan):
+    open_editor_next(page, server, plan["id"])
+    page.locator('#page [data-page="e2"]').click()
+    page.locator('[data-ia-group="content"]').click()
+    page.locator('#panel-body [data-bind="name"]').fill("E2E 연결 확인 제목")
+    wait_saved(page)
+    st, doc = server.api(f"/api/am/projects/{plan['id']}")
+    secs = doc["page"]["sections"]
+    assert [s["sectionId"] for s in secs] == ["e1", "e2", "e3"]
+    assert secs[1]["headline"] == "E2E 연결 확인 제목" and doc["editor_next"]["synced"]
+    assert [sl.get("seq") for sl in secs[1]["slots"] if sl.get("seq")]   # 상품 칸이 이어짐
+    page.goto(f"{server.base}/v2/preview?id={plan['id']}", wait_until="networkidle")
+    assert "E2E 연결 확인 제목" in page.locator("body").inner_text()
     assert page.errors == [], page.errors
 
 
@@ -124,7 +128,7 @@ def test_canvas_selection_reveals_inspector(page, server, plan):
 def test_card_elements(page, server, plan):
     open_editor_next(page, server, plan["id"])
     page.locator("#page [data-page=\"e2\"]").click()
-    # 요소 팔레트는 왼쪽 칸 아래에 늘 보임 (plans/27 §10) → 바로 누름
+    page.locator("#enInsertOpen").click()   # 목록 머리 [＋ 요소] → 요소 넣기 패널 (plans/27 §11)
     page.locator("[data-cb-add=\"productCard\"]").click()
     card = page.locator('#page [data-page="e2"] .cb-node--productCard').first
     card.click(position={"x": 3, "y": 3})
@@ -214,7 +218,7 @@ def test_real_products_and_reviews(page, server, plan):
     assert page.errors == [], page.errors
 
 
-# 9. 저장 → 다시 열기: 값·순서 유지, 기존 편집기 데이터(page.sections)는 그대로
+# 9. 저장 → 다시 열기: 값·순서 유지, page.sections도 같은 순서·제목 (2026-11-15부터 이어짐)
 def test_save_and_reopen(page, server, plan):
     open_editor_next(page, server, plan["id"])
     page.locator('#page [data-page="e1"]').click()
@@ -228,15 +232,11 @@ def test_save_and_reopen(page, server, plan):
     saved = doc["editor_next"]["snapshot"]
     assert [s["id"] for s in saved["sections"]] == ["e2", "e1", "e3"]
     assert next(s for s in saved["sections"] if s["id"] == "e1")["name"] == "E2E 저장 확인 제목"
-    assert [s["headline"] for s in doc["page"]["sections"]] == ["E2E 메인", "E2E 상품", "E2E 서비스"]   # 기존 편집기 값 보존
+    assert [s["headline"] for s in doc["page"]["sections"]] == ["E2E 상품", "E2E 저장 확인 제목", "E2E 서비스"]   # 표준 형식도 같은 순서·제목
     page.reload(wait_until="networkidle")
     page.wait_for_function("() => /열었어요/.test(document.getElementById('enNotice').textContent)")
     assert page.locator("#page .preview-block").evaluate_all("els => els.map(e => e.dataset.page)") == ["e2", "e1", "e3"]
     assert "E2E 저장 확인 제목" in page.locator('#page [data-page="e1"]').inner_text()
-    # 기존 편집기가 저장해도 신규 편집기 저장본은 남는다
-    page.goto(f"{server.base}/v2/editor?id={plan['id']}", wait_until="networkidle")
-    st, doc2 = server.api(f"/api/am/projects/{plan['id']}")
-    assert doc2["editor_next"]["snapshot"]["sections"][0]["id"] == "e2"
     assert page.errors == [], page.errors
 
 
@@ -257,7 +257,7 @@ def test_conflict_is_blocked_and_draft_kept(page, server, plan):
     draft = page.evaluate(f"() => localStorage.getItem('amoread.editor-next.draft.{plan['id']}')")
     assert draft and "충돌 나는 수정" in draft
     st, now = server.api(f"/api/am/projects/{plan['id']}")
-    assert now["rationale"] == "다른 화면" and not now.get("editor_next")   # 덮어쓰지 않음
+    assert now["rationale"] == "다른 화면" and "충돌 나는 수정" not in json.dumps(now, ensure_ascii=False)   # 덮어쓰지 않음
     page.evaluate(f"() => localStorage.removeItem('amoread.editor-next.draft.{plan['id']}')")
 
 
