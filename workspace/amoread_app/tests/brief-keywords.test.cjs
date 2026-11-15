@@ -15,12 +15,14 @@ class Element {
   replaceChildren(...els) { this.children=els; }
   querySelectorAll() { return []; }
   focus() {} select() {} scrollIntoView() {} setCustomValidity() {} reportValidity() {}
+  insertBefore(el) { this.children.unshift(el); } getComputedTextLength() { return 40; } closest() { return null; }   // 마인드맵 알약 너비 재기
   submit() { this.handlers.submit({preventDefault(){}}); }
 }
 const response = (seed, words=[]) => ({seed, fetched_at:'2026-11-15T12:00:00Z', sources:{searchad:{status:'ok',items:words.map(keyword=>({keyword}))},datalab:{status:'ok',items:[]},naver_search:{status:'ok',items:[]}},words:[]});
 async function setup(savedDoc) {
   const elements = new Map();
   for(const [,id] of fs.readFileSync(path.join(V2,'brief.html'),'utf8').matchAll(/id="([^"]+)"/g)) elements.set('#'+id,new Element());
+  elements.set('#rootInput',new Element());   // 명분 입력칸은 가운데 노드를 고칠 때만 생긴다 (brief.js renderMap)
   const doc = savedDoc || {title:'기획안',brief:{myeongbun:'연말 선물',concept:'작성한 컨셉',key_copy:'작성한 카피',season_ref:{name:'연말'}},v2:{seed:'연말 선물',keywords:[]}};
   const pending=[];
   const context=vm.createContext({console, URL, URLSearchParams, Map, Set, Promise, CSS:{escape:x=>x},
@@ -40,7 +42,7 @@ async function setup(savedDoc) {
   vm.runInContext(fs.readFileSync(path.join(V2,'brief.js'),'utf8'),context);
   const settle = async()=>{for(let i=0;i<8;i++)await Promise.resolve();};
   await settle();
-  return {context,doc,pending,elements,settle,run:code=>vm.runInContext(code,context), submit(root){elements.get('#rootInput').value=root;elements.get('#rootForm').submit();}};
+  return {context,doc,pending,elements,settle,run:code=>vm.runInContext(code,context), submit(root){vm.runInContext('editRoot(true)',context);elements.get('#rootInput').value=root;elements.get('#map').handlers.submit({target:{id:'rootForm'},preventDefault(){}});}};   // 가운데 노드 연필 → 입력 → 확인
 }
 
 test('no speculative initial request; stored root is the only first search',async()=>{
@@ -82,8 +84,9 @@ test('hidden words stay out of the map and actual product matching does not intr
 
 test('first branches are actual words, never planning category nodes',async()=>{
   const s=await setup();s.pending[0].resolve(response('연말 선물',['감사 선물','티백','사무실 티타임']));await s.settle();
-  const nodes=s.elements.get('#map').children.filter(x=>x['data-k']);
-  assert.deepEqual(nodes.map(x=>x['data-k']),['감사 선물','티백','사무실 티타임','연말 선물']);
+  const flat=el=>el.children.flatMap(x=>[x,...flat(x)]);   // 선·노드를 그룹으로 나눠 그린다 (가운데 노드 먼저: 가지 선을 잇기 위해 너비를 먼저 잼)
+  const nodes=flat(s.elements.get('#map')).filter(x=>x['data-k']);
+  assert.deepEqual(nodes.map(x=>x['data-k']),['연말 선물','감사 선물','티백','사무실 티타임']);
   assert.equal(nodes.some(x=>x['data-k'].startsWith('@group:')),false);
 });
 

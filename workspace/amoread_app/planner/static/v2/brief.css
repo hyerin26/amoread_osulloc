@@ -163,14 +163,11 @@ input:not([type=checkbox]):not([type=radio]):focus, select:focus, textarea:focus
 .side .acts { display: grid; gap: var(--s2); }
 .mpick .cap em { font-style: normal; color: var(--mute); }
 /* 근거 기반 키워드 탐색 */
-.research-form { display:grid; gap:8px; padding:16px; background:var(--bg); border:1px solid var(--line-sub); border-radius:var(--r2); }
-.research-form > label { font-weight:var(--fw-strong); font-size:var(--fs-sm); }
 .research-controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .research-controls input { flex:1; min-width:180px; }
 select { min-height:var(--control-lg); padding:0 10px; border:1px solid var(--line); border-radius:var(--r2); background:var(--surface); color:var(--ink); font:inherit; }
-.map-scroll { overflow-x:auto; border:1px solid var(--line-sub); border-radius:var(--r2); background:var(--bg); }
+.map-scroll { overflow-x:auto; position:relative; }   /* 예전 마인드맵처럼 카드 위에 바로 (상자 없음). 툴팁 기준 */
 .map { min-width:720px; }
-.map .node .node-badge { font-size:11px; font-weight:400; fill:var(--mute); }
 .map .node.focus rect { stroke:var(--accent); stroke-width:2; }
 .map .node.root.picked rect { fill:var(--ink); }
 .group-candidates { display:grid; gap:8px; margin-top:16px; }
@@ -187,4 +184,14 @@ select { min-height:var(--control-lg); padding:0 10px; border:1px solid var(--li
 .map-pagination { display:flex; align-items:center; justify-content:center; gap:12px; }
 .map .map-empty { font-size:14px; text-anchor:middle; fill:var(--mute); }
 
-.map .node.keyword > text:not(.node-badge) { font-size:16px; }
+
+/* 마인드맵 (2026-11-16): 가운데 노드 연필로 명분 고치기, 출처는 알약 툴팁 */
+.map .root-edit-btn { cursor:pointer; }
+.map .root-edit-btn .hit { fill:transparent; }
+.map .root-edit-btn path { fill:none; stroke:var(--surface); stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+.map .root-edit-btn:hover .hit { fill:rgba(255,255,255,.16); }
+.map .root-edit-btn:focus { outline:none; }
+.map .root-edit-btn:focus-visible .hit { stroke:var(--accent); stroke-width:2.5; }
+.root-edit-form { display:flex; align-items:center; gap:6px; height:100%; padding:2px; }
+.root-edit-form input { flex:1; min-width:0; height:40px; font-weight:var(--fw-strong); }
+.map-tip { position:absolute; transform:translate(-50%,-100%); background:var(--ink); color:var(--surface); font-size:var(--fs-cap); line-height:var(--lh-cap); padding:4px 8px; border-radius:var(--r2); white-space:nowrap; pointer-events:none; z-index:2; }

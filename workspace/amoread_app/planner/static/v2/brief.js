@@ -25,7 +25,8 @@ let path = [ROOT],
   chOn = new Set();
 let keepFocus = null,
   titleTouched = false,
-  sugPage = 0;
+  sugPage = 0,
+  rootEditing = false;   // 가운데 노드에서 명분을 고치는 중
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({
   '&': '&amp;',
@@ -62,7 +63,26 @@ addNode(ROOT, {
   source: 'root'
 });
 $('#rootName').textContent = ROOT;
-$('#rootInput').value = ROOT;
+
+// 마인드맵 툴팁: 키워드 알약의 출처·관심 신호 (알약에 담기엔 길어서). 화면 읽기 프로그램은 노드의 aria-label로 같은 내용을 듣는다
+function showTip(n) {
+  const tip = $('#mapTip'), box = $('.map-scroll');
+  if (!n?.dataset.tip || !tip || !box) return hideTip();
+  tip.textContent = n.dataset.tip;
+  tip.hidden = false;
+  const r = n.getBoundingClientRect(), b = box.getBoundingClientRect();
+  tip.style.left = `${r.left - b.left + box.scrollLeft + r.width / 2}px`;
+  tip.style.top = `${r.top - b.top + box.scrollTop - 6}px`;
+}
+function hideTip() { const tip = $('#mapTip'); if (tip) tip.hidden = true; }
+// 가운데 노드에서 명분 고치기
+function editRoot(on) {
+  if (on && !researchReady) return;   // 기획안을 다 불러오기 전에는 고치지 않음 (예전 [이 명분으로 키워드 찾기]가 꺼져 있던 것과 같음)
+  rootEditing = on;
+  renderMap();
+  if (on) { const i = $('#rootInput'); i?.focus(); i?.select(); i?.closest('.card')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+  else $('[data-root-edit]')?.focus();
+}
 
 function dataFor(k) {
   const own = LIVE.get(k)?.data;
@@ -120,62 +140,99 @@ function renderMap() {
   const pages = Math.max(1, Math.ceil(words.length / size));
   mapPage = Math.min(mapPage, pages - 1);
   const shown = words.slice(mapPage * size, (mapPage + 1) * size);
+  hideTip();
   svg.replaceChildren();
+  const gE = svgEl('g', {}),
+    gN = svgEl('g', {});
+  svg.append(gE, gN);
 
-  function node(k, x, y, root = false) {
+  // 노드 = [고르기 동그라미] [키워드] 알약 (디자인 시스템 v2 마인드맵과 같은 모양). 출처·관심 신호는 알약에 마우스·초점을 두면 툴팁으로.
+  // 가운데 노드 오른쪽에는 명분 고치기 연필 (노드와 따로 초점을 받는 버튼). 고치는 중이면 그 자리에 입력칸.
+  // anchor: 'c' = 가운데 기준, 'r' = 오른쪽 끝을 x에(왼쪽 가지), 'l' = 왼쪽 끝을 x에(오른쪽 가지). 돌려주는 값 = 알약 너비
+  function node(k, x, y, root = false, anchor = 'c') {
     const source = info(k).source,
-      signal = BK.trend(dataFor(k), k);
-    const badge = root ? '' :
+      signal = BK.trend(dataFor(k), k),
+      isPicked = picked.includes(k);
+    const tip = root ? '' :
       `${sourceName(source)}${signal.change!==null ? signal.change>=.2?' · 관심↑':signal.change<=-.2?' · 관심↓':'' : ''}`;
     const g = svgEl('g', {
-      class: `node ${root?'root':'keyword'}${picked.includes(k)?' picked':''}${focus===k?' focus':''}`,
+      class: `node ${root?'root':'keyword'}${isPicked?' picked':''}${focus===k?' focus':''}`,
       tabindex: 0,
       role: 'button',
       'data-k': k,
-      'aria-label': `${k}${badge?', '+badge:''}, Enter로 근거 보기, Space로 브리프에 담기`
+      'aria-label': `${k}${isPicked?', 고름':''}${tip?', '+tip:''}. Enter로 근거 보기, Space로 브리프에 담기`
     });
-    const w = root ? 230 : 290,
-      h = root ? 50 : 64;
-    g.append(svgEl('rect', {
-      x: x - w / 2,
+    if (tip) g.dataset.tip = tip;
+    const t = svgEl('text', {
+      x,
+      y
+    });
+    t.textContent = k.length > 16 ? k.slice(0, 15) + '…' : k;
+    g.append(t);
+    gN.append(g);
+    const pad = root ? 76 : 48,   // 왼쪽 동그라미 자리 + (가운데 노드는 오른쪽 연필 자리)
+      w = Math.max(64, t.getComputedTextLength() + pad),
+      h = root ? 44 : 36,
+      cx = anchor === 'r' ? x - w / 2 : anchor === 'l' ? x + w / 2 : x,
+      x0 = cx - w / 2;
+    t.setAttribute('x', cx + (root ? -2 : 10));
+    g.insertBefore(svgEl('rect', {
+      x: x0,
       y: y - h / 2,
       width: w,
       height: h,
-      rx: 12
-    }));
-    const title = svgEl('title', {});
-    title.textContent = k;
-    g.append(title);
-    const text = svgEl('text', {
-      x,
-      y: badge ? y - 10 : y
+      rx: 8
+    }), t);
+    const ck = svgEl('g', {
+      class: `ck${isPicked ? ' on' : ''}`,
+      'data-pickk': k
     });
-    text.textContent = (picked.includes(k) ? '✓ ' : '') + (k.length > (root ? 12 : 16) ? k.slice(0, root ? 11 : 15) + '…' : k);
-    g.append(text);
-    if (badge) {
-      const label = svgEl('text', {
-        class: 'node-badge',
-        x,
-        y: y + 16
+    ck.append(svgEl('rect', { class: 'hit', x: x0 + 2, y: y - 14, width: 28, height: 28, rx: 6 }));
+    ck.append(svgEl('circle', { cx: x0 + 16, cy: y, r: 8 }));
+    if (isPicked) ck.append(svgEl('path', { d: `M${x0 + 12} ${y}l3 3 5-6` }));
+    g.append(ck);
+    if (root) {
+      const ed = svgEl('g', {
+        class: 'root-edit-btn',
+        tabindex: 0,
+        role: 'button',
+        'data-root-edit': '',
+        'aria-label': `명분 '${k}' 고치기`
       });
-      label.textContent = badge;
-      g.append(label);
+      const ex = x0 + w - 22;
+      ed.append(svgEl('rect', { class: 'hit', x: ex - 14, y: y - 14, width: 28, height: 28, rx: 6 }));
+      ed.append(svgEl('path', { d: `M${ex - 5} ${y + 5}l1-4 7-7 3 3-7 7z M${ex + 1} ${y - 4}l3 3` }));   // 연필
+      const title = svgEl('title', {});
+      title.textContent = '명분 고치기';
+      ed.append(title);
+      gN.append(ed);
     }
-    svg.append(g);
+    return { w, cx };
   }
+
+  // 가운데 노드 먼저 (너비를 알아야 선을 이을 수 있음). 고치는 중이면 입력칸
+  const CX = 550, CY = 320;
+  let rootHalf;
+  if (rootEditing) {
+    rootHalf = 150;
+    const fo = svgEl('foreignObject', { x: CX - 150, y: CY - 24, width: 300, height: 48, class: 'root-edit' });
+    fo.innerHTML = `<form xmlns="http://www.w3.org/1999/xhtml" id="rootForm" class="root-edit-form"><input type="text" id="rootInput" maxlength="20" required pattern="[가-힣A-Za-z0-9 ]{1,20}" aria-label="명분 (한글·영문·숫자·공백 20자 이내)" value="${esc(base)}"><button type="submit" class="btn sm primary">확인</button><button type="button" class="btn sm" data-root-cancel>취소</button></form>`;
+    gN.append(fo);
+  } else rootHalf = node(base, CX, CY, true).w / 2;
   for (let i = 0; i < shown.length; i++) {
     const left = i % 2 === 0,
       side = shown.filter((_, j) => j % 2 === i % 2),
       row = Math.floor(i / 2);
-    const x = left ? 165 : 935,
-      y = 320 + (row - (side.length - 1) / 2) * 92;
-    svg.append(svgEl('path', {
+    const y = CY + (row - (side.length - 1) / 2) * 64,
+      { w, cx } = node(shown[i], left ? 330 : 770, y, false, left ? 'r' : 'l');
+    const from = left ? CX - rootHalf : CX + rootHalf,
+      to = left ? cx + w / 2 : cx - w / 2,
+      mid = (from + to) / 2;
+    gE.append(svgEl('path', {
       class: 'edge',
-      d: `M${left?435:665},320 C${left?360:740},320 ${left?360:740},${y} ${left?310:790},${y}`
+      d: `M${from},${CY} C${mid},${CY} ${mid},${y} ${to},${y}`
     }));
-    node(shown[i], x, y);
   }
-  node(base, 550, 320, true);
   if (!shown.length) {
     const msg = svgEl('text', {
       class: 'map-empty',
@@ -185,6 +242,11 @@ function renderMap() {
     msg.textContent = '네이버 검색 또는 AI로 연관 키워드를 찾아보세요';
     svg.append(msg);
   }
+  // 그린 내용에 맞게 보는 범위를 좁힌다: 고정 1100×640이면 가지가 적을 때 빈 곳이 커서 글자가 10px 남짓으로 작아짐
+  try {
+    const bb = svg.getBBox(), vw = Math.max(760, bb.width + 80), vh = Math.max(360, bb.height + 80);
+    svg.setAttribute('viewBox', `${Math.round(bb.x + bb.width / 2 - vw / 2)} ${Math.round(bb.y + bb.height / 2 - vh / 2)} ${Math.round(vw)} ${Math.round(vh)}`);
+  } catch { /* 그리기 전(화면 밖)에는 그대로 */ }
   $('#mapPagination').innerHTML = pages > 1 ?
     `<button class="btn sm" data-map-page="${mapPage-1}" ${mapPage===0?'disabled':''}>이전 가지</button><span class="cap">${mapPage+1} / ${pages} · ${words.length}개</span><button class="btn sm" data-map-page="${mapPage+1}" ${mapPage===pages-1?'disabled':''}>다음 가지</button>` :
     '';
@@ -532,10 +594,26 @@ function selectFocus(k) {
   render();
 }
 $('#map').addEventListener('click', e => {
+  if (e.target.closest('[data-root-edit]')) { editRoot(true); return; }
+  if (e.target.closest('[data-root-cancel]')) { editRoot(false); return; }
+  const ck = e.target.closest('[data-pickk]');   // 왼쪽 동그라미 = 브리프에 담기·빼기
+  if (ck) { keepFocus = ck.dataset.pickk; pick(ck.dataset.pickk); return; }
   const n = e.target.closest('.node');
   if (n) selectFocus(n.dataset.k);
 });
+$('#map').addEventListener('mouseover', e => { const n = e.target.closest('.node'); n ? showTip(n) : hideTip(); });
+$('#map').addEventListener('mouseleave', hideTip);
+$('#map').addEventListener('focusin', e => showTip(e.target.closest('.node')));
+$('#map').addEventListener('focusout', hideTip);
+$('#map').addEventListener('submit', e => {
+  if (e.target.id !== 'rootForm') return;
+  e.preventDefault();   // 같은 명분이어도 다시 찾는다 (예전 [이 명분으로 키워드 찾기]와 같음)
+  if (applyRootInput()) { editRoot(false); toast('명분을 반영하고 키워드를 다시 찾고 있어요. 작성한 내용은 유지했어요'); }
+});
+$('#map').addEventListener('input', e => { if (e.target.id === 'rootInput') e.target.setCustomValidity(''); });
 $('#map').addEventListener('keydown', e => {
+  if (e.key === 'Escape' && (e.target.id === 'rootInput' || e.target.closest('#rootForm'))) { e.preventDefault(); editRoot(false); return; }
+  if (e.target.closest('[data-root-edit]') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); editRoot(true); return; }
   const n = e.target.closest('.node');
   if (!n) return;
   if (e.key === 'Enter') {
@@ -607,14 +685,8 @@ document.addEventListener('click', e => {
   }
   const ed = t.closest('[data-edit]');
   if (ed) {
-    if (ed.dataset.edit === '명분') {
-      $('#rootInput').focus();
-      $('#rootInput').select();
-      $('#rootInput').scrollIntoView({
-        block: 'center',
-        behavior: 'smooth'
-      });
-    } else toast(`${ed.dataset.edit}은 기획안을 시작할 때 정한 값이에요`);
+    if (ed.dataset.edit === '명분') editRoot(true);   // 위쪽 '명분' 칩도 가운데 노드에서 고친다
+    else toast(`${ed.dataset.edit}은 기획안을 시작할 때 정한 값이에요`);
     return;
   }
   const retry = t.closest('[data-retry-keyword]');
@@ -673,15 +745,12 @@ function applyRootInput() {
   render();
   return true;
 }
-$('#rootForm').addEventListener('submit', e => {
-  e.preventDefault();
-  if (applyRootInput()) toast('명분을 반영하고 키워드를 다시 찾고 있어요. 작성한 내용은 유지했어요');
-});
 $('#aiKeywordExpand').addEventListener('click', () => {
-  if (BK.clean($('#rootInput').value) !== ROOT && !applyRootInput()) return;
+  const ri = $('#rootInput');   // 가운데 노드에서 고치던 명분이 있으면 먼저 반영
+  if (ri && BK.clean(ri.value) !== ROOT && !applyRootInput()) return;
+  if (rootEditing) editRoot(false);
   expandAIKeywords();
 });
-$('#rootInput').addEventListener('input', () => $('#rootInput').setCustomValidity(''));
 $('#manualForm').addEventListener('submit', e => {
   e.preventDefault();
   const k = BK.clean($('#manualKeyword').value);
@@ -923,7 +992,6 @@ $('#nextBtn').addEventListener('click', () => {
 let toastT;
 function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600); }
 
-$('#rootSearch').disabled = true;
 autoTitle(); render();
 
 // ================= 기획안 잇기 (새 버전) =================
@@ -946,7 +1014,6 @@ function setRoot(r) {
     source: 'root'
   });
   $('#rootName').textContent = ROOT;
-  $('#rootInput').value = ROOT;
   path = [ROOT];
   focus = ROOT;
 }
@@ -1020,7 +1087,6 @@ function oursOf(k) {
 }
 PLAN.ready.then(doc => {
   researchReady = true;
-  $('#rootSearch').disabled = false;
   if (doc) {
     loadOurs();
   } // 상품·지난 기획 연결
