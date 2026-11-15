@@ -363,6 +363,15 @@ def capture_info(page_id: str) -> dict:
     return {}
 
 
+def _wire(r: dict):
+    """추출해 둔 와이어프레임(planner/data/wireframes)이 있는 페이지면 가장 비슷한 구좌의 요약을 붙인다. 구조 전체는 /api/am/ai/wire로 따로 받는다."""
+    try:
+        from . import wireframes
+        return wireframes.match(r)
+    except Exception:
+        return None
+
+
 def as_ref(r: dict, why: str = "") -> dict:
     """색인 행 → 화면 레퍼런스 모양(references.js의 REFS 항목 + 출처)."""
     role = r["role"]
@@ -370,7 +379,7 @@ def as_ref(r: dict, why: str = "") -> dict:
     layout = rules.layout_for(role, r["text"]) if role in rules.ROLE_CAT else None   # 레이아웃으로 옮길 수 없는 역할은 '참고 전용'
     return {"id": r["id"], "title": r["title"], "campaign": r["campaign"], "cat": rules.ROLE_CAT.get(role, "스토리"),
             "applicable": layout is not None, "layout": layout, "reason": why or f"'{rules.ROLE_NAME.get(role, role)}' 구좌 사례", "summary": r["text"][:80] + "…",
-            "role": role, "brand": r["brand"], "from": BRAND_FROM.get(r["brand"], "외부"), "url": r.get("url", ""), "page": r["page_id"], "images": r.get("images") or [], "cap": bool(ci), "pglayout": ci.get("layout"), "sx": {"t": (r.get("text") or "")[:120], "n": len(r.get("text") or "")}}   # images = 원본 이미지 주소(화면이 아직 쓰지 않음)
+            "role": role, "brand": r["brand"], "from": BRAND_FROM.get(r["brand"], "외부"), "url": r.get("url", ""), "page": r["page_id"], "images": r.get("images") or [], "cap": bool(ci), "pglayout": ci.get("layout"), "wire": _wire(r), "sx": {"t": (r.get("text") or "")[:120], "n": len(r.get("text") or "")}}   # images = 원본 이미지 주소(화면이 아직 쓰지 않음)
 
 
 def query_for(doc: dict, name: str, purpose: str = "") -> str:
