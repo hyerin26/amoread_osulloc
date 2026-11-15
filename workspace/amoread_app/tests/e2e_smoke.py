@@ -37,7 +37,7 @@ def main() -> int:
                 errs = []
                 pg.on("console", lambda m: errs.append(m.text[:140]) if m.type == "error" and not any(k in m.text for k in KNOWN) else None)
                 pg.on("pageerror", lambda e: errs.append("PAGEERR " + str(e)[:140]))
-                for path in ("/v2/library", "/v2/compose", "/v2/editor", "/v2/brief", "/v2/preview", "/v2/home", "/v2/settings"):
+                for path in ("/v2/library", "/v2/inspire", "/v2/compose", "/v2/editor", "/v2/brief", "/v2/preview", "/v2/home", "/v2/settings"):
                     errs.clear()
                     pg.goto(f"http://127.0.0.1:{PORT}{path}")
                     pg.wait_for_timeout(2000)

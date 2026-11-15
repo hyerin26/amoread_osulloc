@@ -752,7 +752,11 @@ async function loadLib() {
     const ai = await v2api('/api/am/ai/library');
     if (ai.mode === 'ai' && ai.items.length) { R.length = 0; R.push(...ai.items); }
   } catch (e) { /* 예시 유지 */ }
+  // 다른 화면에서 /v2/library#open=<구좌 id> 로 오면 그 구좌를 바로 연다 (오늘의 영감 보관함의 [레퍼런스에서 보기])
+  const want = /^#open=/.test(location.hash) ? decodeURIComponent(location.hash.slice(6)) : '', r = want && byId(want);
+  if (r) { cur = want; if (tk(r) !== tab) { tab = tk(r); f = {}; } history.replaceState(null, '', location.pathname); }
   render();
+  if (want && !r) toast('그 구좌를 라이브러리에서 찾지 못했어요');
   if (tab === 'pin') loadPins();
   loadHealth();
 }

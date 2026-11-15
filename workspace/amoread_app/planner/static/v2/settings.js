@@ -63,7 +63,7 @@ const connWarn = () => CONN.filter(c => ['nokey', 'err', 'limit'].includes(state
 const stateOf = c => c.st;
 function renderToc() {
   const cur = location.hash || '#data';
-  $('#toc').innerHTML = [['#data', '데이터 상태', warnN()], ['#conn', '외부 연결', connWarn()], ['#lists', '사전과 목록', 0], ['#rules', '기획 기준', 0]]
+  $('#toc').innerHTML = [['#data', '데이터 상태', warnN()], ['#auto', '아침 자동 확인', 0], ['#conn', '외부 연결', connWarn()], ['#lists', '사전과 목록', 0], ['#rules', '기획 기준', 0]]
     .map(([h, n, w]) => `<a href="${h}" ${cur === h ? 'aria-current="true"' : ''}>${n}${w ? `<span class="n" aria-label="확인할 것 ${w}개">${w}</span>` : ''}</a>`).join('');
 }
 function renderData() {

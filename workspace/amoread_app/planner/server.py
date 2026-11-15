@@ -100,8 +100,8 @@ def favicon():
 
 
 # 새 버전 (plans/20 재설계 화면). 예전 화면(/)은 그대로 두고 /v2/ 아래에 따로. 정해진 이름만 열어 준다
-V2_PAGES = {"home", "brief", "compose", "editor", "preview", "deals", "library", "settings"}
-# 신규 구좌편집기 (기존 /v2/editor는 그대로 두고 따로). 끄면 화면 404 + 화면 안 <!--editor-next-->…<!--/editor-next--> 진입 버튼을 뺀다
+V2_PAGES = {"home", "brief", "compose", "editor", "preview", "deals", "library", "settings", "inspire"}
+# 신규 구좌편집기 = 03 구좌 편집 (/v2/editor는 이리로 넘김). 끄면(AMOREAD_EDITOR_NEXT=0) 화면 404 + 예전 편집기가 /v2/editor에 열림
 EDITOR_NEXT_ON = config.EDITOR_NEXT and (config.EDITOR_NEXT_DIR / "app.js").is_file()
 _EDITOR_NEXT_BLOCK = re.compile(r"<!--editor-next-->.*?<!--/editor-next-->", re.S)
 _EDITOR_NEXT_FILE = re.compile(r"^[A-Za-z0-9_.-]+\.(js|css)$")   # 편집기 폴더의 js·css만 (테스트·문서·하위 폴더는 열지 않음)
@@ -147,6 +147,17 @@ def refimg_own(name: str):
     if not p:
         raise HTTPException(404, "이미지가 없어요")
     return FileResponse(p)
+
+
+@app.get("/refimg/inspire/{sid}")
+@app.get("/refimg/inspire/{sid}/{n}")
+def refimg_inspire(sid: str, n: int = 0):
+    """오늘의 영감 카드의 실제 페이지 사진 (이 PC에 받아 둔 것만, 화면 높이만큼씩 나눠 찍은 n번째 장). 없으면 404."""
+    from amoread.ai import inspire
+    f = inspire.shot_file(sid, n) if 0 <= n < 40 else None
+    if not f:
+        raise HTTPException(404, "없는 화면입니다.")
+    return FileResponse(f, media_type="image/jpeg", headers={"Cache-Control": "private, max-age=86400"})
 
 
 @app.get("/refimg/pin")
@@ -734,6 +745,8 @@ def main():
         try:
             from amoread.ai import discover
             discover.view()
+            from amoread.ai import inspire
+            inspire.candidates()   # 오늘의 영감 카드 후보도 미리 계산
         except Exception:
             pass
     threading.Thread(target=_warm, daemon=True).start()

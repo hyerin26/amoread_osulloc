@@ -137,6 +137,11 @@ def ai_capture(id: str = ""):
     if not _re.fullmatch(r"[A-Za-z0-9_.-]{1,60}", id or ""):
         return JSONResponse({"error": "잘못된 id예요"}, status_code=400)
     h = render.load_html(id)
+    if h is None:   # 오늘의 영감이 미리 받아 둔 새 프로모션 화면 (라이브러리에는 없는 것)
+        from . import inspire
+        h = inspire.load_preview(id)
+        if h is not None:
+            return {"html": h, "slim": True}   # 미리 받은 화면은 긴 상품 목록을 줄여 그린다 (요소 2만 개짜리 페이지에서 화면이 멈췄음)
     return {"html": h} if h is not None else JSONResponse({"error": "저장된 화면이 없어요"}, status_code=404)
 
 
@@ -263,3 +268,82 @@ def ai_intake_commit(req: CommitReq):
         return intake.commit(req.draft_id, req.model_dump(exclude={"draft_id"}))
     except intake.IntakeError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
+
+
+# ---------------- 오늘의 영감 (아침 카드 넘기기) ----------------
+class SwipeReq(BaseModel):
+    id: str = Field(pattern=r"^[A-Za-z0-9_:.\-]{1,80}$")
+    act: Literal["save", "pass", "undo"]
+
+
+class InspireEditReq(BaseModel):
+    id: str = Field(pattern=r"^[A-Za-z0-9_:.\-]{1,80}$")
+    memo: str | None = Field(default=None, max_length=300)
+    remove: bool = False
+
+
+@router.get("/inspire/deck")
+def inspire_deck(n: int = 12):
+    from . import inspire
+    return inspire.deck(max(1, min(30, n)))
+
+
+@router.post("/inspire/swipe")
+def inspire_swipe(req: SwipeReq):
+    from . import inspire
+    return inspire.swipe(req.id, req.act)
+
+
+@router.get("/inspire/saved")
+def inspire_saved():
+    from . import inspire
+    return inspire.saved()
+
+
+@router.post("/inspire/edit")
+def inspire_edit(req: InspireEditReq):
+    from . import inspire
+    return inspire.edit(req.id, req.memo, req.remove)
+
+
+@router.post("/inspire/reset")
+def inspire_reset():
+    from . import inspire
+    return inspire.reset_taste()
+
+
+@router.post("/inspire/prefetch")
+def inspire_prefetch():
+    """새 프로모션 카드의 실제 화면을 받아 온다 (백그라운드). 진행 상황은 GET으로."""
+    from . import inspire
+    return inspire.prefetch_start()
+
+
+@router.get("/inspire/prefetch")
+def inspire_prefetch_status():
+    from . import inspire
+    return inspire.prefetch_status()
+
+
+# ---------------- 매일 아침 자동 확인 켜기·끄기 (설정 화면) ----------------
+class AutoReq(BaseModel):
+    on: bool
+    at: str = Field(default="09:30", pattern=r"^\d{2}:\d{2}$")
+
+
+@router.get("/auto")
+def auto_status():
+    from . import autostart
+    return autostart.status()
+
+
+@router.post("/auto")
+def auto_set(req: AutoReq):
+    from . import autostart
+    return autostart.enable(req.at) if req.on else autostart.disable()
+
+
+@router.post("/auto/run")
+def auto_run():
+    from . import autostart
+    return autostart.run_now()

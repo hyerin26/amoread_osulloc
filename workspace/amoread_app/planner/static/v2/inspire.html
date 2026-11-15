@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="planner-token" content="__PLANNER_TOKEN__">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>오늘의 영감 · AMOREAD 새 버전</title>
+<!-- 디자인 기준: AMOREAD Green UI v2.5.1. 색·글자·간격은 앱의 tokens.css를 그대로 읽는다 -->
+<link rel="preload" href="/static/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/tokens.css">
+<link rel="stylesheet" href="/static/v2/shell.css">
+<link rel="stylesheet" href="/static/v2/capture.css">
+<link rel="stylesheet" href="/static/v2/library.css">
+<link rel="stylesheet" href="/static/v2/inspire.css">
+</head>
+<body>
+<header class="v2top">
+  <a class="v2logo" href="/v2/home"><i aria-hidden="true">a</i>AMOREAD</a>
+  <nav class="v2nav" aria-label="메뉴"><a href="/v2/home">홈</a><a href="/v2/library">레퍼런스</a><a href="/v2/inspire" aria-current="page">오늘의 영감</a></nav>
+  <span class="v2grow"></span><span class="v2date" id="v2date">새 버전 · 시험 중</span>
+  <a class="v2old" href="/">예전 화면</a>
+  <a class="v2gear" href="/v2/settings" aria-label="설정·데이터"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
+</header>
+<main class="page insp">
+  <div class="head"><div class="grow"><h1>오늘의 영감</h1>
+    <p>새로 올라온 프로모션에서 참고할 만한 것만 골랐어요. 오른쪽으로 밀면 저장, 왼쪽으로 밀면 넘겨요.</p></div>
+    <div class="seg" role="tablist" aria-label="보기" id="tabs"><button role="tab" data-view="deck" aria-selected="true">오늘의 카드</button><button role="tab" data-view="saved" aria-selected="false">보관함<span class="n" id="savedN">0</span></button></div></div>
+
+  <section id="deckView" aria-label="오늘의 카드">
+    <div class="deckwrap">
+      <div class="prog"><span id="progT" aria-live="polite"></span><span class="bar"><i id="progB"></i></span></div>
+      <div class="stack" id="stack" aria-live="polite"></div>
+      <div class="iacts" id="acts">
+        <button class="act pass" id="btnPass" aria-label="넘기기 (왼쪽 화살표 키)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>넘기기</span></button>
+        <button class="act undo" id="btnUndo" aria-label="방금 것 되돌리기 (Z 키)" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7H5V3M5 7a8 8 0 1 1-1.5 7"/></svg><span>되돌리기</span></button>
+        <button class="act save" id="btnSave" aria-label="저장 (오른쪽 화살표 키)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.6 5.3 5.8.85-4.2 4.1 1 5.8L12 16.9l-5.2 2.75 1-5.8-4.2-4.1 5.8-.85z"/></svg><span>저장</span></button>
+        <span class="keys">키보드 ← 넘기기 · → 저장 · Z 되돌리기</span>
+      </div>
+    </div>
+    <div class="side"><div class="noscrbar" id="noscr" hidden></div><aside class="taste" id="taste" aria-label="카드 읽는 법과 취향"></aside><p class="cap autonote" id="autoNote" hidden></p></div>
+  </section>
+
+  <section id="savedView" hidden aria-label="보관함">
+    <div class="sfilters" id="sfilters"></div>
+    <div class="sgrid" id="sgrid"></div>
+  </section>
+</main>
+
+<dialog id="pgDlg" aria-labelledby="pgH"><div class="dlg-h"><div class="grow"><div class="overline">실제 페이지</div><h2 id="pgH"></h2><p class="cap" id="pgS"></p></div>
+  <form method="dialog"><button class="btn sm">닫기</button></form></div><div class="dlg-b" id="pgB"></div></dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="/static/v2/shell.js"></script>
+<script src="/static/v2/api.js"></script>
+<script src="/static/v2/capture.js"></script>
+<script src="/static/v2/inspire.js"></script>
+</body>
+</html>
