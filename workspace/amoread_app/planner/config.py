@@ -16,6 +16,11 @@ from ops.core import config as core_config  # .env 로드도 여기서 됨
 
 PLANNER_DIR = Path(__file__).resolve().parent
 DATA_DIR = PLANNER_DIR / "data"
+
+# 신규 구좌편집기(v1.12) 화면 /v2/editor-next. AMOREAD_EDITOR_NEXT=0이면 화면과 기존 편집기의 진입 버튼을 끈다.
+# 편집기 파일은 저장소의 amoread_editor/editor/v1.12 (폴더가 없어도 꺼진다)
+EDITOR_NEXT = os.getenv("AMOREAD_EDITOR_NEXT", "1") != "0"
+EDITOR_NEXT_DIR = Path(os.getenv("AMOREAD_EDITOR_NEXT_DIR") or (PLANNER_DIR.parents[2] / "amoread_editor" / "editor" / "v1.12"))
 CACHE_DIR = DATA_DIR / "cache"
 PLANNER_JSON = DATA_DIR / "planner_data.json"
 REPORT_DIR = core_config.OUTPUT_DIR

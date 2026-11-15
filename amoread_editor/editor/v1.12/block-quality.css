@@ -1,0 +1,621 @@
+/* AMOREAD v1.12 / Customer-facing blueprint rhythm.
+   Inherits existing Green UI / editor spacing tokens; no design token mutation.
+   Scope: preview nodes and composable content, never inspector chrome. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) {
+  --cb-space-xs:var(--s1,4px);
+  --cb-space-sm:var(--s2,8px);
+  --cb-space-md:var(--s3,12px);
+  --cb-space-lg:var(--s4,16px);
+  --cb-space-xl:var(--s5,24px);
+  --cb-ink:var(--ink,#141414);
+  --cb-muted:var(--mute,#707070);
+  --cb-line:var(--line-sub,#ebebeb);
+  --cb-card:var(--surface,#fff);
+}
+/* Structure: space belongs to the parent, not accumulated child margins. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-dropzone {
+  display:grid;
+  gap:var(--cb-space-md);
+  min-width:0;
+  padding:var(--cb-space-sm);
+  margin:var(--cb-space-lg) 0 0;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-dropzone>.cb-node {
+  margin:0;
+  min-width:0;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-node {
+  box-sizing:border-box;
+  min-width:0;
+  height:auto;
+  align-self:stretch;
+  overflow-wrap:anywhere;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-node--group,
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-node--productGrid {
+  container-type:inline-size;
+  padding:0;
+  border-color:transparent;
+  background:transparent;
+  /* Container establishes responsive rules without overriding the stored choice. */
+}
+/* Group composition: three density tokens, independent inset and alignment. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group {
+  --cb-group-gap:var(--cb-space-md);
+  --cb-group-pad:var(--cb-space-md);
+  display:grid;
+  gap:var(--cb-group-gap);
+  padding:var(--cb-group-pad);
+  align-items:stretch;
+  align-content:start;
+  min-width:0;
+  width:100%;
+  box-sizing:border-box;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-gap-compact {--cb-group-gap:var(--cb-space-sm)}
+/* Match legacy .cb-group.cb-gap-* specificity. Previously that rule won and
+   all inspector choices could display 5/10/16px instead of 8/12/20px. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-gap-compact,
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-gap-normal,
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-gap-relaxed {gap:var(--cb-group-gap)}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-gap-normal {--cb-group-gap:var(--cb-space-md)}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-gap-relaxed {--cb-group-gap:20px}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-pad-compact {--cb-group-pad:var(--cb-space-sm)}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-pad-normal {--cb-group-pad:var(--cb-space-md)}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-pad-relaxed {--cb-group-pad:20px}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-align-start {align-items:start}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-align-center {align-items:center}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-direction-column {grid-template-columns:minmax(0,1fr)}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-direction-row {grid-template-columns:repeat(2,minmax(0,1fr))}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-direction-grid.cb-cols-2 {grid-template-columns:repeat(2,minmax(0,1fr))}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-direction-grid.cb-cols-3 {grid-template-columns:repeat(3,minmax(0,1fr))}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-direction-grid.cb-cols-4 {grid-template-columns:repeat(4,minmax(0,1fr))}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group>.cb-node {
+  margin:0;
+  min-width:0;
+  padding:0;
+  background:transparent;
+  border-color:transparent;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group>.cb-node:hover,
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group>.cb-node:focus-visible,
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group>.cb-node.cb-selected {
+  border-color:var(--sel-line,rgba(0,122,70,.32));
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group .cb-product-card {
+  padding:var(--cb-space-sm)!important;
+  gap:var(--cb-space-xs);
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group .mock-product-image {
+  margin:0 0 var(--cb-space-sm);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group .mock-card-name,
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group .mock-card-price {
+  font-size:12px;
+  line-height:1.45;
+  overflow-wrap:anywhere;
+}
+/* Alignment controls affect the children, not just the group container. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-align-start>.cb-node {align-self:start}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-align-center>.cb-node {align-self:center}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-align-stretch>.cb-node {align-self:stretch}
+/* Attributes: identity, economics, proof, and action have distinct visual rhythm. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-product-card {
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:var(--cb-space-xs);
+  padding:var(--cb-space-sm)!important;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-product-card>.mock-el {
+  margin:0!important;
+  min-width:0;
+  line-height:1.45;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-product-card>.mock-el--img {
+  margin-bottom:var(--cb-space-xs)!important;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-product-card>.mock-el--name {
+  font-weight:600;
+  margin-top:var(--cb-space-xs)!important;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-product-card>.mock-el--sale,
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-product-card>.mock-el--pct {
+  margin-top:0!important;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-product-card>.mock-el--rating,
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-product-card>.mock-el--review,
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-product-card>.mock-el--copy {
+  margin-top:var(--cb-space-xs)!important;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-product-card>.mock-el--btn {
+  margin-top:var(--cb-space-sm)!important;
+}
+/* Text, benefit, notice, review, and CTA are complete blocks rather than loose labels. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-text {
+  line-height:1.6;
+  white-space:pre-wrap;
+  word-break:keep-all;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-role-heading {font-size:18px;line-height:1.42;font-weight:650}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-role-body {font-size:13px;line-height:1.6}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-role-caption {font-size:11px;line-height:1.55;color:var(--cb-muted)}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-benefit {
+  display:grid;
+  gap:var(--cb-space-xs);
+  padding:var(--cb-space-md);
+  border:1px solid var(--cb-line);
+  border-radius:var(--r2,8px);
+  background:var(--cb-card);
+  text-align:left;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-benefit>small {font-size:10px;line-height:16px;color:var(--cb-muted);letter-spacing:.04em}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-benefit>strong {font-size:12px;line-height:18px;color:var(--cb-ink);font-weight:600}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-benefit>b {font-size:18px;line-height:1.35;color:var(--accent,#007a46);font-weight:700}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-benefit>p {padding-top:var(--cb-space-xs);border-top:1px solid var(--cb-line);color:var(--cb-muted);line-height:1.5;font-size:11px;white-space:pre-wrap}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-review {
+  display:grid;
+  gap:var(--cb-space-sm);
+  padding:var(--cb-space-md);
+  border:1px solid var(--cb-line);
+  border-radius:var(--r2,8px);
+  background:var(--cb-card);
+  font-size:12px;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-review>strong {font-size:12px;line-height:1.45}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-review>span {font-size:11px;color:var(--cb-ink)}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-review>p {margin:0;line-height:1.6;white-space:pre-wrap}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-notice {
+  display:grid;
+  grid-template-columns:14px minmax(0,1fr);
+  gap:var(--cb-space-sm);
+  padding:var(--cb-space-md);
+  background:var(--sunken,#f7f7f7);
+  border-radius:var(--r2,8px);
+  color:var(--cb-muted);
+  font-size:11px;
+  line-height:1.55;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-notice>p {margin:0;white-space:pre-wrap}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-cta-wrap {min-width:0;margin-top:var(--cb-space-sm)}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-cta-wrap .cb-action {min-height:36px;padding:9px 14px;font-size:12px;line-height:1.5}
+/* Responsive structure: respect persisted requested columns, but prevent 80px cards
+   inside nested groups. No data changes occur when the responsive layout folds. */
+@container (max-width: 260px) {
+  .cb-group.cb-direction-row {grid-template-columns:minmax(0,1fr)}
+  .cb-group.cb-direction-grid.cb-cols-2 {grid-template-columns:minmax(0,1fr)}
+  .cb-group.cb-direction-grid.cb-cols-3 {grid-template-columns:minmax(0,1fr)}
+  .cb-group.cb-direction-grid.cb-cols-4 {grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce) {
+  :where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-node {transition:none}
+}
+
+/* Native section compositions use the same relationship-based rhythm.
+   The frame itself (not browser width) decides narrow variants. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block {
+  container-type:inline-size;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block > :is(.mock-products,.am-flow-info-list,.am-flow-info-banner,.am-flow-info-hero,.am-flow-info-split,.mock-review-shell,.mock-event,.cb-dropzone) {
+  margin-top:var(--cb-space-lg);
+  margin-bottom:0;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block > .mock-cta {
+  display:block;
+  margin-top:var(--cb-space-lg);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list {
+  gap:var(--cb-space-md);
+  align-items:stretch;
+  min-width:0;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list .am-flow-info-item {
+  min-width:0;
+  min-height:0;
+  align-content:start;
+  gap:var(--cb-space-sm);
+  padding:var(--cb-space-md);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list .am-flow-info-item > div:last-child {
+  gap:var(--cb-space-xs);
+  align-content:start;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list .am-flow-info-item strong {
+  font-size:12px;
+  line-height:1.48;
+  overflow-wrap:anywhere;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list .am-flow-info-item small {
+  font-size:11px;
+  line-height:1.55;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list .am-flow-info-item em {
+  font-size:10px;
+  line-height:1.5;
+  padding-left:var(--cb-space-sm);
+  border-left:2px solid var(--cb-line);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list.density-compact .am-flow-info-item {
+  gap:var(--cb-space-xs);
+  padding:var(--cb-space-sm);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list.density-spacious .am-flow-info-item {
+  gap:var(--cb-space-md);
+  padding:var(--cb-space-lg);
+}
+/* Preserve left/right copy priority of split layouts across ratios. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-split {gap:var(--cb-space-md);align-items:center}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-split.ratio-half {grid-template-columns:repeat(2,minmax(0,1fr))}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-split.ratio-visual {grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-split.ratio-copy {grid-template-columns:minmax(0,1fr) minmax(0,2fr)}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-split.right.ratio-visual {grid-template-columns:minmax(0,1fr) minmax(0,2fr)}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-split.right.ratio-copy {grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-split.top {grid-template-columns:minmax(0,1fr)}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-split-copy {min-width:0;gap:var(--cb-space-sm);padding:0}
+/* Image+copy inside a two/three-card grid should stack within each card. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list.cols-2.image-left .am-flow-info-item,
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list.cols-2.image-right .am-flow-info-item,
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list.cols-3.image-left .am-flow-info-item,
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list.cols-3.image-right .am-flow-info-item {
+  grid-template-columns:minmax(0,1fr);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list.cols-2.image-right .am-flow-img-ghost,
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list.cols-3.image-right .am-flow-img-ghost {order:0}
+/* Compact three-column benefit cards maintain a true three-column composition
+   inside the 340px preview rather than unexpectedly collapsing to two. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list--benefit.cols-3 {
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:var(--cb-space-sm);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list--benefit.cols-3>.am-flow-info-item {
+  min-width:0;
+  padding:var(--cb-space-sm);
+  gap:var(--cb-space-xs);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list--benefit.cols-3 strong {
+  font-size:11px;
+  line-height:1.45;
+  word-break:keep-all;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list--benefit.cols-3 small {
+  font-size:10px;
+  line-height:1.5;
+  overflow-wrap:anywhere;
+}
+
+/* Responsive fallback runs against the 340px design frame, not the desktop app viewport. */
+@container (max-width: 275px) {
+  .am-flow-info-list.cols-2,.am-flow-info-list.cols-3 {grid-template-columns:minmax(0,1fr)}
+  .am-flow-info-split:not(.top) {grid-template-columns:minmax(0,1fr)}
+  .am-flow-info-split.right .am-flow-img-ghost {order:0}
+  .mock-products.am-cols-3:not(.am-product-view-carousel):not(.am-product-view-masonry):not(.am-product-view-list) {grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* 2026-11-14 settings contract: user-selected columns remain visible as chosen
+   in the standard 340px editing frame; only ultra-narrow previews may reflow. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list.cols-3 {
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:var(--s2,8px);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list.cols-3>.am-flow-info-item {
+  padding:var(--s2,8px);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .mock-products.am-cols-4:not(.am-product-view-carousel):not(.am-product-view-masonry):not(.am-product-view-list) {
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:var(--s1,4px);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .mock-products.am-cols-4:not(.am-product-view-carousel):not(.am-product-view-masonry)>.mock-product {
+  padding:3px;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-direction-grid.cb-cols-4 {
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-direction-grid.cb-cols-3 {
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+/* Section-level gap options actually govern their rendered information and product lists. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block.am-gap-compact>.am-flow-info-list {
+  gap:var(--s1,4px);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block.am-gap-normal>.am-flow-info-list {
+  gap:var(--s2,8px);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block.am-gap-relaxed>.am-flow-info-list {
+  gap:var(--s4,16px);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block.am-align-center .am-flow-info-item>div:last-child {
+  text-align:center;
+  justify-items:center;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block.am-align-left .am-flow-info-item>div:last-child {
+  text-align:left;
+  justify-items:start;
+}
+/* Hero visual placement is independent of the image-ratio control.
+   Hero height selects surrounding breathing room; image aspect is preserved. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-hero {
+  min-width:0;
+  padding:0;
+  align-items:start;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-hero.height-small {padding-block:0}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-hero.height-medium {padding-block:var(--s2,8px)}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-hero.height-large {padding-block:var(--s4,16px)}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-hero.position-top {grid-template-columns:minmax(0,1fr)}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-hero.position-side {
+  grid-template-columns:minmax(0,1.8fr) minmax(0,1fr);
+  align-items:center;
+  gap:var(--s3,12px);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-hero.position-side>small {
+  overflow-wrap:anywhere;
+  font-size:11px;
+  line-height:1.55;
+  color:var(--ink2,#555);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-hero.position-background {
+  position:relative;
+  grid-template-columns:minmax(0,1fr);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-hero.position-background>small {
+  position:absolute;
+  left:var(--s3,12px);
+  bottom:calc(var(--s3,12px) + var(--s4,16px));
+  max-width:calc(100% - 24px);
+  padding:var(--s2,8px);
+  background:rgba(255,255,255,.93);
+  border-radius:var(--r2,8px);
+  line-height:1.5;
+  overflow-wrap:anywhere;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list.image-alternate .am-flow-info-item:nth-child(even)>.am-flow-img-ghost {
+  order:2;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list:is(.am-flow-info-list--service,.am-flow-info-list--detail).image-alternate.cols-1>.am-flow-info-item {
+  grid-template-columns:minmax(0,45fr) minmax(0,55fr);
+}
+/* Previously the accordion density control only affected the plain-list view. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-ed-accordion-list.density-compact {gap:var(--s1,4px)}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-ed-accordion-list.density-compact summary {padding:var(--s2,8px) var(--s3,12px);min-height:40px}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-ed-accordion-list.density-compact .am-ed-accordion-content {padding:0 var(--s3,12px) var(--s2,8px)}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-ed-accordion-list.density-spacious {gap:var(--s3,12px)}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-ed-accordion-list.density-spacious summary {padding:var(--s4,16px);min-height:56px}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-ed-accordion-list.density-spacious .am-ed-accordion-content {padding:0 var(--s4,16px) var(--s4,16px)}
+
+/* Container fallback must match the 3-class ratio selectors above; otherwise
+   .am-flow-info-split.right.ratio-visual overrides the narrow single-column rule. */
+@container (max-width:260px) {
+  :where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-split:not(.top).ratio-half,
+  :where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-split:not(.top).ratio-visual,
+  :where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-split:not(.top).ratio-copy {
+    grid-template-columns:minmax(0,1fr);
+  }
+}
+/* Small embedded thumbnails below 260px may stack: never overflow the canvas. */
+@container (max-width:260px) {
+  :where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list.cols-3,
+  :where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list.cols-2 {
+    grid-template-columns:minmax(0,1fr);
+  }
+  :where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-direction-grid.cb-cols-4,
+  :where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-direction-grid.cb-cols-3 {
+    grid-template-columns:minmax(0,1fr);
+  }
+}
+
+/* Benefit kind maps the inspector's discount/gift/shipping/points choice to a
+   recognizable customer-facing metadata chip. No arbitrary icon color mapping. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-item .am-benefit-kind {
+ display:inline-flex;
+ justify-self:start;
+ width:max-content;
+ max-width:100%;
+ margin:0;
+ padding:2px var(--s2,8px);
+ border:1px solid var(--line-sub,#ebebeb);
+ border-radius:var(--r2,8px);
+ background:var(--sunken,#f7f7f7);
+ color:var(--ink2,#555);
+ font-size:10px;
+ line-height:1.35;
+ font-weight:600;
+ white-space:nowrap;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-list--benefit.cols-3 .am-benefit-kind {
+ padding:2px var(--s1,4px);
+ font-size:9px;
+}
+
+/* Dense product-card choice must affect information rhythm while preserving the
+   independently chosen image ratio. Do not force compact media to square. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-product-card.cb-compact {
+  padding:var(--s1,4px)!important;
+  gap:2px;
+  font-size:10px;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-product-card.cb-compact>.mock-el--img {
+  margin-bottom:2px!important;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-product-card.cb-compact .mock-card-name {
+  font-size:10px;
+  line-height:1.35;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-product-card.cb-compact .mock-card-price {
+  font-size:11px;
+  line-height:1.35;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-product-card.cb-compact .mock-card-quote,
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-product-card.cb-compact .mock-card-copy {
+  font-size:10px;
+  line-height:1.4;
+}
+
+/* Alignment contract: horizontal placement, not only text-align on inner copy.
+   The old option changed the label inside benefit cards but left the section
+   heading, CTA and the actual component position untouched. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block.am-align-center > :is(h3,p) {
+ text-align:center;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block.am-align-center > h3 {
+ /* Symmetric title insets prevent the '편집 중' badge clearance from shifting
+    the visible center approximately 24px to the left. */
+ padding-inline:49px;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block.am-align-right > :is(h3,p) {
+ text-align:right;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block.am-align-center > .mock-cta:not(.mock-cta--wide) {
+ display:table;
+ width:max-content;
+ max-width:100%;
+ margin-inline:auto;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block.am-align-right > .mock-cta:not(.mock-cta--wide) {
+ display:table;
+ width:max-content;
+ max-width:100%;
+ margin-left:auto;
+ margin-right:0;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block.am-align-center .am-flow-info-item > div:last-child {
+ display:grid;
+ justify-items:center;
+ text-align:center;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block.am-align-right .am-flow-info-item > div:last-child {
+ display:grid;
+ justify-items:end;
+ text-align:right;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block.am-align-left .am-flow-info-item > div:last-child {
+ display:grid;
+ justify-items:start;
+ text-align:left;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block.am-align-center .mock-element-stack .mock-item {
+ text-align:center;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block.am-align-right .mock-element-stack .mock-item {
+ text-align:right;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block.am-align-center .am-flow-info-list > .am-flow-footnote {
+ text-align:center;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block.am-align-right .am-flow-info-list > .am-flow-footnote {
+ text-align:right;
+}
+/* Text+CTA inner composition has its own positional alignment independent
+   from the outer section copy alignment. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-text.align-left {
+ text-align:left;
+ justify-items:start;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-text.align-center {
+ text-align:center;
+ justify-items:center;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-flow-info-text.align-right {
+ text-align:right;
+ justify-items:end;
+}
+/* Grid 'align' refers to horizontal position inside the available track.
+   Preserve full-width product cards so centered rows don't shrink their images. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-align-start {
+ justify-items:start;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-align-center {
+ justify-items:center;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-align-stretch {
+ justify-items:stretch;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-align-center > .cb-node:not(.cb-node--productCard):not(.cb-node--productGrid):not(.cb-node--group) {
+ justify-self:center;
+ width:fit-content;
+ max-width:100%;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .cb-group.cb-align-center > .cb-node:is(.cb-node--productCard,.cb-node--productGrid,.cb-node--group) {
+ justify-self:stretch;
+}
+
+/* Linked service settings: image position remains effective in accordion mode.
+   Images are intentional placeholders, never fabricated product photographs. */
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-accordion-visual {
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  align-items:start;
+  min-width:0;
+  gap:var(--s3,12px);
+  padding-top:var(--s3,12px);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-accordion-visual:is(.image-left,.image-right) {
+  grid-template-columns:minmax(0,2fr) minmax(0,3fr);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-accordion-visual.image-right > .am-accordion-img-ghost {
+  order:2;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-accordion-visual .am-accordion-img-ghost {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:var(--s1,4px);
+  min-width:0;
+  min-height:76px;
+  margin:0;
+  padding:var(--s2,8px);
+  border-radius:var(--r2,8px);
+  font-size:10px;
+  text-align:center;
+  overflow-wrap:anywhere;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-accordion-visual.image-top .am-accordion-img-ghost {
+  min-height:104px;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-accordion-img-ghost small {
+  font-size:10px;
+  line-height:1.35;
+  color:var(--ink2,#555);
+  overflow-wrap:anywhere;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-accordion-visual .am-accordion-copy {
+  display:grid;
+  align-content:start;
+  justify-items:start;
+  min-width:0;
+  gap:var(--s2,8px);
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-accordion-visual .am-accordion-copy p {
+  padding-top:0;
+  margin:0;
+  line-height:1.55;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-accordion-visual .am-accordion-copy small {
+  display:block;
+  margin:0;
+  line-height:1.5;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-accordion-visual .am-accordion-copy .am-accordion-warning {
+  color:var(--err,#aa3322);
+  font-weight:600;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block.am-align-center .am-accordion-copy {
+  justify-items:center;
+  text-align:center;
+}
+:where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .preview-block.am-align-right .am-accordion-copy {
+  justify-items:end;
+  text-align:right;
+}
+/* Compact previews reflow image-left/right to avoid unreadable ~80px columns. */
+@container (max-width:260px) {
+ :where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-accordion-visual:is(.image-left,.image-right) {
+   grid-template-columns:minmax(0,1fr);
+ }
+ :where(#page,.am-ed-mini-contents,.am-ed-full-preview-content,.am-ed-detail-canvas) .am-accordion-visual.image-right > .am-accordion-img-ghost {
+   order:0;
+ }
+}

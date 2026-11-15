@@ -1,0 +1,189 @@
+/* AMOREAD Editor Kit v1.12 (not storefront UI). All colors/space/type use canonical
+   Green UI semantic roles via the local Lab aliases, no new global :root tokens. */
+.workspace {--am-kit-rad:var(--r2);--am-kit-min-hit:36px;--am-kit-focus:var(--accent)}
+.am-kit-sprite{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
+.am-kit-icon{height:18px;width:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle}
+.am-kit-icon--sm{height:15px;width:15px}.am-kit-icon--lg{height:20px;width:20px}
+/* Primary navigation is the main navigation level, not a pill/button set. */
+.ia-groups.am-kit-primary-nav{display:flex;gap:2px;overflow-x:auto;padding:10px 10px 0;background:var(--surface);border-bottom:1px solid var(--line);scrollbar-width:thin}
+.ia-groups.am-kit-primary-nav .ia-group-btn{min-height:43px;border:0;border-bottom:3px solid transparent;border-radius:0;padding:9px 12px;background:transparent;color:var(--ink2);font-size:var(--fs-sm);font-weight:var(--fw-medium);transition:background .12s ease,color .12s ease}
+.ia-groups.am-kit-primary-nav .ia-group-btn:hover{background:var(--hover)}
+.ia-groups.am-kit-primary-nav .ia-group-btn[aria-selected=true],.ia-groups.am-kit-primary-nav .ia-group-btn[aria-pressed=true]{color:var(--accent);font-weight:var(--fw-strong);border-bottom-color:var(--accent);background:transparent}
+/* Subnavigation has a textual label and inset separation. A single child is a heading, not a second button. */
+.ia-subtabs.am-kit-subnav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-height:36px;padding:8px 14px 10px;background:var(--sunken);border-bottom:1px solid var(--line-sub)}
+.am-kit-subnav-label{font-size:var(--fs-cap);font-weight:var(--fw-medium);color:var(--mute);padding-right:7px;border-right:1px solid var(--line);margin-right:4px}
+.ia-subtabs.am-kit-subnav .ia-subtab{font-size:var(--fs-cap);min-height:28px;padding:4px 9px;border:0;border-radius:5px;background:transparent;color:var(--ink2);font-weight:var(--fw-medium)}
+.ia-subtabs.am-kit-subnav .ia-subtab[aria-selected=true]{color:var(--accent);background:var(--surface);font-weight:var(--fw-strong);box-shadow:inset 0 0 0 1px var(--line)}
+.ia-subtabs.am-kit-subnav .ia-subtab:hover:not([aria-selected=true]){background:var(--hover)}
+.ia-subtabs.am-kit-subheading{display:flex;align-items:center;padding:10px 18px 8px;border-bottom:1px solid var(--line-sub);background:var(--surface);min-height:35px}
+.am-kit-single-heading{color:var(--ink2);font-weight:var(--fw-medium);font-size:var(--fs-cap);display:flex;align-items:center;gap:6px}
+.am-kit-single-heading .am-kit-icon{color:var(--mute)}
+/* Hierarchy tree: independent caret action, selected item, and action tray. */
+.ia-tree-section .ia-tree-toggle{display:flex;align-items:center;justify-content:center;width:28px;height:36px;min-height:36px;border:0;border-radius:6px;color:var(--ink2);background:transparent;padding:0;transition:background .12s ease}
+.ia-tree-toggle .am-kit-icon{width:16px;height:16px;transition:transform .12s ease}
+.ia-tree-toggle[aria-expanded=true] .am-kit-icon{transform:rotate(90deg)}
+.ia-tree-toggle:hover{background:var(--hover)}
+.ia-tree-section .outline-entry{grid-template-columns:28px minmax(0,1fr);column-gap:4px}
+.ia-tree-section .outline-entry-actions button{min-width:30px;min-height:30px;display:inline-flex;align-items:center;justify-content:center}
+.ia-tree-section .outline-entry-actions button .am-kit-icon{width:15px;height:15px}
+.ia-tree-node{display:flex;align-items:center;gap:8px;min-height:38px;line-height:1.4}
+.ia-tree-node .am-kit-icon{width:16px;height:16px;color:var(--mute)}
+.ia-tree-node[aria-current=true] .am-kit-icon{color:var(--accent)}
+/* Work-mode rail: icons have common 20px geometry and distinct pressed state. */
+.cb-rail button{min-height:60px;display:grid;justify-items:center;align-content:center;gap:5px}
+.cb-rail button .am-kit-icon{width:19px;height:19px}
+.cb-rail button[aria-pressed=true]{background:var(--accent-soft);color:var(--accent);border-color:var(--sel-line)}
+/* Editor switch: immediate on/off; other multi-select checkboxes remain native. */
+.inspector .am-ed-toggle{display:flex;align-items:center;gap:12px;cursor:pointer}
+.inspector .am-ed-toggle input[type=checkbox]{appearance:none;-webkit-appearance:none;display:inline-block;width:38px;height:22px;min-width:38px;border-radius:12px;border:1px solid var(--line-strong);background:var(--line);position:relative;margin:0;cursor:pointer;transition:background .12s ease,border-color .12s ease}
+.inspector .am-ed-toggle input[type=checkbox]::before{content:"";position:absolute;width:16px;height:16px;top:2px;left:2px;border-radius:50%;background:var(--surface);box-shadow:0 1px 2px var(--shade);transition:transform .12s ease}
+.inspector .am-ed-toggle input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+.inspector .am-ed-toggle input[type=checkbox]:checked::before{transform:translateX(16px)}
+.inspector .am-ed-toggle input[type=checkbox]:disabled{opacity:.46;cursor:not-allowed}
+.inspector .am-ed-toggle input[type=checkbox]:focus-visible{outline:2px solid var(--am-kit-focus);outline-offset:3px}
+.inspector .am-ed-toggle:has(input:disabled){opacity:.7;cursor:not-allowed}
+/* Shared status, button, chip and field feedback rules (no custom palette). */
+.am-ed-button,.am-ed-icon-btn,.am-ed-choice button,.ia-tree-node,.ia-group-btn,.ia-subtab,.am-ed-input,.am-ed-textarea{transition:border-color .12s ease,background-color .12s ease,color .12s ease}
+.workspace button:focus-visible,.workspace input:focus-visible,.workspace select:focus-visible,.workspace textarea:focus-visible,dialog button:focus-visible{outline:2px solid var(--am-kit-focus,var(--accent));outline-offset:2px}
+.workspace button:disabled,.workspace input:disabled{cursor:not-allowed;opacity:.5}
+.workspace [aria-busy=true]{cursor:progress}
+.am-ed-field:has([aria-invalid=true]) .am-ed-input,.am-ed-field:has([aria-invalid=true]) .am-ed-textarea{border-color:var(--err)}
+.am-kit-skeleton{background:var(--sunken);border-radius:var(--r2);overflow:hidden;position:relative}
+.am-kit-skeleton:before{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,var(--surface),transparent);animation:amKitShimmer 1.6s ease-in-out infinite;opacity:.65}
+@keyframes amKitShimmer{to{transform:translateX(100%)}}
+@keyframes amKitFlash{0%,100%{outline-color:transparent}20%,75%{outline-color:var(--accent)}}
+#page .am-kit-preview-target{outline:3px solid transparent;outline-offset:3px;animation:amKitFlash 1.2s ease-in-out}
+@media(prefers-reduced-motion:reduce){.am-kit-skeleton:before{animation:none}.am-kit-preview-target{animation:none!important;outline:2px solid var(--accent)!important}.am-kit-icon,.inspector .am-ed-toggle input[type=checkbox]::before,.inspector .am-ed-toggle input[type=checkbox],.ia-groups .ia-group-btn{transition:none!important}}
+@media(max-width:820px){.ia-groups.am-kit-primary-nav{padding:8px 8px 0}.ia-groups.am-kit-primary-nav .ia-group-btn{min-height:44px}.ia-tree-node{min-height:44px}.ia-tree-toggle{min-height:42px}}
+
+
+/* ================================================================
+   AMOREAD editor-only primitives and composition contracts v1.12
+   Values alias canonical Green UI; no edits to tokens.demo.css or tokens.css.
+   ================================================================ */
+.workspace, .am-ed-picker, .am-ed-full-preview-dialog, .ia-qa-dialog, .am-kit-gallery {
+  --ed-space-1:var(--s1,4px);--ed-space-2:var(--s2,8px);
+  --ed-space-3:var(--s3,12px);--ed-space-4:var(--s4,16px);
+  --ed-space-5:var(--s5,24px);--ed-space-6:var(--s6,32px);
+  --ed-gap-icon:var(--s2,8px);--ed-gap-label:var(--s1,4px);
+  --ed-gap-fields:var(--s3,12px);--ed-gap-groups:var(--s5,24px);
+  --ed-pad-control-inline:var(--s3,12px);
+  --ed-pad-card:var(--s3,12px);--ed-pad-panel:var(--s-panel,20px);
+  --ed-control-sm:var(--control-sm,32px);--ed-control-md:var(--control-md,36px);
+  --ed-control-lg:var(--control-lg,44px);--ed-radius:var(--r2,8px);
+  --ed-focus-ring:2px solid var(--accent);--ed-focus-offset:2px;
+}
+/* Vertical rhythm. Keep adjacent rules together and groups separated. */
+.inspector .panel-body {padding-inline:var(--ed-pad-panel)}
+.inspector .am-ed-group{padding-block:var(--ed-gap-groups) var(--ed-space-3)}
+.inspector .am-ed-group + .am-ed-group{margin-top:var(--ed-space-2)}
+.inspector .am-ed-group__title{gap:var(--ed-space-2);margin-bottom:var(--ed-space-2)}
+.inspector .am-ed-group__description{margin:0 0 var(--ed-space-4);line-height:var(--lh-cap)}
+.inspector .am-ed-stack{display:grid;gap:var(--ed-gap-fields)}
+.inspector .am-ed-field{display:grid;gap:var(--ed-gap-label);margin:0;min-width:0}
+.inspector .am-ed-field-meta{gap:var(--ed-space-2);margin-top:0;align-items:start}
+.inspector .am-ed-support{overflow-wrap:anywhere;line-height:var(--lh-cap)}
+/* Field state. Focus is never communicated by color alone; helper and error stay adjacent. */
+.inspector :is(.am-ed-input,.am-ed-select,.am-ed-textarea),
+.am-ed-picker :is(.am-ed-input,.am-ed-select,.am-ed-textarea){
+  padding-inline:var(--ed-pad-control-inline);border-radius:var(--ed-radius);
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  transition:border-color .12s ease,box-shadow .12s ease,background .12s ease;
+}
+.inspector :is(.am-ed-input,.am-ed-select,.am-ed-textarea):hover:not(:disabled):not(:read-only){border-color:var(--line-strong)}
+.inspector :is(.am-ed-input,.am-ed-select,.am-ed-textarea):focus-visible,
+.am-ed-picker :is(.am-ed-input,.am-ed-select,.am-ed-textarea):focus-visible{
+  outline:var(--ed-focus-ring);outline-offset:var(--ed-focus-offset);border-color:var(--accent)!important;
+}
+.inspector :is(.am-ed-input,.am-ed-select,.am-ed-textarea):disabled{background:var(--sunken);color:var(--mute);opacity:1;cursor:not-allowed}
+.inspector :is(.am-ed-input,.am-ed-select,.am-ed-textarea):read-only{background:var(--sunken);cursor:default}
+.inspector :is(.am-ed-input,.am-ed-select,.am-ed-textarea)[aria-invalid=true],
+.inspector .am-ed-field[data-state=invalid] :is(.am-ed-input,.am-ed-select,.am-ed-textarea){border-color:var(--err)!important;background:var(--err-soft)}
+.inspector .am-ed-field[data-state=invalid] .am-ed-field-meta,.am-ed-validation{color:var(--err);font-size:var(--fs-cap)}
+/* Buttons / toolbars. Selection is not an action variant; use Tabs and Choice for that. */
+.workspace :is(.am-ed-button,.am-ed-icon-btn){display:inline-flex;align-items:center;justify-content:center;gap:var(--ed-gap-icon);border-radius:var(--ed-radius);min-height:var(--ed-control-md);line-height:1.3;white-space:normal}
+.workspace .am-ed-button--sm{min-height:var(--ed-control-sm)}
+.workspace .am-ed-button--primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.workspace .am-ed-button--primary:hover:not(:disabled){filter:brightness(.93)}
+.workspace .am-ed-button--primary:active:not(:disabled){filter:brightness(.88)}
+.workspace .am-ed-button--subtle:hover:not(:disabled),.workspace .am-ed-icon-btn:hover:not(:disabled){background:var(--hover);border-color:var(--line-strong)}
+.workspace :is(.am-ed-button,.am-ed-icon-btn):active:not(:disabled){transform:translateY(1px)}
+.workspace :is(.am-ed-button,.am-ed-icon-btn):disabled{opacity:.46;cursor:not-allowed;transform:none}
+.workspace .am-ed-button--danger:hover:not(:disabled){background:var(--err-soft)}
+.workspace .am-ed-actionrow{gap:var(--ed-space-2)}
+/* Tree/navigation: nested rows use indentation and edge feedback, not multiple full badges. */
+.ia-tree-section{margin-bottom:var(--ed-space-1)}
+.ia-tree-section .outline-entry{column-gap:var(--ed-space-1)}
+.ia-tree-section .ia-tree-children{margin-block:var(--ed-space-1) var(--ed-space-3);padding-left:var(--ed-space-3)}
+.ia-tree-node{gap:var(--ed-gap-icon);padding-block:var(--ed-space-2);padding-inline:var(--ed-space-2)}
+.ia-tree-node:hover:not([aria-current=true]){background:var(--hover)}
+.ia-tree-node[aria-current=true]{background:var(--accent-soft);border-color:var(--sel-line)}
+.ia-tree-node[aria-current=true]::before{content:'';height:18px;width:2px;border-radius:2px;background:var(--accent);margin-left:-4px}
+.ia-tree-toggle{cursor:pointer}
+.ia-tree-toggle:focus-visible,.ia-tree-node:focus-visible{outline:var(--ed-focus-ring);outline-offset:var(--ed-focus-offset)}
+/* Single, multi and filter choice. Distinguish selection state from execution buttons. */
+.inspector .am-ed-choice,.inspector .am-ed-column-picker,.inspector .am-ed-product-layouts{gap:var(--ed-space-2)}
+.inspector .am-ed-choice button{min-height:var(--ed-control-md);padding:var(--ed-space-2) var(--ed-space-3)}
+.inspector .am-ed-choice button:hover:not([aria-pressed=true]):not(:disabled){background:var(--hover);border-color:var(--line-strong)}
+.inspector .am-ed-choice button[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.inspector .am-ed-choice button:disabled{opacity:.5}
+/* Switch immediacy vs checkbox selection. Native checkbox is intentionally preserved in multiselect lists. */
+.inspector .am-ed-toggle{min-height:var(--ed-control-lg);gap:var(--ed-space-3);padding-block:var(--ed-space-2)}
+.inspector :is(.am-ed-element-row,.am-ed-product-row) input[type=checkbox]{accent-color:var(--accent);min-width:16px;min-height:16px}
+.inspector input[type=checkbox]:focus-visible{outline:var(--ed-focus-ring);outline-offset:var(--ed-focus-offset)}
+/* Repeat item / inspector content card. No extra margin between nested fields. */
+.inspector .am-ed-repeat{margin:0 0 var(--ed-space-2)}
+.inspector .am-ed-repeat__header{gap:var(--ed-space-2);padding:var(--ed-space-3)}
+.inspector .am-ed-repeat__body{padding:var(--ed-space-3);border-top:1px solid var(--line-sub)}
+.inspector .am-ed-element-row,.inspector .am-ed-product-row{gap:var(--ed-space-2);padding:var(--ed-space-2) var(--ed-space-3);margin-bottom:var(--ed-space-2)}
+.inspector .am-ed-ref,.inspector .am-ed-callout{gap:var(--ed-space-3);padding:var(--ed-pad-card)}
+/* Selection catalog / cards / dialogs / accordion / toast share states and spacing. */
+.am-ed-picker .am-ed-picker-card{padding:var(--ed-pad-card);gap:var(--ed-space-2);border-radius:var(--ed-radius)}
+.am-ed-picker .am-ed-picker-card:hover:not([aria-pressed=true]){border-color:var(--line-strong);background:var(--hover)}
+.am-ed-picker .am-ed-picker-card[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft)}
+.am-ed-picker .am-ed-picker-results{column-gap:var(--ed-space-3);row-gap:var(--ed-space-3)}
+.am-ed-picker .am-ed-picker-foot{gap:var(--ed-space-3);padding:var(--ed-space-3) var(--ed-space-5)}
+.ia-advanced{margin-block:var(--ed-space-3)}
+.ia-advanced summary{padding:var(--ed-space-3);display:flex;align-items:center;gap:var(--ed-space-2)}
+.ia-advanced summary:focus-visible{outline:var(--ed-focus-ring);outline-offset:var(--ed-focus-offset)}
+.ia-advanced[open]>summary{border-bottom:1px solid var(--line-sub)}
+.ia-qa-item{padding:var(--ed-pad-card);gap:var(--ed-space-1)}
+.ia-qa-item:hover{border-color:var(--accent);background:var(--hover)}
+.am-ed-note,.am-ed-callout,.am-ed-destination{overflow-wrap:anywhere}
+.am-ed-field-meta:empty{display:none}
+/* Notification, placeholder, status, progress and drop zone. */
+.am-kit-empty{display:grid;justify-items:center;text-align:center;gap:var(--ed-space-2);padding:var(--ed-space-5);background:var(--sunken);border-radius:var(--ed-radius);font-size:var(--fs-sm);color:var(--ink2)}
+.am-kit-empty .am-kit-icon{color:var(--mute)}
+.am-kit-helper{display:block;color:var(--mute);font-size:var(--fs-cap);line-height:var(--lh-cap)}
+.am-kit-status[data-tone=error]{color:var(--err)}
+.am-kit-status[data-tone=success]{color:var(--ok)}
+.am-kit-status[data-tone=warning]{color:var(--warn)}
+.cb-dropzone{border-style:dashed;transition:border-color .12s ease,background .12s ease}
+.cb-dropzone.cb-drag-over{background:var(--accent-soft);outline:2px solid var(--accent);outline-offset:2px}
+.toast{z-index:90;max-width:min(380px,calc(100vw - 40px));line-height:var(--lh-body)}
+/* Gallery-only staging styles. Uses exactly same component classes and token aliases. */
+.am-kit-gallery{font-family:var(--font);color:var(--ink);background:var(--bg);padding:var(--ed-space-5);max-width:1200px;margin:auto}
+.am-kit-gallery h1{font-size:var(--fs-h1);margin:0 0 var(--ed-space-2)}
+.am-kit-gallery h2{font-size:var(--fs-h2);margin:0 0 var(--ed-space-3)}
+.am-kit-gallery p{font-size:var(--fs-sm);line-height:1.6}
+.am-kit-gallery__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(275px,1fr));gap:var(--ed-space-4);margin-top:var(--ed-space-5)}
+.am-kit-gallery__card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:var(--ed-space-4);display:grid;gap:var(--ed-space-3);align-content:start;min-width:0}
+.am-kit-gallery__card .am-ed-button{display:inline-flex;align-items:center;justify-content:center;min-height:36px;gap:8px;padding:8px 12px;border-radius:var(--r2)}
+.am-kit-gallery__row{display:flex;gap:var(--ed-space-2);align-items:center;flex-wrap:wrap}
+.am-kit-gallery__card .am-ed-group{padding:0}
+.am-kit-gallery__card .am-ed-field{display:grid;gap:var(--ed-space-1)}
+.am-kit-gallery__card .am-ed-input,.am-kit-gallery__card .am-ed-textarea,.am-kit-gallery__card select{width:100%;padding:8px 11px;border:1px solid var(--line);border-radius:var(--r2)}
+.am-kit-gallery__card .am-ed-choice{display:flex;gap:6px;flex-wrap:wrap}
+.am-kit-gallery__card .am-ed-choice button{border:1px solid var(--line);border-radius:var(--r2);background:var(--surface);padding:8px 10px}
+.am-kit-gallery__card .am-ed-choice button[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.am-kit-gallery__card .am-ed-icon-btn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px}
+.am-kit-gallery__card summary{cursor:pointer}
+@media(prefers-reduced-motion:reduce){.am-kit-skeleton:before{animation:none}.workspace .am-ed-button:active{transform:none}}
+/* Storybook/gallery uses the same functional switch geometry as the Inspector. */
+.am-kit-gallery .am-ed-toggle{display:flex;align-items:center;gap:var(--ed-space-3);min-height:44px;cursor:pointer}
+.am-kit-gallery .am-ed-toggle input[role=switch]{appearance:none;-webkit-appearance:none;width:38px;height:22px;min-width:38px;background:var(--line);border:1px solid var(--line-strong);border-radius:12px;position:relative;margin:0;cursor:pointer;transition:background .12s ease}
+.am-kit-gallery .am-ed-toggle input[role=switch]::before{content:'';position:absolute;width:16px;height:16px;top:2px;left:2px;border-radius:50%;background:var(--surface);box-shadow:0 1px 2px var(--shade);transition:transform .12s ease}
+.am-kit-gallery .am-ed-toggle input[role=switch]:checked{background:var(--accent);border-color:var(--accent)}
+.am-kit-gallery .am-ed-toggle input[role=switch]:checked::before{transform:translateX(16px)}
+.am-kit-gallery .am-ed-toggle input[role=switch]:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.am-kit-gallery .am-ed-toggle small{display:block;color:var(--mute);font-size:var(--fs-cap)}

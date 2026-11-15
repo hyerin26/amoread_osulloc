@@ -1,0 +1,28 @@
+<!--
+  기존 오설록 구좌편집기 화면의 HTML(또는 해당 화면 컴포넌트)에만 추가하세요.
+  기존 편집기 코드를 지우지 마세요. 
+  실제 CSS 선택자와 API 함수명은 대상 GitLab 코드를 확인 후 교체해야 합니다.
+-->
+<script>
+window.AMOREAD_INTEGRATION = {
+  // mountSelector가 없으면 기존 화면 우측 하단에 새 편집기 버튼이 표시됩니다.
+  buttonLabel: '구좌편집기 · 신규',
+  greenUI: {
+    tokenMap: {
+      // 실제 최신 Green UI 의미 변수 이름을 연결하세요.
+      // '--accent': '--CURRENT_GREEN_UI_PRIMARY',
+      // '--accent-soft': '--CURRENT_GREEN_UI_SUBTLE'
+    },
+    selectors: {
+      // 기존 앱에 실제로 존재하는 요소 선택자를 지정해야 비교가 가능합니다.
+      // primaryButton: '.your-real-primary-button',
+      // secondaryButton: '.your-real-secondary-button',
+      // input: '.your-real-input',
+      // heading: '.your-real-heading'
+    }
+  },
+  // 연결 전에는 데모로 실행됩니다. 운영 API 어댑터는 별도 구현해야 합니다.
+  hostAdapter: window.AMOREAD_OSULLOC_API || null
+};
+</script>
+<script defer src="/amoread-editor/integration/launcher.js"></script>

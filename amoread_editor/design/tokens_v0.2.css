@@ -1,0 +1,54 @@
+/* AMOREAD team proposal v0.2; not official SEED/Polaris/Fluent values.
+   Use semantic aliases in components, don't hardcode palette values.
+   Confirm corporate brand guidelines and existing in-house tool tokens later. */
+:root {
+  /* Surfaces */
+  --am-color-canvas: #F6F8F7;
+  --am-color-surface: #FFFFFF;
+  --am-color-surface-subtle: #F1F5F2;
+  --am-color-border: #DCE4DF;
+  /* Text */
+  --am-color-text-primary: #192720;
+  --am-color-text-secondary: #52675D;
+  --am-color-text-tertiary: #63776D;
+  /* Brand actions */
+  --am-color-brand: #266953;
+  --am-color-brand-hover: #1F5947;
+  --am-color-brand-subtle: #EDF5F0;
+  /* Semantic states */
+  --am-color-info: #165B91;
+  --am-color-info-subtle: #EAF3FB;
+  --am-color-success: #266B4C;
+  --am-color-success-subtle: #EAF5ED;
+  --am-color-warning: #9A591B;
+  --am-color-warning-subtle: #FFF4E5;
+  --am-color-danger: #A43D45;
+  --am-color-danger-subtle: #FFF0F1;
+  /* Spacing */
+  --am-space-1: 4px;
+  --am-space-2: 8px;
+  --am-space-3: 12px;
+  --am-space-4: 16px;
+  --am-space-5: 20px;
+  --am-space-6: 24px;
+  --am-space-8: 32px;
+  --am-space-10: 40px;
+  /* Typography */
+  --am-font-family: Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --am-font-page: 700 26px/34px var(--am-font-family);
+  --am-font-section: 700 18px/26px var(--am-font-family);
+  --am-font-subsection: 600 16px/24px var(--am-font-family);
+  --am-font-body: 400 14px/22px var(--am-font-family);
+  --am-font-body-strong: 600 14px/22px var(--am-font-family);
+  --am-font-caption: 400 12px/18px var(--am-font-family);
+  /* Shape & control dimensions */
+  --am-radius-control: 8px;
+  --am-radius-card: 12px;
+  --am-control-sm: 30px;
+  --am-control-md: 36px;
+  --am-control-lg: 40px;
+  --am-sidebar-width: 220px;
+  --am-context-panel-width: 320px;
+  --am-toolbar-height: 56px;
+  --am-focus-ring: 2px solid var(--am-color-brand);
+}

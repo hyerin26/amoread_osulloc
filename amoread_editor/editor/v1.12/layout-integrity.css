@@ -1,0 +1,171 @@
+/* AMOREAD 1.7.1 · Layout integrity layer.
+   This file only fixes component rhythm and layout containment. The existing
+   Green UI tokens, section schemas, product properties and editor behavior
+   are unchanged. All spacing values reuse the v1.7 editor rhythm aliases. */
+
+/* 1. Picker: grid tracks must size from their content, not share the available
+   scroll-pane height. Otherwise the text overflows into the next row. */
+.am-ed-picker-results {
+  grid-auto-rows: max-content;
+  align-content: start;
+  align-items: start;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+.am-ed-picker-card {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 114px max-content max-content;
+  align-content: start;
+  justify-items: stretch;
+  gap: var(--ed-space-element, 8px);
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  overflow: hidden;
+  padding: var(--ed-space-element, 8px);
+  text-align: left;
+}
+.am-ed-picker-card > .am-ed-mini-view {
+  box-sizing: border-box;
+  grid-row: 1;
+  min-width: 0;
+  width: 100%;
+  height: 114px;
+  overflow: hidden;
+  contain: paint;
+}
+.am-ed-picker-card > b,
+.am-ed-picker-card > small {
+  display: block;
+  min-width: 0;
+  height: auto;
+  margin: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+.am-ed-picker-card > b {
+  grid-row: 2;
+  line-height: 1.45;
+  font-size: var(--fs-sm);
+}
+.am-ed-picker-card > small {
+  grid-row: 3;
+  font-size: var(--fs-cap);
+  line-height: 1.45;
+}
+.am-ed-picker-main,
+.am-ed-picker-summary,
+.am-ed-picker-results { min-width: 0; }
+.am-ed-picker-summary > :is(h3,p) {overflow-wrap: anywhere;}
+
+/* 2. Preview: captions and titles participate in normal document flow.
+   Multiline campaign copy, product names and variable card heights are safe. */
+.phone .preview-block,
+.am-ed-detail-canvas .preview-block,
+.am-ed-mini-contents .preview-block,
+.am-ed-full-preview-content .preview-block {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.preview-block > h3 {
+  margin: 0 0 var(--ed-space-inline, 4px);
+  font-size: var(--fs-h2);
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+.preview-block > p,
+.preview-block > .preview-extra-line {
+  margin: 0 0 var(--ed-space-element, 8px);
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+.preview-block > :is(.mock-products,.mock-element-stack,.mock-review-shell,.mock-event,.am-flow-info-list,.am-ed-accordion-list) {
+  margin-top: var(--ed-space-card, 12px);
+}
+.preview-block :is(.mock-item,.am-flow-info-item,.mock-review-card,.mock-event) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* 3. Repeated product cards: let price / name / labels wrap naturally and
+   maintain the same internal spacing in 1-, 2-, 3-column and grouped layouts. */
+.mock-products { align-items: start; }
+.mock-product {
+  min-width: 0;
+  max-width: 100%;
+  row-gap: var(--ed-space-inline, 4px);
+  padding: var(--ed-space-element, 8px);
+}
+.mock-product > .mock-el {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+  margin: 0;
+  line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.mock-product > .mock-el--img { width: 100%; }
+.mock-product :is(.mock-card-name,.mock-card-copy,.mock-card-appeal,.mock-card-quote) {
+  display: block;
+  white-space: pre-wrap;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.mock-product :is(.mock-card-label,.mock-card-pill,.mock-card-tag,.mock-card-rating,.mock-card-price-label,.mock-card-discount,.mock-card-price) {
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.mock-product .mock-product-image { margin: 0 0 var(--ed-space-inline, 4px); }
+.am-product-view-list .mock-product > .mock-el:not(.mock-el--img) { grid-column: 2; }
+
+/* 4. Nested blocks and information cards should grow with their content. */
+.cb-node,.cb-product-card,.cb-group,.cb-product-grid,.am-flow-info-list,
+.am-flow-info-item,.mock-item,.am-ed-accordion {
+  min-width: 0;
+  max-width: 100%;
+}
+.cb-node :is(.cb-text,.cb-review,.cb-notice,.cb-benefit),
+.am-flow-info-item :is(strong,small,em),
+.am-ed-accordion summary,
+.am-ed-accordion-content {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+.am-ed-accordion summary { min-height: 44px; }
+.am-ed-accordion summary > :first-child { min-width: 0; }
+.am-flow-info-list { align-items: stretch; }
+.am-flow-info-item { align-content: start; }
+.am-flow-info-item > div:last-child { align-content: start; }
+
+/* 5. Inspector: separate labels from controls and groups, never use negative
+   margins to fit variable-height descriptions. */
+.inspector .am-ed-group__title {
+  align-items: flex-start;
+  gap: var(--ed-space-element, 8px);
+  min-width: 0;
+}
+.inspector .am-ed-group__title > :is(h3,span) { min-width: 0; }
+.inspector .am-ed-field { min-width: 0; }
+.inspector .am-ed-field-meta,
+.inspector .am-ed-group__description { line-height: 1.5; }
+.inspector :is(.am-ed-input,.am-ed-textarea,.am-ed-select) { min-width: 0; max-width: 100%; }
+.am-ed-product-layout-option,
+.am-ed-column-option,
+.am-ed-review-layout-option { min-width: 0; height: auto; align-content: start; }
+.am-ed-product-layout-option :is(b,small),
+.am-ed-column-option :is(strong,small) {overflow-wrap: anywhere;line-height: 1.45;}
+
+/* Small cards keep their canonical 340px frame, only the viewport is shorter.
+   The text rows never shrink into the next card. */
+@media (max-width: 760px) {
+  .am-ed-picker-card {grid-template-rows: 100px max-content max-content;}
+  .am-ed-picker-card > .am-ed-mini-view {height: 100px;}
+}

@@ -1,0 +1,301 @@
+/* AMOREAD v1.12 / direct canvas selection and inspector spacing.
+   Reuses editor/Green UI roles without changing design tokens or customer data. */
+#page {position:relative;}
+#page .am-canvas-selected {
+ outline:2px solid var(--accent,#007a46);
+ outline-offset:2px;
+ box-shadow:0 0 0 3px var(--accent-soft,#eef5ef);
+ border-radius:var(--r2,8px);
+}
+#page .am-canvas-toolbar {
+ position:absolute;
+ z-index:45;
+ display:flex;
+ align-items:center;
+ gap:var(--s1,4px);
+ max-width:calc(100% - 12px);
+ min-height:38px;
+ padding:4px 5px 4px 10px;
+ background:var(--surface,#fff);
+ color:var(--ink,#141414);
+ border:1px solid var(--line,#dedede);
+ border-radius:var(--r2,8px);
+ box-shadow:0 4px 16px rgba(20,20,20,.14);
+ box-sizing:border-box;
+ white-space:nowrap;
+}
+#page .am-canvas-toolbar__label {
+ min-width:0;
+ max-width:112px;
+ overflow:hidden;
+ text-overflow:ellipsis;
+ font-size:11px;
+ line-height:18px;
+ font-weight:600;
+ padding-right:5px;
+ border-right:1px solid var(--line-sub,#ebebeb);
+}
+#page .am-canvas-toolbar button {
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ gap:4px;
+ flex:0 0 auto;
+ border:0;
+ border-radius:6px;
+ min-width:30px;
+ min-height:30px;
+ padding:4px 7px;
+ background:transparent;
+ font-size:11px;
+ line-height:18px;
+ color:var(--ink2,#484848);
+ cursor:pointer;
+}
+#page .am-canvas-toolbar button:hover {background:var(--sunken,#f3f3f3);}
+#page .am-canvas-toolbar button:focus-visible {outline:2px solid var(--accent,#007a46);outline-offset:1px;}
+#page .am-canvas-toolbar .am-canvas-toolbar__delete {color:var(--price,#b52e10);font-weight:600;}
+#page .am-canvas-toolbar .am-canvas-toolbar__delete:hover {background:var(--red-soft,#fff0ec);}
+#page .am-canvas-toolbar .am-kit-icon {width:15px;height:15px;flex:none;}
+/* Inspector: one clear selection banner, not a second floating inspector. */
+.inspector .am-canvas-native-actions {
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:var(--s2,8px);
+ padding:var(--s3,12px);
+ margin:var(--s3,12px) 0 var(--s2,8px);
+ background:var(--sunken,#f7f7f7);
+ border:1px solid var(--line-sub,#ebebeb);
+ border-radius:var(--r2,8px);
+}
+.inspector .am-canvas-native-actions strong {display:block;font-size:12px;line-height:18px;color:var(--ink);}
+.inspector .am-canvas-native-actions small {display:block;margin-top:4px;font-size:11px;line-height:16px;color:var(--mute);}
+.inspector .am-canvas-native-actions button {
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ gap:4px;
+ border:1px solid var(--line,#dedede);
+ border-radius:var(--r2,8px);
+ background:var(--surface,#fff);
+ min-height:36px;
+ padding:8px;
+ font-size:12px;
+ color:var(--price,#b52e10);
+ cursor:pointer;
+ flex-shrink:0;
+}
+.inspector .am-canvas-native-actions button:focus-visible {outline:2px solid var(--accent,#007a46);outline-offset:2px;}
+/* The long 16-element menu is an accordion, with one consistent 4/8/12/16 rhythm. */
+.inspector details.ia-advanced.cb-card-elements-advanced {
+ margin:var(--s4,16px) 0 var(--s5,24px);
+ padding:0;
+ border:1px solid var(--line,#dedede);
+ border-radius:var(--r2,8px);
+ background:var(--surface,#fff);
+ overflow:hidden;
+}
+.inspector .cb-card-elements-advanced > summary {
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ gap:var(--s3,12px);
+ padding:var(--s3,12px) var(--s4,16px);
+ list-style:none;
+ cursor:pointer;
+ min-height:60px;
+ box-sizing:border-box;
+ color:var(--ink);
+}
+.inspector .cb-card-elements-advanced > summary::-webkit-details-marker {display:none;}
+.inspector .cb-card-elements-summary__main {display:grid;gap:var(--s1,4px);min-width:0;}
+.inspector .cb-card-elements-summary__main strong {font-size:13px;line-height:20px;font-weight:600;}
+.inspector .cb-card-elements-summary__main small {font-size:11px;line-height:16px;color:var(--mute);font-weight:400;}
+.inspector .cb-card-elements-summary__meta {display:inline-flex;gap:var(--s2,8px);align-items:center;color:var(--mute);font-size:11px;white-space:nowrap;}
+.inspector .cb-card-elements-summary__chevron {display:inline-block;width:8px;height:8px;border-right:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:rotate(45deg);margin-top:-4px;transition:transform .14s ease;}
+.inspector .cb-card-elements-advanced[open] .cb-card-elements-summary__chevron {transform:rotate(225deg);margin-top:4px;}
+.inspector .cb-card-elements-advanced .am-ed-group {
+ margin:0;
+ padding:var(--s3,12px) var(--s4,16px) var(--s4,16px);
+ border:0;
+ background:transparent;
+}
+.inspector .cb-card-elements-advanced .am-ed-group__description {margin:0 0 var(--s3,12px);font-size:11px;line-height:1.55;}
+.inspector .cb-card-elements-list {display:grid;gap:0;}
+.inspector .cb-el-row {
+ display:grid;
+ grid-template-columns:minmax(0,1fr) auto;
+ align-items:center;
+ min-height:44px;
+ gap:var(--s2,8px);
+ padding:var(--s2,8px) 0;
+ margin:0;
+ border:0;
+ border-bottom:1px solid var(--line-sub,#ebebeb);
+ font-size:12px;
+}
+.inspector .cb-el-row:last-child {border-bottom:0;}
+.inspector .cb-el-row label {display:inline-flex;align-items:center;gap:var(--s2,8px);min-width:0;line-height:18px;cursor:pointer;}
+.inspector .cb-el-row label span {min-width:0;overflow-wrap:anywhere;}
+.inspector .cb-el-row input[type="checkbox"] {width:16px;height:16px;min-width:16px;accent-color:var(--accent,#007a46);}
+.inspector .cb-el-row-actions {display:flex;gap:var(--s1,4px);flex:none;}
+.inspector .cb-el-row-actions button {
+ min-width:32px;
+ min-height:32px;
+ border:1px solid var(--line,#dedede);
+ padding:6px;
+ border-radius:var(--r2,8px);
+ background:var(--surface,#fff);
+ color:var(--ink2,#484848);
+ line-height:18px;
+ cursor:pointer;
+}
+.inspector .cb-el-row-actions button:disabled {opacity:.32;cursor:not-allowed;}
+.inspector .cb-el-row-actions button:focus-visible {outline:2px solid var(--accent,#007a46);outline-offset:2px;}
+.inspector .cb-card-properties {margin-top:var(--s4,16px);}
+.inspector .cb-card-properties .am-ed-stack {gap:var(--s3,12px);}
+@media(prefers-reduced-motion:reduce){.inspector .cb-card-elements-summary__chevron{transition:none;}}
+
+/* Canvas->inspector synchronized selection.
+   Highlight the exact repeated card or detail field, not the whole inspector. */
+.inspector #panel-body .am-ed-repeat.am-inspector-target {
+ border-color:var(--sel-line,var(--accent,#007a46));
+ box-shadow:0 0 0 2px var(--accent-soft,#eef5ef);
+ background:var(--surface,#fff);
+}
+.inspector #panel-body .am-ed-repeat.am-inspector-target>.am-ed-repeat__header {
+ background:var(--accent-soft,#eef5ef);
+}
+.inspector #panel-body .am-inspector-target:is(.am-ed-field,.am-ed-review-row,.am-ed-product-row,.am-ed-toggle,.cb-el-row) {
+ border-radius:var(--r2,8px);
+ outline:2px solid var(--sel-line,var(--accent,#007a46));
+ outline-offset:2px;
+ background:var(--accent-soft,#eef5ef);
+}
+.inspector #panel-body .am-inspector-target .am-ed-input:focus,
+.inspector #panel-body .am-inspector-target .am-ed-textarea:focus {
+ border-color:var(--accent,#007a46);
+}
+
+/* Product card: one compact 16-element stack. Controls are only mounted for the
+   enabled element whose own disclosure is expanded. The stack independently
+   scrolls, including auto-scroll while dragging near its top/bottom edges. */
+.inspector #panel-body .cb-card-elements-list {
+ display:block;
+ max-height:min(52vh,520px);
+ min-height:0;
+ overflow-y:auto;
+ overflow-x:hidden;
+ overscroll-behavior-y:contain;
+ scrollbar-gutter:stable;
+ padding:0 var(--s1,4px);
+ border:1px solid var(--line-sub,#e9ece8);
+ border-radius:var(--r2,8px);
+}
+.inspector #panel-body .cb-card-elements-list .cb-el-row {
+ display:block;
+ min-height:0;
+ padding:0;
+ margin:0;
+ background:var(--surface,#fff);
+ box-sizing:border-box;
+ border-bottom:1px solid var(--line-sub,#ebebeb);
+ position:relative;
+}
+.inspector #panel-body .cb-card-elements-list .cb-el-row:last-child {border-bottom:0;}
+.inspector #panel-body .cb-el-row--off {color:var(--mute,#6f7970);}
+.inspector #panel-body .cb-el-row-main {
+ min-height:44px;
+ display:grid;
+ grid-template-columns:15px minmax(0,1fr) auto auto;
+ gap:var(--s1,4px);
+ align-items:center;
+ padding:var(--s2,8px) var(--s1,4px);
+}
+.inspector #panel-body .cb-el-grip {
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ width:15px;
+ height:30px;
+ font-size:16px;
+ line-height:1;
+ color:var(--mute,#6f7970);
+ cursor:grab;
+ user-select:none;
+}
+.inspector #panel-body .cb-el-row[draggable="true"] {cursor:grab;}
+.inspector #panel-body .cb-el-row--dragging {opacity:.45;cursor:grabbing;}
+.inspector #panel-body .cb-el-row[data-cb-drop="before"] {box-shadow:inset 0 3px var(--accent,#007a46);}
+.inspector #panel-body .cb-el-row[data-cb-drop="after"] {box-shadow:inset 0 -3px var(--accent,#007a46);}
+.inspector #panel-body .cb-el-row--just-moved {background:var(--accent-soft,#eef5ef);}
+.inspector #panel-body .cb-el-row-main > label {
+ display:flex;
+ align-items:center;
+ gap:var(--s2,8px);
+ font-size:12px;
+ line-height:1.4;
+ margin:0;
+ min-width:0;
+ cursor:pointer;
+}
+.inspector #panel-body .cb-el-row-main > label > span {
+ overflow-wrap:anywhere;
+ min-width:0;
+}
+.inspector #panel-body .cb-el-row-main .cb-el-edit {
+ border:0;
+ border-radius:var(--r2,8px);
+ background:var(--sunken,#f7f7f7);
+ color:var(--accent,#007a46);
+ font-size:11px;
+ line-height:16px;
+ font-weight:600;
+ padding:5px 7px;
+ cursor:pointer;
+ white-space:nowrap;
+ min-width:0;
+}
+.inspector #panel-body .cb-el-row-main .cb-el-status {
+ color:var(--mute,#737b76);
+ font-size:10px;
+ white-space:nowrap;
+}
+.inspector #panel-body .cb-el-row-main .cb-el-row-actions {
+ display:flex;
+ gap:2px;
+}
+.inspector #panel-body .cb-el-row-main .cb-el-row-actions button {
+ min-width:25px;
+ min-height:27px;
+ padding:3px;
+ border:1px solid var(--line-sub,#ecefec);
+ border-radius:6px;
+ font-size:11px;
+ cursor:pointer;
+}
+.inspector #panel-body .cb-el-inline-fields {
+ display:grid;
+ gap:var(--s3,12px);
+ margin:0 var(--s2,8px) var(--s3,12px) calc(var(--s4,16px) + var(--s1,4px));
+ padding:var(--s3,12px);
+ border:1px solid var(--line-sub,#e5ebe6);
+ border-radius:var(--r2,8px);
+ background:var(--sunken,#f8faf8);
+}
+.inspector #panel-body .cb-el-inline-fields .am-ed-field {
+ min-width:0;
+ margin:0;
+}
+.inspector #panel-body .cb-el-inline-fields .am-ed-field + .am-ed-field {
+ margin-top:0;
+}
+.inspector #panel-body .cb-el-inline-fields textarea {
+ resize:vertical;
+ min-height:64px;
+}
+.inspector #panel-body .cb-el-row-main button:focus-visible {
+ outline:2px solid var(--accent,#007a46);
+ outline-offset:2px;
+}

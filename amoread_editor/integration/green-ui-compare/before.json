@@ -1,0 +1,1105 @@
+{
+ "at": "2026-11-14 07:53",
+ "old": {
+  "주요 버튼": {
+   "values": {
+    "background-color": "rgb(0, 122, 70)",
+    "color": "rgb(255, 255, 255)",
+    "border-top-width": "0px",
+    "border-top-style": "none",
+    "border-top-color": "rgb(255, 255, 255)",
+    "border-top-left-radius": "8px",
+    "height": "36px",
+    "padding-left": "12px",
+    "font-size": "14px",
+    "font-weight": "600",
+    "line-height": "20px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": null,
+   "selector": ".btn.sm.primary"
+  },
+  "보조 버튼": {
+   "values": {
+    "background-color": "rgb(243, 243, 243)",
+    "color": "rgb(20, 20, 20)",
+    "border-top-width": "0px",
+    "border-top-style": "none",
+    "border-top-color": "rgb(20, 20, 20)",
+    "border-top-left-radius": "8px",
+    "height": "36px",
+    "padding-left": "12px",
+    "font-size": "14px",
+    "font-weight": "600",
+    "line-height": "20px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": "old_01.png",
+   "selector": "#xlsDown"
+  },
+  "텍스트형(고스트) 버튼": {
+   "values": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "color": "rgb(20, 20, 20)",
+    "border-top-width": "0px",
+    "border-top-style": "none",
+    "border-top-color": "rgb(20, 20, 20)",
+    "border-top-left-radius": "8px",
+    "height": "36px",
+    "padding-left": "12px",
+    "font-size": "14px",
+    "font-weight": "600",
+    "line-height": "20px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": null,
+   "selector": "a.btn.sm.ghost"
+  },
+  "작은 버튼": {
+   "values": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "color": "rgb(20, 20, 20)",
+    "border-top-width": "0px",
+    "border-top-style": "none",
+    "border-top-color": "rgb(20, 20, 20)",
+    "border-top-left-radius": "8px",
+    "height": "32px",
+    "padding-left": "10px",
+    "font-size": "13px",
+    "font-weight": "600",
+    "line-height": "20px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": "old_03.png",
+   "selector": ".btn.xs"
+  },
+  "비활성 텍스트 버튼": {
+   "values": {
+    "background-color": "rgb(243, 243, 243)",
+    "color": "rgb(102, 102, 102)",
+    "border-top-width": "0px",
+    "border-top-style": "none",
+    "border-top-color": "rgb(102, 102, 102)",
+    "border-top-left-radius": "8px",
+    "height": "36px",
+    "padding-left": "12px",
+    "font-size": "14px",
+    "font-weight": "600",
+    "line-height": "20px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none",
+    "opacity": "1",
+    "cursor": "default"
+   },
+   "shot": "old_04.png",
+   "selector": "#xlsDown"
+  },
+  "비활성 아이콘 버튼(순서 이동)": {
+   "values": {
+    "color": "rgb(102, 102, 102)",
+    "opacity": "0.35",
+    "cursor": "default",
+    "background-color": "rgba(0, 0, 0, 0)"
+   },
+   "shot": "old_05.png",
+   "selector": "#secList .ib:disabled"
+  },
+  "키보드 포커스(주요 버튼)": {
+   "values": {
+    "outline-style": "solid",
+    "outline-width": "2px",
+    "outline-color": "rgb(0, 122, 70)",
+    "outline-offset": "2px",
+    "border-top-color": "rgb(255, 255, 255)",
+    "box-shadow": "none"
+   },
+   "shot": "old_06.png",
+   "selector": ".btn.sm.primary, .v2plan .v2btn.primary"
+  },
+  "한 줄 입력창": {
+   "values": {
+    "background-color": "rgb(255, 255, 255)",
+    "color": "rgb(20, 20, 20)",
+    "border-top-width": "1px",
+    "border-top-style": "solid",
+    "border-top-color": "rgb(222, 222, 222)",
+    "border-top-left-radius": "8px",
+    "height": "36px",
+    "padding-left": "10px",
+    "font-size": "15px",
+    "font-weight": "400",
+    "line-height": "24px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": "old_07.png",
+   "selector": "#panel input[type=text]"
+  },
+  "입력창 포커스": {
+   "values": {
+    "outline-style": "none",
+    "outline-width": "3px",
+    "outline-color": "rgb(20, 20, 20)",
+    "outline-offset": "2px",
+    "border-top-color": "rgb(0, 122, 70)",
+    "box-shadow": "none"
+   },
+   "shot": "old_08.png",
+   "selector": "#panel input[type=text]"
+  },
+  "여러 줄 입력창": {
+   "values": {
+    "background-color": "rgb(255, 255, 255)",
+    "color": "rgb(20, 20, 20)",
+    "border-top-width": "1px",
+    "border-top-style": "solid",
+    "border-top-color": "rgb(222, 222, 222)",
+    "border-top-left-radius": "8px",
+    "height": "66px",
+    "padding-left": "10px",
+    "font-size": "15px",
+    "font-weight": "400",
+    "line-height": "24px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": "old_09.png",
+   "selector": "#panel textarea"
+  },
+  "선택창(select)": {
+   "values": {
+    "background-color": "rgb(255, 255, 255)",
+    "color": "rgb(20, 20, 20)",
+    "border-top-width": "1px",
+    "border-top-style": "solid",
+    "border-top-color": "rgb(222, 222, 222)",
+    "border-top-left-radius": "8px",
+    "height": "36px",
+    "padding-left": "10px",
+    "font-size": "15px",
+    "font-weight": "400",
+    "line-height": "normal",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": "old_10.png",
+   "selector": "#panel select"
+  },
+  "체크박스": {
+   "values": {
+    "width": "18px",
+    "height": "18px",
+    "accent-color": "rgb(0, 122, 70)",
+    "appearance": "auto"
+   },
+   "shot": "old_11.png",
+   "selector": "#panel input[type=checkbox]"
+  },
+  "라디오 버튼": {
+   "values": null,
+   "shot": null,
+   "selector": "input[type=radio]"
+  },
+  "선택형 버튼(안 눌림)": {
+   "values": {
+    "background-color": "rgb(255, 255, 255)",
+    "color": "rgb(72, 72, 72)",
+    "border-top-width": "1px",
+    "border-top-style": "solid",
+    "border-top-color": "rgb(222, 222, 222)",
+    "border-top-left-radius": "8px",
+    "height": "36px",
+    "padding-left": "12px",
+    "font-size": "14px",
+    "font-weight": "500",
+    "line-height": "20px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": "old_13.png",
+   "selector": ".chip"
+  },
+  "오류 상태 입력창": {
+   "values": null,
+   "shot": null,
+   "selector": "[aria-invalid=true]"
+  },
+  "탭(선택됨)": {
+   "values": {
+    "background-color": "rgb(238, 245, 239)",
+    "color": "rgb(0, 122, 70)",
+    "border-top-width": "0px",
+    "border-top-style": "none",
+    "border-top-color": "rgb(0, 122, 70)",
+    "border-top-left-radius": "6px",
+    "height": "36px",
+    "padding-left": "14px",
+    "font-size": "14px",
+    "font-weight": "600",
+    "line-height": "20px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": "old_15.png",
+   "selector": ".seg > button[aria-selected=true]"
+  },
+  "탭(선택 안 됨)": {
+   "values": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "color": "rgb(72, 72, 72)",
+    "border-top-width": "0px",
+    "border-top-style": "none",
+    "border-top-color": "rgb(72, 72, 72)",
+    "border-top-left-radius": "6px",
+    "height": "36px",
+    "padding-left": "14px",
+    "font-size": "14px",
+    "font-weight": "500",
+    "line-height": "20px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": "old_16.png",
+   "selector": ".seg > button[aria-selected=false]"
+  },
+  "편집 패널 카드": {
+   "values": {
+    "background-color": "rgb(255, 255, 255)",
+    "border-top-width": "1px",
+    "border-top-color": "rgb(235, 235, 235)",
+    "border-top-left-radius": "12px",
+    "box-shadow": "none",
+    "padding-left": "0px"
+   },
+   "shot": "old_17.png",
+   "selector": "aside.card.panel"
+  },
+  "구좌 목록 카드": {
+   "values": {
+    "background-color": "rgb(255, 255, 255)",
+    "border-top-width": "1px",
+    "border-top-color": "rgb(235, 235, 235)",
+    "border-top-left-radius": "12px",
+    "box-shadow": "none",
+    "padding-left": "20px"
+   },
+   "shot": "old_18.png",
+   "selector": "nav.card.list"
+  },
+  "구좌 목록 항목(선택됨)": {
+   "values": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "border-top-width": "1px",
+    "border-top-color": "rgba(0, 122, 70, 0.32)",
+    "border-top-left-radius": "8px",
+    "box-shadow": "none",
+    "padding-left": "12px"
+   },
+   "shot": "old_19.png",
+   "selector": "#secList button[aria-current=true]"
+  },
+  "접고 펴는 묶음": {
+   "values": null,
+   "shot": null,
+   "selector": "details"
+  },
+  "대화상자": {
+   "values": {
+    "background-color": "rgb(255, 255, 255)",
+    "border-top-width": "1px",
+    "border-top-color": "rgb(222, 222, 222)",
+    "border-top-left-radius": "12px",
+    "box-shadow": "none",
+    "padding-left": "0px",
+    "width": "760px"
+   },
+   "shot": "old_21.png",
+   "selector": "#dlg"
+  },
+  "도구 막대": {
+   "values": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "border-top-width": "0px",
+    "column-gap": "8px"
+   },
+   "shot": "old_22.png",
+   "selector": ".head .acts"
+  },
+  "토스트": {
+   "values": {
+    "background-color": "rgb(20, 20, 20)",
+    "color": "rgb(255, 255, 255)",
+    "border-top-left-radius": "12px",
+    "font-size": "14px",
+    "padding-left": "18px"
+   },
+   "shot": "old_23.png",
+   "selector": ".toast"
+  },
+  "화면 제목": {
+   "values": {
+    "color": "rgb(20, 20, 20)",
+    "font-size": "28px",
+    "font-weight": "700",
+    "line-height": "36px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif"
+   },
+   "shot": "old_24.png",
+   "selector": ".head h1"
+  },
+  "패널 제목": {
+   "values": {
+    "color": "rgb(20, 20, 20)",
+    "font-size": "20px",
+    "font-weight": "600",
+    "line-height": "28px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif"
+   },
+   "shot": "old_25.png",
+   "selector": "#panel h2, #panel h3"
+  },
+  "본문": {
+   "values": {
+    "color": "rgb(20, 20, 20)",
+    "font-size": "15px",
+    "font-weight": "400",
+    "line-height": "24px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif"
+   },
+   "shot": "old_26.png",
+   "selector": "body"
+  },
+  "보조 문구(캡션)": {
+   "values": {
+    "color": "rgb(102, 102, 102)",
+    "font-size": "13px",
+    "font-weight": "400",
+    "line-height": "20px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif"
+   },
+   "shot": "old_27.png",
+   "selector": ".cap"
+  }
+ },
+ "new": {
+  "주요 버튼": {
+   "values": {
+    "background-color": "rgb(0, 122, 70)",
+    "color": "rgb(255, 255, 255)",
+    "border-top-width": "0px",
+    "border-top-style": "none",
+    "border-top-color": "rgb(255, 255, 255)",
+    "border-top-left-radius": "8px",
+    "height": "36px",
+    "padding-left": "12px",
+    "font-size": "13px",
+    "font-weight": "500",
+    "line-height": "24px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": "before_shots/new_00.png",
+   "selector": ".am-ed-button--primary"
+  },
+  "보조 버튼": {
+   "values": {
+    "background-color": "rgb(255, 255, 255)",
+    "color": "rgb(20, 20, 20)",
+    "border-top-width": "1px",
+    "border-top-style": "solid",
+    "border-top-color": "rgb(222, 222, 222)",
+    "border-top-left-radius": "8px",
+    "height": "40px",
+    "padding-left": "9px",
+    "font-size": "13px",
+    "font-weight": "500",
+    "line-height": "24px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": "before_shots/new_01.png",
+   "selector": "#exportDemo"
+  },
+  "텍스트형(고스트) 버튼": {
+   "values": {
+    "background-color": "rgb(255, 255, 255)",
+    "color": "rgb(20, 20, 20)",
+    "border-top-width": "1px",
+    "border-top-style": "solid",
+    "border-top-color": "rgb(222, 222, 222)",
+    "border-top-left-radius": "8px",
+    "height": "40px",
+    "padding-left": "9px",
+    "font-size": "13px",
+    "font-weight": "500",
+    "line-height": "24px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": "before_shots/new_02.png",
+   "selector": "#undo"
+  },
+  "작은 버튼": {
+   "values": {
+    "background-color": "rgb(255, 255, 255)",
+    "color": "rgb(20, 20, 20)",
+    "border-top-width": "1px",
+    "border-top-style": "solid",
+    "border-top-color": "rgb(222, 222, 222)",
+    "border-top-left-radius": "8px",
+    "height": "32px",
+    "padding-left": "9px",
+    "font-size": "13px",
+    "font-weight": "500",
+    "line-height": "16.9px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": "before_shots/new_03.png",
+   "selector": ".am-ed-button--sm"
+  },
+  "비활성 텍스트 버튼": {
+   "values": {
+    "background-color": "rgb(255, 255, 255)",
+    "color": "rgb(20, 20, 20)",
+    "border-top-width": "1px",
+    "border-top-style": "solid",
+    "border-top-color": "rgb(222, 222, 222)",
+    "border-top-left-radius": "8px",
+    "height": "40px",
+    "padding-left": "9px",
+    "font-size": "13px",
+    "font-weight": "500",
+    "line-height": "24px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none",
+    "opacity": "0.5",
+    "cursor": "not-allowed"
+   },
+   "shot": "before_shots/new_04.png",
+   "selector": "#exportDemo"
+  },
+  "비활성 아이콘 버튼(순서 이동)": {
+   "values": {
+    "color": "rgb(72, 72, 72)",
+    "opacity": "0.5",
+    "cursor": "not-allowed",
+    "background-color": "rgba(0, 0, 0, 0)"
+   },
+   "shot": "before_shots/new_05.png",
+   "selector": "[data-list-action]:disabled"
+  },
+  "키보드 포커스(주요 버튼)": {
+   "values": {
+    "outline-style": "solid",
+    "outline-width": "2px",
+    "outline-color": "rgb(0, 122, 70)",
+    "outline-offset": "2px",
+    "border-top-color": "rgb(255, 255, 255)",
+    "box-shadow": "none"
+   },
+   "shot": "before_shots/new_06.png",
+   "selector": ".am-ed-button--primary"
+  },
+  "한 줄 입력창": {
+   "values": {
+    "background-color": "rgb(255, 255, 255)",
+    "color": "rgb(20, 20, 20)",
+    "border-top-width": "1px",
+    "border-top-style": "solid",
+    "border-top-color": "rgb(222, 222, 222)",
+    "border-top-left-radius": "8px",
+    "height": "44px",
+    "padding-left": "12px",
+    "font-size": "15px",
+    "font-weight": "400",
+    "line-height": "24px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": "before_shots/new_07.png",
+   "selector": "#panel-body .am-ed-input"
+  },
+  "입력창 포커스": {
+   "values": {
+    "outline-style": "solid",
+    "outline-width": "2px",
+    "outline-color": "rgb(0, 122, 70)",
+    "outline-offset": "2px",
+    "border-top-color": "rgb(0, 122, 70)",
+    "box-shadow": "none"
+   },
+   "shot": "before_shots/new_08.png",
+   "selector": "#panel-body .am-ed-input"
+  },
+  "여러 줄 입력창": {
+   "values": {
+    "background-color": "rgb(255, 255, 255)",
+    "color": "rgb(20, 20, 20)",
+    "border-top-width": "1px",
+    "border-top-style": "solid",
+    "border-top-color": "rgb(222, 222, 222)",
+    "border-top-left-radius": "8px",
+    "height": "80px",
+    "padding-left": "12px",
+    "font-size": "15px",
+    "font-weight": "400",
+    "line-height": "24px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": "before_shots/new_09.png",
+   "selector": "#panel-body .am-ed-textarea"
+  },
+  "선택창(select)": {
+   "values": null,
+   "shot": null,
+   "selector": ".am-ed-select"
+  },
+  "체크박스": {
+   "values": {
+    "width": "38px",
+    "height": "22px",
+    "accent-color": "rgb(0, 122, 70)",
+    "appearance": "none"
+   },
+   "shot": "before_shots/new_11.png",
+   "selector": ".inspector input[type=checkbox]"
+  },
+  "라디오 버튼": {
+   "values": null,
+   "shot": null,
+   "selector": "input[type=radio]"
+  },
+  "선택형 버튼(안 눌림)": {
+   "values": {
+    "background-color": "rgb(255, 255, 255)",
+    "color": "rgb(72, 72, 72)",
+    "border-top-width": "1px",
+    "border-top-style": "solid",
+    "border-top-color": "rgb(222, 222, 222)",
+    "border-top-left-radius": "8px",
+    "height": "42px",
+    "padding-left": "12px",
+    "font-size": "14px",
+    "font-weight": "400",
+    "line-height": "24px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": "before_shots/new_13.png",
+   "selector": ".am-ed-choice button[aria-pressed=false]"
+  },
+  "오류 상태 입력창": {
+   "values": {
+    "background-color": "rgb(255, 240, 236)",
+    "color": "rgb(20, 20, 20)",
+    "border-top-width": "1px",
+    "border-top-style": "solid",
+    "border-top-color": "rgb(181, 46, 16)",
+    "border-top-left-radius": "8px",
+    "height": "44px",
+    "padding-left": "12px",
+    "font-size": "15px",
+    "font-weight": "400",
+    "line-height": "24px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": "before_shots/new_14.png",
+   "selector": ".am-ed-field .am-ed-input"
+  },
+  "탭(선택됨)": {
+   "values": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "color": "rgb(0, 122, 70)",
+    "border-top-width": "0px",
+    "border-top-style": "none",
+    "border-top-color": "rgb(0, 122, 70)",
+    "border-top-left-radius": "0px",
+    "height": "45px",
+    "padding-left": "12px",
+    "font-size": "14px",
+    "font-weight": "600",
+    "line-height": "24px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": "before_shots/new_15.png",
+   "selector": ".ia-group-btn[aria-selected=true]"
+  },
+  "탭(선택 안 됨)": {
+   "values": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "color": "rgb(72, 72, 72)",
+    "border-top-width": "0px",
+    "border-top-style": "none",
+    "border-top-color": "rgb(72, 72, 72)",
+    "border-top-left-radius": "0px",
+    "height": "45px",
+    "padding-left": "12px",
+    "font-size": "14px",
+    "font-weight": "500",
+    "line-height": "24px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+    "box-shadow": "none"
+   },
+   "shot": "before_shots/new_16.png",
+   "selector": ".ia-group-btn[aria-selected=false]"
+  },
+  "편집 패널 카드": {
+   "values": {
+    "background-color": "rgb(255, 255, 255)",
+    "border-top-width": "0px",
+    "border-top-color": "rgb(20, 20, 20)",
+    "border-top-left-radius": "0px",
+    "box-shadow": "none",
+    "padding-left": "0px"
+   },
+   "shot": "before_shots/new_17.png",
+   "selector": "aside.inspector"
+  },
+  "구좌 목록 카드": {
+   "values": {
+    "background-color": "rgb(255, 255, 255)",
+    "border-top-width": "0px",
+    "border-top-color": "rgb(20, 20, 20)",
+    "border-top-left-radius": "0px",
+    "box-shadow": "none",
+    "padding-left": "20px"
+   },
+   "shot": "before_shots/new_18.png",
+   "selector": "aside.outline"
+  },
+  "구좌 목록 항목(선택됨)": {
+   "values": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "border-top-width": "1px",
+    "border-top-color": "rgba(0, 122, 70, 0.32)",
+    "border-top-left-radius": "6px",
+    "box-shadow": "none",
+    "padding-left": "8px"
+   },
+   "shot": "before_shots/new_19.png",
+   "selector": ".outline-item[aria-current=true]"
+  },
+  "접고 펴는 묶음": {
+   "values": null,
+   "shot": null,
+   "selector": "details"
+  },
+  "대화상자": {
+   "values": {
+    "background-color": "rgb(255, 255, 255)",
+    "border-top-width": "1px",
+    "border-top-color": "rgb(222, 222, 222)",
+    "border-top-left-radius": "12px",
+    "box-shadow": "rgba(20, 20, 20, 0.08) 0px 8px 30px 0px",
+    "padding-left": "0px",
+    "width": "1030px"
+   },
+   "shot": "before_shots/new_21.png",
+   "selector": "#typeDialog"
+  },
+  "도구 막대": {
+   "values": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "border-top-width": "0px",
+    "column-gap": "12px"
+   },
+   "shot": "before_shots/new_22.png",
+   "selector": ".en-tools .topstatus"
+  },
+  "토스트": {
+   "values": {
+    "background-color": "rgb(20, 20, 20)",
+    "color": "rgb(255, 255, 255)",
+    "border-top-left-radius": "8px",
+    "font-size": "15px",
+    "padding-left": "18px"
+   },
+   "shot": "before_shots/new_23.png",
+   "selector": "#toast"
+  },
+  "화면 제목": {
+   "values": {
+    "color": "rgb(20, 20, 20)",
+    "font-size": "20px",
+    "font-weight": "600",
+    "line-height": "24px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif"
+   },
+   "shot": "before_shots/new_24.png",
+   "selector": ".center-head h2"
+  },
+  "패널 제목": {
+   "values": {
+    "color": "rgb(20, 20, 20)",
+    "font-size": "20px",
+    "font-weight": "600",
+    "line-height": "24px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif"
+   },
+   "shot": "before_shots/new_25.png",
+   "selector": ".inspector-head h2"
+  },
+  "본문": {
+   "values": {
+    "color": "rgb(20, 20, 20)",
+    "font-size": "15px",
+    "font-weight": "400",
+    "line-height": "24px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif"
+   },
+   "shot": "before_shots/new_26.png",
+   "selector": "body"
+  },
+  "보조 문구(캡션)": {
+   "values": {
+    "color": "rgb(102, 102, 102)",
+    "font-size": "13px",
+    "font-weight": "400",
+    "line-height": "24px",
+    "font-family": "Inter, \"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif"
+   },
+   "shot": "before_shots/new_27.png",
+   "selector": ".am-ed-group__description, .outline-desc"
+  }
+ },
+ "tokens": [
+  {
+   "token": "--font",
+   "demo": "Inter,'Pretendard Variable',Pretendard,'Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif",
+   "app": "'Inter', 'Pretendard Variable', 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif",
+   "status": "일치"
+  },
+  {
+   "token": "--bg",
+   "demo": "#fafafa",
+   "app": "#fafafa",
+   "status": "일치"
+  },
+  {
+   "token": "--surface",
+   "demo": "#fff",
+   "app": "#ffffff",
+   "status": "일치"
+  },
+  {
+   "token": "--sunken",
+   "demo": "#f3f3f3",
+   "app": "#f3f3f3",
+   "status": "일치"
+  },
+  {
+   "token": "--hover",
+   "demo": "#f3f3f3",
+   "app": "#f3f3f3",
+   "status": "일치"
+  },
+  {
+   "token": "--ink",
+   "demo": "#141414",
+   "app": "#141414",
+   "status": "일치"
+  },
+  {
+   "token": "--ink2",
+   "demo": "#484848",
+   "app": "#484848",
+   "status": "일치"
+  },
+  {
+   "token": "--mute",
+   "demo": "#666",
+   "app": "#666666",
+   "status": "일치"
+  },
+  {
+   "token": "--line",
+   "demo": "#dedede",
+   "app": "#dedede",
+   "status": "일치"
+  },
+  {
+   "token": "--line-sub",
+   "demo": "#ebebeb",
+   "app": "#ebebeb",
+   "status": "일치"
+  },
+  {
+   "token": "--line-strong",
+   "demo": "#adadad",
+   "app": "#adadad",
+   "status": "일치"
+  },
+  {
+   "token": "--accent",
+   "demo": "#007a46",
+   "app": "#007a46",
+   "status": "일치"
+  },
+  {
+   "token": "--accent-ink",
+   "demo": "#fff",
+   "app": "#ffffff",
+   "status": "일치"
+  },
+  {
+   "token": "--accent-soft",
+   "demo": "#eef5ef",
+   "app": "#eef5ef",
+   "status": "일치"
+  },
+  {
+   "token": "--sel-line",
+   "demo": "rgba(0,122,70,.32)",
+   "app": "rgba(0, 122, 70, .32)",
+   "status": "일치"
+  },
+  {
+   "token": "--sel-fill",
+   "demo": "transparent",
+   "app": "transparent",
+   "status": "일치"
+  },
+  {
+   "token": "--price",
+   "demo": "#b52e10",
+   "app": "#b52e10",
+   "status": "일치"
+  },
+  {
+   "token": "--ok",
+   "demo": "#007a46",
+   "app": "#007a46",
+   "status": "일치"
+  },
+  {
+   "token": "--ok-soft",
+   "demo": "#eef5ef",
+   "app": "#eef5ef",
+   "status": "일치"
+  },
+  {
+   "token": "--warn",
+   "demo": "#484848",
+   "app": "#484848",
+   "status": "일치"
+  },
+  {
+   "token": "--warn-soft",
+   "demo": "#fff8e0",
+   "app": "#fff8e0",
+   "status": "일치"
+  },
+  {
+   "token": "--err",
+   "demo": "#b52e10",
+   "app": "#b52e10",
+   "status": "일치"
+  },
+  {
+   "token": "--err-soft",
+   "demo": "#fff0ec",
+   "app": "#fff0ec",
+   "status": "일치"
+  },
+  {
+   "token": "--err-line",
+   "demo": "#ff5a36",
+   "app": "#ff5a36",
+   "status": "일치"
+  },
+  {
+   "token": "--shade",
+   "demo": "rgba(20,20,20,.08)",
+   "app": "rgba(20, 20, 20, 0.08)",
+   "status": "일치"
+  },
+  {
+   "token": "--scrim",
+   "demo": "rgba(20,20,20,.28)",
+   "app": "rgba(20, 20, 20, 0.28)",
+   "status": "일치"
+  },
+  {
+   "token": "--fs-cap",
+   "demo": "12px",
+   "app": "13px",
+   "status": "충돌 발견"
+  },
+  {
+   "token": "--fs-sm",
+   "demo": "13px",
+   "app": "14px",
+   "status": "충돌 발견"
+  },
+  {
+   "token": "--fs-body",
+   "demo": "14px",
+   "app": "15px",
+   "status": "충돌 발견"
+  },
+  {
+   "token": "--fs-h2",
+   "demo": "16px",
+   "app": "16px",
+   "status": "일치"
+  },
+  {
+   "token": "--fs-h1",
+   "demo": "20px",
+   "app": "20px",
+   "status": "일치"
+  },
+  {
+   "token": "--fs-masthead",
+   "demo": "28px",
+   "app": "28px",
+   "status": "일치"
+  },
+  {
+   "token": "--lh-cap",
+   "demo": "18px",
+   "app": "20px",
+   "status": "충돌 발견"
+  },
+  {
+   "token": "--lh-sm",
+   "demo": "20px",
+   "app": "22px",
+   "status": "충돌 발견"
+  },
+  {
+   "token": "--lh-body",
+   "demo": "22px",
+   "app": "24px",
+   "status": "충돌 발견"
+  },
+  {
+   "token": "--lh-h2",
+   "demo": "24px",
+   "app": "24px",
+   "status": "일치"
+  },
+  {
+   "token": "--lh-h1",
+   "demo": "28px",
+   "app": "28px",
+   "status": "일치"
+  },
+  {
+   "token": "--fw-regular",
+   "demo": "400",
+   "app": "400",
+   "status": "일치"
+  },
+  {
+   "token": "--fw-medium",
+   "demo": "500",
+   "app": "500",
+   "status": "일치"
+  },
+  {
+   "token": "--fw-strong",
+   "demo": "600",
+   "app": "600",
+   "status": "일치"
+  },
+  {
+   "token": "--fw-title",
+   "demo": "700",
+   "app": "700",
+   "status": "일치"
+  },
+  {
+   "token": "--s1",
+   "demo": "4px",
+   "app": "4px",
+   "status": "일치"
+  },
+  {
+   "token": "--s2",
+   "demo": "8px",
+   "app": "8px",
+   "status": "일치"
+  },
+  {
+   "token": "--s3",
+   "demo": "12px",
+   "app": "12px",
+   "status": "일치"
+  },
+  {
+   "token": "--s4",
+   "demo": "16px",
+   "app": "16px",
+   "status": "일치"
+  },
+  {
+   "token": "--s5",
+   "demo": "24px",
+   "app": "24px",
+   "status": "일치"
+  },
+  {
+   "token": "--s6",
+   "demo": "32px",
+   "app": "32px",
+   "status": "일치"
+  },
+  {
+   "token": "--s-panel",
+   "demo": "20px",
+   "app": "20px",
+   "status": "일치"
+  },
+  {
+   "token": "--s-card",
+   "demo": "24px",
+   "app": "24px",
+   "status": "일치"
+  },
+  {
+   "token": "--r",
+   "demo": "12px",
+   "app": "12px",
+   "status": "일치"
+  },
+  {
+   "token": "--r2",
+   "demo": "8px",
+   "app": "8px",
+   "status": "일치"
+  },
+  {
+   "token": "--control-sm",
+   "demo": "32px",
+   "app": "32px",
+   "status": "일치"
+  },
+  {
+   "token": "--control-md",
+   "demo": "36px",
+   "app": "36px",
+   "status": "일치"
+  },
+  {
+   "token": "--control-lg",
+   "demo": "44px",
+   "app": "44px",
+   "status": "일치"
+  },
+  {
+   "token": "--hit",
+   "demo": "32px",
+   "app": "32px",
+   "status": "일치"
+  }
+ ]
+}
