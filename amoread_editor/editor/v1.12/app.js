@@ -12,6 +12,8 @@ const CTA_STYLES=[['filled','강조형'],['outline','테두리형'],['text','텍
 const REVIEW_LAYOUTS=[['cards','개별 후기 카드'],['feature-left','큰 상품 사진 + 후기'],['feature-top','상단 상품 사진 + 후기'],['text','상품명 + 후기']];
 const PRODUCT_VIEWS=[['grid','그리드','균형 있게 한눈에'],['list','리스트','이미지 옆 상품 정보'],['card','와이드 카드','대표 상품을 크게'],['carousel','캐러셀','가로로 넘기는 추천'],['masonry','메이슨리','크기가 다른 이미지 카드']];
 const PRODUCT_VIEW_NAMES=Object.fromEntries(PRODUCT_VIEWS.map(x=>[x[0],x[1]]));
+// 탭(필터) 구좌를 쓸 수 있는 유형. s.ftabs=[{id,label,zone,productIds}] — 오른쪽 패널 탭(tabs()·tab)과는 다른 것 (plans/28)
+const FTAB_LAYOUTS=['grid2','grid3','feat'];
 function productView(s){return PRODUCT_VIEW_NAMES[s.productView]?s.productView:'grid'}
 function productViewPicker(s){if(!['grid2','grid3','feat'].includes(s.layout))return '';
  return `<section class="am-ed-group am-ed-product-style-section"><div class="am-ed-group__title"><h3>상품 배치 방식</h3><span class="am-ed-tag">${E(PRODUCT_VIEW_NAMES[productView(s)])}</span></div><p class="am-ed-group__description">같은 상품·카드 요소를 그대로 유지한 채 진열 방식만 전환합니다.</p><div class="am-ed-product-layouts">${PRODUCT_VIEWS.map(([id,label,description])=>`<button type="button" class="am-ed-product-layout-option" data-product-style="${id}" aria-pressed="${productView(s)===id}"><span class="am-ed-layout-visual am-ed-layout-${id}" aria-hidden="true"><i></i><i></i><i></i><i></i></span><b>${label}</b><small>${description}</small></button>`).join('')}</div></section>`;
@@ -1454,6 +1456,13 @@ window.AMOREAD_EDITOR_API=Object.freeze({
    s.lines=(Array.isArray(v.lines)?v.lines:[]).slice(0,10).map(l=>({text:str(l?.text,120)}));
    const seqs=[...new Set((Array.isArray(x.slots)?x.slots:[]).map(sl=>String(sl?.seq??'')))].filter(seq=>PRODUCTS.some(p=>p.id===seq));
    if(['grid2','grid3','feat','deal-banner'].includes(layout))s.productIds=seqs;
+   // 탭(필터) 구좌: 탭마다 상품을 나눠 둔다 (plans/28). 칸의 tabId가 없거나 없는 탭이면 첫 탭. 같은 상품이 여러 탭에 있어도 된다
+   const ftIn=(Array.isArray(x.tabs)?x.tabs:[]).filter(t=>t&&/^[A-Za-z0-9_-]{1,40}$/.test(t.tabId||'')).slice(0,12);
+   if(FTAB_LAYOUTS.includes(layout)&&ftIn.length){
+    const ids=new Set(ftIn.map(t=>t.tabId)),tabOf=sl=>ids.has(sl?.tabId)?sl.tabId:ftIn[0].tabId;
+    s.ftabs=ftIn.map(t=>({id:t.tabId,label:str(t.label,40),zone:str(t.zone_tag,40),
+     productIds:[...new Set((Array.isArray(x.slots)?x.slots:[]).filter(sl=>tabOf(sl)===t.tabId).map(sl=>String(sl?.seq??'')))].filter(seq=>PRODUCTS.some(p=>p.id===seq))}));
+   }
    const card=v.card;
    if(card&&Array.isArray(card.order)&&card.order.length===ORDER.length&&ORDER.every(k=>card.order.includes(k)))s.card.order=card.order.slice();
    if(card&&card.on&&typeof card.on==='object')for(const k of ORDER)if(k in card.on)s.card.on[k]=card.on[k]?1:0;

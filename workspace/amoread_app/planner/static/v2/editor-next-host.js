@@ -100,7 +100,26 @@ function enToLegacy(snapshot, prevSections, knownSeqs) {
     // 편집기가 모르는 칸(카탈로그에 없는 SEQ, 묶음 상품)은 지우지 않고 남긴다
     const foreign = pSlots.filter(x => x && ((x.items && x.items.length) || (x.seq && !knownSeqs.has(String(x.seq)))));
     let slots = pSlots;
-    if (EN_PRODUCT_LAYOUTS.includes(s.layout)) {
+    const ft = EN_FTAB_LAYOUTS.includes(s.layout) ? enFtabs(s) : null;
+    if (ft) {
+      // 탭 구좌 (plans/28): 칸은 '탭|SEQ'로 찾는다 → 같은 상품이 여러 탭에 있어도 칸이 사라지지 않음. 없는 탭의 칸은 첫 탭으로
+      const tabIds = new Set(ft.map(t => t.id)), first = ft.length ? ft[0].id : null;
+      const tabOf = x => (first ? (tabIds.has(x.tabId) ? x.tabId : first) : null);
+      const at = (x, id) => { const c = { ...x }; if (id) c.tabId = id; else delete c.tabId; return c; };
+      const byKey = new Map();
+      pSlots.filter(x => x && x.seq).forEach(x => { const k = `${tabOf(x)}|${x.seq}`; if (!byKey.has(k)) byKey.set(k, x); });
+      const ids = (s.productIds || []).map(String).filter(seq => /^\d{1,12}$/.test(seq));
+      const groups = ft.length ? ft : [{ id: null, productIds: ids }];   // 탭을 없앴으면 모든 상품을 한 구좌로
+      const used = new Set(), filled = new Set();
+      const picked = groups.flatMap(t => t.productIds.filter(seq => /^\d{1,12}$/.test(seq)).map(seq => {
+        filled.add(t.id);
+        const o = byKey.get(`${t.id}|${seq}`);
+        if (o) { used.add(o); return at(o, t.id); }
+        return at({ slotId: enSlotId(), seq, items: null, placeholderStatus: 'AVAILABLE', customCopy: '' }, t.id);
+      }));
+      const empty = pSlots.filter(x => x && !x.seq && !(x.items && x.items.length) && !filled.has(tabOf(x)));   // 상품을 아직 안 고른 탭의 자리는 유지
+      slots = [...picked, ...foreign.filter(x => !used.has(x)).map(x => at(x, tabOf(x))), ...empty.map(x => at(x, tabOf(x)))].slice(0, 40);
+    } else if (EN_PRODUCT_LAYOUTS.includes(s.layout)) {
       const ids = (s.productIds || []).map(String).filter(seq => /^\d{1,12}$/.test(seq));
       const picked = ids.map(seq => bySeq.get(seq) || { slotId: enSlotId(), tabId: firstTab, seq, items: null, placeholderStatus: 'AVAILABLE', customCopy: '' });
       const empty = ids.length ? [] : pSlots.filter(x => x && !x.seq && !(x.items && x.items.length));   // 상품을 아직 안 고른 자리는 유지
@@ -111,14 +130,31 @@ function enToLegacy(snapshot, prevSections, knownSeqs) {
     return {
       ...p, sectionId: s.id, order: i, name: enCut(s.name, 40), headline: enCut(s.name, 120), subhead: enCut(s.role, 400),
       cta: enCut(s.cta, 40), layoutId: s.layout, zone_tag: enCut(s.cat, 40), designNotes: enCut(s.notes, 2000), slots,
+      ...(ft ? { zone_kind: p.zone_kind || (ft.length ? '탭' : ''), tabs: ft.map(t => ({ ...((p.tabs || []).find(x => x && x.tabId === t.id) || {}), tabId: t.id, label: enCut(t.label, 40), zone_tag: enCut(t.zone, 40) })) } : {}),
       v2: { ...pv, scope: enCut(s.scope, 200), num: !!s.num, ctaOn: !!s.ctaOn, ctaTo: enCut(s.ctaTo, 60), lines,
         ...(s.card ? { card: { order: s.card.order, on: s.card.on, def: s.card.def } } : {}), ...(ai ? { copyRecommendation: ai } : {}) },
     };
   });
 }
-// page.sections가 이 편집기 밖(02 구좌 구성 등)에서 바뀌었는지 알아보는 지문 (구좌 id·유형·제목·설명·상품 SEQ만)
+// 편집기의 탭 구좌 값 (plans/28). null = 탭을 모르던 저장본 → 이전 tabs를 그대로 둔다 / [] = 탭을 없앰
+// 편집기가 productIds만 고쳤을 때(탭 UI 밖): 빠진 상품은 모든 탭에서 빼고, 탭에 없는 새 상품은 첫 탭에 넣는다
+const EN_FTAB_LAYOUTS = ['grid2', 'grid3', 'feat'];   // app.js FTAB_LAYOUTS와 같게
+function enFtabs(s) {
+  if (!Array.isArray(s.ftabs)) return null;
+  const ids = (s.productIds || []).map(String), have = new Set(ids);
+  const tabs = s.ftabs.filter(t => t && /^[A-Za-z0-9_-]{1,40}$/.test(t.id || '')).slice(0, 12)
+    .map(t => ({ ...t, productIds: [...new Set((t.productIds || []).map(String))].filter(q => have.has(q)) }));
+  if (tabs.length) { const placed = new Set(tabs.flatMap(t => t.productIds)); tabs[0].productIds.push(...[...new Set(ids)].filter(q => !placed.has(q))); }
+  return tabs;
+}
+// page.sections가 이 편집기 밖(02 구좌 구성 등)에서 바뀌었는지 알아보는 지문 (구좌 id·유형·제목·설명·상품 SEQ, 탭 구좌면 탭과 칸의 탭)
+// 탭이 없는 구좌는 예전 지문과 같다 → 업데이트 뒤 처음 열 때 쓸데없이 '다시 맞춤'이 생기지 않음
 function enLegacyMark(sections) {
-  const s = JSON.stringify((Array.isArray(sections) ? sections : []).map(x => [x.sectionId, x.layoutId, x.headline || '', x.subhead || '', (x.slots || []).map(y => y.seq || '')]));
+  const s = JSON.stringify((Array.isArray(sections) ? sections : []).map(x => {
+    const r = [x.sectionId, x.layoutId, x.headline || '', x.subhead || '', (x.slots || []).map(y => y.seq || '')];
+    if (x.tabs && x.tabs.length) r.push(x.tabs.map(t => [t.tabId, t.label || '']), (x.slots || []).map(y => y.tabId || ''));
+    return r;
+  }));
   let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
   return `${s.length}:${h.toString(36)}`;
 }
@@ -142,14 +178,20 @@ async function enConnect() {
   //               ③ 저장본이 없으면 page.sections에서 가져옴
   let start, how;
   try {
-    if (en && en.snapshot && (!en.synced || en.synced === enLegacyMark(legacy) || !legacy.length)) { start = en.snapshot; how = 'saved'; }
-    else {
+    if (en && en.snapshot && (!en.synced || en.synced === enLegacyMark(legacy) || !legacy.length)) {
+      // 탭을 모르던 때의 저장본이면 탭은 page.sections에서 채운다 (plans/28)
+      const leg = new Map(API.fromLegacyPage(doc.page).sections.filter(f => f.ftabs).map(f => [f.id, f]));
+      start = { ...en.snapshot, sections: (en.snapshot.sections || []).map(s => s.ftabs === undefined && leg.get(s.id) && leg.get(s.id).layout === s.layout ? { ...s, ftabs: leg.get(s.id).ftabs } : s) };
+      how = 'saved';
+    } else {
       const fresh = API.fromLegacyPage(doc.page);
       if (en && en.snapshot) {
         const old = new Map((en.snapshot.sections || []).map(s => [s.id, s]));
         fresh.sections = fresh.sections.map(f => {
           const o = old.get(f.id);
-          return o && o.layout === f.layout ? { ...o, name: f.name, role: f.role, productIds: EN_PRODUCT_LAYOUTS.includes(f.layout) ? f.productIds : o.productIds, notes: f.notes } : f;
+          // 탭은 02(page.sections)가 기준: 02에서 탭을 없앴으면 []
+          return o && o.layout === f.layout ? { ...o, name: f.name, role: f.role, productIds: EN_PRODUCT_LAYOUTS.includes(f.layout) ? f.productIds : o.productIds, notes: f.notes,
+            ftabs: f.ftabs || (o.ftabs ? [] : undefined) } : f;
         });
         how = 'resynced';
       } else how = 'imported';
