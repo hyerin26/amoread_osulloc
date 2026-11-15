@@ -198,3 +198,11 @@ select { min-height:var(--control-lg); padding:0 10px; border:1px solid var(--li
 .map .root-edit-btn:hover .hit { fill: var(--hover); }
 .map .root-edit-btn:hover path { stroke: var(--ink); }
 .map-tip { position:absolute; transform:translate(-50%,-100%); background:var(--surface); color:var(--ink); border:1px solid var(--line); font-size:var(--fs-cap); line-height:var(--lh-cap); padding:4px 8px; border-radius:var(--r2); white-space:nowrap; pointer-events:none; z-index:2; }
+/* 마인드맵 크기 (2026-11-16): 두 번 펼친 지도까지 한 화면에 들어오게 글자·알약·동그라미를 줄임. 지도는 실제 픽셀 크기로 그린다 (renderMap) */
+.map { width: auto; min-width: 0; margin: 0 auto; }
+.map .node text { font-size: 13px; }
+.map .node.keyword > text { font-size: 13px; }
+.map .node.root text { font-size: 15px; }
+.map .node .ck circle { stroke-width: 1.25; }
+.map .node .ck path { stroke-width: 1.6; }
+.map .node.open rect { stroke: var(--line-strong); stroke-width: 1; }   /* 펼친 키워드: 진한 1px 선 (덧칠 없음) */

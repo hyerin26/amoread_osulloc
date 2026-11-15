@@ -86,7 +86,7 @@ test('first branches are actual words, never planning category nodes',async()=>{
   const s=await setup();s.pending[0].resolve(response('연말 선물',['감사 선물','티백','사무실 티타임']));await s.settle();
   const flat=el=>el.children.flatMap(x=>[x,...flat(x)]);   // 선·노드를 그룹으로 나눠 그린다 (가운데 노드 먼저: 가지 선을 잇기 위해 너비를 먼저 잼)
   const nodes=flat(s.elements.get('#map')).filter(x=>x['data-k']);
-  assert.deepEqual(nodes.map(x=>x['data-k']),['연말 선물','감사 선물','티백','사무실 티타임']);
+  assert.deepEqual(nodes.map(x=>x['data-k']).sort(),['감사 선물','사무실 티타임','연말 선물','티백']);   // 그리는 순서는 왼쪽 가지 → 오른쪽 가지라 순서는 보지 않음
   assert.equal(nodes.some(x=>x['data-k'].startsWith('@group:')),false);
 });
 
