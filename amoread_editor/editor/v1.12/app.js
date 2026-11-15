@@ -28,7 +28,10 @@ function ftRemove(s,id){const i=ftOn(s)&&s.ftabs.length>FTAB_MIN?s.ftabs.findInd
 function ftMove(s,id,d){const i=s.ftabs.findIndex(t=>t.id===id),j=i+d;if(i<0||j<0||j>=s.ftabs.length)return;[s.ftabs[i],s.ftabs[j]]=[s.ftabs[j],s.ftabs[i]];}
 // 탭 없애기: 모든 탭 상품을 탭 순서대로 한 구좌에. ftabs=[]는 '없앴음' (저장 때 page.sections의 탭도 지움)
 function ftDrop(s){if(!Array.isArray(s.ftabs)||!s.ftabs.length)return;ftStore(s);s.productIds=[...new Set(s.ftabs.flatMap(t=>t.productIds))];s.ftabs=[];delete s.ftabCur;}
-function ftPills(s){if(!ftOn(s))return '';const cur=ftCur(s);return `<div class="am-ftabs" role="tablist" aria-label="${E(s.name)} 탭">${s.ftabs.map(t=>`<button type="button" role="tab" class="am-ftab" data-ftab-pill="${E(s.id)}|${E(t.id)}" aria-selected="${t===cur}" tabindex="${t===cur?0:-1}">${E(t.label||'탭')}</button>`).join('')}</div>`;}
+// 구좌 추가 창 미리보기(카드 자체가 button)에서는 그림만: button 안 button은 HTML이 카드를 끊어 버린다
+function ftPills(s){if(!ftOn(s))return '';const cur=ftCur(s);
+ if(!sections.includes(s))return `<div class="am-ftabs" aria-hidden="true">${s.ftabs.map(t=>`<span class="am-ftab" aria-selected="${t===cur}">${E(t.label||'탭')}</span>`).join('')}</div>`;
+ return `<div class="am-ftabs" role="tablist" aria-label="${E(s.name)} 탭">${s.ftabs.map(t=>`<button type="button" role="tab" class="am-ftab" data-ftab-pill="${E(s.id)}|${E(t.id)}" aria-selected="${t===cur}" tabindex="${t===cur?0:-1}">${E(t.label||'탭')}</button>`).join('')}</div>`;}
 function ftIssues(s){if(!ftOn(s))return [];ftStore(s);const out=[],noZone=s.ftabs.filter(t=>!t.zone.trim()).length;
  s.ftabs.forEach((t,i)=>{if(!t.label.trim())out.push(`${i+1}번 탭 이름이 비어 있어요`);else if(!t.productIds.length)out.push(`'${t.label}' 탭에 상품이 없어요`);});
  if(noZone)out.push(`Zone(PROMO_WORK 카테고리명)이 빈 탭이 ${noZone}개 있어요`);return out;}

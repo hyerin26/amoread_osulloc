@@ -113,6 +113,7 @@ def test_add_tab_section_from_picker_and_edit_tabs(page, server):
     # 구좌 추가 창: '탭'으로 검색하면 상품 탭 카드가 나온다
     page.click("#addSection")
     page.fill("#pickerSearch", "탭")
+    assert page.locator('[data-picker-id="grid2@tabs"] .am-ftab').count() == 3   # 알약이 카드 안에 (button 안 button이면 카드가 끊김)
     page.click('[data-picker-id="grid2@tabs"]')
     page.click("#pickerApply")
     s = _cur(page)
