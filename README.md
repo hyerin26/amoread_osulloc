@@ -14,7 +14,7 @@
 - Google Chrome (레퍼런스 화면 수집·신규 프로모션 찾기에 사용)
 - 이 비공개 GitLab 저장소에 접근할 수 있는 계정
 
-시작 메뉴에서 **PowerShell**을 열고 아래 명령어로 확인합니다. 이 문서의 명령어는 PowerShell 기준입니다.
+시작 메뉴에서 **PowerShell**을 열고 아래 명령어로 확인합니다. 이 문서의 명령어는 PowerShell 기준이며, 파일·폴더 경로는 Windows 표기(`\`)를 사용합니다. URL과 Git 브랜치 이름에는 `/`를 그대로 사용합니다.
 
 ```powershell
 python --version
@@ -31,16 +31,16 @@ git --version
 git clone -b ai/amoread-ai-module --single-branch https://gitlab.com/amoread2/osulloc.git osulloc-ai
 cd osulloc-ai
 git branch --show-current
-cd workspace/amoread_app
+cd workspace\amoread_app
 ```
 
 브랜치 확인 결과가 `ai/amoread-ai-module`이면 맞습니다. 이미 `osulloc-ai` 폴더가 있다면 새로 복제하지 말고 그 폴더가 올바른 브랜치인지 먼저 확인해 주세요. 기존 폴더를 삭제하거나 덮어쓰지 마세요.
 
-**이후 설치·데이터 변환·실행 명령은 모두 `osulloc-ai/workspace/amoread_app` 폴더에서 실행합니다.** 저장소 전체가 필요하므로 `amoread_app` 폴더만 따로 옮기지 마세요.
+**이후 설치·데이터 변환·실행 명령은 모두 `osulloc-ai\workspace\amoread_app` 폴더에서 실행합니다.** 저장소 전체가 필요하므로 `amoread_app` 폴더만 따로 옮기지 마세요.
 
 ## 3. 기존에 전달해 주셨던 원천 데이터 넣기 (필수)
 
-담당자님께서 기존에 저희에게 보내주셨던 **판매실적·상품장·프로모션 정보·리뷰 파일**을 넣어 주세요. 위치는 저장소 최상위가 아니라 **`workspace/amoread_app/data`**입니다.
+담당자님께서 기존에 저희에게 보내주셨던 **판매실적·상품장·프로모션 정보·리뷰 파일**을 넣어 주세요. 위치는 저장소 최상위가 아니라 **`workspace\amoread_app\data`**입니다.
 
 이미 아래 구조의 `data` 폴더를 보관 중이시면 `amoread_app` 안으로 폴더째 복사해 주세요. 파일 이름과 연도는 원본 그대로 유지합니다.
 
@@ -63,13 +63,13 @@ osulloc-ai
 
 | 위치 (`amoread_app` 기준) | 넣을 원천 자료 |
 |---|---|
-| `data/report_service/` | SEQ × 일자 고객판매실적 CSV, 몰 전체 일자별 트렌드 CSV |
-| `data/sample/` | 오설록 온라인 가이드 상품장 Excel, BY26 프로모션별 할인정보 Excel |
-| `data/sample/reviews/` | 고객 리뷰 파일 |
+| `data\report_service\` | SEQ × 일자 고객판매실적 CSV, 몰 전체 일자별 트렌드 CSV |
+| `data\sample\` | 오설록 온라인 가이드 상품장 Excel, BY26 프로모션별 할인정보 Excel |
+| `data\sample\reviews\` | 고객 리뷰 파일 |
 
 `YYYY`와 `…`는 파일명 예시의 생략 표시입니다. 이 글자대로 파일명을 바꾸지 마세요. 여러 연도의 파일을 전달하셨다면 해당 파일들을 함께 넣어 주세요.
 
-**원천 데이터와 레퍼런스 데이터는 서로 다릅니다.** 이 브랜치에는 초기 레퍼런스 색인·수집본이 포함되어 있지만, 판매실적·원가 등 위 원천 자료는 별도로 넣어야 합니다. 원천 자료를 `planner/data` 안에 넣지 마세요. `planner/data`는 앱이 사용할 변환 결과와 레퍼런스 데이터가 있는 위치입니다.
+**원천 데이터와 레퍼런스 데이터는 서로 다릅니다.** 이 브랜치에는 초기 레퍼런스 색인·수집본이 포함되어 있지만, 판매실적·원가 등 위 원천 자료는 별도로 넣어야 합니다. 원천 자료를 `planner\data` 안에 넣지 마세요. `planner\data`는 앱이 사용할 변환 결과와 레퍼런스 데이터가 있는 위치입니다.
 
 원천 자료는 Git에 올리지 않습니다. 데이터 파일을 공유할 때는 사내 승인 채널을 이용해 주세요.
 
@@ -97,9 +97,9 @@ python setup_env.py
 
 ```powershell
 python -m venv .venv
-./.venv/Scripts/python.exe -m pip install pip-system-certs
-./.venv/Scripts/python.exe -m pip install -r planner/requirements.txt
-./.venv/Scripts/python.exe -m pip install -r planner/requirements-capture.txt
+.\.venv\Scripts\python.exe -m pip install pip-system-certs
+.\.venv\Scripts\python.exe -m pip install -r planner\requirements.txt
+.\.venv\Scripts\python.exe -m pip install -r planner\requirements-capture.txt
 ```
 
 ## 5. 실제 데이터 변환 (필수)
@@ -108,10 +108,10 @@ python -m venv .venv
 
 ```powershell
 $env:PYTHONUTF8 = "1"
-./.venv/Scripts/python.exe -W ignore -m planner.build
+.\.venv\Scripts\python.exe -W ignore -m planner.build
 ```
 
-- 결과 파일: `workspace/amoread_app/planner/data/planner_data.json`
+- 결과 파일: `workspace\amoread_app\planner\data\planner_data.json`
 - `[오류] 온라인 가이드 파일이 없습니다: …` 등 오류가 나오면 안내된 원천 파일의 위치와 이름을 확인한 뒤 다시 실행해 주세요. 오류가 남아 있으면 실제 데이터 준비가 끝난 상태가 아닙니다.
 - 이후 **판매실적·상품장·프로모션 정보 등 원천 파일을 바꿀 때마다 이 변환 명령어를 다시 실행**합니다. 서버가 켜져 있어도 변환 결과를 다시 읽습니다.
 
@@ -122,7 +122,7 @@ $env:PYTHONUTF8 = "1"
 ```powershell
 $env:PYTHONUTF8 = "1"
 $env:PLANNER_PORT = "9751"
-./.venv/Scripts/python.exe -m planner.server
+.\.venv\Scripts\python.exe -m planner.server
 ```
 
 크롬에서 **[http://127.0.0.1:9751/v2/](http://127.0.0.1:9751/v2/)** 를 열어 주세요. 브라우저가 자동으로 열려도 주소 끝이 `/v2/`인지 확인합니다.
@@ -134,7 +134,7 @@ $env:PLANNER_PORT = "9751"
 
 ### 다음부터 실행할 때
 
-파일 탐색기에서 `osulloc-ai/workspace/amoread_app` 폴더를 열고 주소창에 `powershell`을 입력합니다. **6번의 세 줄만 다시 실행**하면 됩니다. 설치는 매번 하지 않아도 됩니다. 원천 데이터가 바뀐 경우에는 5번을 먼저 진행하세요.
+파일 탐색기에서 `osulloc-ai\workspace\amoread_app` 폴더를 열고 주소창에 `powershell`을 입력합니다. **6번의 세 줄만 다시 실행**하면 됩니다. 설치는 매번 하지 않아도 됩니다. 원천 데이터가 바뀐 경우에는 5번을 먼저 진행하세요.
 
 ### 실행 후 확인
 
@@ -166,10 +166,10 @@ $env:PLANNER_PORT = "9751"
 | 증상 | 확인할 내용 |
 |---|---|
 | `python`을 찾을 수 없음 | Python 설치와 PATH 확인. 설치 명령은 `py -3 setup_env.py`로 시도 |
-| `setup_env.py` 또는 모듈을 찾을 수 없음 | 현재 위치가 `osulloc-ai/workspace/amoread_app`인지 확인 |
+| `setup_env.py` 또는 모듈을 찾을 수 없음 | 현재 위치가 `osulloc-ai\workspace\amoread_app`인지 확인 |
 | 패키지 설치 중 SSL·인증서 오류 | `pip-system-certs` 설치 단계 확인. 계속 실패하면 오류 메시지를 전달하고 사내 인증서·네트워크 설정 확인 |
 | 원천 파일이 없다는 오류 | 3번의 위치·원본 파일명 확인 후 5번 재실행 |
-| 상품·실적 화면에 데이터 없음 | 5번 변환이 오류 없이 완료되어 `planner/data/planner_data.json`이 생성되었는지 확인 |
+| 상품·실적 화면에 데이터 없음 | 5번 변환이 오류 없이 완료되어 `planner\data\planner_data.json`이 생성되었는지 확인 |
 | 포트가 이미 사용 중 | `$env:PLANNER_PORT = "9761"`로 바꿔 실행하고 접속 주소도 `http://127.0.0.1:9761/v2/`로 변경 |
 | 인증 토큰이 없다는 안내 | 서버 재실행 후 페이지 새로고침 |
 | 한글이 깨짐 | 실행·변환 전에 `$env:PYTHONUTF8 = "1"` 설정 |
@@ -180,13 +180,13 @@ $env:PLANNER_PORT = "9751"
 
 ```powershell
 $env:PYTHONUTF8 = "1"
-./.venv/Scripts/python.exe -m amoread.ai.selfcheck
+.\.venv\Scripts\python.exe -m amoread.ai.selfcheck
 ```
 
 레퍼런스 데이터가 누락된 경우 수집 담당이 내보낸 스냅샷 ZIP을 사내 채널로 받아 다음과 같이 지정할 수 있습니다. 판매실적·상품장 원천 파일을 대신하는 ZIP은 아닙니다.
 
 ```powershell
-python setup_env.py --snapshot "C:/실제경로/amoread_snapshot_날짜_시각.zip"
+python setup_env.py --snapshot "C:\실제경로\amoread_snapshot_날짜_시각.zip"
 ```
 
 경로는 실제 받은 파일 위치로 바꿔 주세요. 설치 도구는 기존 기본 색인이 있으면 데이터 가져오기를 건너뜁니다. 최신 스냅샷으로 교체가 필요한 경우에는 [AI 모듈 문서의 스냅샷 공유 안내](https://gitlab.com/amoread2/osulloc/-/blob/ai/amoread-ai-module/workspace/amoread_app/amoread/ai/README.md)를 확인해 주세요.
