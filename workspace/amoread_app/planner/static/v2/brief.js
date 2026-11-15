@@ -134,7 +134,7 @@ function connectProducts() {
 }
 
 // 지도: 가운데는 늘 명분. 펼친 키워드(opened)의 가지는 바깥쪽 줄에 함께 그리고, 접기 전까지 남는다 (탐색한 키워드로 돌아가도 유지)
-const MAX_DEPTH = 3, KIDS_MAX = 8, ROW = 38, GAP = 44;
+const MAX_DEPTH = 3, KIDS_MAX = 8, ROW = 50, GAP = 64;   // 가지 사이 간격 (2026-11-16: 38·44는 너무 붙어 보였음)
 const parentOf = new Map();   // 지도에 그린 키워드 → 부모 (펼치기·접기·탐색 경로용)
 function chainOf(k) {
   const out = [k];
