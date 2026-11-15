@@ -209,15 +209,6 @@ select { min-height:var(--control-lg); padding:0 10px; border:1px solid var(--li
 /* 칩 글자는 왼쪽 정렬로 쌓는다 (가운데 정렬 + 보정값 대신 정해진 간격) */
 .map .node text.lbl { text-anchor: start; }
 
-/* ── 마인드맵 다듬기 (2026-11-16): 가운데 40 · 1단 32 · 하위 28 알약, 선도 단계별 굵기. 고른 키워드까지 가는 길은 강조색 ── */
-.map .edge.d1 { stroke: var(--line-strong); stroke-width: 1.75; }
-.map .edge.d2 { stroke: var(--line); stroke-width: 1.25; }
-.map .edge.on { stroke: var(--accent); stroke-width: 2; }
-.map .node.d1 > text { font-size: 14px; font-weight: var(--fw-medium); fill: var(--ink); }
-.map .node.d2 > text { font-size: 13px; fill: var(--ink2); }
-.map .node.d1 rect { stroke: var(--line); }
-.map .node.root rect { stroke: var(--accent); stroke-width: 1.5; }
-.map .node.root text { font-size: 16px; }
 .map-status { margin: 0 0 var(--s2); }
 .sec-head .ai-cost { margin-left: -4px; }
 #researchStatus:empty { display: none; }
@@ -228,26 +219,11 @@ select { min-height:var(--control-lg); padding:0 10px; border:1px solid var(--li
 .mood .fr { height: 104px; }
 .mood .mn { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 
-/* ── 마인드맵 3차 (2026-11-16): 둥근 네모 + 괄호형 선 · 색은 Green UI ──
-   가운데: 진한 초록 + 흰 글자 / 1단: 연한 초록 / 하위: 흰 바탕 + 회색 테두리 / 선: 회색, 고른 길은 초록 */
+/* ── 마인드맵 가지 (2026-11-16): 괄호형 선 · 굵기 1단 1px / 하위 0.75px · 고른 길 초록 1.25px. 노드 모양은 손대기 전 그대로 ── */
 .map .edge { fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .map .edge.d1 { stroke: var(--line-strong); stroke-width: 1; }
 .map .edge.d2 { stroke: var(--line-strong); stroke-width: .75; }
 .map .edge.on { stroke: var(--accent); stroke-width: 1.25; }
-.map .node.d1 rect { fill: var(--accent-soft); stroke: var(--sel-line); }
-.map .node.d2 rect { fill: var(--surface); stroke: var(--line); }
-.map .node.root rect { fill: var(--accent); stroke: var(--accent); }
-.map .node.root > text { fill: var(--accent-ink); }
-.map .node.root .ck circle { fill: transparent; stroke: var(--accent-ink); }
-.map .node.root .ck.on circle { fill: var(--accent-ink); stroke: var(--accent-ink); }
-.map .node.root .ck path { stroke: var(--accent); }
-.map .root-edit-btn path { stroke: var(--accent-ink); }
-.map .root-edit-btn:hover .hit { fill: rgba(255, 255, 255, .18); }
-.map .root-edit-btn:hover path { stroke: var(--accent-ink); }
-.map .node.keyword:hover rect { stroke: var(--accent); }
-.map .node.open rect { stroke: var(--accent); stroke-width: 1.5; }
-.map .node.focus rect { stroke: var(--accent); stroke-width: 2; }
-.map .node.keyword.picked > text { fill: var(--accent); font-weight: var(--fw-strong); }
 /* 누를 때 생기던 검정 초점 테두리(브라우저 기본 outline) 없앰 — 키를 누르면 다시 그리며 초점을 되돌려 놓아 테두리가 붙었다.
    키보드로 옮길 때만 초록 테두리로 위치 표시 (2026-11-16) */
 .map:focus, .map .node:focus, .map .node:focus-visible, .map .root-edit-btn:focus, .map .ck:focus { outline: none; }

@@ -134,12 +134,7 @@ function connectProducts() {
 }
 
 // 지도: 가운데는 늘 명분. 펼친 키워드(opened)의 가지는 바깥쪽 줄에 함께 그리고, 접기 전까지 남는다 (탐색한 키워드로 돌아가도 유지)
-// 간격 (2026-11-16 다듬기: 38·44px로 붙어 있어 '옹졸하게' 보였다)
-//   ROW1 = 1단 가지 한 칸 높이, ROW = 하위 가지 한 칸, GAP1 = 가운데 → 1단, GAPN = 부모 → 자식
-//   (2026-11-16 3차) 모양은 둥근 네모, 선은 괄호형: 부모에서 가로로 나와 세로 기둥 하나를 같이 쓰고 꺾이는 곳만 둥글게 → 곡선이 제각각 퍼지지 않게. 같은 단계는 한 세로줄
-//   펼친 가지가 있으면 가로가 길어지므로 휨·간격을 줄여 카드 폭 안에 들게 한다 (spacing())
-const MAX_DEPTH = 3, KIDS_MAX = 8, ROW1 = 50, ROW = 36;
-const spacing = () => (opened.size ? { GAP1: 64, GAPN: 48, ARC: 0 } : { GAP1: 80, GAPN: 56, ARC: 0 });
+const MAX_DEPTH = 3, KIDS_MAX = 8, ROW = 38, GAP = 44;
 const parentOf = new Map();   // 지도에 그린 키워드 → 부모 (펼치기·접기·탐색 경로용)
 function chainOf(k) {
   const out = [k];
@@ -162,14 +157,14 @@ function renderMap() {
 
   // 노드 = [고르기 동그라미] [키워드] 알약. 출처·관심 신호는 툴팁으로. 가운데 노드 오른쪽에는 명분 고치기 연필
   // anchor: 'c' 가운데 기준, 'r' 오른쪽 끝을 x에(왼쪽 가지), 'l' 왼쪽 끝을 x에(오른쪽 가지)
-  function node(k, x, y, root = false, anchor = 'c', depth = 0) {
+  function node(k, x, y, root = false, anchor = 'c') {
     const source = info(k).source,
       signal = BK.trend(dataFor(k), k),
       isPicked = picked.includes(k);
     const tip = root ? '' :
       `${sourceName(source)}${signal.change!==null ? signal.change>=.2?', 관심 상승':signal.change<=-.2?', 관심 하락':'' : ''}`;
     const g = svgEl('g', {
-      class: `node ${root?'root':`keyword d${Math.min(depth, 2)}`}${isPicked?' picked':''}${focus===k?' focus':''}${opened.has(k)?' open':''}`,
+      class: `node ${root?'root':'keyword'}${isPicked?' picked':''}${focus===k?' focus':''}${opened.has(k)?' open':''}`,
       tabindex: 0,
       role: 'button',
       'data-k': k,
@@ -179,9 +174,7 @@ function renderMap() {
     // 칩 규격 (Material 3 입력 칩, Atlassian·Toss 칩과 같은 8px 그리드): [여백][동그라미][8px][글자][(연필 자리)][여백]
     //   키워드: 높이 28 · 왼쪽 10 · 동그라미 12 · 간격 8 · 글자 · 오른쪽 12
     //   명분:   높이 36 · 왼쪽 12 · 동그라미 14 · 간격 8 · 글자 · 간격 4 · 연필 버튼 24(아이콘 14) · 오른쪽 6
-    //   1단 키워드는 한 단계 크게(높이 32) → 가운데·1단·하위 세 단계가 크기로 구분된다 (2026-11-16)
-    const S = root ? { h: 40, l: 14, d: 14, gap: 8, r: 8, btn: 24, btnGap: 4 }
-      : depth <= 1 ? { h: 32, l: 12, d: 12, gap: 8, r: 14, btn: 0, btnGap: 0 } : { h: 28, l: 10, d: 12, gap: 8, r: 12, btn: 0, btnGap: 0 };
+    const S = root ? { h: 36, l: 12, d: 14, gap: 8, r: 6, btn: 24, btnGap: 4 } : { h: 28, l: 10, d: 12, gap: 8, r: 12, btn: 0, btnGap: 0 };
     const t = svgEl('text', { x, y, class: 'lbl' });
     t.textContent = k.length > 14 ? k.slice(0, 13) + '…' : k;
     g.append(t);
@@ -193,7 +186,7 @@ function renderMap() {
       x0 = cx - w / 2,
       dc = x0 + S.l + S.d / 2;   // 동그라미 가운데
     t.setAttribute('x', x0 + S.l + S.d + S.gap);
-    g.insertBefore(svgEl('rect', { x: x0, y: y - h / 2, width: w, height: h, rx: root ? 10 : 8 }), t);   // 둥근 네모
+    g.insertBefore(svgEl('rect', { x: x0, y: y - h / 2, width: w, height: h, rx: 8 }), t);
     const ck = svgEl('g', { class: `ck${isPicked ? ' on' : ''}`, 'data-pickk': k });
     ck.append(svgEl('rect', { class: 'hit', x: dc - 12, y: y - 12, width: 24, height: 24, rx: 6 }));   // 누르는 자리 24px
     ck.append(svgEl('circle', { cx: dc, cy: y, r: S.d / 2 }));
@@ -221,7 +214,7 @@ function renderMap() {
     const kids = depth < MAX_DEPTH && opened.has(k) ? branchWords(k).filter(w => !drawn.has(w)).slice(0, KIDS_MAX) : [];
     kids.forEach(w => { drawn.add(w); parentOf.set(w, k); });
     tree.set(k, kids);
-    H.set(k, Math.max(depth <= 1 ? ROW1 : ROW, kids.reduce((a, c) => a + grow(c, depth + 1), 0)));
+    H.set(k, Math.max(ROW, kids.reduce((a, c) => a + grow(c, depth + 1), 0)));
     return H.get(k);
   }
   shown.forEach(k => grow(k, 1));
@@ -245,13 +238,10 @@ function renderMap() {
     fo.innerHTML = `<form xmlns="http://www.w3.org/1999/xhtml" id="rootForm" class="root-edit-form"><input type="text" id="rootInput" maxlength="20" required pattern="[가-힣A-Za-z0-9 ]{1,20}" aria-label="명분 (한글, 영문, 숫자, 공백 20자 이내)" value="${esc(ROOT)}"><button type="submit" class="btn sm primary">확인</button><button type="button" class="btn sm" data-root-cancel>취소</button></form>`;
     gN.append(fo);
   } else rootHalf = node(ROOT, CX, CY, true).w / 2;
-  // 1단은 가운데 노드를 둘러싼 부채꼴: 가운데 높이 줄이 가장 바깥(ARC), 위아래 끝으로 갈수록 안쪽 → 둥글게 퍼진 지도.
-  // 하위 가지는 부모 알약 바로 바깥(GAPN)에서 자라 가지마다 따로 뻗는다 (예전엔 깊이마다 한 세로줄에 모여 표처럼 보였음).
-  // 가운데 → 지금 보고 있는 키워드까지의 선은 강조 (어디서 뻗어 나온 말인지 보이게)
-  const onPath = new Set(chainOf(focus)), spotOf = new Map(spots.map(s => [s.k, s])), { GAP1, GAPN, ARC } = spacing();
-  // 괄호형 선: 부모 → (가로) → 기둥(부모와 자식 사이 가운데 x) → (세로) → (가로) → 자식. 꺾이는 곳 반지름 8.
-  // 같은 부모의 자식은 기둥 x가 같아 세로선이 한 줄로 겹친다. 강조할 선(고른 길)은 나중에 그려 위에 오게 한다
-  const onEdges = [];
+  const at = new Map([[ROOT, { y: CY, outer: { '-1': CX - rootHalf, '1': CX + rootHalf } }]]);
+  // 가지 (2026-11-16, 사용자가 남기기로 한 것): 괄호형 — 부모에서 가로로 나와 세로 기둥(부모와 자식 사이 가운데)을 같이 쓰고 꺾이는 곳만 반지름 8.
+  // 같은 부모의 자식은 같은 세로줄이라 세로선이 한 줄로 겹친다. 가운데 → 지금 보고 있는 키워드까지의 길은 초록으로, 회색 선 위에 그린다
+  const onPath = new Set(chainOf(focus)), onEdges = [];
   const edge = (x1, y1, x2, y2, depth, on) => {
     const mx = (x1 + x2) / 2, sx = Math.sign(x2 - x1) || 1, sy = Math.sign(y2 - y1), r = Math.min(8, Math.abs(y2 - y1) / 2, Math.abs(x2 - x1) / 2);
     const d = Math.abs(y2 - y1) < 1 ? `M${x1},${y1} H${x2}`
@@ -259,19 +249,18 @@ function renderMap() {
     const el = svgEl('path', { class: `edge d${Math.min(depth, 2)}${on ? ' on' : ''}`, d });
     on ? onEdges.push(el) : gE.append(el);
   };
-  const draw = (s, inner, py, px) => {
-    const left = s.side < 0, { w, cx } = node(s.k, inner, s.y, false, left ? 'r' : 'l', s.depth);
-    const near = left ? cx + w / 2 : cx - w / 2, outer = left ? cx - w / 2 : cx + w / 2;
-    edge(px, py, near, s.y, s.depth, onPath.has(s.k) && focus !== ROOT);
-    for (const c of tree.get(s.k) || []) draw(spotOf.get(c), outer + s.side * GAPN, s.y, outer);
-  };
-  for (const side of [-1, 1]) {
-    const firsts = spots.filter(s => s.depth === 1 && s.side === side);
-    const maxDy = Math.max(1, ...firsts.map(s => Math.abs(s.y - CY)));
-    for (const s of firsts) {
-      const t = Math.abs(s.y - CY) / maxDy;
-      draw(s, CX + side * (rootHalf + GAP1 + ARC * (1 - t * t)), CY, CX + side * rootHalf);
+  const edgeX = { '-1': CX - rootHalf - GAP, '1': CX + rootHalf + GAP };
+  for (let depth = 1; depth <= MAX_DEPTH; depth++) {
+    const widest = { '-1': 0, '1': 0 };
+    for (const s of spots.filter(x => x.depth === depth)) {
+      const { w, cx } = node(s.k, edgeX[s.side], s.y, false, s.side < 0 ? 'r' : 'l');
+      widest[s.side] = Math.max(widest[s.side], w);
+      const p = at.get(parentOf.get(s.k)), from = p.outer ? p.outer[s.side] : p.outerX,
+        to = s.side < 0 ? cx + w / 2 : cx - w / 2;
+      edge(from, p.y, to, s.y, depth, onPath.has(s.k) && focus !== ROOT);
+      at.set(s.k, { y: s.y, outerX: s.side < 0 ? cx - w / 2 : cx + w / 2 });
     }
+    for (const side of ['-1', '1']) edgeX[side] += (+side) * (widest[side] + GAP);
   }
   gE.append(...onEdges);
   // 가지가 없을 때: 네이버로 찾는 중이면 그 안내, 다 찾았는데 비었으면 그때만 AI를 권한다 (AI는 자동으로 돌지 않음)
@@ -290,9 +279,8 @@ function renderMap() {
   }
   // 크기: 그린 내용에 맞춰 실제 픽셀로 (펼친 정도에 따라 글자 크기가 크게 바뀌지 않게). 칸보다 넓으면 조금만 줄이고 그다음엔 가로로 밀어 봄
   try {
-    // 여백 64: 가장 바깥 알약이 카드 끝에 붙지 않게. 최소 높이 360: 가지가 적어도 지도가 납작해 보이지 않게
-    const bb = svg.getBBox(), vw = Math.max(640, bb.width + 64), vh = Math.max(360, bb.height + 64),
-      cw = $('.map-scroll').clientWidth || vw, scale = Math.max(.8, Math.min(1, cw / vw));
+    const bb = svg.getBBox(), vw = Math.max(560, bb.width + 48), vh = Math.max(300, bb.height + 48),
+      cw = $('.map-scroll').clientWidth || vw, scale = Math.max(.85, Math.min(1.1, cw / vw));
     svg.setAttribute('viewBox', `${Math.round(bb.x + bb.width / 2 - vw / 2)} ${Math.round(bb.y + bb.height / 2 - vh / 2)} ${Math.round(vw)} ${Math.round(vh)}`);
     Object.assign(svg.style, { width: `${Math.round(vw * scale)}px`, height: `${Math.round(vh * scale)}px`, minWidth: '0' });
   } catch { /* 그리기 전(화면 밖)에는 그대로 */ }
