@@ -10,12 +10,13 @@
 <link rel="preload" href="/static/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/static/tokens.css">
 <link rel="stylesheet" href="/static/v2/shell.css">
+<link rel="stylesheet" href="/static/v2/capture.css">
 <link rel="stylesheet" href="/static/v2/compose.css">
 </head>
 <body>
 <header class="v2top">
   <a class="v2logo" href="/v2/home"><i aria-hidden="true">a</i>AMOREAD</a>
-  <nav class="v2nav" aria-label="메뉴"><a href="/v2/home">홈</a><a href="/v2/library">레퍼런스</a></nav>
+  <nav class="v2nav" aria-label="메뉴"><a href="/v2/home">홈</a><a href="/v2/library">레퍼런스</a><a href="/v2/inspire">오늘의 영감</a></nav>
   <span class="v2grow"></span><span class="v2date" id="v2date">새 버전 · 시험 중</span>
   <a class="v2old" href="/">예전 화면</a>
   <a class="v2gear" href="/v2/settings" aria-label="설정·데이터"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
@@ -39,10 +40,10 @@
   <div class="masthead">
     <h1 data-plan-title>봄 · 피크닉에서 누리는 차 한 잔의 여유</h1>
     <div class="brief">
-      <span class="fact cls">시즌</span>
-      <span class="fact"><span class="k">기간</span>3/2(월) ~ 3/15(일)</span>
-      <span class="fact"><span class="k">키워드</span>피크닉 · 보온병</span>
-      <span class="fact"><span class="k">메인 카피</span>피크닉 가방에 차 한 병</span>
+      <span class="fact cls" id="briefClass">시즌</span>
+      <span class="fact"><span class="k">기간</span><span id="briefPeriod">3/2(월) ~ 3/15(일)</span></span>
+      <span class="fact"><span class="k">키워드</span><span id="briefKeywords">피크닉 · 보온병</span></span>
+      <span class="fact"><span class="k">메인 카피</span><span id="briefCopy">피크닉 가방에 차 한 병</span></span>
       <a class="link" href="/v2/brief">브리프 고치기</a>
     </div>
   </div>
@@ -92,6 +93,7 @@
 
 <script src="/static/v2/shell.js"></script>
 <script src="/static/v2/api.js"></script>
+<script src="/static/v2/capture.js"></script>
 <script src="/static/v2/plan.js"></script>
 <script src="/static/v2/compose.js"></script>
 </body>

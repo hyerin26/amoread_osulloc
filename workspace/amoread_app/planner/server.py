@@ -61,6 +61,9 @@ class Guard(BaseHTTPMiddleware):
 
 
 app.add_middleware(Guard)
+# 큰 JSON(레퍼런스 목록 650KB, 수집 화면 450KB)을 줄여 보낸다. 레퍼런스가 늘어도 화면이 느려지지 않게
+from starlette.middleware.gzip import GZipMiddleware  # noqa: E402
+app.add_middleware(GZipMiddleware, minimum_size=2048)
 
 
 @app.exception_handler(Exception)
@@ -88,8 +91,15 @@ def index():
     return HTMLResponse(html.replace("__PLANNER_TOKEN__", TOKEN))
 
 
+@app.get("/favicon.ico")
+def favicon():
+    """브라우저가 화면마다 자동으로 찾는 아이콘. 없으면 404가 콘솔에 빨갛게 남아 진짜 오류와 섞이므로 비어 있는 응답(204)으로 답한다."""
+    from fastapi.responses import Response
+    return Response(status_code=204)
+
+
 # 새 버전 (plans/20 재설계 화면). 예전 화면(/)은 그대로 두고 /v2/ 아래에 따로. 정해진 이름만 열어 준다
-V2_PAGES = {"home", "brief", "compose", "editor", "preview", "deals", "library", "settings"}
+V2_PAGES = {"home", "brief", "compose", "editor", "preview", "deals", "library", "settings", "inspire"}
 
 
 @app.get("/v2", response_class=HTMLResponse)
@@ -117,6 +127,17 @@ def refimg_own(name: str):
     return FileResponse(p)
 
 
+@app.get("/refimg/inspire/{sid}")
+@app.get("/refimg/inspire/{sid}/{n}")
+def refimg_inspire(sid: str, n: int = 0):
+    """오늘의 영감 카드의 실제 페이지 사진 (이 PC에 받아 둔 것만, 화면 높이만큼씩 나눠 찍은 n번째 장). 없으면 404."""
+    from amoread.ai import inspire
+    f = inspire.shot_file(sid, n) if 0 <= n < 40 else None
+    if not f:
+        raise HTTPException(404, "없는 화면입니다.")
+    return FileResponse(f, media_type="image/jpeg", headers={"Cache-Control": "private, max-age=86400"})
+
+
 @app.get("/refimg/pin")
 def refimg_pin(u: str):
     try:
@@ -131,6 +152,17 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 # AMOREAD 통합 기획 API (/api/am/*) — 같은 Guard(토큰·보안 헤더)가 적용된다
 from amoread.api import router as amoread_router  # noqa: E402
 app.include_router(amoread_router)
+
+# 멘트추천기능: 기존 app/Guard를 재사용하는 선택 모듈 (새 서버 없음).
+from importlib.util import spec_from_file_location, module_from_spec  # noqa: E402
+_copy_dir = Path(__file__).resolve().parents[3] / "멘트추천기능"
+if (_copy_dir / "__init__.py").is_file():
+    _copy_spec = spec_from_file_location("osulloc_copy_recommender", _copy_dir / "__init__.py",
+                                         submodule_search_locations=[str(_copy_dir)])
+    _copy_module = module_from_spec(_copy_spec)
+    sys.modules[_copy_spec.name] = _copy_module
+    _copy_spec.loader.exec_module(_copy_module)
+    _copy_module.install(app)
 
 
 # ----------------------------------------------------------------------
@@ -672,10 +704,26 @@ def claude_job(job_id: str):
 
 def main():
     import uvicorn
-    url = f"http://127.0.0.1:{config.SERVER_PORT}/"
+    url = f"http://127.0.0.1:{config.SERVER_PORT}/v2/home"
     if "--no-browser" not in sys.argv:
         threading.Timer(1.5, lambda: webbrowser.open(url)).start()
     print(f"기획 도우미: {url}  (이 창을 닫으면 종료됩니다)")
+    try:   # AI 데이터 자체 점검 한 줄 요약 (문제가 있으면 무엇을 하면 되는지까지). 점검이 실패해도 서버는 켜진다
+        from amoread.ai import selfcheck
+        s = selfcheck.summary()
+        print({"ok": "AI 데이터 점검: 문제 없음", "warn": f"AI 데이터 점검: 확인할 것 {s['counts']['warn']}건 (python -m amoread.ai.selfcheck 로 자세히)",
+               "error": f"AI 데이터 점검: 고쳐야 할 문제 {s['counts']['error']}건 (python -m amoread.ai.selfcheck 로 자세히)"}[s["status"]])
+    except Exception:
+        pass
+    def _warm():   # '신규 프로모션 찾기' 비교(0.7초)를 미리 해 둔다: 창을 처음 열 때도 바로 뜨게. 실패해도 무시
+        try:
+            from amoread.ai import discover
+            discover.view()
+            from amoread.ai import inspire
+            inspire.candidates()   # 오늘의 영감 카드 후보도 미리 계산
+        except Exception:
+            pass
+    threading.Thread(target=_warm, daemon=True).start()
     uvicorn.run(app, host=config.SERVER_HOST, port=config.SERVER_PORT, log_level="warning")
 
 

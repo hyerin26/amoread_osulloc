@@ -153,3 +153,12 @@ dialog::backdrop { background: var(--scrim); }
 .search:has(input:disabled) input[type=search] { color: var(--mute); cursor: not-allowed; }
 .search-meta { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); }
 .search-meta.none { color: var(--ink2); }
+
+/* 매일 아침 자동 확인 (settings-auto.js) */
+#auto .lnk { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.autoat { display: inline-flex; align-items: center; gap: 6px; }
+.autoat input { height: var(--control-md); border: 1px solid var(--line); border-radius: var(--r2); padding: 0 8px; color: var(--ink); background: var(--surface); font-variant-numeric: tabular-nums; }
+.autokv { margin: 0; display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 8px 12px; font-size: var(--fs-sm); line-height: var(--lh-sm); }
+.autokv dt { color: var(--mute); }
+.autokv dd { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.autor.bad { color: var(--err); }
