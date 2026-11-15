@@ -103,19 +103,62 @@ function enToLegacy(snapshot, prevSections, knownSeqs) {
     if (EN_PRODUCT_LAYOUTS.includes(s.layout)) {
       const ids = (s.productIds || []).map(String).filter(seq => /^\d{1,12}$/.test(seq));
       const picked = ids.map(seq => bySeq.get(seq) || { slotId: enSlotId(), tabId: firstTab, seq, items: null, placeholderStatus: 'AVAILABLE', customCopy: '' });
-      const empty = ids.length ? [] : pSlots.filter(x => x && !x.seq && !(x.items && x.items.length));   // 상품을 아직 안 고른 자리는 유지
+      // 남은 칸 = 편집기 미리보기의 빈 카드 자리와 같은 수 (app.js productSlotTotal과 같은 셈) → 04 미리보기도 '4칸'으로 같게
+      let empty = [];
+      if (s.layout !== 'deal-banner') {
+        const cols = Number(s.layoutColumns && s.layoutColumns[s.layout]) || { grid2: 2, grid3: 3, feat: 2 }[s.layout] || 2;
+        const total = Math.max(Number(s.slotCount) || (s.layout === 'feat' ? Math.max(2, cols) : cols * 2), ids.length);
+        const prevEmpty = pSlots.filter(x => x && !x.seq && !(x.items && x.items.length));   // 아직 안 고른 자리는 원래 칸(id)을 다시 쓴다
+        empty = Array.from({ length: Math.max(0, total - ids.length) }, (_, k) => prevEmpty[k] || { slotId: enSlotId(), tabId: firstTab, seq: null, items: null, placeholderStatus: 'UNDECIDED', customCopy: '' });
+      } else if (!ids.length) empty = pSlots.filter(x => x && !x.seq && !(x.items && x.items.length));
       slots = [...picked, ...foreign.filter(x => !picked.includes(x)), ...empty].slice(0, 40);
     }
     const lines = (s.lines || []).slice(0, 10).map((l, k) => ({ id: (pv.lines && pv.lines[k] && pv.lines[k].id) || `l${k + 1}`, text: enCut(l && l.text, 120) }));
     const ai = window.EN_AI_META[s.id] || pv.copyRecommendation;
+    // 붙인 레퍼런스 → v2.att (예전 편집기와 같은 형식: 04 미리보기·인계가 이 값을 읽는다)
+    const att = (s.refs || []).filter(r => r && r.id && r.attached !== false).slice(0, 8).map(r => ({
+      ref: enCut(r.id, 80), note: enCut(r.note, 120), name: enCut(r.name, 60), page: enCut(r.from, 60), from: '',
+      url: /^https?:\/\//i.test(r.url || '') ? enCut(r.url, 300) : '' }));
     return {
       ...p, sectionId: s.id, order: i, name: enCut(s.name, 40), headline: enCut(s.name, 120), subhead: enCut(s.role, 400),
       cta: enCut(s.cta, 40), layoutId: s.layout, zone_tag: enCut(s.cat, 40), designNotes: enCut(s.notes, 2000), slots,
-      v2: { ...pv, scope: enCut(s.scope, 200), num: !!s.num, ctaOn: !!s.ctaOn, ctaTo: enCut(s.ctaTo, 60), lines,
+      v2: { ...pv, scope: enCut(s.scope, 200), num: !!s.num, ctaOn: !!s.ctaOn, ctaTo: enCut(s.ctaTo, 60), lines, att,
         ...(s.card ? { card: { order: s.card.order, on: s.card.on, def: s.card.def } } : {}), ...(ai ? { copyRecommendation: ai } : {}) },
     };
   });
 }
+// ── 레퍼런스 고를 목록 (2026-11-16): ① AI 추천 모듈이 수집본에서 찾은 '이 구좌와 비슷한 사례' ② 레퍼런스 라이브러리(직접 모은 것·핀터레스트)
+// 둘 중 하나가 실패해도 나머지는 보여 준다. 둘 다 실패하면 편집기가 '불러오지 못했어요 · 링크로 붙이기'를 보여 준다
+let enLibWait = null;
+function enLibRefs() {
+  if (!enLibWait) enLibWait = v2api('/api/am/references').then(d => {
+    const fav = new Set(d.favorites || []);
+    return (d.items || []).map(x => ({ id: String(x.id), name: x.name || '레퍼런스', from: x.source === 'Pinterest' ? 'Pinterest' : '라이브러리 · 직접 추가',
+      url: x.link || '', why: fav.has(x.id) ? '★ 즐겨찾기' : '', group: '레퍼런스 라이브러리', fav: fav.has(x.id) }))
+      .sort((a, b) => b.fav - a.fav);
+  });
+  enLibWait.catch(() => { enLibWait = null; });   // 실패하면 다음에 다시 시도
+  return enLibWait;
+}
+async function enRefSource(doc, s) {
+  const d = PLAN.doc || doc;
+  const [rec, lib] = await Promise.allSettled([
+    v2api('/api/am/ai/references', { section: { layoutId: s.layout, name: String(s.name || '').slice(0, 40), purpose: String(s.role || '').slice(0, 20) }, n: 8,
+      doc: { id: d.id || '', title: d.title || '', brief: d.brief || {}, v2: { cls: (d.v2 && d.v2.cls) || '', seed: (d.v2 && d.v2.seed) || '', keywords: (d.v2 && d.v2.keywords) || [] } } }),
+    enLibRefs()]);
+  if (rec.status === 'rejected' && lib.status === 'rejected') throw rec.reason;
+  const out = [];
+  if (rec.status === 'fulfilled' && rec.value && rec.value.mode === 'ai')
+    for (const it of rec.value.items || []) out.push({ id: String(it.id), name: it.title || '레퍼런스', from: [it.from, it.campaign].filter(Boolean).join(' · '), url: it.url || '', why: it.why || it.reason || '', group: '이 구좌와 비슷한 사례', live: true });
+  if (lib.status === 'fulfilled') out.push(...lib.value);
+  return out;
+}
+// 담당자가 사례를 붙이거나 뺐을 때 AI 모듈에 기록 → 다음 추천 순서에 반영 (화면 변화 없음, id만 보냄)
+const enRefPicked = doc => (r, added, s) => {
+  if (!r || !r.live) return;
+  v2api('/api/am/ai/feedback', { event: added ? 'pick_ref' : 'drop_ref', doc_id: doc.id || '', ref_id: String(r.id).slice(0, 80), section: String(s.layout || '').slice(0, 40) }).catch(() => {});
+};
+
 // page.sections가 이 편집기 밖(02 구좌 구성 등)에서 바뀌었는지 알아보는 지문 (구좌 id·유형·제목·설명·상품 SEQ만)
 function enLegacyMark(sections) {
   const s = JSON.stringify((Array.isArray(sections) ? sections : []).map(x => [x.sectionId, x.layoutId, x.headline || '', x.subhead || '', (x.slots || []).map(y => y.seq || '')]));
@@ -126,6 +169,11 @@ function enLegacyMark(sections) {
 async function enConnect() {
   const API = window.AMOREAD_EDITOR_API;
   const doc = await PLAN.ready;
+  if (!doc && new URLSearchParams(location.search).get('id')) {
+    // 주소에 기획안이 있는데 못 엶(지워짐·잘못된 주소·서버 문제): '예시 기획안'이라고만 하면 내 기획안이 사라진 것처럼 보인다
+    enNotice('이 기획안을 열지 못했어요. 지워졌거나 주소가 잘못됐을 수 있어요. 아래는 예시 화면이라 저장하지 않아요.', { error: true, action: { label: '기획안 목록으로', run: () => { location.href = '/v2/home'; } } });
+    return;
+  }
   if (!doc) {
     enNotice('예시 기획안이에요 · 저장하지 않아요', { detail: '상품·후기는 편집기에 들어 있는 가상 데이터예요. 홈에서 기획안을 열면 그 기획안의 상품·할인과 저장이 연결돼요.' });
     return;
@@ -134,6 +182,7 @@ async function enConnect() {
   try { cat = await enCatalog(doc); } catch (e) { cat = { products: [], reviews: [], failed: 0 }; catError = e.message; }
   API.setCatalog({ products: cat.products, reviews: cat.reviews, note: `앱 후기 요약 발췌 ${cat.reviews.length}건 (상품 ${cat.products.length}개)` });
   const known = new Set(cat.products.map(p => p.id));
+  if (API.setRefSource) API.setRefSource(s => enRefSource(doc, s), { onPick: enRefPicked(doc) });
 
   const en = doc.editor_next && doc.editor_next.schema === EN_SCHEMA ? doc.editor_next : null;
   const legacy = (doc.page && doc.page.sections) || [];
@@ -143,17 +192,28 @@ async function enConnect() {
   let start, how;
   try {
     if (en && en.snapshot && (!en.synced || en.synced === enLegacyMark(legacy) || !legacy.length)) { start = en.snapshot; how = 'saved'; }
-    else {
+    else if (!legacy.length) {
+      // 02 구좌 구성을 아직 안 함: 빈 메인 비주얼 하나로 시작 (고치기 전에는 저장하지 않음 → 02의 '구좌 없음' 상태를 바꾸지 않는다)
+      start = API.fromLegacyPage({ sections: [{ sectionId: 's1', layoutId: 'hero', headline: '메인 비주얼' }] }); how = 'empty';
+    } else {
       const fresh = API.fromLegacyPage(doc.page);
       if (en && en.snapshot) {
         const old = new Map((en.snapshot.sections || []).map(s => [s.id, s]));
         fresh.sections = fresh.sections.map(f => {
           const o = old.get(f.id);
-          return o && o.layout === f.layout ? { ...o, name: f.name, role: f.role, productIds: EN_PRODUCT_LAYOUTS.includes(f.layout) ? f.productIds : o.productIds, notes: f.notes } : f;
+          return o && o.layout === f.layout ? { ...o, name: f.name, role: f.role, productIds: EN_PRODUCT_LAYOUTS.includes(f.layout) ? f.productIds : o.productIds, slotCount: f.slotCount ?? o.slotCount, notes: f.notes } : f;
         });
         how = 'resynced';
       } else how = 'imported';
       start = fresh;
+    }
+    // 레퍼런스를 다루기 전에 저장된 편집기 값은 refs가 비어 있다 → 예전 편집기에서 붙인 레퍼런스(v2.att)를 한 번 가져온다
+    // (붙인 것을 여기서 모두 빼면 att도 []로 저장되므로 다시 살아나지 않는다)
+    const attOf = new Map(legacy.filter(x => x && x.sectionId && x.v2 && Array.isArray(x.v2.att) && x.v2.att.length).map(x => [x.sectionId, x.v2.att]));
+    if (attOf.size) {
+      const viaLegacy = API.fromLegacyPage({ sections: legacy.filter(x => attOf.has(x.sectionId)) });
+      const refsOf = new Map(viaLegacy.sections.map(x => [x.id, x.refs || []]));
+      start = { ...start, sections: start.sections.map(x => (!x.refs || !x.refs.length) && refsOf.get(x.id) && refsOf.get(x.id).length ? { ...x, refs: refsOf.get(x.id) } : x) };
     }
     API.importSnapshot(start);
   } catch (e) {
@@ -163,10 +223,12 @@ async function enConnect() {
   }
   const base = { saved: `저장본을 열었어요 (마지막 저장 ${String(doc.updated_at || '').slice(5, 16)})`,
     resynced: `02 구좌 구성에서 바뀐 구좌 ${legacy.length}개에 맞춰 다시 가져왔어요`,
-    imported: `구좌 ${legacy.length}개를 가져왔어요` }[how];
+    imported: `구좌 ${legacy.length}개를 가져왔어요`,
+    empty: '아직 고른 구좌가 없어요' }[how];
   const lead = `${base} · 상품 ${cat.products.length}개${cat.failed ? ` (후기 못 불러옴 ${cat.failed}개)` : ''}`;
   const detail = '여기서 고친 문구·상품·순서는 04 미리보기·내보내기와 AI 카피 추천에 그대로 이어져요. 가격은 이 기획안의 할인 행 기준이고, 이미지는 앱 데이터에 없어 자리만 표시해요.';
   if (catError) enNotice(`상품·후기를 불러오지 못했어요: ${catError}. 상품 없이 편집할 수 있어요.`, { error: true });
+  else if (how === 'empty') enNotice(base, { detail: '02 구좌 구성에서 추천 구성을 고르면 그 구좌들이 여기 와요. 여기서 [＋ 구좌]로 하나씩 만들어도 돼요.', action: { label: '02 구좌 구성으로', run: () => { location.href = `/v2/compose?id=${encodeURIComponent(doc.id)}`; } } });
   else enNotice(lead, { detail });
 
   // 서버보다 새 임시 저장본이 있으면 복원할지 묻는다 (자동으로 덮어쓰지 않음)
@@ -176,9 +238,11 @@ async function enConnect() {
   }
 
   PLAN.sendEditorNext = true;
-  let last = null;
+  let last = null, failing = false;
   const push = snapshot => {
     last = snapshot;
+    // 저장이 막힌 동안(다른 창에서 바뀜·서버 꺼짐)에는 plan.js가 보내지 않고 기다리므로, 고칠 때마다 임시 보관본을 새로 쓴다
+    if (failing) enDraft.write(doc.id, snapshot);
     PLAN.save(d => {
       const sections = enToLegacy(snapshot, d.page && d.page.sections, known);
       d.page = { ...(d.page || {}), sections };
@@ -190,12 +254,13 @@ async function enConnect() {
   // 처음 열었을 때 page.sections가 편집기 값과 다르면(처음 가져옴·다시 맞춤·옛 저장본) 한 번 맞춰 둔다
   //  → 고치지 않고 바로 04 미리보기나 AI 추천으로 가도 같은 내용
   const now = API.exportSnapshot();
-  if (how !== 'saved' || !en.synced || enLegacyMark(enToLegacy(now, legacy, known)) !== enLegacyMark(legacy)) push(now);
+  if (how !== 'empty' && (how !== 'saved' || !en.synced || enLegacyMark(enToLegacy(now, legacy, known)) !== enLegacyMark(legacy))) push(now);
   addEventListener('plan:saved', e => {
+    failing = !e.detail.ok;
     if (e.detail.ok) { enDraft.clear(doc.id); return; }
+    // 어떻게 할지(다시 시도·새로 불러오기·내 것으로 저장)는 화면 아래 저장 띠(plan.js)가 묻는다. 여기서는 작성 내용을 지킨 사실만 알린다
     const kept = last && enDraft.write(doc.id, last);
-    enNotice(`저장하지 못했어요: ${e.detail.error}${kept ? ' · 작성 내용은 이 브라우저에 임시로 보관했어요.' : ''}`,
-      { error: true, action: { label: '새로고침', run: () => location.reload() } });
+    enNotice(`${e.detail.stale ? '다른 창에서 이 기획안이 바뀌어 저장을 멈췄어요' : '저장하지 못했어요'}${kept ? ' · 작성 내용은 이 브라우저에 임시로 보관했어요' : ''}. 화면 아래 안내에서 골라 주세요.`, { error: true });
   });
 }
 

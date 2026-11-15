@@ -11,10 +11,10 @@
   const S = new Map();   // 구좌 id → 상태 (다른 구좌로 옮겨도 결과를 보관)
   const st = id => { if (!S.has(id)) S.set(id, { target: 'both', tone: '브랜드 기본', busy: false, result: null, error: '', stale: false, run: 0, job: null, fp: null, applied: null }); return S.get(id); };
   let doc = null, avail = null;   // avail: null=확인 중, {available:bool}
-  const token = () => (document.querySelector('meta[name="planner-token"]') || {}).content || '';
+  // v2fetch(api.js): 토큰을 붙이고, 서버를 다시 켜 토큰이 바뀌었으면 새로 받아 한 번 더 보낸다
   async function api(path, body) {
-    const r = await fetch('/api/am/copy' + path, { method: body === undefined ? 'GET' : 'POST',
-      headers: { 'x-planner-token': token(), ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
+    const r = await v2fetch('/api/am/copy' + path, { method: body === undefined ? 'GET' : 'POST',
+      headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body) });
     let data = {}; try { data = await r.json(); } catch { /* 빈 응답 */ }
     if (!r.ok) throw new Error(typeof data.detail === 'string' ? data.detail : data.error || '추천 요청을 처리하지 못했어요.');
