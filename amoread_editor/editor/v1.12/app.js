@@ -490,11 +490,21 @@ function shapePanel(s){
  }).join('');
  return nativeCardVisibilityPanel(s)+productViewPicker(s)+columnPicker(s)+G('카드에 보일 것','카드에 무엇을 어떤 순서로 보일지 정해요. 이 구좌의 모든 상품 카드에 같이 적용돼요.',rows)+G('데이터 표시 기준',CATALOG_NOTE?'상품·가격·후기는 이 기획안의 상품·할인 값이에요.':'예시 화면이라 상품·가격·후기는 가상 데이터예요.',`<div class="am-ed-note">상품명·정가·할인가·할인율·별점·후기는 자동으로 채워져요. 가격을 바꾸려면 상품·할인 단계에서 고쳐 주세요.</div>`);
 }
+// 상품 고르기 (2026-11-16 스크롤 줄이기): 고른 상품을 맨 위, 8개가 넘으면 찾기 칸. 찾는 말은 다시 그려도 유지(PROD_Q)
+let PROD_Q='',PROD_ALL=false,PROD_SEC=null,CARD_FOLD_OPEN=false;
+const prodMatch=p=>{const q=PROD_Q.trim().toLowerCase();return !q||String(p.name).toLowerCase().includes(q)||String(p.id).includes(q);};
 function productPanel(s){
- const content=PRODUCTS.map(p=>`<label class="am-ed-product-row"><div class="thumb">IMG</div><div class="txt"><b>${E(p.name)}</b><small>${E(p.id)} · ${E(p.priceNote||'최종가')} ${MONEY(priced(p).sale)}</small></div><input type="checkbox" data-product="${E(p.id)}" ${s.productIds.includes(p.id)?'checked':''}></label>`).join('');
+ if(PROD_SEC!==s.id){PROD_SEC=s.id;PROD_ALL=false;PROD_Q='';}   // 다른 구좌로 옮기면 찾기·모두 보기는 처음부터
+ const ordered=[...PRODUCTS].sort((a,b)=>(s.productIds.includes(b.id)?1:0)-(s.productIds.includes(a.id)?1:0));
+ const finder=PRODUCTS.length>8?`<input type="search" class="am-ed-input en-prod-q" data-prod-q value="${E(PROD_Q)}" placeholder="상품 이름·SEQ로 찾기 (${PRODUCTS.length}개)" aria-label="상품 찾기" autocomplete="off">`:'';
+ // 찾는 말이 없으면 고른 상품 + 앞 10개만 (나머지는 [상품 모두 보기]) → 73개를 늘 펼쳐 5,000px 넘게 내려가던 것을 줄임
+ let extra=0;const show=p=>{if(s.productIds.includes(p.id))return true;if(PROD_Q.trim())return prodMatch(p);if(PROD_ALL)return true;return extra++<10;};
+ const vis=new Map(ordered.map(p=>[p.id,show(p)])),rest=ordered.filter(p=>!vis.get(p.id)).length;
+ const more=!PROD_Q.trim()&&rest?`<button type="button" class="am-ed-button am-ed-button--subtle en-prod-more" data-prod-all>상품 모두 보기 (${rest}개 더)</button>`:'';
+ const content=finder+ordered.map(p=>`<label class="am-ed-product-row"${vis.get(p.id)?'':' hidden'} data-prod-name="${E(String(p.name).toLowerCase())} ${E(p.id)}"><div class="thumb">IMG</div><div class="txt"><b>${E(p.name)}</b><small>${E(p.id)} · ${E(p.priceNote||'최종가')} ${MONEY(priced(p).sale)}</small></div><input type="checkbox" data-product="${E(p.id)}" ${s.productIds.includes(p.id)?'checked':''}></label>`).join('')+more;
  const appeals=s.productIds.map(id=>PRODUCTS.find(p=>p.id===id)).filter(Boolean).map(p=>F('appeals.'+p.id,p.name+' · 상품별 소구문구',s.appeals[p.id]||'',{max:80,area:true,rows:2,help:'한 상품에 하나의 소구문구. 카드 요소를 켜면 미리보기에 반영됩니다.'})).join('');
  const where=ftOn(s)?` '${ftCur(s).label||'탭'}' 탭에 담겨요.`:' 이 구좌에 보여요.';
- return ftabPanel(s)+nativeCardVisibilityPanel(s)+G('상품 선택',(CATALOG_NOTE?'이 기획안에 담은 상품이에요. 체크하면':'예시 상품이에요. 체크하면')+where,content)+G('상품별 소구문구','상품마다 카드에 넣을 한 줄 문구예요. [배치·표시]에서 소구문구를 켜야 보여요.',appeals||'<div class="am-ed-note">상품을 먼저 넣어 주세요.</div>')+G('다른 곳에서 하는 것','할인율·판정 근거는 상품·할인 단계에서 고쳐요. 탭별 상품 배치·카드별 라벨은 아직 준비 중이에요.','');
+ return ftabPanel(s)+nativeCardVisibilityPanel(s)+G('상품 선택',(CATALOG_NOTE?'이 기획안에 담은 상품이에요. 체크하면':'예시 상품이에요. 체크하면')+where,content)+G('상품별 소구문구','상품마다 카드에 넣을 한 줄 문구예요. [배치·표시]에서 소구문구를 켜야 보여요.',appeals||'<div class="am-ed-note">상품을 먼저 넣어 주세요.</div>');
 }
 // 탭(필터) 구좌 묶음 (plans/28): 탭 이름·Zone은 data-bind(ftabs.i.label/zone)라 입력·실행 취소가 다른 칸과 같다
 function ftabPanel(s){
@@ -638,6 +648,14 @@ function renderPanel(){
  $('tabbar').innerHTML=iaGroupedTabs(s,ts);
  $('panel-body').innerHTML=(iaGroup==='layout'?imageRatioPicker(s):'')+panelRender[tab](s);
  // 꼭 채워야 하는 자료(상품 구좌의 상품, 후기 구좌의 후기)가 비었으면 [내용] 맨 위에 알리고 바로 고르러 가게 한다
+ // '카드에 보일 것'(16개 요소, 약 1,300px)은 접어 두고 켠 개수만 한 줄로 (2026-11-16 스크롤 줄이기). 펼친 상태는 다시 그려도 유지
+ const cardG=[...$('panel-body').querySelectorAll(':scope > .am-ed-group')].find(g=>g.querySelector('h3')?.textContent.startsWith('카드에 보일 것'));
+ if(cardG&&s.card){
+  const on=ORDER.filter(k=>s.card.on[k]).length,d=document.createElement('details');d.className='en-fold';d.open=CARD_FOLD_OPEN;
+  d.innerHTML=`<summary><strong>카드에 보일 것</strong><small>${on}개 켬 · ${ORDER.length}개 중</small></summary>`;
+  cardG.querySelector('.am-ed-group__title')?.remove();cardG.replaceWith(d);d.append(cardG);
+  d.addEventListener('toggle',()=>{CARD_FOLD_OPEN=d.open;});
+ }
  const need=fillState(s),needTab=s.layout==='review'?'review':'products';
  if(need&&need.need&&iaGroup==='content'&&tab!==needTab)$('panel-body').insertAdjacentHTML('afterbegin',`<div class="en-need" role="status"><div><strong>${E(need.text)}</strong><small>${s.layout==='review'?'보여 줄 후기를 아직 고르지 않았어요.':'이 구좌에 넣을 상품을 골라 주세요. 빈 자리는 미리보기에 점선으로 보여요.'}</small></div><button type="button" class="am-ed-button am-ed-button--primary" data-need-tab="${needTab}">${s.layout==='review'?'후기 고르기':'상품 고르기'}</button></div>`);
   if(canvasTarget&&canvasTarget.sectionId===s.id&&!['block','block-attribute'].includes(canvasTarget.kind)){
@@ -1552,7 +1570,15 @@ $('data-library').addEventListener('submit',e=>{
  let host='';try{host=new URL(url).hostname.replace(/^www\./,'');}catch(_){}
  toggleRef(section(),{id:'link-'+Date.now().toString(36),name:name||host||'링크',from:'링크'+(host?' · '+host:''),url},true);
 });
+// 상품 찾기: 다시 그리지 않고 줄만 숨긴다 (입력 중 커서 유지). 고른 상품은 늘 보인다
+$('panel-body').addEventListener('input',e=>{
+ const q=e.target.closest('[data-prod-q]');if(!q)return;e.stopPropagation();PROD_Q=q.value;const w=PROD_Q.trim().toLowerCase();
+ let n=0;   // 찾는 말을 지우면 다시 '고른 것 + 앞 10개'
+ $('panel-body').querySelectorAll('.am-ed-product-row').forEach(r=>{const on=!!r.querySelector('input:checked');r.hidden=w?!r.dataset.prodName.includes(w)&&!on:!on&&!PROD_ALL&&n++>=10;});
+ const more=$('panel-body').querySelector('[data-prod-all]');if(more)more.hidden=!!w;
+},true);
 $('panel-body').addEventListener('click',e=>{
+ if(e.target.closest('[data-prod-all]')){PROD_ALL=true;renderPanel();return;}
  const nt=e.target.closest('[data-need-tab]');
  if(nt){tab=nt.dataset.needTab;renderPanel();$('panel-body').querySelector('input,button,select')?.focus();return;}
  if(e.target.closest('[data-ref-find]')){cbRailMode='data';iaDataMode='refs';renderAll();$('data-library').querySelector('[data-ref-pick],#refLinkUrl')?.focus();return;}

@@ -62,6 +62,9 @@ class Guard(BaseHTTPMiddleware):
 
 
 app.add_middleware(Guard)
+# 01 브리프 키워드 탐색 (근거 기반 마인드맵·AI 키워드 확장, /api/brief/*) — merge/2026-11-15
+from .brief_research import router as brief_research_router  # noqa: E402
+app.include_router(brief_research_router)
 # 큰 JSON(레퍼런스 목록 650KB, 수집 화면 450KB)을 줄여 보낸다. 레퍼런스가 늘어도 화면이 느려지지 않게
 from starlette.middleware.gzip import GZipMiddleware  # noqa: E402
 app.add_middleware(GZipMiddleware, minimum_size=2048)

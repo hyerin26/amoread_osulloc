@@ -208,3 +208,22 @@ select { min-height:var(--control-lg); padding:0 10px; border:1px solid var(--li
 .map .node.open rect { stroke: var(--line-strong); stroke-width: 1; }   /* 펼친 키워드: 진한 1px 선 (덧칠 없음) */
 /* 칩 글자는 왼쪽 정렬로 쌓는다 (가운데 정렬 + 보정값 대신 정해진 간격) */
 .map .node text.lbl { text-anchor: start; }
+
+/* ── 마인드맵 다듬기 (2026-11-16): 가운데 40 · 1단 32 · 하위 28 알약, 선도 단계별 굵기. 고른 키워드까지 가는 길은 강조색 ── */
+.map .edge.d1 { stroke: var(--line-strong); stroke-width: 1.75; }
+.map .edge.d2 { stroke: var(--line); stroke-width: 1.25; }
+.map .edge.on { stroke: var(--accent); stroke-width: 2; }
+.map .node.d1 > text { font-size: 14px; font-weight: var(--fw-medium); fill: var(--ink); }
+.map .node.d2 > text { font-size: 13px; fill: var(--ink2); }
+.map .node.d1 rect { stroke: var(--line); }
+.map .node.root rect { stroke: var(--accent); stroke-width: 1.5; }
+.map .node.root text { font-size: 16px; }
+.map-status { margin: 0 0 var(--s2); }
+.sec-head .ai-cost { margin-left: -4px; }
+#researchStatus:empty { display: none; }
+
+/* 느낌 레퍼런스: 11개가 두세 줄로 쌓여 약 450px → 한 줄 가로 넘김 (스크롤 줄이기, 2026-11-16) */
+.moods { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x proximity; }
+.moods > .mwrap { flex: none; scroll-snap-align: start; }
+.mood .fr { height: 104px; }
+.mood .mn { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }

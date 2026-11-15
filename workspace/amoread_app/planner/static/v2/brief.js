@@ -134,7 +134,11 @@ function connectProducts() {
 }
 
 // 지도: 가운데는 늘 명분. 펼친 키워드(opened)의 가지는 바깥쪽 줄에 함께 그리고, 접기 전까지 남는다 (탐색한 키워드로 돌아가도 유지)
-const MAX_DEPTH = 3, KIDS_MAX = 8, ROW = 38, GAP = 44;
+// 간격 (2026-11-16 다듬기: 38·44px로 붙어 있어 '옹졸하게' 보였다)
+//   ROW1 = 1단 가지 한 칸 높이, ROW = 하위 가지 한 칸, GAP1 = 가운데 → 1단, GAPN = 부모 → 자식, ARC = 부채꼴 휨(가운데 줄이 위아래보다 이만큼 바깥)
+//   펼친 가지가 있으면 가로가 길어지므로 휨·간격을 줄여 카드 폭 안에 들게 한다 (spacing())
+const MAX_DEPTH = 3, KIDS_MAX = 8, ROW1 = 50, ROW = 36;
+const spacing = () => (opened.size ? { GAP1: 60, GAPN: 40, ARC: 36 } : { GAP1: 76, GAPN: 48, ARC: 72 });
 const parentOf = new Map();   // 지도에 그린 키워드 → 부모 (펼치기·접기·탐색 경로용)
 function chainOf(k) {
   const out = [k];
@@ -157,14 +161,14 @@ function renderMap() {
 
   // 노드 = [고르기 동그라미] [키워드] 알약. 출처·관심 신호는 툴팁으로. 가운데 노드 오른쪽에는 명분 고치기 연필
   // anchor: 'c' 가운데 기준, 'r' 오른쪽 끝을 x에(왼쪽 가지), 'l' 왼쪽 끝을 x에(오른쪽 가지)
-  function node(k, x, y, root = false, anchor = 'c') {
+  function node(k, x, y, root = false, anchor = 'c', depth = 0) {
     const source = info(k).source,
       signal = BK.trend(dataFor(k), k),
       isPicked = picked.includes(k);
     const tip = root ? '' :
       `${sourceName(source)}${signal.change!==null ? signal.change>=.2?', 관심 상승':signal.change<=-.2?', 관심 하락':'' : ''}`;
     const g = svgEl('g', {
-      class: `node ${root?'root':'keyword'}${isPicked?' picked':''}${focus===k?' focus':''}${opened.has(k)?' open':''}`,
+      class: `node ${root?'root':`keyword d${Math.min(depth, 2)}`}${isPicked?' picked':''}${focus===k?' focus':''}${opened.has(k)?' open':''}`,
       tabindex: 0,
       role: 'button',
       'data-k': k,
@@ -174,7 +178,9 @@ function renderMap() {
     // 칩 규격 (Material 3 입력 칩, Atlassian·Toss 칩과 같은 8px 그리드): [여백][동그라미][8px][글자][(연필 자리)][여백]
     //   키워드: 높이 28 · 왼쪽 10 · 동그라미 12 · 간격 8 · 글자 · 오른쪽 12
     //   명분:   높이 36 · 왼쪽 12 · 동그라미 14 · 간격 8 · 글자 · 간격 4 · 연필 버튼 24(아이콘 14) · 오른쪽 6
-    const S = root ? { h: 36, l: 12, d: 14, gap: 8, r: 6, btn: 24, btnGap: 4 } : { h: 28, l: 10, d: 12, gap: 8, r: 12, btn: 0, btnGap: 0 };
+    //   1단 키워드는 한 단계 크게(높이 32) → 가운데·1단·하위 세 단계가 크기로 구분된다 (2026-11-16)
+    const S = root ? { h: 40, l: 14, d: 14, gap: 8, r: 8, btn: 24, btnGap: 4 }
+      : depth <= 1 ? { h: 32, l: 12, d: 12, gap: 8, r: 14, btn: 0, btnGap: 0 } : { h: 28, l: 10, d: 12, gap: 8, r: 12, btn: 0, btnGap: 0 };
     const t = svgEl('text', { x, y, class: 'lbl' });
     t.textContent = k.length > 14 ? k.slice(0, 13) + '…' : k;
     g.append(t);
@@ -186,7 +192,7 @@ function renderMap() {
       x0 = cx - w / 2,
       dc = x0 + S.l + S.d / 2;   // 동그라미 가운데
     t.setAttribute('x', x0 + S.l + S.d + S.gap);
-    g.insertBefore(svgEl('rect', { x: x0, y: y - h / 2, width: w, height: h, rx: 8 }), t);
+    g.insertBefore(svgEl('rect', { x: x0, y: y - h / 2, width: w, height: h, rx: h / 2 }), t);   // 알약 모양 (끝이 둥근 칩)
     const ck = svgEl('g', { class: `ck${isPicked ? ' on' : ''}`, 'data-pickk': k });
     ck.append(svgEl('rect', { class: 'hit', x: dc - 12, y: y - 12, width: 24, height: 24, rx: 6 }));   // 누르는 자리 24px
     ck.append(svgEl('circle', { cx: dc, cy: y, r: S.d / 2 }));
@@ -214,7 +220,7 @@ function renderMap() {
     const kids = depth < MAX_DEPTH && opened.has(k) ? branchWords(k).filter(w => !drawn.has(w)).slice(0, KIDS_MAX) : [];
     kids.forEach(w => { drawn.add(w); parentOf.set(w, k); });
     tree.set(k, kids);
-    H.set(k, Math.max(ROW, kids.reduce((a, c) => a + grow(c, depth + 1), 0)));
+    H.set(k, Math.max(depth <= 1 ? ROW1 : ROW, kids.reduce((a, c) => a + grow(c, depth + 1), 0)));
     return H.get(k);
   }
   shown.forEach(k => grow(k, 1));
@@ -238,19 +244,27 @@ function renderMap() {
     fo.innerHTML = `<form xmlns="http://www.w3.org/1999/xhtml" id="rootForm" class="root-edit-form"><input type="text" id="rootInput" maxlength="20" required pattern="[가-힣A-Za-z0-9 ]{1,20}" aria-label="명분 (한글, 영문, 숫자, 공백 20자 이내)" value="${esc(ROOT)}"><button type="submit" class="btn sm primary">확인</button><button type="button" class="btn sm" data-root-cancel>취소</button></form>`;
     gN.append(fo);
   } else rootHalf = node(ROOT, CX, CY, true).w / 2;
-  const at = new Map([[ROOT, { y: CY, outer: { '-1': CX - rootHalf, '1': CX + rootHalf } }]]);
-  const edgeX = { '-1': CX - rootHalf - GAP, '1': CX + rootHalf + GAP };
-  for (let depth = 1; depth <= MAX_DEPTH; depth++) {
-    const widest = { '-1': 0, '1': 0 };
-    for (const s of spots.filter(x => x.depth === depth)) {
-      const { w, cx } = node(s.k, edgeX[s.side], s.y, false, s.side < 0 ? 'r' : 'l');
-      widest[s.side] = Math.max(widest[s.side], w);
-      const p = at.get(parentOf.get(s.k)), from = p.outer ? p.outer[s.side] : p.outerX,
-        to = s.side < 0 ? cx + w / 2 : cx - w / 2, mid = (from + to) / 2;
-      gE.append(svgEl('path', { class: 'edge', d: `M${from},${p.y} C${mid},${p.y} ${mid},${s.y} ${to},${s.y}` }));
-      at.set(s.k, { y: s.y, outerX: s.side < 0 ? cx - w / 2 : cx + w / 2 });
+  // 1단은 가운데 노드를 둘러싼 부채꼴: 가운데 높이 줄이 가장 바깥(ARC), 위아래 끝으로 갈수록 안쪽 → 둥글게 퍼진 지도.
+  // 하위 가지는 부모 알약 바로 바깥(GAPN)에서 자라 가지마다 따로 뻗는다 (예전엔 깊이마다 한 세로줄에 모여 표처럼 보였음).
+  // 가운데 → 지금 보고 있는 키워드까지의 선은 강조 (어디서 뻗어 나온 말인지 보이게)
+  const onPath = new Set(chainOf(focus)), spotOf = new Map(spots.map(s => [s.k, s])), { GAP1, GAPN, ARC } = spacing();
+  const edge = (x1, y1, x2, y2, depth, on) => {
+    const mid = x1 + (x2 - x1) * .55;
+    gE.append(svgEl('path', { class: `edge d${Math.min(depth, 2)}${on ? ' on' : ''}`, d: `M${x1},${y1} C${mid},${y1} ${mid},${y2} ${x2},${y2}` }));
+  };
+  const draw = (s, inner, py, px) => {
+    const left = s.side < 0, { w, cx } = node(s.k, inner, s.y, false, left ? 'r' : 'l', s.depth);
+    const near = left ? cx + w / 2 : cx - w / 2, outer = left ? cx - w / 2 : cx + w / 2;
+    edge(px, py, near, s.y, s.depth, onPath.has(s.k) && focus !== ROOT);
+    for (const c of tree.get(s.k) || []) draw(spotOf.get(c), outer + s.side * GAPN, s.y, outer);
+  };
+  for (const side of [-1, 1]) {
+    const firsts = spots.filter(s => s.depth === 1 && s.side === side);
+    const maxDy = Math.max(1, ...firsts.map(s => Math.abs(s.y - CY)));
+    for (const s of firsts) {
+      const t = Math.abs(s.y - CY) / maxDy;
+      draw(s, CX + side * (rootHalf + GAP1 + ARC * (1 - t * t)), CY, CX + side * rootHalf);
     }
-    for (const side of ['-1', '1']) edgeX[side] += (+side) * (widest[side] + GAP);
   }
   // 가지가 없을 때: 네이버로 찾는 중이면 그 안내, 다 찾았는데 비었으면 그때만 AI를 권한다 (AI는 자동으로 돌지 않음)
   const loading = LIVE.get(ROOT)?.state === 'loading', empty = !shown.length && !rootEditing;
@@ -268,8 +282,9 @@ function renderMap() {
   }
   // 크기: 그린 내용에 맞춰 실제 픽셀로 (펼친 정도에 따라 글자 크기가 크게 바뀌지 않게). 칸보다 넓으면 조금만 줄이고 그다음엔 가로로 밀어 봄
   try {
-    const bb = svg.getBBox(), vw = Math.max(560, bb.width + 48), vh = Math.max(300, bb.height + 48),
-      cw = $('.map-scroll').clientWidth || vw, scale = Math.max(.85, Math.min(1.1, cw / vw));
+    // 여백 64: 가장 바깥 알약이 카드 끝에 붙지 않게. 최소 높이 360: 가지가 적어도 지도가 납작해 보이지 않게
+    const bb = svg.getBBox(), vw = Math.max(640, bb.width + 64), vh = Math.max(360, bb.height + 64),
+      cw = $('.map-scroll').clientWidth || vw, scale = Math.max(.8, Math.min(1, cw / vw));
     svg.setAttribute('viewBox', `${Math.round(bb.x + bb.width / 2 - vw / 2)} ${Math.round(bb.y + bb.height / 2 - vh / 2)} ${Math.round(vw)} ${Math.round(vh)}`);
     Object.assign(svg.style, { width: `${Math.round(vw * scale)}px`, height: `${Math.round(vh * scale)}px`, minWidth: '0' });
   } catch { /* 그리기 전(화면 밖)에는 그대로 */ }
@@ -281,6 +296,7 @@ function renderMap() {
 }
 
 function renderPath() {
+  $('#path').hidden = path.length < 2;   // 명분 하나뿐이면 '탐색한 키워드 수능'은 가운데 노드와 같은 말이라 뺀다
   $('#path').innerHTML = '<span class="cap">탐색한 키워드</span>' + path.map((k, i) =>
       `${i ? '<span class="sep">›</span>' : ''}<button data-path="${i}" ${i===path.length-1?'aria-current="true"':''}>${esc(k)}</button>`)
     .join('');
@@ -301,8 +317,10 @@ function renderStatus() {
   const t = aiExpansions.find(e => e.parent === mapRoot())?.fetched_at || rec?.data?.fetched_at;
   $('#aiKeywordExpand').disabled = !researchReady || !!keywordBusy;
   $('#aiKeywordExpand').textContent = keywordBusy ? 'AI가 찾는 중' : 'AI로 더 찾기';
-  $('#aiKeywordStatus').textContent = keywordBusy ? `AI가 ‘${keywordBusy.seed}’ 관련 웹 자료를 찾고 있어요.` : keywordMessage ||
-    '지도는 네이버 검색 결과로 만들어요. AI는 버튼을 누를 때만 써요.';
+  // 평소 안내 문장은 뺐다 (스크롤 줄이기, 2026-11-16). AI가 찾는 중이거나 결과 메시지가 있을 때만 한 줄
+  const aiMsg = keywordBusy ? `AI가 ‘${keywordBusy.seed}’ 관련 웹 자료를 찾고 있어요.` : keywordMessage;
+  $('#aiKeywordStatus').textContent = aiMsg;
+  $('#aiKeywordStatus').hidden = !aiMsg;
   $('#mapDemo').textContent = t ? `조회 ${formatTime(t)}` : '근거 기반 탐색';
 }
 
@@ -454,7 +472,7 @@ const aiNotes = new Map();
 function renderDock() {
   $('#picked').innerHTML = picked.length ? `<span class="cap">${picked.length}/30개</span>` + picked.map(k =>
     `<span class="pk"><button data-focus="${esc(k)}" aria-label="${esc(k)} 근거 보기">${esc(k)}</button><button data-unpick="${esc(k)}" aria-label="${esc(k)} 빼기">✕</button></span>`
-  ).join('') : '<span class="cap">근거를 확인한 키워드 3~5개를 담아 콘셉트로 연결해 보세요.</span>';
+  ).join('') : '<span class="cap">지도에서 동그라미를 누르면 여기 담겨요</span>';
   renderSugs();
   renderConcepts();
   if (typeof renderMoods === 'function') renderMoods();
@@ -968,7 +986,7 @@ function renderMoods() {
   const keys = [ROOT, ...picked], score = m => m.tags.filter(t => keys.includes(t)).length + (m.fav ? 0.5 : 0);
   const own = MOODS.filter(m => m.own), lib = MOODS.filter(m => m.lib).sort((a, b) => score(b) - score(a)).slice(0, 8), demo = MOODS.filter(m => m.demo).sort((a, b) => score(b) - score(a)).slice(0, lib.length ? 3 : 5);
   const list = own.concat(lib, demo);   // 직접 붙인 것 → 라이브러리 → 예시
-  $('#moodBasis').textContent = `명분 '${ROOT}'${picked.length ? `과 고른 키워드(${picked.join(', ')})` : ''}에 맞는 것을 앞에 두었어요.${libState === 'err' ? ' 라이브러리를 불러오지 못해 예시만 보여요.' : ''}`;
+  $('#moodBasis').textContent = libState === 'err' ? '라이브러리를 불러오지 못해 예시만 보여요.' : '';   // 정렬 설명은 뺌 (스크롤 줄이기)
   const tag = $('#moodSrcTag'); if (tag) { tag.textContent = lib.length ? `라이브러리 ${lib.length}개, 예시 ${demo.length}개` : '예시'; tag.className = `tag ${lib.length ? 'real' : 'demo-t'}`; }
   $('#moods').innerHTML = list.map(m => `<div class="mwrap"><button class="mood" data-mood="${m.id}" aria-pressed="${moodSel.has(m.id)}" title="${esc(m.src)}"><span class="fr">${moodPic(m)}</span><span class="mn">${m.fav ? '★ ' : ''}${esc(m.name)}</span><span class="cap">${esc(m.src)}${m.demo ? ' · 예시' : ''}</span></button>
     <button class="mdet" type="button" data-mdet="${m.id}" aria-label="${esc(m.name)} 자세히 보기">자세히</button></div>`).join('');
