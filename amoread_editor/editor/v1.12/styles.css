@@ -191,3 +191,9 @@
 @media(max-width:460px){.am-flow-navitem{grid-template-columns:auto minmax(0,1fr)}.am-flow-navitem small{grid-column:2}.am-flow-info-list.cols-3{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .am-flow-result-hero,.am-flow-result-coupon{display:grid;gap:var(--s3);border-radius:var(--r2);background:var(--accent-soft);padding:var(--s3)}.am-flow-result-hero .am-flow-img-ghost{min-height:100px}.am-flow-result-hero p,.am-flow-result-coupon p{font-size:11px;line-height:1.55;color:var(--ink2)}.am-flow-result-coupon{border:1px dashed var(--sel-line);background:var(--surface)}.am-flow-result-coupon b{font-size:11px;color:var(--accent)}.am-flow-result-coupon span{font-size:10px;color:var(--mute)}
 .am-flow-info-hero.height-small .am-flow-img-ghost{min-height:100px}.am-flow-info-hero.height-medium .am-flow-img-ghost{min-height:145px}.am-flow-info-hero.height-large .am-flow-img-ghost{min-height:210px}.am-flow-info-text{margin:12px 0;padding:var(--s4);background:var(--sunken);border-radius:var(--r2);display:grid;gap:8px;text-align:center}.am-flow-info-text strong{font-size:14px}.am-flow-info-text small{font-size:10px;color:var(--mute)}.am-flow-info-text.compact{padding:var(--s2)}.am-flow-info-text.compact strong{font-size:12px}
+/* 탭(필터) 구좌 (plans/28): 미리보기의 탭 알약, 오른쪽 칸의 탭 묶음 */
+.am-ftabs{display:flex;gap:4px;overflow-x:auto;margin:6px 0 8px;padding-bottom:2px}
+.am-ftab{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:4px 10px;font-size:11px;line-height:1.3}
+.am-ftab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.am-ftab-row.is-current{border-color:var(--accent)}
+.am-ftab-tools{display:flex;gap:8px;flex-wrap:wrap}

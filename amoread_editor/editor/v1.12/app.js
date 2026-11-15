@@ -14,6 +14,24 @@ const PRODUCT_VIEWS=[['grid','그리드','균형 있게 한눈에'],['list','리
 const PRODUCT_VIEW_NAMES=Object.fromEntries(PRODUCT_VIEWS.map(x=>[x[0],x[1]]));
 // 탭(필터) 구좌를 쓸 수 있는 유형. s.ftabs=[{id,label,zone,productIds}] — 오른쪽 패널 탭(tabs()·tab)과는 다른 것 (plans/28)
 const FTAB_LAYOUTS=['grid2','grid3','feat'];
+// s.productIds = 지금 보는 탭(s.ftabCur)의 상품, 다른 탭 상품은 s.ftabs[].productIds에 보관 → 상품을 다루는 기존 코드가 그대로 탭 단위로 동작한다
+const FTAB_MIN=2,FTAB_MAX=12;
+const ftOn=s=>FTAB_LAYOUTS.includes(s.layout)&&Array.isArray(s.ftabs)&&s.ftabs.length>0;
+const ftCur=s=>s.ftabs.find(t=>t.id===s.ftabCur)||s.ftabs[0];
+let ftSeq=0;const ftNewId=()=>'ft'+Date.now().toString(36)+(ftSeq++).toString(36);
+function ftStore(s){if(Array.isArray(s.ftabs)&&s.ftabs.length)ftCur(s).productIds=(s.productIds||[]).slice();}
+function ftSwitch(s,id){if(!ftOn(s)||!s.ftabs.some(t=>t.id===id))return;ftStore(s);s.ftabCur=id;s.productIds=ftCur(s).productIds.slice();}
+function ftSplit(s,labels=['탭 1','탭 2']){s.ftabs=labels.map((label,i)=>({id:ftNewId(),label,zone:'',productIds:i?[]:(s.productIds||[]).slice()}));s.ftabCur=s.ftabs[0].id;}
+function ftAdd(s){if(!ftOn(s)||s.ftabs.length>=FTAB_MAX)return false;ftStore(s);const t={id:ftNewId(),label:'탭 '+(s.ftabs.length+1),zone:'',productIds:[]};s.ftabs.push(t);s.ftabCur=t.id;s.productIds=[];return true;}
+// 지운 탭의 상품은 첫 탭으로 옮긴다 (지우지 않음). 옮긴 상품 수, 지울 수 없으면 null
+function ftRemove(s,id){const i=ftOn(s)&&s.ftabs.length>FTAB_MIN?s.ftabs.findIndex(t=>t.id===id):-1;if(i<0)return null;ftStore(s);const gone=s.ftabs.splice(i,1)[0],first=s.ftabs[0],moved=gone.productIds.filter(p=>!first.productIds.includes(p));first.productIds.push(...moved);if(!s.ftabs.some(t=>t.id===s.ftabCur))s.ftabCur=first.id;s.productIds=ftCur(s).productIds.slice();return moved.length;}
+function ftMove(s,id,d){const i=s.ftabs.findIndex(t=>t.id===id),j=i+d;if(i<0||j<0||j>=s.ftabs.length)return;[s.ftabs[i],s.ftabs[j]]=[s.ftabs[j],s.ftabs[i]];}
+// 탭 없애기: 모든 탭 상품을 탭 순서대로 한 구좌에. ftabs=[]는 '없앴음' (저장 때 page.sections의 탭도 지움)
+function ftDrop(s){if(!Array.isArray(s.ftabs)||!s.ftabs.length)return;ftStore(s);s.productIds=[...new Set(s.ftabs.flatMap(t=>t.productIds))];s.ftabs=[];delete s.ftabCur;}
+function ftPills(s){if(!ftOn(s))return '';const cur=ftCur(s);return `<div class="am-ftabs" role="tablist" aria-label="${E(s.name)} 탭">${s.ftabs.map(t=>`<button type="button" role="tab" class="am-ftab" data-ftab-pill="${E(s.id)}|${E(t.id)}" aria-selected="${t===cur}" tabindex="${t===cur?0:-1}">${E(t.label||'탭')}</button>`).join('')}</div>`;}
+function ftIssues(s){if(!ftOn(s))return [];ftStore(s);const out=[],noZone=s.ftabs.filter(t=>!t.zone.trim()).length;
+ s.ftabs.forEach((t,i)=>{if(!t.label.trim())out.push(`${i+1}번 탭 이름이 비어 있어요`);else if(!t.productIds.length)out.push(`'${t.label}' 탭에 상품이 없어요`);});
+ if(noZone)out.push(`Zone(PROMO_WORK 카테고리명)이 빈 탭이 ${noZone}개 있어요`);return out;}
 function productView(s){return PRODUCT_VIEW_NAMES[s.productView]?s.productView:'grid'}
 function productViewPicker(s){if(!['grid2','grid3','feat'].includes(s.layout))return '';
  return `<section class="am-ed-group am-ed-product-style-section"><div class="am-ed-group__title"><h3>상품 배치 방식</h3><span class="am-ed-tag">${E(PRODUCT_VIEW_NAMES[productView(s)])}</span></div><p class="am-ed-group__description">같은 상품·카드 요소를 그대로 유지한 채 진열 방식만 전환합니다.</p><div class="am-ed-product-layouts">${PRODUCT_VIEWS.map(([id,label,description])=>`<button type="button" class="am-ed-product-layout-option" data-product-style="${id}" aria-pressed="${productView(s)===id}"><span class="am-ed-layout-visual am-ed-layout-${id}" aria-hidden="true"><i></i><i></i><i></i><i></i></span><b>${label}</b><small>${description}</small></button>`).join('')}</div></section>`;
@@ -79,12 +97,13 @@ const PRODUCT_FOR_REVIEW = id => PRODUCTS.find(p=>p.id===id);
 const PICKER_OPTIONS=CATALOG.flatMap(x=>x.id==='review'
  ? REVIEW_LAYOUTS.map(([variant,label])=>({ ...x,id:`review@${variant}`,layout:'review',variant,name:label,description:'후기 모음 · '+label,keywords:x.keywords+' '+label }))
  : x.id==='grid2'
- ? PRODUCT_VIEWS.map(([variant,label,description])=>({...x,id:`grid2@${variant}`,layout:'grid2',variant,variantKind:'product',name:'상품 '+label,description,keywords:x.keywords+' '+label+' 진열'}))
+ ? [...PRODUCT_VIEWS.map(([variant,label,description])=>({...x,id:`grid2@${variant}`,layout:'grid2',variant,variantKind:'product',name:'상품 '+label,description,keywords:x.keywords+' '+label+' 진열'})),
+    {...x,id:'grid2@tabs',layout:'grid2',variant:'tabs',variantKind:'tabs',name:'상품 탭 (가격대·취향별)',description:'탭을 눌러 가격대·취향별 상품을 바꿔 보는 구좌 · 탭 하나가 PROMO_WORK 칸 하나',keywords:x.keywords+' 탭 필터 가격대 취향 테마 카테고리 진열'}]
  : ['notice','timeline'].includes(x.id)
  ? [{...x,layout:x.id,variant:null},{...x,id:`${x.id}@accordion`,layout:x.id,variant:'accordion',variantKind:'accordion',name:x.id==='notice'?'약관·규정 아코디언':'배송·일정 아코디언',description:'접힌 제목과 펼침 내용을 각각 지정하는 안내',keywords:x.keywords+' 접기 펼치기'}]
  : [{...x,layout:x.id,variant:null}]);
 const PICKER_OPTION=id=>PICKER_OPTIONS.find(x=>x.id===id);
-const pickerIdFor=s=>s.layout==='review'?`review@${(s.rv&&s.rv.layout)||'cards'}`:s.layout==='grid2'?`grid2@${productView(s)}`:['notice','timeline'].includes(s.layout)&&s.config?.presentation==='accordion'?`${s.layout}@accordion`:s.layout;
+const pickerIdFor=s=>s.layout==='review'?`review@${(s.rv&&s.rv.layout)||'cards'}`:s.layout==='grid2'?(ftOn(s)?'grid2@tabs':`grid2@${productView(s)}`):['notice','timeline'].includes(s.layout)&&s.config?.presentation==='accordion'?`${s.layout}@accordion`:s.layout;
 const EVENT_UI_DEFAULTS={
  'ev-quiz':{question:'나에게 어울리는 차를 골라볼까요?',options:['꽃향이 느껴지는 산뜻한 차','고소하고 깊은 맛의 차','시원하게 즐기는 차']},
  'ev-share':{sharePrompt:'이벤트를 친구에게 알려주세요',shareChannels:'링크 복사, 메시지'},
@@ -370,7 +389,7 @@ function demoInner(s){
 
  if(['grid2','grid3','feat'].includes(s.layout)){
   const chosen=s.productIds.map(id=>PRODUCTS.find(p=>p.id===id)).filter(Boolean);
-  return `<div class="mock-products am-cols-${[1,2,3,4].includes(Number(s.layoutColumns?.[s.layout]))?Number(s.layoutColumns[s.layout]):PRODUCT_COLUMN_DEFAULTS[s.layout]} am-product-view-${productView(s)} ${s.layout==='feat'?'mock-products--featured':''}">${chosen.map((p,i)=>`<div class="mock-product" data-card-product="${E(p.id)}">${renderProductCardElements(s,p,{masonryIndex:i,nativeCard:true})}</div>`).join('')}</div>`;
+  return `${ftPills(s)}<div class="mock-products am-cols-${[1,2,3,4].includes(Number(s.layoutColumns?.[s.layout]))?Number(s.layoutColumns[s.layout]):PRODUCT_COLUMN_DEFAULTS[s.layout]} am-product-view-${productView(s)} ${s.layout==='feat'?'mock-products--featured':''}">${chosen.map((p,i)=>`<div class="mock-product" data-card-product="${E(p.id)}">${renderProductCardElements(s,p,{masonryIndex:i,nativeCard:true})}</div>`).join('')}</div>`;
  }
  if(s.layout.startsWith('ev-'))return eventPreview(s);
  if(s.layout==='review')return reviewPreview(s);
@@ -454,7 +473,22 @@ function shapePanel(s){
 function productPanel(s){
  const content=PRODUCTS.map(p=>`<label class="am-ed-product-row"><div class="thumb">IMG</div><div class="txt"><b>${E(p.name)}</b><small>${E(p.id)} · ${E(p.priceNote||'최종가')} ${MONEY(priced(p).sale)}</small></div><input type="checkbox" data-product="${E(p.id)}" ${s.productIds.includes(p.id)?'checked':''}></label>`).join('');
  const appeals=s.productIds.map(id=>PRODUCTS.find(p=>p.id===id)).filter(Boolean).map(p=>F('appeals.'+p.id,p.name+' · 상품별 소구문구',s.appeals[p.id]||'',{max:80,area:true,rows:2,help:'한 상품에 하나의 소구문구. 카드 요소를 켜면 미리보기에 반영됩니다.'})).join('');
- return nativeCardVisibilityPanel(s)+G('상품 선택',CATALOG_NOTE?'이 기획안에 담은 상품이에요. 체크하면 이 구좌에 보여요.':'예시 상품이에요. 체크하면 이 구좌에 보여요.',content)+G('상품별 소구문구','카드 모양 탭의 소구문구 표시 요소와 연결됩니다.',appeals||'<div class="am-ed-note">상품을 먼저 선택해주세요.</div>')+G('다른 곳에서 하는 것','할인율·판정 근거는 상품·할인 단계에서 고쳐요. 탭별 상품 배치·카드별 라벨은 아직 준비 중이에요.','');
+ const where=ftOn(s)?` '${ftCur(s).label||'탭'}' 탭에 담겨요.`:' 이 구좌에 보여요.';
+ return ftabPanel(s)+nativeCardVisibilityPanel(s)+G('상품 선택',(CATALOG_NOTE?'이 기획안에 담은 상품이에요. 체크하면':'예시 상품이에요. 체크하면')+where,content)+G('상품별 소구문구','카드 모양 탭의 소구문구 표시 요소와 연결됩니다.',appeals||'<div class="am-ed-note">상품을 먼저 선택해주세요.</div>')+G('다른 곳에서 하는 것','할인율·판정 근거는 상품·할인 단계에서 고쳐요. 카드별 라벨은 아직 준비 중이에요.','');
+}
+// 탭(필터) 구좌 묶음 (plans/28): 탭 이름·Zone은 data-bind(ftabs.i.label/zone)라 입력·실행 취소가 다른 칸과 같다
+function ftabPanel(s){
+ if(!FTAB_LAYOUTS.includes(s.layout))return '';
+ const help='가격대·취향처럼 상품을 탭으로 나눠 보여 줘요. 탭 하나가 PROMO_WORK 칸(Zone) 하나예요.';
+ if(!ftOn(s))return G('탭',help,B('탭으로 나누기','data-ftab-op="split"','am-ed-button--sm'));
+ const cur=ftCur(s),n=s.ftabs.length;
+ const ic=(sym,label,attr,off)=>`<button type="button" class="am-ed-icon-btn" ${attr} title="${E(label)}" aria-label="${E(label)}" ${off?'disabled':''}>${window.AMEditorKit?.icon(sym,'am-kit-icon--sm')||E(sym)}</button>`;
+ const rows=s.ftabs.map((t,i)=>{const on=t===cur,name=t.label||'이름 없는 탭',id=`data-ftab-id="${E(t.id)}"`;
+  return `<div class="am-ed-repeat am-ftab-row${on?' is-current':''}"><div class="am-ed-repeat__header"><span class="am-ed-tag">${i+1}</span><div class="am-ed-repeat__main"><strong>${E(name)}</strong><small>상품 ${(on?s.productIds:t.productIds).length}개${on?' · 지금 보는 탭':''}</small></div>
+   ${on?'':B('보기',`data-ftab-op="view" ${id} aria-label="${E(name)} 탭 상품 보기"`,'am-ed-button--subtle am-ed-button--sm')}
+   ${ic('arrow-up',name+' 탭 위로',`data-ftab-op="up" ${id}`,i===0)}${ic('arrow-down',name+' 탭 아래로',`data-ftab-op="down" ${id}`,i===n-1)}${ic('trash',n<=FTAB_MIN?'탭은 2개 이상이어야 해요':name+' 탭 지우기',`data-ftab-op="del" ${id}`,n<=FTAB_MIN)}</div>
+   <div class="am-ed-repeat__body">${F(`ftabs.${i}.label`,'탭 이름',t.label,{max:40})}${F(`ftabs.${i}.zone`,'Zone (PROMO_WORK 카테고리명)',t.zone,{max:40,optional:true,help:'할인 행의 카테고리명과 같게 적어요'})}</div></div>`;}).join('');
+ return G('탭',`${help} 고객은 첫 탭을 먼저 봐요.`,rows+`<div class="am-ftab-tools">${B('+ 탭 추가',`data-ftab-op="add" ${n>=FTAB_MAX?'disabled':''}`,'am-ed-button--sm')}${B('탭 없애기','data-ftab-op="drop"','am-ed-button--subtle am-ed-button--sm')}</div>`);
 }
 function eventPanel(s){
  const e=s.ev,ui=eventUI(s);
@@ -873,7 +907,7 @@ $('ia-breadcrumb').addEventListener('click',e=>{const b=e.target.closest('[data-
  if(b.dataset.iaParent==='page'){cbRailMode='sections';cbSelected=null;iaSelectedChild=null;renderAll();}
  else {cbSelected=null;iaSelectedChild=null;tab='copy';iaGroup='content';renderAll();}
 });
-function iaIssueList(){const entries=[];for(const s of sections){FLOW.ensure(s);for(const issue of FLOW.issues(s))if(issue.level!=='info')entries.push({id:s.id,name:s.name,level:issue.level,text:issue.text});for(const text of AMBlocks.issues(s,blockContext()))entries.push({id:s.id,name:s.name,level:'warn',text});}return entries;}
+function iaIssueList(){const entries=[];for(const s of sections){FLOW.ensure(s);for(const text of ftIssues(s))entries.push({id:s.id,name:s.name,level:'warn',text});for(const issue of FLOW.issues(s))if(issue.level!=='info')entries.push({id:s.id,name:s.name,level:issue.level,text:issue.text});for(const text of AMBlocks.issues(s,blockContext()))entries.push({id:s.id,name:s.name,level:'warn',text});}return entries;}
 $('iaCheckAll').addEventListener('click',()=>{const list=iaIssueList();$('ia-qa-items').innerHTML=list.length?list.map((x,i)=>`<button type="button" class="ia-qa-item" data-ia-issue-section="${E(x.id)}"><span>${E(x.name)} · ${x.level==='error'?'오류':'확인 필요'}</span><b>${E(x.text)}</b></button>`).join(''):'<div class="am-ed-note">빠진 입력이나 연결 오류가 없어요.</div>';$('ia-qa-dialog').showModal();});
 $('iaQaClose').addEventListener('click',()=>$('ia-qa-dialog').close());
 $('ia-qa-items').addEventListener('click',e=>{const b=e.target.closest('[data-ia-issue-section]');if(!b)return;$('ia-qa-dialog').close();setCurrent(b.dataset.iaIssueSection);tab='check';iaGroup='check';renderPanel();});
@@ -963,6 +997,10 @@ $('panel-body').addEventListener('focusout',e=>{if(cbSelected&&e.target.matches(
 
 $('section-list').addEventListener('click',e=>{const x=e.target.closest('[data-list-action]');if(x){let [action,id]=x.dataset.listAction.split(':'),i=sections.findIndex(s=>s.id===id);if(i<0)return;const before=capture();if(action==='up'&&i>0)[sections[i-1],sections[i]]=[sections[i],sections[i-1]];else if(action==='down'&&i<sections.length-1)[sections[i+1],sections[i]]=[sections[i],sections[i+1]];else if(action==='clone'){const t=clone(sections[i]);t.id='s_'+Date.now().toString(36);t.name+=' (복제)';sections.splice(i+1,0,t);current=t.id}else if(action==='delete'&&sections.length>1){sections.splice(i,1);if(current===id)current=sections[Math.min(i,sections.length-1)].id;}mark(before);updateAll();return;}const b=e.target.closest('[data-section]');if(b){setCurrent(b.dataset.section);AMEditorKit.revealInPreview({sectionId:b.dataset.section});}});
 $('page').addEventListener('click',e=>{
+ const pill=e.target.closest('[data-ftab-pill]');
+ if(pill){e.preventDefault();e.stopPropagation();const [sid,tid]=pill.dataset.ftabPill.split('|'),sx=sections.find(z=>z.id===sid);if(!sx)return;
+  ftSwitch(sx,tid);if(current!==sid)setCurrent(sid);else renderAll();saveDemo();
+  $('page').querySelector(`[data-ftab-pill="${CSS.escape(pill.dataset.ftabPill)}"]`)?.focus();return;}
  const action=e.target.closest('[data-canvas-action]');
  if(action){e.preventDefault();e.stopPropagation();const op=action.dataset.canvasAction;if(op==='delete')removeCanvasTarget();else if(op==='duplicate')duplicateCanvasTarget();else if(op==='edit')editCanvasTarget();return;}
  const referenceLink=e.target.closest('.am-custom-ref-link');
@@ -999,6 +1037,7 @@ $('page').addEventListener('click',e=>{
  if(role&&role.parentElement===sec){selectCanvasNative({kind:'role',sectionId:sid});return;}
  setCurrent(sid);
 });
+$('page').addEventListener('keydown',e=>{const pill=e.target.closest?.('[data-ftab-pill]');if(pill&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();const all=[...pill.parentElement.querySelectorAll('[data-ftab-pill]')],i=all.indexOf(pill),next=all[(i+(e.key==='ArrowRight'?1:all.length-1))%all.length];next.click();}});
 $('page').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-cb-node]')){e.preventDefault();selectBlock(e.target.dataset.cbNode,e.target.closest('[data-page]')?.dataset.page);return;}if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-page]')){e.preventDefault();setCurrent(e.target.dataset.page)}});
 // Left outline: reorder siblings within the same semantic list and section.
 // Do not allow cross-section drops or moving a child outside its block group.
@@ -1183,6 +1222,16 @@ $('panel-body').addEventListener('change',e=>{const t=e.target,s=section(),befor
  else return;
  mark(before);renderList();renderList();renderPanel();renderPage();saveDemo();});
 $('panel-body').addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;const s=section(),before=capture();
+ if(t.dataset.ftabOp){const op=t.dataset.ftabOp,id=t.dataset.ftabId;let msg='';
+  if(op==='split'){ftSplit(s);msg='탭 2개로 나눴어요. 지금 상품은 첫 탭에 있어요';}
+  else if(op==='add'){if(!ftAdd(s))return;msg='탭을 추가했어요. 이 탭에 담을 상품을 골라 주세요';}
+  else if(op==='view')ftSwitch(s,id);
+  else if(op==='up'||op==='down')ftMove(s,id,op==='up'?-1:1);
+  else if(op==='del'){const moved=ftRemove(s,id);if(moved===null){toast('탭은 2개 이상이어야 해요. 탭을 쓰지 않으려면 [탭 없애기]를 눌러 주세요');return;}msg=moved?`탭을 지웠어요. 그 탭에만 있던 상품 ${moved}개는 첫 탭으로 옮겼어요`:'탭을 지웠어요';}
+  else if(op==='drop'){ftDrop(s);msg='탭을 없앴어요. 모든 탭의 상품을 이 구좌에 모았어요';}
+  if(op!=='view')mark(before);renderList();renderPanel();renderPage();saveDemo();if(msg)toast(msg);
+  if(op==='view'||op==='up'||op==='down')$('panel-body').querySelector(`[data-ftab-id="${CSS.escape(id)}"][data-ftab-op="${op==='view'?'up':op}"]`)?.focus();
+  return;}
  if(t.dataset.productStyle){if(!PRODUCT_VIEW_NAMES[t.dataset.productStyle])return;s.productView=t.dataset.productStyle;mark(before);renderList();renderList();renderPanel();renderPage();saveDemo();return;}
  if(t.dataset.masonryReset){if(productView(s)!=='masonry')return;s.productImageRatios={};mark(before);renderList();renderList();renderPanel();renderPage();saveDemo();return;}
  if(t.dataset.columnPath){
@@ -1293,6 +1342,7 @@ $('panel-body').addEventListener('change',async e=>{const el=e.target;if(el.id!=
 function pickerMock(x,id){
  const mock=makeSection(x.layout,id,x.layout==='review'?'구매 후기로 확인하세요':x.name,x.description);
  if(x.variantKind==='product')mock.productView=x.variant;
+ if(x.variantKind==='tabs')ftSplit(mock,['1만원대','2만원대','3만원 이상']);
  if(x.variantKind==='accordion'){FLOW.ensure(mock);mock.config.presentation='accordion';}
  if(x.layout==='grid3')mock.layoutColumns={grid3:3};
  if(x.variant&&x.layout==='review')mock.rv.layout=x.variant;
@@ -1360,18 +1410,20 @@ $('pickerFullClose').addEventListener('click',()=>$('fullPreviewDialog').close()
 
 $('pickerClose').addEventListener('click',()=>$('typeDialog').close());$('pickerCancel').addEventListener('click',()=>$('typeDialog').close());
 $('pickerApply').addEventListener('click',()=>{
- const before=capture(),x=PICKER_OPTION(pickerSelected);if(!x)return;
+ const before=capture(),x=PICKER_OPTION(pickerSelected);if(!x)return;let ftNote='';
  if(pickerMode==='add'){
   let i=sections.findIndex(a=>a.id===current);
-  const fresh=makeSection(x.layout,'s_'+Date.now().toString(36),x.layout==='review'?'후기 모음':x.name,x.description);
+  const fresh=makeSection(x.layout,'s_'+Date.now().toString(36),x.layout==='review'?'후기 모음':x.variantKind==='tabs'?'탭별 추천':x.name,x.description);
   if(x.variantKind==='product')fresh.productView=x.variant;
+  if(x.variantKind==='tabs')ftSplit(fresh);
    if(x.variantKind==='accordion'){FLOW.ensure(fresh);fresh.config.presentation='accordion';}
    if(x.variant&&x.layout==='review')fresh.rv.layout=x.variant;
   fresh.ctaOn=['hero','ev-coupon'].includes(fresh.layout);fresh.cta='자세히 보기';
   sections.splice(i+1,0,fresh);current=fresh.id;
  } else {
   const s=section(),old=s.layout;
-  if(old===x.layout&&x.variantKind==='product'){s.productView=x.variant;}
+  if(old===x.layout&&x.variantKind==='tabs'){}   // 탭은 아래에서
+  else if(old===x.layout&&x.variantKind==='product'){s.productView=x.variant;}
    else if(old===x.layout&&x.variantKind==='accordion'){FLOW.ensure(s);s.config.presentation='accordion';}
    else if(old===x.layout&&['notice','timeline'].includes(old)){FLOW.ensure(s);s.config.presentation='plain';}
    else if(old==='review'&&x.layout==='review'){
@@ -1389,10 +1441,12 @@ $('pickerApply').addEventListener('click',()=>{
     if(x.variantKind==='accordion'){FLOW.ensure(s);s.config.presentation='accordion';}
    if(!s.ctaStyleModified)s.ctaStyle=CTA_DEFAULTS[x.layout]||s.ctaStyle;
   }
+  if(x.variantKind==='tabs'&&!ftOn(s))ftSplit(s);
+  if(!FTAB_LAYOUTS.includes(s.layout)&&s.ftabs?.length){ftDrop(s);ftNote=' · 이 유형은 탭을 쓰지 않아 탭을 없앴어요 (실행 취소 가능)';}
  }
  FLOW.setView(section(),x.layout==='ev-quiz'?'q:0':'before');
  tab=(x.layout==='review'?'review':'copy');mark(before);$('typeDialog').close();renderAll();saveDemo();
- toast(pickerMode==='add'?'구좌를 추가했어요': '구좌 구성을 변경했어요');
+ toast((pickerMode==='add'?'구좌를 추가했어요': '구좌 구성을 변경했어요')+ftNote);
 });
 $('undo').addEventListener('click',undo);$('redo').addEventListener('click',redo);
 $('exportDemo').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({notice:'UX 프로토타입 전용 JSON. 사내 API 입력 금지.',...serialize()},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='amoread-lab-demo.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)});
@@ -1462,6 +1516,7 @@ window.AMOREAD_EDITOR_API=Object.freeze({
     const ids=new Set(ftIn.map(t=>t.tabId)),tabOf=sl=>ids.has(sl?.tabId)?sl.tabId:ftIn[0].tabId;
     s.ftabs=ftIn.map(t=>({id:t.tabId,label:str(t.label,40),zone:str(t.zone_tag,40),
      productIds:[...new Set((Array.isArray(x.slots)?x.slots:[]).filter(sl=>tabOf(sl)===t.tabId).map(sl=>String(sl?.seq??'')))].filter(seq=>PRODUCTS.some(p=>p.id===seq))}));
+    s.ftabCur=s.ftabs[0].id;s.productIds=s.ftabs[0].productIds.slice();   // 처음엔 첫 탭을 본다
    }
    const card=v.card;
    if(card&&Array.isArray(card.order)&&card.order.length===ORDER.length&&ORDER.every(k=>card.order.includes(k)))s.card.order=card.order.slice();

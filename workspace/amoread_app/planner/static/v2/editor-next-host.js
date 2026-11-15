@@ -136,16 +136,14 @@ function enToLegacy(snapshot, prevSections, knownSeqs) {
     };
   });
 }
-// 편집기의 탭 구좌 값 (plans/28). null = 탭을 모르던 저장본 → 이전 tabs를 그대로 둔다 / [] = 탭을 없앰
-// 편집기가 productIds만 고쳤을 때(탭 UI 밖): 빠진 상품은 모든 탭에서 빼고, 탭에 없는 새 상품은 첫 탭에 넣는다
+// 편집기의 탭 구좌 값 (plans/28). null = 탭을 모르던 저장본 → 이전 tabs를 그대로 둔다 / [] = 탭을 없앰 (productIds = 합친 상품)
+// 편집기에서 s.productIds는 지금 보는 탭(s.ftabCur, 없으면 첫 탭)의 상품이고, 다른 탭 상품은 s.ftabs[].productIds에 있다
 const EN_FTAB_LAYOUTS = ['grid2', 'grid3', 'feat'];   // app.js FTAB_LAYOUTS와 같게
 function enFtabs(s) {
   if (!Array.isArray(s.ftabs)) return null;
-  const ids = (s.productIds || []).map(String), have = new Set(ids);
-  const tabs = s.ftabs.filter(t => t && /^[A-Za-z0-9_-]{1,40}$/.test(t.id || '')).slice(0, 12)
-    .map(t => ({ ...t, productIds: [...new Set((t.productIds || []).map(String))].filter(q => have.has(q)) }));
-  if (tabs.length) { const placed = new Set(tabs.flatMap(t => t.productIds)); tabs[0].productIds.push(...[...new Set(ids)].filter(q => !placed.has(q))); }
-  return tabs;
+  const tabs = s.ftabs.filter(t => t && /^[A-Za-z0-9_-]{1,40}$/.test(t.id || '')).slice(0, 12);
+  const cur = tabs.find(t => t.id === s.ftabCur) || tabs[0];
+  return tabs.map(t => ({ ...t, productIds: [...new Set(((t === cur ? s.productIds : t.productIds) || []).map(String))] }));
 }
 // page.sections가 이 편집기 밖(02 구좌 구성 등)에서 바뀌었는지 알아보는 지문 (구좌 id·유형·제목·설명·상품 SEQ, 탭 구좌면 탭과 칸의 탭)
 // 탭이 없는 구좌는 예전 지문과 같다 → 업데이트 뒤 처음 열 때 쓸데없이 '다시 맞춤'이 생기지 않음
@@ -181,7 +179,10 @@ async function enConnect() {
     if (en && en.snapshot && (!en.synced || en.synced === enLegacyMark(legacy) || !legacy.length)) {
       // 탭을 모르던 때의 저장본이면 탭은 page.sections에서 채운다 (plans/28)
       const leg = new Map(API.fromLegacyPage(doc.page).sections.filter(f => f.ftabs).map(f => [f.id, f]));
-      start = { ...en.snapshot, sections: (en.snapshot.sections || []).map(s => s.ftabs === undefined && leg.get(s.id) && leg.get(s.id).layout === s.layout ? { ...s, ftabs: leg.get(s.id).ftabs } : s) };
+      start = { ...en.snapshot, sections: (en.snapshot.sections || []).map(s => {
+        const L = s.ftabs === undefined && leg.get(s.id);
+        return L && L.layout === s.layout ? { ...s, ftabs: L.ftabs, ftabCur: L.ftabCur, productIds: L.productIds } : s;
+      }) };
       how = 'saved';
     } else {
       const fresh = API.fromLegacyPage(doc.page);
@@ -191,7 +192,7 @@ async function enConnect() {
           const o = old.get(f.id);
           // 탭은 02(page.sections)가 기준: 02에서 탭을 없앴으면 []
           return o && o.layout === f.layout ? { ...o, name: f.name, role: f.role, productIds: EN_PRODUCT_LAYOUTS.includes(f.layout) ? f.productIds : o.productIds, notes: f.notes,
-            ftabs: f.ftabs || (o.ftabs ? [] : undefined) } : f;
+            ftabs: f.ftabs || (o.ftabs ? [] : undefined), ftabCur: f.ftabCur } : f;
         });
         how = 'resynced';
       } else how = 'imported';
