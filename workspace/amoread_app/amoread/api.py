@@ -212,11 +212,10 @@ class ProjectReq(BaseModel):
     page: Page | None = None
     links: Links | None = None
     rationale: str = Field(default="", max_length=20000)
-    # 신규 구좌편집기(v1.12) 값. 기존 편집기의 page.sections와 따로 둔다(서로 덮지 않게). 모양은 편집기가 정하고 여기서는 크기만 막는다.
-    # 안 보내면 저장된 값을 그대로 둔다 (store.save)
+    # 신규 구좌편집기(v1.12) 값. 모양은 편집기가 정하고 여기서는 크기만 막는다. 안 보내면 저장된 값을 그대로 둔다 (store.save)
     editor_next: dict[str, Any] | None = None
-    # 동시 수정 확인: 화면이 마지막으로 받은 updated_at. 보내면 저장된 값과 다를 때 409. 안 보내면 예전처럼 저장
-    base_updated_at: str | None = Field(default=None, max_length=19)
+    base_updated_at: str | None = Field(default=None, max_length=19)   # 이 창이 읽은 저장 시각. 서버 것이 더 새로우면 저장을 거절한다 (다른 창이 덮어쓰지 않게)
+    force: bool = False                                                # 담당자가 '내 것으로 덮어쓰기'를 고른 경우
 
     @model_validator(mode="after")
     def _editor_next_size(self):
@@ -284,11 +283,15 @@ def get_project(pid: str):
 
 @router.post("/projects")
 def save_project(req: ProjectReq):
+    # 같은 기획안을 창 두 개(또는 예전 화면+새 화면)에서 고치면 나중 저장이 앞 저장을 말없이 지웠다 → 읽은 시각이 서버 것과 다르면 거절하고 화면이 묻게 한다.
+    # 비교는 store.save 안(저장 잠금 안)에서 한다. base를 안 보내는 예전 화면은 그대로 저장. force = 담당자가 [내 것으로 저장]을 고름
+    doc = req.model_dump()
+    if doc.pop("force", False):
+        doc["base_updated_at"] = None
     try:
-        return store.save(req.model_dump())
+        return store.save(doc)
     except store.Conflict as e:
-        return JSONResponse({"error": "다른 화면에서 이 기획안이 먼저 저장됐어요. 새로고침해서 최신 내용을 확인해 주세요.",
-                             "code": "conflict", "updated_at": e.updated_at}, status_code=409)
+        return JSONResponse({"error": "다른 창에서 이 기획안이 바뀌었어요.", "code": "stale", "updated_at": e.updated_at}, status_code=409)
 
 
 @router.post("/projects/{pid}/confirm")
@@ -503,7 +506,13 @@ def refs_save(req: RefReq):
 def refs_delete(rid: str):
     if not re.fullmatch(r"own[0-9a-f]{10}", rid):
         return JSONResponse({"error": "잘못된 레퍼런스예요"}, status_code=400)
-    return {"ok": references.delete_item(rid)}
+    ok = references.delete_item(rid)
+    try:   # 직접 가져온 페이지면 AI 검색 색인에서도 뺀다
+        from .ai import intake
+        intake.remove(rid)
+    except Exception:
+        pass
+    return {"ok": ok}
 
 
 @router.post("/references/{rid}/image")
@@ -537,3 +546,7 @@ def pin_board_delete(req: BoardReq):
 @router.get("/pinterest/pins")
 def pin_list():
     return references.all_pins()
+
+# ---------- AI 추천 (구좌 구성·레퍼런스): /api/am/ai/*  — 화면은 바꾸지 않고 서버로만 붙는다 (amoread/ai/README.md) ----------
+from .ai.api import router as _ai_router  # noqa: E402
+router.include_router(_ai_router)

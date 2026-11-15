@@ -165,3 +165,10 @@ input[type=checkbox], input[type=radio] { width: 18px; height: 18px; margin: 0; 
 .v2drawer .kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; word-break: keep-all; }
 .v2drawer .row { display: flex; gap: var(--s2); flex-wrap: wrap; }
 @media (max-width: 480px) { .v2drawer { width: 100vw; border-left: 0; } }
+
+/* 저장 실패·다른 창 충돌 안내 (plan.js): 고를 때까지 화면 아래에 계속 보인다 */
+.v2savebar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; max-width: min(760px, calc(100vw - 32px)); padding: 12px 16px; border: 1px solid var(--err-line); border-radius: var(--r2); background: var(--err-soft); color: var(--err); font-size: var(--fs-sm); font-weight: var(--fw-strong); box-shadow: 0 6px 24px rgba(0, 0, 0, .16); }
+.v2savebar span { flex: 1 1 260px; }
+/* 데이터 없음 안내 (api.js): 왜 예시가 보이는지 + 어디서 고치는지 */
+.v2notice { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; margin: 0 0 var(--s4); padding: 10px 14px; border-radius: var(--r2); background: var(--warn-soft); color: var(--warn); font-size: var(--fs-sm); }
+.v2notice a { color: var(--ink); font-weight: var(--fw-strong); }

@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="/static/tokens.css">
 <link rel="stylesheet" href="/static/v2/shell.css">
 <link rel="stylesheet" href="/static/v2/brief.css">
+<link rel="stylesheet" href="/copy-recommender-assets/editor.css">
 </head>
 <body>
 <header class="v2top v2one" aria-label="기획안 막대">
@@ -26,7 +27,7 @@
 </header>
 
 <main class="page">
-  <p class="demo"><b>새 버전 시험 중이에요.</b> 키워드를 누르면 오른쪽 근거의 <b>검색·글은 네이버 실제 데이터</b>예요 (키워드만 보내요). <b>가지는 그 말이 나온 블로그 글 여러 개에 함께 나온 말</b>이에요 (뉴스는 덜 셈) (자동으로 뽑아서 엉뚱한 말이 섞일 수 있어요. 검색광고 키를 넣으면 연관 키워드가 먼저 와요). 우리 데이터, 메인 카피 제안은 아직 예시예요.</p>
+  <p class="demo"><b>새 버전 시험 중이에요.</b> 키워드를 누르면 오른쪽 근거의 <b>검색·글은 네이버 실제 데이터</b>예요 (키워드만 보내요). <b>가지는 그 말이 나온 블로그 글 여러 개에 함께 나온 말</b>이에요 (뉴스는 덜 셈) (자동으로 뽑아서 엉뚱한 말이 섞일 수 있어요. 검색광고 키를 넣으면 연관 키워드가 먼저 와요). 우리 데이터는 연결 상태에 따라 표시돼요. 아래 기본 제안은 카피 틀이며, AI 제안 버튼은 Claude를 호출해요.</p>
 
   <div class="masthead">
     <div class="grow">
@@ -75,8 +76,9 @@
       <div>
         <input type="text" id="copy" maxlength="60" placeholder="페이지 첫 화면의 한 줄 · 나중에 써도 돼요">
         <div class="sugbar"><span class="cap">제안</span><span class="tag" title="고른 키워드를 장면형·질문형 같은 카피 틀에 넣어 만든 문장이에요. 골라서 다듬어 쓰세요.">키워드로 만든 카피 틀</span><span class="cap" id="sugBasis"></span></div>
+        <div id="briefAiRecommendations"></div>
         <div class="sugs" id="sugs" role="group" aria-label="메인 카피 제안"></div>
-        <div class="sugbar"><button class="btn sm" id="moreSug">다른 제안 보기</button><button class="btn sm" id="aiSug" disabled title="AI 카피 제안은 아직 연결 전이에요">AI 제안 · 준비 중</button>
+        <div class="sugbar"><button class="btn sm" id="moreSug">다른 제안 보기</button><button class="btn sm" id="aiSug">AI 제안</button>
           <span class="cap">누르면 메인 카피 칸에 들어가요. 가격·쿠폰·효능 표현은 넣지 않아요.</span></div>
       </div>
       <span class="rl" id="moodL">느낌 레퍼런스 <em>(선택)</em></span>
@@ -100,6 +102,9 @@
 <script src="/static/v2/shell.js"></script>
 <script src="/static/v2/api.js"></script>
 <script src="/static/v2/plan.js"></script>
+<script src="/copy-recommender-assets/core.js"></script>
+<script src="/copy-recommender-assets/editor-plugin.js"></script>
 <script src="/static/v2/brief.js"></script>
+<script src="/copy-recommender-assets/brief-plugin.js"></script>
 </body>
 </html>

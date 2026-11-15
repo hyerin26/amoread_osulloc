@@ -45,6 +45,10 @@ h1, h2, h3, h4, p { margin: 0; }
 .c-season { background: var(--cls-season); color: var(--cls-season-ink); } .c-brand { background: var(--cls-brand); color: var(--cls-brand-ink); } .c-launch { background: var(--cls-launch); color: var(--cls-launch-ink); } .c-collab { background: var(--cls-collab); color: var(--cls-collab-ink); } .c-clear { background: var(--cls-clear); color: var(--cls-clear-ink); }
 .seg { display: inline-flex; gap: 4px; padding: 4px; background: var(--sunken); border-radius: var(--r2); max-width: 100%; overflow-x: auto; }
 .seg > button { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; min-height: var(--control-md); padding: 6px 14px; border-radius: 6px; color: var(--ink2); font-size: var(--fs-sm); font-weight: var(--fw-medium); white-space: nowrap; justify-content: center; line-height: var(--lh-label); }
+/* 칸이 넘쳐 가로로 밀어야 할 때 오른쪽 끝이 잘려 보이지 않게 흐림으로 알려 준다 (스크롤 위치에 따라 CSS만으로 사라짐 · 자바스크립트 없음) */
+.seg { scrollbar-width: none; background: linear-gradient(to right, var(--sunken) 30%, transparent), linear-gradient(to left, var(--sunken) 30%, transparent) 100% 0, radial-gradient(farthest-side at 0 50%, rgba(0,0,0,.18), transparent), radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.18), transparent) 100% 0;
+  background-repeat: no-repeat; background-size: 24px 100%, 24px 100%, 10px 100%, 10px 100%; background-attachment: local, local, scroll, scroll; background-color: var(--sunken); }
+.seg::-webkit-scrollbar { display: none; }
 .seg > button:hover { color: var(--ink); }
 .seg > button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-strong); }
 .seg > button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
@@ -201,3 +205,90 @@ dialog::backdrop { background: var(--scrim); }
 .search:has(input:disabled) input[type=search] { color: var(--mute); cursor: not-allowed; }
 .search-meta { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); }
 .search-meta.none { color: var(--ink2); }
+
+/* 새 레퍼런스 가져오기: 자동으로 나눈 구좌 미리보기 */
+.imp-secs { margin: 6px 0 0; padding-left: 20px; display: grid; gap: 4px; max-height: 180px; overflow: auto; font-size: 13px; }
+.imp-secs li .cap { color: var(--ink-3, #777); margin-left: 4px; }
+
+/* 프로모션 윤곽 썸네일: 구좌 역할을 순서대로 쌓은 간략 화면 (이미지를 받지 않아도 '이런 구성이구나'를 보이려고) */
+.shp { --a: var(--ink2); display: block; width: 100%; height: 100%; }
+.shp.c-season { --a: var(--cls-season-ink); } .shp.c-brand { --a: var(--cls-brand-ink); } .shp.c-launch { --a: var(--cls-launch-ink); } .shp.c-collab { --a: var(--cls-collab-ink); } .shp.c-clear { --a: var(--cls-clear-ink); }
+.shp .pg { fill: var(--surface); stroke: var(--line); stroke-width: .6; }
+.shp .bk { fill: var(--sunken); } .shp .ln { fill: var(--line); } .shp .ac { fill: var(--bn, var(--a)); } .shp .cl { fill: var(--a); } .shp .ac2 { fill: var(--a); opacity: .35; }
+.shp .ol { fill: none; stroke: var(--a); stroke-width: .8; stroke-dasharray: 2 1.4; opacity: .8; }
+.shp .wh { fill: var(--surface); opacity: .92; } .shp .bt { fill: var(--bn, var(--a)); font-size: 3.8px; font-weight: 700; } .shp .nm { fill: var(--ink); font-size: 4.4px; font-weight: 700; } .shp .tx { fill: var(--ink2); font-size: 3.6px; font-weight: 600; } .shp .txw { fill: #fff; font-size: 4px; font-weight: 700; } .shp text { fill: var(--mute); font-size: 5.2px; font-family: inherit; }
+.fr .shp { position: absolute; inset: 6px; width: calc(100% - 12px); height: calc(100% - 12px); }
+.dfig .shp { width: min(100%, 260px); height: auto; aspect-ratio: 3 / 4; }
+
+/* 구좌 역할 계열별 색: 블록마다 제 색을 입혀 배치가 한눈에 읽히게 */
+.shp .f-vis { --c: hsl(335 58% 58%); } .shp .f-prod { --c: hsl(152 46% 42%); } .shp .f-ben { --c: hsl(28 86% 55%); }
+.shp .f-story { --c: hsl(214 62% 56%); } .shp .f-act { --c: hsl(268 50% 60%); } .shp .f-info { --c: hsl(215 10% 62%); }
+.shp g .ac { fill: var(--c); } .shp g .ac2 { fill: var(--c); opacity: .5; } .shp g .bk { fill: var(--c); opacity: .3; } .shp g .ol { stroke: var(--c); }
+.shp g .ln { fill: var(--c); opacity: .45; }
+
+/* 수집 당시 화면(읽기용) */
+.snap { max-width: 520px; margin: 8px auto 0; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-size: 13px; line-height: 1.55; color: var(--ink); overflow-wrap: anywhere; }
+.snap div > span { display: block; } .snap .sn-a { color: var(--ink); } .snap h1, .snap h2, .snap h3, .snap h4 { margin: 10px 0 4px; font-size: 15px; }
+.snap ul, .snap ol { margin: 4px 0; padding-left: 18px; } .snap table { border-collapse: collapse; width: 100%; } .snap td, .snap th { border: 1px solid var(--line); padding: 3px 6px; }
+.snap section { padding: 10px 0; border-top: 1px dashed var(--line); } .snap section:first-child { border-top: 0; }
+.snap .sn-img { display: flex; align-items: center; justify-content: center; min-height: 84px; margin: 6px 0; border-radius: 6px; background: var(--sunken); color: var(--mute); font-size: 11px; text-align: center; padding: 6px; }
+.snap .sn-img span { display: block; }
+
+.cap-box { margin-bottom: 12px; } .cap-box h3 { margin: 0 0 6px; font-size: 14px; }
+.cap-tb { border-collapse: collapse; width: 100%; font-size: 12.5px; } .cap-tb td { border: 1px solid var(--line); padding: 5px 8px; vertical-align: top; }
+.cap-tb .cp-ok { color: #13734a; font-weight: 700; } .cap-tb .cp-mid { color: #a86400; font-weight: 700; } .cap-tb .cp-no { color: #b3261e; font-weight: 700; }
+
+.snapframe { display: block; width: 390px; max-width: 100%; height: 68vh; margin: 8px auto; border: 1px solid var(--line); border-radius: 10px; background: #fff; overflow: auto; transform: translateZ(0); }
+.snapd { margin-top: 10px; } .snapd summary { cursor: pointer; color: var(--mute); font-size: 12.5px; }
+
+/* 전체 페이지 보기: 원본 모양 + 구좌 박스 */
+.wv { position: relative; width: 390px; max-width: 100%; margin: 4px auto 16px; border: 1px solid var(--line); background: #fff; }
+.wvf { display: block; width: 390px; overflow: hidden; transform: translateZ(0); contain: paint; background: #fff; }   /* transform: 안쪽 fixed 요소(고정 헤더 등)가 화면 전체로 번지지 않게 이 칸에 가둔다 */
+.wb { position: absolute; left: 0; right: 0; border: 2px dashed var(--ac, #1f6f54); pointer-events: none; box-sizing: border-box; }
+.wb.none { border: 1px dotted var(--line-strong); }
+.wb.used { border-style: solid; border-width: 3px; background: rgba(31, 111, 84, .07); }
+.wbt { position: absolute; top: 0; left: 0; display: flex; gap: 6px; align-items: center; max-width: 100%; padding: 3px 6px; background: rgba(255, 255, 255, .94); border: 1px solid var(--line); border-radius: 0 0 8px 0; font-size: 11.5px; font-weight: 600; pointer-events: auto; }
+.wb.none .wbt { opacity: .7; font-weight: 500; }
+.wbt .here { color: #fff; background: #1f6f54; border-radius: 4px; padding: 0 5px; font-weight: 600; }
+
+/* 마켓별 신규 프로모션 찾기 */
+#discMarkets { margin-bottom: 10px; }
+#dlgB .dtools { display: flex; align-items: center; gap: 8px; margin: 8px 0 10px; }
+#dlgB .dcount { margin-left: auto; font-size: 13px; color: var(--muted, #6b7280); }
+#dlgB .dlist { display: flex; flex-direction: column; border: 1px solid var(--line, #e5e7eb); border-radius: 12px; overflow: hidden; }
+#dlgB .drow { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--line, #e5e7eb); }
+#dlgB .drow:first-child { border-top: 0; }
+#dlgB .drow:hover { background: rgba(0, 0, 0, .03); }
+#dlgB .dmain { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; cursor: pointer; }
+#dlgB .dmain input { width: 18px; height: 18px; flex: none; margin: 0; }
+#dlgB .dtxt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+#dlgB .dtxt b { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-all; }
+#dlgB .dmeta { font-size: 12px; color: var(--muted, #6b7280); }
+#dlgB .dlink { flex: none; font-size: 12px; color: var(--muted, #6b7280); text-decoration: none; padding: 4px 8px; border-radius: 8px; }
+#dlgB .dlink:hover { background: rgba(0, 0, 0, .06); color: inherit; }
+#dlgB .dchg { font-style: normal; color: #b45309; font-weight: 600; }
+#dlgB .dbar { position: sticky; top: -20px; z-index: 3; background: var(--surface); padding: 30px 0 10px; border-bottom: 1px solid var(--line, #e5e7eb); }
+#dlgB .dbar .dtools { margin: 0; }
+#dlgB .dbar .dout { margin: 10px 0 0; max-height: 150px; overflow: auto; }
+#dlgB .dtools .primary { margin-left: 4px; }
+#dlgB .dout:empty { display: none; }
+#dlgB .dout { margin: 0 0 10px; }
+#dlgB .dlist input[disabled] { opacity: .35; cursor: not-allowed; }
+#dlgB .dscore { flex: none; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: rgba(0, 0, 0, .06); color: var(--muted, #6b7280); }
+#dlgB .dscore.hi { background: #dcfce7; color: #166534; font-weight: 600; }
+#dlgB .dscore.lo { background: #fee2e2; color: #991b1b; }
+#dlgB .dwhy { font-style: normal; color: #b45309; }
+#dlgB .dlow { margin-top: 12px; }
+#dlgB .dlow > summary { cursor: pointer; font-size: 14px; font-weight: 600; padding: 8px 0; }
+
+.cropbox { position: absolute; inset: 6px; display: block; }
+.dfig .cropbox { position: relative; inset: auto; width: min(100%, 260px); aspect-ratio: 3 / 4; }
+.cropbox .shp, .dfig .cropbox .shp { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; }
+/* 잘라 보기가 구성도 테두리를 덮거나, 구성도가 비쳐 보이지 않게: 테두리 안쪽에 흰 바탕으로 */
+.cropbox .crop { inset: 3px; border-radius: 4px; }
+
+/* 구좌 글 카드 */
+.tc { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px 12px 10px; background: var(--surface, #fff); border: 1px solid var(--line-sub); border-radius: 6px; overflow: hidden; text-align: left; }
+.tc b { font-size: 14px; line-height: 1.35; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.tc .tx { font-size: 12px; line-height: 1.5; color: var(--ink2, #666); display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
+.tc .tk { margin-top: auto; align-self: flex-end; font-size: 12px; color: var(--ink2, #666); }

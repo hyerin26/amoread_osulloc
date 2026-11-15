@@ -80,6 +80,11 @@ function demoImg(w, h, alt) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w * 40}" height="${h * 40}"><defs><pattern id="p" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="16" fill="#f3f3f3"/></pattern></defs><rect width="100%" height="100%" fill="#ffffff"/><rect width="100%" height="100%" fill="url(#p)"/><rect x="0.5" y="0.5" width="${w * 40 - 1}" height="${h * 40 - 1}" fill="none" stroke="#dedede"/></svg>`;
   return `<img src="data:image/svg+xml,${encodeURIComponent(svg)}" alt="${esc(alt)}">`;
 }
+// 수집해 둔 화면이 있으면 원본 구좌 자리를 잘라 보여 준다 (없으면 빗금 자리)
+const capOf = src => { const p = PAGES[src[0]]; if (!p?.cap) return ''; const b = Cap.band(p.layout, src[1]);
+  const sx = CANDS.flatMap(k => k.secs).map(s => s[3]).find(g => g?.src && g.src[0] === src[0] && g.src[1] === src[1])?.sx;
+  const at = b ? `data-y="${b.y}" data-h="${b.h}"` : sx ? `data-t="${esc(sx.t)}" data-n="${sx.n}"` : '';
+  return at ? `<span class="crop" data-crop data-id="${esc(src[0])}" ${at}></span>` : ''; };
 function visual(c) {
   if (c.type === 'single') {
     const p = PAGES[c.page];
@@ -87,9 +92,9 @@ function visual(c) {
   }
   if (c.type === 'mix') {
     const s = srcList(c), show = s.slice(0, s.length > 4 ? 3 : 4), more = s.length - show.length;
-    return `<button class="vis mosaic" data-src="${c.id}" aria-label="출처 ${s.length}개 보기">${show.map((x, i) => { const r = SEC_R[x[1]] || [3, 4]; return `<span class="cell">${demoImg(r[0], r[1], '')}<b>${NUM[i]}</b></span>`; }).join('')}${more ? `<span class="cell more">+${more}</span>` : ''}</button>`;
+    return `<button class="vis mosaic" data-src="${c.id}" aria-label="출처 ${s.length}개 보기">${show.map((x, i) => { const r = SEC_R[x[1]] || [3, 4]; return `<span class="cell">${capOf(x) || demoImg(r[0], r[1], '')}<b>${NUM[i]}</b></span>`; }).join('')}${more ? `<span class="cell more">+${more}</span>` : ''}</button>`;
   }
-  return `<div class="vis none"><span>원본 없음</span><span class="cap">${esc(c.basis)} 기준으로 자동으로 짠 구성이에요</span></div>`;
+  return `<div class="vis none"><span>원본 없음</span><span class="cap">${AI_LIVE ? '유형 규칙으로 정한 기본 틀이라 가져온 원본 페이지가 없어요' : `${esc(c.basis)} 기준으로 자동으로 짠 구성이에요`}</span></div>`;
 }
 function headTag(c) {
   if (c.type === 'single') { const p = PAGES[c.page]; return `<span class="tag ${p.from === '자사몰' ? 'real' : ''}">${p.from === '자사몰' ? '지난 행사' : '외부'}</span>`; }
@@ -101,7 +106,7 @@ const glance = c => {
   return `구좌 ${c.secs.length} · 탭 구좌 ${tabs} · 하루특가 ${deal ? '있음' : '없음'}`;
 };
 const basisOf = c => c.type === 'single' ? `${PAGES[c.page].from} · ${PAGES[c.page].name}${PAGES[c.page].period ? ` (${PAGES[c.page].period})` : ''}`
-  : c.type === 'mix' ? `자사몰·외부 레퍼런스 ${pagesOf(c).length}곳 · 연결 후 AI·로직` : c.basis;
+  : c.type === 'mix' ? `자사몰·외부 레퍼런스 ${pagesOf(c).length}곳 · ${AI_LIVE ? '수집한 사례에서 골랐어요' : '연결 후 AI·로직'}` : c.basis;
 const shown = () => n === 3 ? CANDS : CANDS.filter(c => pair.includes(c.id));
 
 // 탭 구좌 ↔ 따로 구좌: 탭 하나로 = 탭 하나가 PROMO_WORK Zone 하나 / 따로 = 탭마다 구좌 하나 (같은 묶음 열쇠 gk로 다시 묶을 수 있음)
@@ -119,7 +124,7 @@ function mergeGroup(gk) {
 function renderCands() {
   const list = shown(), box = $('#cands');
   box.className = `cands n${list.length}`;
-  $('#candCap').textContent = COMP_LIVE ? `이 기획안의 브리프(분류·키워드·메인 카피)와 PROMO_WORK 지난 행사로 ${list.length}개를 만들었어요` : `브리프(분류·키워드·메인 카피)와 레퍼런스로 ${list.length}개를 만들었어요`;
+  $('#candCap').textContent = COMP_LIVE && AI_LIVE ? `이 기획안의 브리프(분류·키워드·메인 카피)와 수집한 레퍼런스로 ${list.length}개를 만들었어요` : COMP_LIVE ? `이 기획안의 브리프(분류·키워드·메인 카피)와 PROMO_WORK 지난 행사로 ${list.length}개를 만들었어요` : `브리프(분류·키워드·메인 카피)와 레퍼런스로 ${list.length}개를 만들었어요`;
   box.innerHTML = list.map(c => {
     return `<article class="cand n${list.length}" ${chosen === c.id ? 'aria-current="true"' : ''} aria-labelledby="c${c.id}">
       <div class="head"><span class="letter">${c.id}</span><div class="grow"><h3 id="c${c.id}">${esc(c.title)}</h3><p class="cap">${esc(basisOf(c))}</p></div>${headTag(c)}</div>
@@ -168,7 +173,7 @@ function groupLine(r, i) {
     <span class="cap">${r.tabs ? `탭 ${r.tabs.length}개: ${r.tabs.map(esc).join(' · ')} · 탭 하나가 PROMO_WORK 칸 하나` : `'${esc(r.gname)}' 묶음을 구좌 ${parts}개로 나눴어요`} · 지난 행사에서 추정</span></div>`;
 }
 function render() {
-  renderCands(); renderEdit();
+  renderCands(); renderEdit(); Cap.lazy($('#cands'));
   $$('.demo .seg [data-n]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.n === n));
   $$('.demo [data-pair]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pair === pair));
   $('#pairSeg').hidden = n !== 2;
@@ -178,6 +183,7 @@ function render() {
 let dirty = false;   // 고른 구성을 고쳤는지 (다른 안을 고를 때 덮어쓰기 확인)
 function choose(id) {
   if (chosen && chosen !== id && dirty && !confirm('고친 구성이 있어요. 다른 구성안으로 바꿀까요? (고친 내용은 사라져요)')) return;
+  if (AI_LIVE && id !== 'blank') v2api('/api/am/ai/feedback', { event: 'pick_cand', doc_id: PLAN.id || '', cand_id: id }).catch(() => {});   // 어떤 추천안을 골랐는지 기록 (화면 변화 없음)
   chosen = id; rows = id === 'blank' ? [{ id: uid(), name: '메인 비주얼', layout: 'hero', why: '' }] : toRows(CANDS.find(c => c.id === id));
   sel = null; dirty = false; render();
   $('#editH').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -240,6 +246,14 @@ $('#nextBtn').addEventListener('click', () => { if (!PLAN.id) { toast(`예시예
 function openOrig(pageKey, mark) {
   const p = PAGES[pageKey]; if ($('#srcDlg').open) $('#srcDlg').close();
   $('#origH').textContent = p.name;
+  if (p.cap) {   // 수집해 둔 화면이 있으면 원본 모양 그대로 + 가져온 구좌 위치 강조
+    $('#origSub').textContent = `${p.from} · 수집 당시 모습 그대로예요. 초록 실선 박스가 이번 구성에 가져온 구좌예요 (이미지는 파일을 저장하지 않아 회색 칸)`;
+    $('#origNote').textContent = '';
+    const sx = mark ? CANDS.flatMap(k => k.secs).map(s => s[3]).find(g => g?.src && g.src[0] === pageKey && g.src[1] === mark)?.sx : null;
+    Cap.whole($('#origBody'), pageKey, p.layout, mark, sx);
+    $('#origDlg').showModal(); return;
+  }
+
   $('#origSub').textContent = p.zones ? `${p.from}${p.period ? ` · ${p.period}` : ''} · PROMO_WORK 카테고리명(진열 칸)을 행 순서대로 늘어놓았어요` : `${p.from}${p.period ? ` · ${p.period}` : ''} · 실제로 걸렸던 페이지 한 장 전체예요`;
   $('#origBody').innerHTML = p.secs.map((nm, i) => `<div class="oseg ${nm === mark ? 'used' : ''}"><div class="t"><span class="grow">${i + 1}. ${esc(nm)}</span>
       ${nm === mark ? '<span class="tag real">이번 구성에 가져온 구좌</span>' : ''}<span class="tag">${p.zones ? `진열 칸 · 상품 ${p.zones[i]?.count ?? '-'}개` : '원본 구좌 레퍼런스'}</span></div>
@@ -257,11 +271,12 @@ function openSources(id) {
     if (!g?.src) return `<tr><td>${i + 1}. ${esc(nm)}</td><td class="cap">레퍼런스 없이 규칙으로 넣었어요</td><td></td><td></td></tr>`;
     const k = list.indexOf(g.src), p = PAGES[g.src[0]];
     const r = SEC_R[g.src[1]] || [3, 4];
-    return `<tr><td>${i + 1}. ${esc(nm)}</td><td><span class="sth">${demoImg(r[0], r[1], '')}<b>${NUM[k]}</b></span> ${esc(g.src[1])}</td>
+    return `<tr><td>${i + 1}. ${esc(nm)}</td><td><span class="sth ${capOf(g.src) ? 'cap' : ''}">${capOf(g.src) || demoImg(r[0], r[1], '')}<b>${NUM[k]}</b></span> ${esc(g.src[1])}</td>
       <td><span class="tag ${p.from === '자사몰' ? 'real' : ''}">${p.from}</span> ${esc(p.name)}</td>
       <td><button class="btn sm" data-orig="${g.src[0]}" data-mark="${esc(g.src[1])}">전체 페이지 보기</button></td></tr>`;
   }).join('')}</tbody></table>`;
   $('#srcDlg').showModal();
+  Cap.lazy($('#srcBody'));
 }
 
 
@@ -303,10 +318,33 @@ async function pastCand(doc) {
   }
   return null;
 }
-let COMP_LIVE = false;
+function renderBriefSummary(doc) {
+  const b = doc.brief || {}, period = b.period || {};
+  const dateLabel = value => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return '미정';
+    const date = new Date(`${value}T00:00:00`);
+    return `${date.getMonth()+1}/${date.getDate()}(${'일월화수목금토'[date.getDay()]})`;
+  };
+  $('#briefClass').textContent = CLS_N[doc.v2?.cls] || '분류 미정';
+  $('#briefPeriod').textContent = period.start || period.end ? `${dateLabel(period.start)} ~ ${dateLabel(period.end)}` : '기간 미정';
+  $('#briefKeywords').textContent = (doc.v2?.keywords || []).join(' · ') || '선택한 키워드 없음';
+  $('#briefCopy').textContent = b.key_copy || '메인 카피 미정';
+}
+let COMP_LIVE = false, AI_LIVE = false;
+// 구좌 구성 AI (서버 /api/am/ai/compose): 브리프 → A 규칙형, C 레퍼런스 조합 + 원본 페이지(PAGES). 실패·색인 없음(mode≠ai)이면 false를 돌려 지금 로직을 그대로 쓴다
+async function applyAi(doc) {
+  try {
+    const r = await v2api('/api/am/ai/compose', { doc: { id: doc.id || '', title: doc.title || '', brief: doc.brief || {}, v2: { cls: doc.v2?.cls || '', seed: doc.v2?.seed || '', keywords: doc.v2?.keywords || [] } }, per_section: 1 });
+    if (r.mode !== 'ai') return false;
+    Object.assign(PAGES, r.pages || {});
+    for (const c of r.candidates || []) { const i = CANDS.findIndex(x => x.id === c.id); if (i >= 0) CANDS[i] = c; else CANDS.push(c); }
+    return true;
+  } catch (e) { return false; }
+}
 async function buildLive(doc) {
   const kw = (doc.v2?.keywords || [])[0] || doc.v2?.seed || doc.brief?.myeongbun || '', cls = CLS_N[doc.v2?.cls] || '분류 미정', base = CANDS.find(c => c.id === 'A');
   COPY = doc.brief?.key_copy || doc.brief?.myeongbun || doc.title || '';
+  renderBriefSummary(doc);
   Object.assign(base, { title: `${cls} 기본형`, why: `${cls} 프로모션의 기본 틀에 고른 키워드를 넣었어요`, basis: `분류: ${cls}`,
     match: [[`같은 분류: ${cls}`, !!doc.v2?.cls], [`키워드: ${kw || '없음'}`, !!kw], ['메인 카피', !!doc.brief?.key_copy]],
     secs: [['메인 비주얼', 'hero', '명분과 메인 카피를 첫 화면에 크게'], ...(doc.v2?.keywords || []).slice(0, 2).map(k => [`${k} 추천`, 'grid2', `고른 키워드 '${k}'에 맞는 상품`]),
@@ -315,9 +353,11 @@ async function buildLive(doc) {
   if (past) CANDS[bi] = past; else CANDS.splice(bi, 1);
   const mix = CANDS.find(c => c.id === 'C');
   if (mix) Object.assign(mix, { title: '레퍼런스 조합 추천 (예시)', why: '레퍼런스 라이브러리가 아직 예시예요. 연결되면 실제 페이지의 구좌를 골라 이어요. 지금은 구성 모양만 참고하세요' });
+  AI_LIVE = await applyAi(doc);   // 서버 AI가 준비돼 있으면 A·C를 그 결과로 바꾼다. 아니면 위 예시 그대로
   COMP_LIVE = true; n = 3;
   document.querySelectorAll('.demo .seg, .demo > .cap').forEach(x => { x.hidden = true; });   // 목업 보기용 개수 고르기는 숨김
-  const dp = document.querySelector('.demo p'); if (dp) dp.innerHTML = '<b>이 기획안으로 만든 추천이에요.</b> A는 분류·키워드 규칙, B는 PROMO_WORK 지난 행사의 진열 칸 순서예요. C(레퍼런스 조합)와 원본 페이지 캡처는 아직 예시예요.';
+  const dp = document.querySelector('.demo p'); if (dp) dp.innerHTML = AI_LIVE ? '<b>이 기획안으로 만든 추천이에요.</b> A는 프로모션 유형의 필수 구좌, C는 브리프에 가까운 레퍼런스 페이지에서 구좌를 가져와 이은 구성이에요. 지난 우리 기획안이 비슷하면 D로 나와요.'
+    : '<b>이 기획안으로 만든 추천이에요.</b> A는 분류·키워드 규칙, B는 PROMO_WORK 지난 행사의 진열 칸 순서예요. C(레퍼런스 조합)와 원본 페이지 캡처는 아직 예시예요.';
 }
 
 let toastT;
@@ -328,10 +368,11 @@ render();
 let lastJ = null;
 function toSections(prev) {
   const old = Object.fromEntries(((prev && prev.sections) || []).map(x => [x.sectionId, x]));
+  const firstHero = rows.find(r => r.layout === 'hero');
   return rows.map((r, i) => {
     const o = old[r.id] || {};
     const tabs = r.tabs ? r.tabs.map((label, j) => ({ ...(o.tabs?.[j] || {}), tabId: o.tabs?.[j]?.tabId || `${r.id}t${j + 1}`, label: String(label).slice(0, 40), zone_tag: o.tabs?.[j]?.zone_tag || '' })) : [];
-    return { ...o, sectionId: r.id, order: i, name: String(r.name).slice(0, 40), layoutId: r.layout, role: String(r.why || '').slice(0, 200),
+    return { ...o, ...(r === firstHero ? {headline: PLAN.doc?.brief?.key_copy || ''} : {}), sectionId: r.id, order: i, name: String(r.name).slice(0, 40), layoutId: r.layout, role: String(r.why || '').slice(0, 200),
       zone_kind: String(r.kind || '').slice(0, 20), tabs, v2: { ...(o.v2 || {}), gk: r.gk || '', gname: r.gname || '' } };
   });
 }

@@ -1,206 +1,196 @@
-# AMOREAD — 오설록몰 프로모션 페이지 기획 도구 (`design` 브랜치)
+# AMOREAD — 담당자님용 Windows 실행 안내
 
-프로모션 기획안 하나를 **홈(일정·명분) → 브리프 → 구좌 구성 추천 → 구좌 편집 → 미리보기·내보내기** 순서로 만드는 로컬 웹앱입니다.
-새로 설계한 화면은 `/v2/`, 예전 화면은 `/`에 있습니다.
+이 문서는 **`ai/amoread-ai-module` 브랜치**를 담당자님 PC에서 실행하는 방법입니다. `ai/amoread-ai-module`은 폴더명이 아니라 Git 브랜치 이름입니다.
 
-기획자 프로토타입(`sub`)을 바탕으로 브리프의 레퍼런스 상세 패널, 구좌 편집과 미리보기의 좁은 화면 배치, 디자이너 전달 ZIP의 파일 선택 항목을 다듬었습니다. 변경 이력은 [README_UXUI_변경사항.md](README_UXUI_변경사항.md)에서 확인할 수 있습니다.
+프로모션 기획안을 **홈 → 브리프 → 구좌 구성 → 구좌 편집 → 미리보기·내보내기** 순서로 만드는 로컬 웹앱입니다. 사용할 화면은 `/v2/`입니다.
 
-> 이 문서는 각자 PC에서 처음 받아 실행하는 방법입니다. 서버는 **자기 PC(127.0.0.1)에서만** 열리므로, 다른 사람 PC의 화면에는 접속할 수 없습니다. 각자 실행하세요.
+> 처음에는 **코드 받기 → 기존 원천 데이터 넣기 → Python 환경 설치 → 데이터 변환 → 앱 실행** 순서로 진행해 주세요. 실제 데이터로 사용하려면 데이터 배치·변환이 필요합니다. 원천 데이터는 담당자님께서 기존에 저희에게 전달해 주셨던 파일입니다. 새로 준비하거나 다시 전달하실 필요 없이, 보관 중인 해당 파일을 사용해 주세요.
 
----
+## 1. 준비 사항
 
-## 1. 준비물
+- Windows 10/11
+- Python **3.11 이상** (설치 시 `Add Python to PATH` 선택)
+- Git
+- Google Chrome (레퍼런스 화면 수집·신규 프로모션 찾기에 사용)
+- 이 비공개 GitLab 저장소에 접근할 수 있는 계정
 
-| 항목 | 내용 |
-|---|---|
-| OS | Windows 10/11 또는 macOS |
-| Git | `git --version`으로 확인 |
-| Python | **3.11 이상** (`python --version`). 담당자 PC는 3.15.2에서 동작 확인 |
-| GitLab 권한 | 이 저장소는 비공개입니다. 접근 권한이 없으면 담당자에게 요청 |
-
----
-
-## 2. 받기
+시작 메뉴에서 **PowerShell**을 열고 아래 명령어로 확인합니다. 이 문서의 명령어는 PowerShell 기준이며, 파일·폴더 경로는 Windows 표기(`\`)를 사용합니다. URL과 Git 브랜치 이름에는 `/`를 그대로 사용합니다.
 
 ```powershell
-git clone -b design https://gitlab.com/amoread2/osulloc.git
-cd osulloc\workspace\amoread_app
+python --version
+git --version
 ```
 
-이미 저장소를 받았다면 `osulloc` 폴더에서 `git fetch origin`으로 최신 브랜치를 확인한 뒤 `git switch design`으로 이동합니다. 이후 앱 실행 명령은 `workspace/amoread_app` 폴더에서 실행합니다.
+`python`을 찾을 수 없으면 `py -3 --version`도 확인해 주세요. `py`만 동작하는 PC에서는 아래의 `python setup_env.py`를 `py -3 setup_env.py`로 바꿔 실행하면 됩니다.
 
----
+## 2. AI 통합 버전 받기
 
-## 3. Python 환경 만들기 (Windows, 처음 한 번)
+기존 작업 폴더와 섞이지 않도록 **새 폴더 `osulloc-ai`**에 받습니다. 파일 탐색기에서 저장할 위치를 연 뒤 주소창에 `powershell`을 입력하고 Enter를 누르세요. 아래 명령어를 한 줄씩 실행합니다.
+
+```powershell
+git clone -b ai/amoread-ai-module --single-branch https://gitlab.com/amoread2/osulloc.git osulloc-ai
+cd osulloc-ai
+git branch --show-current
+cd workspace\amoread_app
+```
+
+브랜치 확인 결과가 `ai/amoread-ai-module`이면 맞습니다. 이미 `osulloc-ai` 폴더가 있다면 새로 복제하지 말고 그 폴더가 올바른 브랜치인지 먼저 확인해 주세요. 기존 폴더를 삭제하거나 덮어쓰지 마세요.
+
+**이후 설치·데이터 변환·실행 명령은 모두 `osulloc-ai\workspace\amoread_app` 폴더에서 실행합니다.** 저장소 전체가 필요하므로 `amoread_app` 폴더만 따로 옮기지 마세요.
+
+## 3. 기존에 전달해 주셨던 원천 데이터 넣기 (필수)
+
+담당자님께서 기존에 저희에게 보내주셨던 **판매실적·상품장·프로모션 정보·리뷰 파일**을 넣어 주세요. 위치는 저장소 최상위가 아니라 **`workspace\amoread_app\data`**입니다.
+
+이미 아래 구조의 `data` 폴더를 보관 중이시면 `amoread_app` 안으로 폴더째 복사해 주세요. 파일 이름과 연도는 원본 그대로 유지합니다.
+
+```text
+osulloc-ai
+└─ workspace
+   └─ amoread_app
+      ├─ setup_env.py
+      ├─ planner
+      └─ data
+         ├─ report_service
+         │  ├─ CustomTemplate 고객판매실적_seq YYYY.csv
+         │  └─ 일자별트렌드_전체 데이터_YYYY.csv
+         └─ sample
+            ├─ ★오설록 온라인 가이드….xlsx
+            ├─ BY26 프로모션별 할인정보….xlsx
+            └─ reviews
+               └─ 고객 리뷰 파일들
+```
+
+| 위치 (`amoread_app` 기준) | 넣을 원천 자료 |
+|---|---|
+| `data\report_service\` | SEQ × 일자 고객판매실적 CSV, 몰 전체 일자별 트렌드 CSV |
+| `data\sample\` | 오설록 온라인 가이드 상품장 Excel, BY26 프로모션별 할인정보 Excel |
+| `data\sample\reviews\` | 고객 리뷰 파일 |
+
+`YYYY`와 `…`는 파일명 예시의 생략 표시입니다. 이 글자대로 파일명을 바꾸지 마세요. 여러 연도의 파일을 전달하셨다면 해당 파일들을 함께 넣어 주세요.
+
+**원천 데이터와 레퍼런스 데이터는 서로 다릅니다.** 이 브랜치에는 초기 레퍼런스 색인·수집본이 포함되어 있지만, 판매실적·원가 등 위 원천 자료는 별도로 넣어야 합니다. 원천 자료를 `planner\data` 안에 넣지 마세요. `planner\data`는 앱이 사용할 변환 결과와 레퍼런스 데이터가 있는 위치입니다.
+
+원천 자료는 Git에 올리지 않습니다. 데이터 파일을 공유할 때는 사내 승인 채널을 이용해 주세요.
+
+## 4. Python 환경 만들기 (처음 한 번)
+
+3번의 파일을 넣은 뒤, `amoread_app` 폴더의 PowerShell에서 실행합니다.
+
+```powershell
+python setup_env.py
+```
+
+설치 도구가 다음 작업을 자동으로 수행합니다.
+
+1. Python 버전 확인 및 `.venv` 가상환경 생성
+2. 사내망 인증서 연동용 `pip-system-certs`와 앱 필수 패키지 설치
+3. 화면 수집 도구 Playwright 설치 (이 PC의 Chrome 사용)
+4. 레퍼런스 데이터 확인 및 기본 데이터 생성 시도
+5. 앱 로딩과 데이터 상태 점검
+
+**별도로 `python -m venv .venv`를 실행하지 않아도 되는 이유는 이 도구가 가상환경 생성과 패키지 설치를 대신하기 때문입니다.** 가상환경 활성화 명령도 필요하지 않습니다. 이후 명령에서는 `.venv` 안의 Python을 직접 사용합니다.
+
+설치에는 몇 분 걸릴 수 있습니다. PowerShell 창을 닫지 말고 완료 또는 오류 메시지를 확인해 주세요. Playwright 설치에 실패하면 화면 수집·신규 찾기는 제한되지만 나머지 기능은 사용할 수 있습니다.
+
+설치 도구 대신 직접 설치해야 하는 경우에만 아래 명령어를 사용합니다. 두 방식을 모두 진행할 필요는 없습니다.
 
 ```powershell
 python -m venv .venv
-.venv\Scripts\python.exe -m pip install pip-system-certs
-.venv\Scripts\python.exe -m pip install -r planner\requirements.txt
+.\.venv\Scripts\python.exe -m pip install pip-system-certs
+.\.venv\Scripts\python.exe -m pip install -r planner\requirements.txt
+.\.venv\Scripts\python.exe -m pip install -r planner\requirements-capture.txt
 ```
 
-- `pip-system-certs`를 먼저 설치하는 이유: 사내망에서 pip가 인증서 오류(`SSL: CERTIFICATE_VERIFY_FAILED`)로 멈추는 것을 막습니다.
-- `.venv` 폴더는 git에 올라가지 않습니다 (각자 PC에서 만듦).
-- 설치는 몇 분 걸립니다. 끝에 나오는 `A new release of pip is available` 안내는 무시해도 됩니다.
+## 5. 실제 데이터 변환 (필수)
 
----
+설치가 끝나면 아래 명령어를 실행해 **3번의 원천 파일을 앱에서 사용할 데이터로 변환**합니다. 설치 도구도 생성 작업을 시도하지만 기존 결과가 있으면 건너뛰므로, 이번에 넣은 파일이 반영되도록 이 단계를 진행해 주세요.
 
-## 4. Windows에서 실행
+```powershell
+$env:PYTHONUTF8 = "1"
+.\.venv\Scripts\python.exe -W ignore -m planner.build
+```
+
+- 결과 파일: `workspace\amoread_app\planner\data\planner_data.json`
+- `[오류] 온라인 가이드 파일이 없습니다: …` 등 오류가 나오면 안내된 원천 파일의 위치와 이름을 확인한 뒤 다시 실행해 주세요. 오류가 남아 있으면 실제 데이터 준비가 끝난 상태가 아닙니다.
+- 이후 **판매실적·상품장·프로모션 정보 등 원천 파일을 바꿀 때마다 이 변환 명령어를 다시 실행**합니다. 서버가 켜져 있어도 변환 결과를 다시 읽습니다.
+
+## 6. 앱 실행 및 종료
+
+같은 `amoread_app` 폴더에서 실행합니다.
 
 ```powershell
 $env:PYTHONUTF8 = "1"
 $env:PLANNER_PORT = "9751"
-.venv\Scripts\python.exe -m planner.server
+.\.venv\Scripts\python.exe -m planner.server
 ```
 
-- 1~2초 뒤 브라우저가 자동으로 열립니다 (`--no-browser`를 붙이면 안 열림).
-- **새 화면: http://127.0.0.1:9751/v2/**  ·  예전 화면: http://127.0.0.1:9751/
-- 끄려면 PowerShell 창에서 `Ctrl + C` 또는 창 닫기.
-- `PLANNER_PORT`를 안 정하면 9731번을 씁니다. 이미 쓰는 번호라 실패하면 다른 번호(예: 9761)로 바꾸세요.
-- 두 번째부터는 **4번만** 하면 됩니다.
+크롬에서 **[http://127.0.0.1:9751/v2/](http://127.0.0.1:9751/v2/)** 를 열어 주세요. 브라우저가 자동으로 열려도 주소 끝이 `/v2/`인지 확인합니다.
 
-### macOS에서 실행
+- **사용 중에는 PowerShell 창을 열어두세요.** 창을 닫으면 서버도 종료됩니다.
+- 종료: PowerShell 창에서 **Ctrl + C**
+- 각자 PC에서 실행하는 앱이므로 이 주소를 다른 사람에게 보내도 담당자님 PC에 접속되지는 않습니다.
+- `PLANNER_PORT`를 지정하지 않으면 기본 포트는 9731입니다. 이 문서는 9751로 통일합니다.
 
-`osulloc` 폴더에서 다음 명령을 실행합니다.
+### 다음부터 실행할 때
 
-```sh
-cd workspace/amoread_app
-python3 -m venv .venv
-.venv/bin/python -m pip install -r planner/requirements.txt
-PYTHONUTF8=1 PLANNER_PORT=9751 .venv/bin/python -m planner.server --no-browser
+파일 탐색기에서 `osulloc-ai\workspace\amoread_app` 폴더를 열고 주소창에 `powershell`을 입력합니다. **6번의 세 줄만 다시 실행**하면 됩니다. 설치는 매번 하지 않아도 됩니다. 원천 데이터가 바뀐 경우에는 5번을 먼저 진행하세요.
+
+### 실행 후 확인
+
+1. `/v2/` 화면이 열리는지 확인합니다.
+2. 실제 상품·실적 등이 필요한 화면에서 데이터 없음 안내가 나오면 3번과 5번을 확인합니다. 기획안을 열지 않은 화면에는 예시가 보일 수 있으므로 화면이 열렸다는 것만으로 실제 데이터 반영을 판단하지 마세요.
+3. 레퍼런스 라이브러리에 초기 레퍼런스가 표시되는지 확인합니다. 서버 창에 AI 데이터 점검 경고가 있으면 내용을 확인합니다.
+4. 기획안을 저장한 뒤 구좌 구성·레퍼런스 추천을 확인합니다.
+
+## 7. AI 기능별 추가 설정
+
+| 기능 | 필요한 설정 |
+|---|---|
+| 구좌 구성·레퍼런스 추천 | 기본 설치와 포함된 레퍼런스 데이터로 사용. 이 추천 자체에는 Claude 인증이 필요하지 않음 |
+| AI 카피 추천·설명 다듬기 | 조직에서 승인한 Claude Agent SDK 인증과 모델 접근 설정 필요 |
+| 기존 기획안 생성·수정 대화 | 담당자 PC의 Claude Code 설치·로그인 필요 |
+| 신규 프로모션 찾기·화면 수집 | Playwright 설치 및 담당자 PC의 Chrome 필요 |
+| 네이버 검색·트렌드·연관 키워드 | `.env.example`의 안내에 따라 `.env`에 API 설정 필요 |
+
+**Python 패키지 설치만으로 Claude 인증까지 완료되지는 않습니다.** AI 카피 추천은 실제 인증과 모델 권한이 있어야 성공합니다. 브라우저에 API 키를 입력하지 마세요. 관련 기능 설정이 없는 경우에도 나머지 기능은 확인할 수 있습니다.
+
+- AI 카피 추천: 저장된 기획안에서 **구좌 편집 → 문구 → AI 카피 추천**
+- 설명 다듬기: 구좌 편집의 설명란 아래 **AI로 문구 다듬기**
+- 브리프 메인 카피: 브리프의 **AI 제안**
+
+세부 안내: [AI 추천 모듈](https://gitlab.com/amoread2/osulloc/-/blob/ai/amoread-ai-module/workspace/amoread_app/amoread/ai/README.md), [멘트 추천 기능](https://gitlab.com/amoread2/osulloc/-/blob/ai/amoread-ai-module/멘트추천기능/README.md).
+
+## 8. 문제가 생기면
+
+| 증상 | 확인할 내용 |
+|---|---|
+| `python`을 찾을 수 없음 | Python 설치와 PATH 확인. 설치 명령은 `py -3 setup_env.py`로 시도 |
+| `setup_env.py` 또는 모듈을 찾을 수 없음 | 현재 위치가 `osulloc-ai\workspace\amoread_app`인지 확인 |
+| 패키지 설치 중 SSL·인증서 오류 | `pip-system-certs` 설치 단계 확인. 계속 실패하면 오류 메시지를 전달하고 사내 인증서·네트워크 설정 확인 |
+| 원천 파일이 없다는 오류 | 3번의 위치·원본 파일명 확인 후 5번 재실행 |
+| 상품·실적 화면에 데이터 없음 | 5번 변환이 오류 없이 완료되어 `planner\data\planner_data.json`이 생성되었는지 확인 |
+| 포트가 이미 사용 중 | `$env:PLANNER_PORT = "9761"`로 바꿔 실행하고 접속 주소도 `http://127.0.0.1:9761/v2/`로 변경 |
+| 인증 토큰이 없다는 안내 | 서버 재실행 후 페이지 새로고침 |
+| 한글이 깨짐 | 실행·변환 전에 `$env:PYTHONUTF8 = "1"` 설정 |
+| AI 카피 추천 실패 | Claude 인증·모델 권한 확인. 패키지가 설치되어 있다는 상태만으로 인증 성공을 보장하지 않음 |
+| 레퍼런스가 비거나 점검 경고가 나옴 | 아래 점검 명령 실행 후 안내 확인 |
+
+레퍼런스 데이터 점검은 앱을 종료한 뒤 같은 폴더에서 실행할 수 있습니다.
+
+```powershell
+$env:PYTHONUTF8 = "1"
+.\.venv\Scripts\python.exe -m amoread.ai.selfcheck
 ```
 
-브라우저에서 [v2 화면](http://127.0.0.1:9751/v2/)을 엽니다. 가상 환경과 패키지 설치는 처음 한 번만 하면 됩니다.
+레퍼런스 데이터가 누락된 경우 수집 담당이 내보낸 스냅샷 ZIP을 사내 채널로 받아 다음과 같이 지정할 수 있습니다. 판매실적·상품장 원천 파일을 대신하는 ZIP은 아닙니다.
 
-### 실행 파일(.bat)에 대해
+```powershell
+python setup_env.py --snapshot "C:\실제경로\amoread_snapshot_날짜_시각.zip"
+```
 
-| 파일 | 다른 PC에서 | 설명 |
-|---|---|---|
-| `run_redesign.bat` | ❌ 안 됨 | 담당자 PC의 Python 경로(Downloads 폴더 안)를 직접 가리킵니다. 실행하면 `Python venv not found`로 끝납니다. |
-| `run_planner.bat` | ⭕ 됨 | `.venv`가 없으면 3번을 자동으로 하고 **9731번**으로 엽니다. 새 화면은 http://127.0.0.1:9731/v2/ . 데이터가 없으면 시작할 때 원천 파일 오류가 한 번 나오지만 서버는 그대로 뜹니다. |
-| `build_data.bat` | ⭕ 됨 | 5번의 데이터 만들기를 실행합니다. |
+경로는 실제 받은 파일 위치로 바꿔 주세요. 설치 도구는 기존 기본 색인이 있으면 데이터 가져오기를 건너뜁니다. 최신 스냅샷으로 교체가 필요한 경우에는 [AI 모듈 문서의 스냅샷 공유 안내](https://gitlab.com/amoread2/osulloc/-/blob/ai/amoread-ai-module/workspace/amoread_app/amoread/ai/README.md)를 확인해 주세요.
 
----
+문제가 해결되지 않으면 **실행한 단계와 PowerShell 오류 메시지**를 전달해 주세요. API 키·비밀번호·원천 데이터 내용은 포함하지 마세요.
 
-## 5. 데이터 (선택 — 없어도 화면은 열림)
-
-판매실적·원가·리뷰 등 **데이터 파일은 git에 올리지 않습니다** (`.gitignore`로 제외).
-
-**데이터 없이 실행하면**
-- `/v2/` 화면은 모두 열리고, 기획안을 열지 않은 상태에서는 **예시(가짜) 내용**으로 보입니다. 화면 구조·디자인 확인은 이걸로 충분합니다.
-- 실제 숫자가 필요한 부분(상품·할인 계산, 지난 행사, 실적 등)은 "기획용 데이터가 없습니다" 같은 안내가 나옵니다.
-
-**데이터가 필요하면**
-1. 담당자에게 데이터 묶음을 **사내 채널로** 따로 받습니다 (git·외부 메신저로 주고받지 않기).
-2. 아래 위치에 넣습니다.
-
-   | 위치 | 내용 |
-   |---|---|
-   | `data\report_service\CustomTemplate 고객판매실적_seq YYYY.csv` | SEQ × 일자 판매실적 |
-   | `data\report_service\일자별트렌드_전체 데이터_YYYY.csv` | 몰 전체 KPI |
-   | `data\sample\★오설록 온라인 가이드….xlsx` | 상품장 (이동평균가 = 원가) |
-   | `data\sample\BY26 프로모션별 할인정보….xlsx` | 행사 이력(PROMO_WORK) + 상품 구성 |
-   | `data\sample\reviews\` | 고객 리뷰 |
-
-3. 데이터를 만듭니다 (원천 파일을 바꿀 때마다 다시).
-
-   ```powershell
-   $env:PYTHONUTF8 = "1"
-   .venv\Scripts\python.exe -W ignore -m planner.build
-   ```
-
-   결과는 `planner\data\planner_data.json`에 생기고, 서버를 켠 채로 만들어도 자동으로 다시 읽습니다.
-   파일이 없으면 `[오류] 온라인 가이드 파일이 없습니다: …`처럼 어떤 파일이 빠졌는지 알려 줍니다.
-
----
-
-## 6. 외부 연결·AI (선택)
-
-- **네이버 검색·트렌드·연관 키워드**: `.env.example`을 복사해 `.env`로 이름을 바꾸고 키를 넣습니다. 키 받는 법은 `.env.example` 안 설명과 `plans/22_키워드소재_창구_조사와_API키.md` §3 참고.
-  - **키는 `.env`에만** 둡니다. 코드·문서·커밋·채팅에 쓰지 마세요. `.env`는 git에 올라가지 않습니다.
-  - 키가 없으면 해당 기능만 비어 있고 나머지는 동작합니다.
-- **AI 기능**(기획안 만들기·수정 대화): 그 PC에 Claude Code가 설치·로그인돼 있어야 동작합니다. 없으면 AI 기능만 꺼집니다.
-
----
-
-## 7. 어디부터 보면 되나
-
-| 보고 싶은 것 | 위치 |
-|---|---|
-| 화면별 결정 기록 (왜 이렇게 만들었나, 열린 질문) | `plans/20_사용자플로우_재설계.md` (먼저 읽기) — §5가 멘토님·디자이너·운영에게 묻는 질문 |
-| 화면별 실제 데이터 / 예시 구분표 | `plans/23_새버전_v2_앱에_붙이기.md` §2 |
-| 새 화면 코드 (HTML·CSS·JS) | `workspace/amoread_app/planner/static/v2/` |
-| 디자인 토큰 (색·글꼴·간격) | `workspace/amoread_app/planner/static/tokens.css` |
-| 서버·API | `workspace/amoread_app/planner/server.py` |
-| 화면 목업 (가짜 데이터) | `plans/mockups/` |
-
-화면 코드 규칙: 보안 정책(CSP) 때문에 HTML의 `style="…"` 속성과 `<style>`·인라인 `<script>`는 동작하지 않습니다. CSS 클래스와 별도 `.js` 파일로 작성하세요.
-
----
-
-## 8. 같이 작업할 때
-
-- 화면 UX/UI 작업은 `design`을 기준으로 브랜치를 만들고, `design`을 대상으로 Merge Request를 엽니다.
-  ```powershell
-  git switch -c 이름/작업내용
-  ```
-- **올리면 안 되는 것**: `data\`, `planner\data\`, `.env`, `.venv\` (모두 `.gitignore`에 있음). `git status`에 이런 파일이 보이면 커밋하지 마세요.
-- `design`과 `main`은 커밋 이력이 별개입니다. `main` 반영 방식은 팀과 협의합니다.
-
----
-
-## 9. 03 구좌 편집 = 신규 구좌편집기 (`yunxeo` 브랜치)
-
-`yunxeo`에서는 `design_eun`의 신규 구좌편집기(v1.12)가 **03 구좌 편집의 유일한 편집기**입니다. 예전 구좌 편집기 주소(`/v2/editor`)로 들어와도 신규 편집기로 넘어갑니다.
-
-### 9-1. 보기
-
-1. 홈(`/v2/home`)에서 기획안을 열고 단계 막대의 **03 구좌 편집**
-2. 예시 화면만 보려면 `http://127.0.0.1:9751/v2/editor` (가상 상품·후기, 저장 안 됨)
-
-### 9-2. 화면 구성 (자세히: `plans/27`)
-
-| 칸 | 하는 일 |
-|---|---|
-| 왼쪽 | 페이지 구좌 목록 (순서·복제·삭제는 줄에 마우스를 올리면), **＋ 구좌**(유형 선택 창), **＋ 요소**(요소 넣기 패널) |
-| 가운데 | 모바일 미리보기 + 페이지 전체 도구(실행 취소·검수·내보내기) |
-| 오른쪽 | 고른 구좌 편집: 내용(문구·상품) · 배치·표시 · 참고·인계 · 검수, **AI 카피 추천**(문구 탭), **자료 연결** |
-
-### 9-3. 저장과 연결
-
-- 고친 내용은 기획안의 `editor_next`(편집기 값 전체)와 표준 형식 `page.sections`에 **함께** 저장됩니다 → 04 미리보기·내보내기·AI 카피 추천이 같은 내용을 봅니다.
-- 02 구좌 구성에서 구좌를 다시 고르면, 03을 열 때 바뀐 구좌에 맞춰 다시 가져옵니다 (같은 구좌 id는 편집기 세부값 유지).
-- 다른 화면이 먼저 저장했으면 덮어쓰지 않고 "저장 못 했어요"로 알리고, 작성 내용은 이 브라우저에 임시 보관합니다.
-- 상품·가격은 이 기획안의 **상품·할인** 단계 값입니다. 상품 이미지는 앱 데이터에 없어 자리만 나옵니다.
-
-### 9-4. AI 카피 추천
-
-- 오른쪽 **내용 › 문구**의 설명 입력칸 아래. 제목·설명 함께 / 제목만 / 설명만 / 지금 설명 다듬기, 말투 3가지 → 후보 3개 → 고른 것만 입력칸에 들어갑니다 (실행 취소 가능).
-- 서버 모듈은 저장소 루트 `멘트추천기능/` (`ai/amoread-ai-module` 브랜치에서 모듈만 가져옴). 서버가 Claude Agent SDK로 호출하며, 그 PC에 Claude Code가 로그인돼 있어야 실제 추천이 됩니다. 원가·매출·후기는 보내지 않습니다.
-
-### 9-5. 개발자용
-
-- **끄기**: `$env:AMOREAD_EDITOR_NEXT = "0"`이면 신규 편집기가 꺼지고 `/v2/editor`가 예전 편집기를 엽니다. 편집기 파일은 `amoread_editor/editor/v1.12`, 앱 연결부는 `planner/static/v2/editor-next*` (배치 `editor-next-ux.css`, 저장 연결 `editor-next-host.js`, AI `editor-next-ai.js`).
-- **테스트**:
-  ```powershell
-  .venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-  .venv\Scripts\python.exe -m playwright install chromium
-  .venv\Scripts\python.exe -m pytest tests -q            # 저장 단위 + 브라우저 통합 테스트 (서버를 스스로 띄움)
-  cd ..\..; workspace\amoread_app\.venv\Scripts\python.exe -m pytest 멘트추천기능/tests -q   # AI 카피 추천 모듈 (저장소 루트에서)
-  ```
-  사내망에서 `playwright install`이 막히면 `$env:E2E_BROWSER_CHANNEL = "msedge"` (이 PC의 Edge 사용, 정책에 따라 안 될 수 있음).
-- **디자인 비교**(원본 대비): `amoread_editor\integration\green-ui-compare\report.html`
-
----
-
-## 문제가 생기면
-
-| 증상 | 해결 |
-|---|---|
-| `python`을 찾을 수 없음 | Python 설치 시 "Add to PATH" 체크, 또는 `py -3 -m venv .venv` |
-| pip 설치 중 SSL/인증서 오류 | 3번의 `pip-system-certs`를 먼저 설치했는지 확인 |
-| `Python venv not found` | `run_redesign.bat` 대신 4번 명령 또는 `run_planner.bat` 사용 |
-| 포트 사용 중 오류 | `$env:PLANNER_PORT`를 다른 번호로 |
-| 화면은 뜨는데 "인증 토큰이 없습니다" | 페이지 새로고침 (서버를 다시 켜면 토큰이 바뀜) |
-| 숫자 화면이 비어 있음 | 5번 데이터를 넣고 `planner.build` 실행 |
-| 한글이 깨짐 | 실행 전에 `$env:PYTHONUTF8 = "1"` |
+> `run_redesign.bat`는 특정 PC의 Python 경로를 사용하므로 이 안내의 실행 명령을 사용해 주세요.

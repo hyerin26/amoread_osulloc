@@ -231,7 +231,7 @@ document.addEventListener('click', e => {
 });
 $('#chClear').addEventListener('click', () => { chOn.clear(); render(); });
 // AI는 필요한 자리에 버튼으로만 (찻잎이 대화창 없음). 보내는 것: 고른 키워드·컨셉·명분뿐
-// AI 카피 제안은 아직 연결 전 → 버튼은 '준비 중'으로 꺼 둠 (동작하는 척하지 않음)
+// AI 제안은 멘트추천기능/brief-plugin.js에서 기존 로컬 서버로 연결한다.
 $('#connBtn').addEventListener('click', () => { location.href = '/v2/settings#conn'; });
 // ================= 실제 데이터 (새 버전) =================
 // 근거 패널의 '검색'·'글'은 네이버(NAVER API HUB)에서 받아요. 키워드를 눌러 근거를 볼 때만 부르고(지나가기만 해선 안 부름),
@@ -413,6 +413,9 @@ function saveBrief() {
     d.title = $('#title').value.trim().slice(0, 80) || d.title;
     d.brief = { ...d.brief, concept: $('#concept').value.trim().slice(0, 300), audience: $('#who').value.trim().slice(0, 300), key_copy: $('#copy').value.trim().slice(0, 120) };
     d.v2.keywords = picked.filter(k => k.length <= 20).slice(0, 30);
+    const hero = d.page?.sections?.find(s => s.layoutId === 'hero');
+    if (hero) hero.headline = d.brief.key_copy;
+
   });
 }
 // ---------- 우리 데이터 (기획안이 열려 있을 때, 실제): 명분 사전 · 지난 컨셉 · 이름이 겹치는 판매 중 상품 · 효능 표현 ----------

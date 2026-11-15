@@ -360,3 +360,13 @@ table.t tr.chg td { background: var(--accent-soft); }
 .toast.act { pointer-events: auto; }
 .toast .tact { all: unset; cursor: pointer; color: var(--accent-soft); font-weight: var(--fw-strong); text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
 .toast .tact:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 2px; border-radius: 4px; }
+
+/* 수집 화면 잘라 보기 (capture.js) */
+.thumb { position: relative; }
+.thumb .crop { inset: 3px; }
+.wv { position: relative; width: 390px; max-width: 100%; margin: 4px auto 16px; border: 1px solid var(--line); background: #fff; }
+.wvf { display: block; width: 390px; overflow: hidden; transform: translateZ(0); contain: paint; background: #fff; }
+.wb { position: absolute; left: 0; right: 0; border: 2px dashed #1f6f54; pointer-events: none; box-sizing: border-box; }
+.wb.used { border-style: solid; border-width: 3px; background: rgba(31, 111, 84, .07); }
+.wbt { position: absolute; top: 0; left: 0; display: flex; gap: 6px; align-items: center; max-width: 100%; padding: 3px 6px; background: rgba(255, 255, 255, .94); border: 1px solid var(--line); border-radius: 0 0 8px 0; font-size: 11.5px; font-weight: 600; }
+.wbt .here { color: #fff; background: #1f6f54; border-radius: 4px; padding: 0 5px; font-weight: 600; }

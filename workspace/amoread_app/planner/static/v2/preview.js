@@ -258,7 +258,7 @@ function toSec(x) {
     return c(sl.seq && PRODUCTS[sl.seq] ? String(sl.seq) : null, { label: e.label || df.label || '', tag: e.tag || df.tag || '', pill: e.pill || df.pill || '', pillText: (e.pill ? e.pillText : df.pillText) || '',
       copy: sl.customCopy || df.copy || '', btn: e.btn || df.btn || '', off: e.off || [] }); };
   const s = { id: x.sectionId, name: x.headline || x.name || '', role: x.subhead || '', lines: (v.lines || []).map(l => l.text).filter(Boolean), layout: lay, num: !!v.num,
-    scope: v.scope || '', cta: (v.ctaOn ?? !!x.cta) && x.cta ? [x.cta, v.ctaTo || ''] : null, refs: [], moods: [], notes: x.designNotes || '' };
+    scope: v.scope || '', cta: (v.ctaOn ?? !!x.cta) && x.cta ? [x.cta, v.ctaTo || ''] : null, refs: (v.att || []).map(a => ({ name: a.name || '레퍼런스', page: [a.page, a.from].filter(Boolean).join(' · '), note: a.note || '', r: [9, 16] })), moods: [], notes: x.designNotes || '' };
   if (['grid2', 'grid3', 'feat'].includes(lay)) {
     s.on = v.card?.order && v.card?.on ? v.card.order.filter(k => v.card.on[k]) : ON_PRICE;
     if (x.tabs?.length) { const first = x.tabs[0].tabId; s.tabs = x.tabs.map(t => [t.label, (x.slots || []).filter(sl => (sl.tabId || first) === t.tabId).map(mk)]); }
@@ -313,7 +313,7 @@ const cardsCsv = () => '﻿' + cardTables().map(t => t.tsv.split('\n').map(l => 
 async function exportLive(k, files) {
   const base = safeName(META.title);
   if (k === 'promo') {
-    const res = await fetch('/api/am/export', { method: 'POST', headers: { 'x-planner-token': V2_TOKEN, 'Content-Type': 'application/json' },
+    const res = await v2fetch('/api/am/export', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: META.title, brief: [META.myeongbun, META.concept].filter(Boolean).join(' · ').slice(0, 4000), rationale: (PLAN.doc.rationale || '').slice(0, 20000), source: '새 버전', rows: ROWS }) });
     if (!res.ok) { let m = `서버 오류 (${res.status})`; try { m = (await res.json()).error || m; } catch { /* 빈 응답 */ } throw new Error(m); }
     saveBlob(await res.blob(), `${base}_PROMO_WORK_${today()}.xlsx`); return 'PROMO_WORK 붙여넣기 (엑셀)';

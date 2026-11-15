@@ -10,6 +10,7 @@
 <link rel="preload" href="/static/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/static/tokens.css">
 <link rel="stylesheet" href="/static/v2/shell.css">
+<link rel="stylesheet" href="/static/v2/capture.css">
 <link rel="stylesheet" href="/static/v2/compose.css">
 </head>
 <body>
@@ -36,10 +37,10 @@
   <div class="masthead">
     <h1 data-plan-title>봄 · 피크닉에서 누리는 차 한 잔의 여유</h1>
     <div class="brief">
-      <span class="fact cls">시즌</span>
-      <span class="fact"><span class="k">기간</span>3/2(월) ~ 3/15(일)</span>
-      <span class="fact"><span class="k">키워드</span>피크닉 · 보온병</span>
-      <span class="fact"><span class="k">메인 카피</span>피크닉 가방에 차 한 병</span>
+      <span class="fact cls" id="briefClass">시즌</span>
+      <span class="fact"><span class="k">기간</span><span id="briefPeriod">3/2(월) ~ 3/15(일)</span></span>
+      <span class="fact"><span class="k">키워드</span><span id="briefKeywords">피크닉 · 보온병</span></span>
+      <span class="fact"><span class="k">메인 카피</span><span id="briefCopy">피크닉 가방에 차 한 병</span></span>
       <a class="link" href="/v2/brief">브리프 고치기</a>
     </div>
   </div>
@@ -89,6 +90,7 @@
 
 <script src="/static/v2/shell.js"></script>
 <script src="/static/v2/api.js"></script>
+<script src="/static/v2/capture.js"></script>
 <script src="/static/v2/plan.js"></script>
 <script src="/static/v2/compose.js"></script>
 </body>

@@ -271,9 +271,10 @@ function copyTab(s) {
     <label class="f"><span>${hero ? '메인 카피' : '제목'}</span><input type="text" data-sf="name" maxlength="60" value="${esc(s.name)}" placeholder="${hero ? '' : '예) 마중차, GIFT ROOM'}">
       <span class="hint">${hero ? '브리프에서 정한 메인 카피예요. 여기서 고치면 브리프에도 바뀌어요' : '구좌 목록에도 이 제목으로 보여요'}</span></label>
     <label class="f"><span>설명 <em>(선택) 제목 아래 한두 줄</em></span><textarea data-sf="role" maxlength="200" rows="2" placeholder="예) 첫 인사를 건네며 입맛을 돋궈줄 차">${esc(s.role)}</textarea></label>
+    <div class="chips-row"><button class="btn xs" type="button" data-copy-polish>AI로 문구 다듬기</button><span class="hint">입력한 설명을 자연스럽고 감각적인 광고 문장으로</span></div>
     ${s.lines.map((l, j) => `<div class="f"><span class="l">추가 문구 ${j + 1}</span><div class="lnrow"><input type="text" data-line="${j}" maxlength="120" value="${esc(l.text)}" aria-label="추가 문구 ${j + 1}">
       <span class="tools"><button class="ib" data-linemv="${j}:-1" ${j ? '' : 'disabled'} aria-label="위로">↑</button><button class="ib" data-linemv="${j}:1" ${j < s.lines.length - 1 ? '' : 'disabled'} aria-label="아래로">↓</button><button class="ib" data-linedel="${j}" aria-label="추가 문구 ${j + 1} 삭제">✕</button></span></div></div>`).join('')}
-    <div class="chips-row"><button class="btn xs" data-lineadd>+ 문구 한 줄 추가</button><button class="btn xs" disabled title="AI 문구 다듬기는 아직 연결 전이에요">AI로 문구 다듬기 · 준비 중</button></div>
+    <div class="chips-row"><button class="btn xs" data-lineadd>+ 문구 한 줄 추가</button></div>
     <div class="f"><span class="l">버튼</span><label class="ck"><input type="checkbox" data-ctaon ${s.ctaOn ? 'checked' : ''}> 이 구좌에 버튼 넣기</label>
       ${s.ctaOn ? `<div class="two"><label class="f"><span class="hint">버튼 문구</span><input type="text" data-sf="cta" maxlength="30" value="${esc(s.cta)}" placeholder="${k === 'product' ? '예) 티백 더보기' : k === 'event' ? '예) 참여하기' : '예) 혜택 받기'}"></label>
         <label class="f"><span class="hint">어디로 <em>(선택)</em></span><input type="text" data-sf="ctaTo" maxlength="60" value="${esc(s.ctaTo)}" placeholder="예) 티백 카테고리, 쿠폰 받기"></label></div>` : '<span class="hint">버튼 없이 둬요. 언제든 다시 켤 수 있어요.</span>'}</div>
@@ -281,7 +282,7 @@ function copyTab(s) {
     ${hero ? '' : `<label class="f"><span>담는 것 <em>(선택)</em></span><input type="text" data-sf="scope" maxlength="40" value="${esc(s.scope)}" placeholder="예) 티백, 선물 세트, 티푸드"></label>`}
     ${k === 'product' ? `<label class="f"><span>엑셀 카테고리명 <em>(선택) PROMO_WORK 카테고리명</em></span><input type="text" data-sf="cat" maxlength="40" value="${esc(s.cat)}" placeholder="비워 둬요">
       <span class="hint">지난 PROMO_WORK에는 비어 있거나('가을 차회') 제목과 다른 이름('혜택 02 쿠폰가')이 섞여 있어요. 어떻게 쓸지 멘토님께 확인 중이라 기본은 비워 둬요.${s.tabs ? ' 탭 구좌는 탭마다 정해요(확인 후).' : ''}</span></label>` : ''}
-    <div class="box"><span class="cap">문구 제안 <span class="tag demo-t">연결 예정</span></span><p class="hint">브리프 컨셉으로 제목·설명을 이야기 순서(코스·방·여정)로 제안해요. 예) 가을 차회: 01 마중차 · 첫 인사를 건네며 입맛을 돋궈줄 차</p></div>`;
+    ${window.CopyRecommendation ? window.CopyRecommendation.render(s.id) : '<p class="hint">AI 추천 모듈을 불러오지 못했어요. 페이지를 새로고침해 주세요.</p>'}`;
 }
 // 카드 모양 탭: 이 구좌의 카드 모두에 같은 모양 (요소 켜고 끄기·순서). 위에 견본 카드를 바로 보여줌
 const sampleOf = s => cardsOf(s).find(c => c.seq) || slot();
@@ -408,25 +409,49 @@ function demoImg(w, h) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w * 40}" height="${h * 40}"><defs><pattern id="p" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="16" fill="#f3f3f3"/></pattern></defs><rect width="100%" height="100%" fill="#ffffff"/><rect width="100%" height="100%" fill="url(#p)"/><rect x="0.5" y="0.5" width="${w * 40 - 1}" height="${h * 40 - 1}" fill="none" stroke="#dedede"/></svg>`;
   return `<img src="data:image/svg+xml,${encodeURIComponent(svg)}" alt="">`;
 }
+// ---- 서버 AI 추천 레퍼런스 (수집해 둔 원본 구좌): 있으면 예시 REFS 대신 이것을 쓴다 ----
+const LIVE = { by: {}, loading: {} };   // by[구좌 id] = { top: [id…], more: [id…] } | null(서버 AI 없음 → 예시)
+const capSpan = r => {   // 수집해 둔 화면에서 그 구좌만 잘라 보여 준다 (화면에 보일 때 그림)
+  if (!r.cap) return '';
+  const b = Cap.band(r.pg, r.name, r.sx?.t), at = b ? `data-y="${b.y}" data-h="${b.h}"` : r.sx ? `data-t="${esc(r.sx.t)}" data-n="${r.sx.n}"` : '';
+  return at ? `<span class="crop" data-crop data-id="${esc(r.pid)}" ${at}></span>` : '';
+};
+async function loadRecs(s) {
+  if (LIVE.by[s.id] !== undefined || LIVE.loading[s.id]) return;
+  LIVE.loading[s.id] = 1;
+  try {
+    const d = PLAN.doc || {}, res = await v2api('/api/am/ai/references', { section: { layoutId: s.layout, name: (s.name || '').slice(0, 40), purpose: (s.role || '').slice(0, 20) }, n: 8,
+      doc: { id: d.id || '', title: d.title || '', brief: d.brief || {}, v2: { cls: d.v2?.cls || '', seed: d.v2?.seed || '', keywords: d.v2?.keywords || [] } } });
+    if (res.mode !== 'ai' || !res.items?.length) LIVE.by[s.id] = null;
+    else {
+      const ids = res.items.map(it => { REFS[it.id] = { name: it.title, page: it.campaign, from: it.from, layout: LNAME[it.layout] ? it.layout : null, r: [9, 16], why: it.why || it.reason, live: true, role: it.role, cap: it.cap, pg: it.pglayout, pid: it.page, sx: it.sx, url: it.url }; return it.id; });
+      LIVE.by[s.id] = { top: ids.slice(0, 3), more: ids.slice(3) };
+    }
+  } catch (e) { LIVE.by[s.id] = null; }
+  delete LIVE.loading[s.id];
+  if (S() && S().id === s.id && tab === 'refs') renderPanel();
+}
 function refCard(s, k) {
-  const r = REFS[k], att = s.att.some(a => a.ref === k), canLay = r.layout && r.layout !== s.layout;
-  return `<div class="ref ${att ? 'att' : ''}"><span class="thumb">${r.img ? `<img src="${esc(r.img)}" alt="">` : demoImg(r.r[0], r.r[1])}</span><div>
+  const r = REFS[k], att = s.att.some(a => a.ref === k), canLay = r.layout && (r.layout !== s.layout || (r.live && r.role === 'product_list'));
+  return `<div class="ref ${att ? 'att' : ''}"><span class="thumb">${r.img ? `<img src="${esc(r.img)}" alt="">` : demoImg(r.r[0], r.r[1])}${capSpan(r)}</span><div>
         <div class="rn">${esc(r.name)}</div><div class="cap"><span class="tag ${r.from === '자사몰' ? 'real' : ''}">${esc(r.from)}</span> ${esc(r.page || '')}</div><div class="why">${esc(r.why || '')}</div>
         <div class="ra"><button class="btn xs" data-refview="${k}">미리보기</button>
           <button class="btn xs ${att ? '' : 'primary'}" data-refatt="${k}" aria-pressed="${att}">${att ? '참고에서 빼기' : '참고로 붙이기'}</button>
-          ${r.layout ? `<button class="btn xs" data-reflay="${k}" ${canLay ? '' : 'disabled'} title="${!canLay ? '지금과 같은 레이아웃이에요' : `${LNAME[r.layout]}로 바꿔요 · 문구·메모는 그대로`}">레이아웃 가져오기</button>` : ''}
+          ${r.layout ? `<button class="btn xs" data-reflay="${k}" ${canLay ? '' : 'disabled'} title="${!canLay ? '지금과 같은 레이아웃이에요' : r.live ? '원본에서 칸 수를 재서 우리 레이아웃 중 가장 가까운 것으로 바꿔요 · 문구·메모는 그대로' : `${LNAME[r.layout]}로 바꿔요 · 문구·메모는 그대로`}">레이아웃 가져오기</button>` : ''}
           <button class="btn xs ghost" data-refsave="${k}" aria-pressed="${saved.has(k)}">${saved.has(k) ? '★ 즐겨찾기 해제' : '☆ 즐겨찾기'}</button></div></div></div>`;
 }
 function refsTab(s) {
-  const cand = s.refs.concat(Object.keys(REFS).filter(k => !s.refs.includes(k) && REFS[k].layout === s.layout).slice(0, 1));
+  loadRecs(s);
+  const lv = LIVE.by[s.id], wait = LIVE.by[s.id] === undefined;
+  const cand = lv ? lv.top : wait ? [] : s.refs.concat(Object.keys(REFS).filter(k => !s.refs.includes(k) && !REFS[k].live && REFS[k].layout === s.layout).slice(0, 1));
   // 더 찾기: 위에 없는 레퍼런스 전부 (같은 구좌 종류 먼저). 라이브러리에 사진·핀터레스트로 모은 것도 여기 나와요
-  const more = Object.keys(REFS).filter(k => !cand.includes(k)).sort((a, b) => (REFS[b].layout === s.layout) - (REFS[a].layout === s.layout));
+  const more = lv ? lv.more : wait ? [] : Object.keys(REFS).filter(k => !cand.includes(k) && !REFS[k].live).sort((a, b) => (REFS[b].layout === s.layout) - (REFS[a].layout === s.layout));
   const moreBox = !refMore ? '' : `<div class="refmore" role="region" aria-label="레퍼런스 더 찾기">
       ${more.length ? `<p class="hint">${more.length}개 · 같은 구좌 종류(${esc(LNAME[s.layout])}) 먼저</p><div class="refs">${more.map(k => refCard(s, k)).join('')}</div>`
         : '<div class="empty-st"><b>더 보여 드릴 레퍼런스가 없어요</b><p class="hint">레퍼런스 라이브러리에서 핀터레스트 보드를 연결하거나 이미지·링크를 직접 추가하면 여기에서도 고를 수 있어요.</p></div>'}
       <a class="btn xs" href="/v2/library" target="_blank" rel="noopener">레퍼런스 라이브러리 새 탭으로 열기</a></div>`;
-  return `<p class="hint">이 구좌에 참고할 <b>원본 구좌 레퍼런스</b>예요. 자사몰과 외부 페이지에서 잘라 낸 구좌예요.</p>
-    <div class="refs">${cand.map(k => refCard(s, k)).join('') || '<p class="hint">이 구좌 종류의 예시가 아직 없어요</p>'}</div>
+  return `<p class="hint">이 구좌에 참고할 <b>원본 구좌 레퍼런스</b>예요. ${lv ? '수집해 둔 자사몰·외부 페이지에서 이 구좌와 비슷한 구좌를 찾았어요.' : '아래는 예시예요 (수집 데이터가 없을 때).'}</p>
+    <div class="refs">${cand.map(k => refCard(s, k)).join('') || `<p class="hint">${wait ? '수집해 둔 레퍼런스에서 찾는 중이에요…' : '이 구좌 종류의 예시가 아직 없어요'}</p>`}</div>
     <button class="btn sm" data-refmore aria-expanded="${refMore}">${refMore ? '더 찾기 닫기' : `레퍼런스 더 찾기 (${more.length})`}</button>
     ${moreBox}
     ${moodBlock(s)}`;
@@ -556,7 +581,8 @@ function dlg(o, h, sub, body, foot) { $('#dlgO').textContent = o; $('#dlgH').tex
 
 // ================= 동작 =================
 const refocus = sel => { const el = document.querySelector(sel); el?.focus(); return !!el; };
-document.addEventListener('click', e => {
+const _rp = renderPanel; renderPanel = function () { _rp(); Cap.lazy($('#panel')); };
+document.addEventListener('click', async e => {
   const t = e.target, s = S(), d = k => t.closest(`[data-${k}]`), v = k => d(k)?.dataset[k.replace(/-(.)/g, (_, c) => c.toUpperCase())];
   // 구좌 추가·삭제·실행 취소 (구좌가 하나도 없어도 동작)
   if (d('secaddopen') || t.closest('#secAdd')) { openAddSec(); return; }
@@ -607,9 +633,18 @@ document.addEventListener('click', e => {
   if (d('rvshow')) { const k = v('rvshow'); s.rv.show[k] = s.rv.show[k] ? 0 : 1; render(); refocus(`[data-rvshow="${k}"]`); return; }
   if (d('rvmv')) { const [j, dd] = v('rvmv').split(':').map(Number), o = s.rv.order; [o[j], o[j + dd]] = [o[j + dd], o[j]]; render(); refocus(`[data-rvmv="${j + dd}:${dd}"]`); return; }
   if (d('rvadd')) { const used = s.rv.groups.map(g => g.seq), next = [...new Set(REVIEWS.map(r => r.seq))].find(x => !used.includes(x)); if (next) { s.rv.groups.push({ seq: next, picks: [] }); render(); } else toast(liveOn ? '후기가 있는 이 기획안 상품을 모두 넣었어요 (상품을 카드에 넣으면 그 후기도 여기 나와요)' : '예시 후기가 있는 상품을 모두 넣었어요'); return; }
-  if (d('refview')) { const r = REFS[v('refview')]; dlg('원본 구좌 레퍼런스 · 미리보기', r.name, `${r.from} · ${r.page} — 미리보기만 해요. 이 구좌는 바뀌지 않아요.`, `<div class="thumb big">${demoImg(r.r[0], r.r[1])}</div><p class="hint">원본 비율 ${r.r[0]}:${r.r[1]} (예시). 원본 페이지 캡처가 아직 연결 전이라 전체 페이지는 볼 수 없어요.</p>`, ''); return; }
-  if (d('refatt')) { const k = v('refatt'), i = s.att.findIndex(a => a.ref === k); if (i >= 0) s.att.splice(i, 1); else s.att.push({ ref: k, note: '' }); render(); toast(i >= 0 ? '참고에서 뺐어요' : '참고로 붙였어요. 디자인 요청 탭에서 참고할 것을 적을 수 있어요'); return; }
-  if (d('reflay') && !d('reflay').disabled) { const r = REFS[v('reflay')]; setLayout(s, r.layout); render(); toast(`레이아웃을 '${LNAME[r.layout]}'로 가져왔어요. 문구·메모는 그대로예요`); return; }
+  if (d('refview')) { const k = v('refview'), r = REFS[k], big = capSpan(r); dlg('원본 구좌 레퍼런스 · 미리보기', r.name, `${r.from} · ${r.page} — 미리보기만 해요. 이 구좌는 바뀌지 않아요.`, `<div class="thumb big">${demoImg(r.r[0], r.r[1])}${big}</div><p class="hint">${big ? '수집해 둔 원본 화면에서 이 구좌만 잘라 보여 줘요 (이미지 파일은 저장하지 않아 회색 칸).' : `원본 비율 ${r.r[0]}:${r.r[1]} (예시). 수집해 둔 화면이 없어 전체 페이지는 볼 수 없어요.`}</p>`, r.cap ? `<button class="btn sm" data-refwhole="${k}">전체 페이지 보기 · 이 구좌 위치</button>` : ''); Cap.lazy($('#dlgB')); return; }
+  if (d('refwhole')) { const r = REFS[v('refwhole')]; $('#dlgB').innerHTML = '<div id="rw"></div>'; $('#dlgS').textContent = '수집 당시 모습 그대로예요. 초록 실선 박스가 이 구좌 자리예요 (이미지는 회색 칸).'; $('#dlgF').innerHTML = `<button class="btn sm" data-refview="${v('refwhole')}">구좌만 보기</button>`; Cap.whole($('#rw'), r.pid, r.pg, r.name, r.sx); return; }
+  if (d('refatt')) { const k = v('refatt'), i = s.att.findIndex(a => a.ref === k); if (i >= 0) s.att.splice(i, 1); else s.att.push({ ref: k, note: '' });
+    if (REFS[k]?.live) v2api('/api/am/ai/feedback', { event: i >= 0 ? 'drop_ref' : 'pick_ref', doc_id: PLAN.id || '', ref_id: k, section: (s.layout || '').slice(0, 40) }).catch(() => {});   // 담당자가 붙인/뺀 사례를 기록 → 다음 추천에서 조금 앞/뒤로 (화면 변화 없음)
+    render(); toast(i >= 0 ? '참고에서 뺐어요' : '참고로 붙였어요. 디자인 요청 탭에서 참고할 것을 적을 수 있어요'); return; }
+  if (d('reflay') && !d('reflay').disabled) {
+    const k = v('reflay'), r = REFS[k]; let ly = r.layout, note = '';
+    const b = r.live && r.role === 'product_list' && r.cap ? Cap.band(r.pg, r.name, r.sx?.t) : null;
+    if (b) { toast('원본 화면에서 칸 수를 재는 중이에요…'); try { const n = await Cap.cols(r.pid, b.y, b.h); if (n >= 3) ly = 'grid3'; else if (n === 2) ly = 'grid2'; note = ` · 원본은 ${n}칸`; } catch (e2) {} }
+    if (ly === s.layout) { toast(`레이아웃은 그대로 '${LNAME[ly]}'예요${note}. 원본 칸 수가 지금 구좌와 같거나 우리 레이아웃에 딱 맞는 종류가 없어요`); return; }
+    setLayout(s, ly); render(); toast(`레이아웃을 '${LNAME[ly]}'로 바꿨어요${note}. 칸 수는 원본에서 잰 값이고, 세부 모양은 우리 레이아웃 중 가장 가까운 것이에요. 문구·메모는 그대로예요`); return;
+  }
   if (d('refsave')) { const k = v('refsave'); saved.has(k) ? saved.delete(k) : saved.add(k); renderPanel(); return; }
   if (d('moodlink')) { moodLink = !moodLink; renderPanel(); refocus(moodLink ? '#moodUrl' : '[data-moodlink]'); return; }
   if (d('moodurl')) { const raw = $('#moodUrl').value.trim(); let u; try { u = new URL(raw); } catch { u = null; }
@@ -631,7 +666,7 @@ document.addEventListener('input', e => {
   const t = e.target, s = S();
   if (t.id === 'pq') { t.closest('.search')?.classList.toggle('has-value', !!t.value); q = t.value; const tmp = document.createElement('div'); tmp.innerHTML = pickList(); $('#phits').outerHTML = tmp.querySelector('#phits').outerHTML; return; }
   if (!s) return;
-  if (t.dataset.sf) { s[t.dataset.sf] = t.value; renderPhone(); renderList(); if (t.dataset.sf === 'name') $('#panel h2').textContent = s.name; return; }
+  if (t.dataset.sf) { s[t.dataset.sf] = t.value; if (t.dataset.sf === 'name') syncHeroCopy(s); renderPhone(); renderList(); if (t.dataset.sf === 'name') $('#panel h2').textContent = s.name; return; }
   if (t.dataset.cf && t.tagName !== 'SELECT') { const c = cardOfEl(s, t); if (c) { c[t.dataset.cf] = t.value; renderPhone(); renderList(); } return; }
   if (t.dataset.df && t.tagName !== 'SELECT') { s.card.def[t.dataset.df] = t.value; renderPhone(); renderList(); const sm = $('#pbody .sample'); if (sm) sm.innerHTML = wCard(sampleOf(s), s); return; }
   if (t.dataset.appeal) { const it = itemOf(t.dataset.appeal); if (it) it.appeal = t.value; renderPhone(); return; }
@@ -691,8 +726,8 @@ let liveOn = false, lastE = null, KWS = [], PERIOD = ['', ''];
 // 구좌·카드·문구·할인 상태가 바뀔 때마다 앞 상태를 기억 (최대 60번). 글자를 칠 때는 0.6초 모아서 한 번.
 // 화면 이동(뒤로 가기)과는 따로: 이건 이 화면 안의 편집 이력만. 버튼 + Ctrl+Z / Ctrl+Shift+Z(또는 Ctrl+Y). 입력칸 안에서는 브라우저 기본 되돌리기
 const hist = { past: [], future: [], cur: null, key: null };
-const histKey = () => JSON.stringify([secs.map(toSection), items]);
-const histSnap = () => ({ secs: structuredClone(secs), items: structuredClone(items), cur });
+const histKey = () => JSON.stringify([secs.map(toSection), items, PLAN.doc?.brief?.key_copy || '']);
+const histSnap = () => ({ secs: structuredClone(secs), items: structuredClone(items), cur, briefCopy: PLAN.doc?.brief?.key_copy || '' });
 function syncHist() { const u = $('#undoBtn'), r = $('#redoBtn'); if (u) u.disabled = !hist.past.length; if (r) r.disabled = !hist.future.length; }
 function track() {
   const k = histKey();
@@ -705,6 +740,7 @@ let trackT = null; const trackSoon = () => { clearTimeout(trackT); trackT = setT
 function resetHist() { hist.past = []; hist.future = []; hist.key = null; hist.cur = null; track(); }
 function restoreHist(st) {
   secs = structuredClone(st.secs); items = structuredClone(st.items);
+  if (liveOn && PLAN.doc) PLAN.save(d => { d.brief.key_copy = st.briefCopy || ''; });
   cur = secs.some(x => x.id === st.cur) ? st.cur : secs.some(x => x.id === cur) ? cur : secs[0]?.id ?? null;
   hist.cur = st; hist.key = histKey(); renderBase(); saveEditor(); syncHist();
 }
@@ -758,7 +794,7 @@ const edP = r => ({ seq: String(r.seq), name: r.name, price: r.price, cost: r.co
 function fromSection(x) {
   const v = x.v2 || {}, layout = x.layoutId || 'hero', k = kindOf(layout);
   const s = { id: x.sectionId, name: x.headline || x.name || '', layout, role: x.subhead || '', scope: v.scope || '', num: !!v.num,
-    cta: x.cta || '', ctaOn: v.ctaOn ?? !!x.cta, ctaTo: v.ctaTo || '', refs: v.refs || [], att: [], notes: x.designNotes || '',
+    cta: x.cta || '', ctaOn: v.ctaOn ?? !!x.cta, ctaTo: v.ctaTo || '', refs: v.refs || [], att: (v.att || []).map(a => { if (!REFS[a.ref]) REFS[a.ref] = { name: a.name || '레퍼런스', page: a.page || '', from: a.from || '외부', layout: null, r: [9, 16], why: '', live: true, url: a.url || '' }; return { ref: a.ref, note: a.note || '' }; }), notes: x.designNotes || '',
     // 느낌 레퍼런스의 참고할 것: 예전 이름 '글씨' → '글씨체'
     moods: (v.moods || []).map(m => ({ id: m.id, pts: new Set((m.pts || []).map(p => (p === '글씨' ? '글씨체' : p))) })), lines: (v.lines || []).map(l => ({ id: l.id, text: l.text || '' })), cat: x.zone_tag || '' };
   // 카드 = 저장된 slots (상품 목록에 없는 SEQ는 비워 보이되 저장할 때 그대로 돌려놓음)
@@ -772,6 +808,7 @@ function fromSection(x) {
       s.tabs = x.tabs.map(t => { const cs = slots.filter(sl => (sl.tabId || first) === t.tabId).map(mk); return { id: t.tabId, name: t.label, cat: t.zone_tag || '', cards: cs.length ? cs : [slot(), slot()] }; }); }
     else s.cards = slots.length ? slots.map(mk) : [slot(), slot(), slot(), slot()];
   }
+  s.copyRecommendation = v.copyRecommendation || null;
   if (k === 'review') s.rv = v.rv || { shape: 'mix', groups: [], order: [], show: { img: 1, name: 1, price: 0 }, author: 'hide' };
   if (k === 'event') s.ev = v.ev || { how: '', reward: '', rewardText: '', pick: '', count: '', when: '', login: true, notice: '' };
   return s;
@@ -786,8 +823,9 @@ function toSection(s, i) {
     layoutId: s.layout, zone_tag: cut(s.cat, 40), designNotes: cut(s.notes, 2000),
     ...(s.tabs ? { tabs: s.tabs.map(t => ({ tabId: t.id, label: cut(t.name, 40), zone_tag: cut(t.cat, 40) })) } : {}),
     ...(s.card ? { slots: (s.tabs ? s.tabs.flatMap(t => t.cards.map(c => slotOut(c, t.id))) : (s.cards || []).map(c => slotOut(c, null))).slice(0, 40) } : {}),
-    v2: { scope: cut(s.scope, 200), num: !!s.num, ctaOn: !!s.ctaOn, ctaTo: cut(s.ctaTo, 60), lines: (s.lines || []).map(l => ({ id: l.id, text: cut(l.text, 120) })),
+    v2: { copyRecommendation: s.copyRecommendation || null, scope: cut(s.scope, 200), num: !!s.num, ctaOn: !!s.ctaOn, ctaTo: cut(s.ctaTo, 60), lines: (s.lines || []).map(l => ({ id: l.id, text: cut(l.text, 120) })),
       refs: s.refs || [], moods: (s.moods || []).map(m => ({ id: m.id, pts: [...m.pts] })),
+      att: (s.att || []).slice(0, 8).map(a => { const r = REFS[a.ref] || {}; return { ref: cut(a.ref, 80), note: cut(a.note, 120), name: cut(r.name, 60), page: cut(r.page, 60), from: cut(r.from, 10), url: /^https?:\/\//.test(r.url || '') ? cut(r.url, 300) : '' }; }),   // 붙인 레퍼런스: 이름·출처를 같이 저장해 다시 열어도, 레퍼런스가 색인에서 빠져도 목록이 남게
       ...(s.card ? { card: { order: s.card.order, on: s.card.on, def: defOut(s.card.def) }, cards: cardExtra(s) } : {}), ...(s.rv ? { rv: s.rv } : {}), ...(s.ev ? { ev: s.ev } : {}) } };
 }
 // 이 화면의 할인(items) → 기획안 promo_rows (하루특가·조합 행은 건드리지 않음)
@@ -915,7 +953,7 @@ PLAN.ready.then(async doc => {
   secs.forEach(s => { (s.tabs || []).forEach(t => { if (seenId.has(t.id)) t.id = uid('t'); seenId.add(t.id); }); allCards(s).forEach(c => { if (seenId.has(c.id)) c.id = uid('c'); seenId.add(c.id); }); });
   secs.forEach(s => { if (s.rv) s.rv.groups = s.rv.groups.filter(g => P[g.seq]); });   // 예시 상품(P106 등)이 남아 있으면 뺌
   liveOn = true; lastE = JSON.stringify([secs.map(toSection), items]);
-  document.querySelector('.demo').innerHTML = '<b>이 기획안의 실제 내용이에요.</b> 구좌는 구좌 구성에서 정한 것, 상품·가격·원가·후기는 실제 데이터예요. 카드에 넣거나 할인을 고치면 상품·할인과 같은 값으로 저장돼요. 레퍼런스·느낌 이미지와 AI 문구 다듬기는 아직 예시예요.';
+  document.querySelector('.demo').innerHTML = '<b>이 기획안의 실제 내용이에요.</b> 구좌는 구좌 구성에서 정한 것, 상품·가격·원가·후기는 실제 데이터예요. 카드에 넣거나 할인을 고치면 상품·할인과 같은 값으로 저장돼요. 레퍼런스·느낌 이미지는 아직 예시예요. AI 카피 추천은 Claude 연결 상태에 따라 사용할 수 있어요.';
   renderBase(); resetHist();   // 불러온 상태가 이력의 출발점 (예시 화면으로 되돌아가지 않게)
   if (want) showSec(cur, true);
   // 후기·별점은 그린 뒤에 채운다 (2026-11-10: 후기를 다 받을 때까지 예시 화면이 보이고 고친 것도 저장되지 않던 것). 후기는 저장 값이 아니라 다시 그려도 저장하지 않음
@@ -967,3 +1005,37 @@ PLAN.ready.then(async doc => {
 // 편집 이력의 출발점 (예시 화면 또는 기획안을 불러오기 전 상태. 기획안을 불러오면 resetHist로 다시 잡음)
 track();
 loadLibMoods();
+
+// 멘트추천기능과 연결: 원본 편집/저장/실행 취소 흐름을 그대로 사용한다.
+function syncHeroCopy(s) {
+  if (liveOn && PLAN.doc && s === secs.find(x => x.layout === 'hero')) {
+    PLAN.save(d => { d.brief.key_copy = cut(s.name, 120); });
+  }
+}
+window.CopyRecommendation?.connect({
+  enabled: () => liveOn && !!PLAN.id,
+  currentId: () => cur,
+  snapshot(id) {
+    const section = secs.find(x => x.id === id);
+    return window.CopyRecommendationCore.snapshot({doc: PLAN.doc, section, sections: secs, products: P, rows: items, extras: EXTRAS});
+  },
+  async prepare(id) {
+    if (!liveOn || !PLAN.id) throw Error('저장된 기획안에서 사용할 수 있어요.');
+    if (!secs.some(x => x.id === id)) throw Error('구좌를 찾지 못했어요.');
+    if (Object.keys(drafts).length) throw Error('미반영 할인이 있어요. 상품 탭에서 반영하거나 되돌린 뒤 추천해 주세요.');
+    saveEditor(); await PLAN.flush();
+  },
+  paint(id) {
+    if (id !== cur || tab !== 'copy') return;
+    const body = $('#pbody'), top = body?.scrollTop || 0;
+    renderPanel(); const next = $('#pbody'); if (next) next.scrollTop = top;
+  },
+  apply(id, patch, meta) {
+    if (id !== cur) throw Error('추천받은 구좌로 돌아온 뒤 적용해 주세요.');
+    const section = secs.find(x => x.id === id); if (!section) throw Error('구좌를 찾지 못했어요.');
+    clearTimeout(trackT); track();
+    Object.assign(section, patch); section.copyRecommendation = meta;
+    if ('name' in patch) syncHeroCopy(section);
+    render(); toast('AI 문구를 적용했어요. 직접 수정하거나 실행 취소할 수 있어요.', true);
+  }
+});

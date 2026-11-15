@@ -258,7 +258,7 @@ function rebuild(full) {
 }
 function uploadGuide(f) {
   const fd = new FormData(); fd.append('file', f, f.name); toast('원가 파일을 올리는 중이에요…');
-  fetch('/api/guide', { method: 'POST', headers: { 'x-planner-token': V2_TOKEN }, body: fd })
+  v2fetch('/api/guide', { method: 'POST', body: fd })
     .then(async r => { const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || `서버 오류 (${r.status})`); return d; })
     .then(d => { costFiles = (d.guides || []).map(g => [g.name, g.modified, g.in_use]); render(); toast('원가 파일을 올렸어요. 데이터 갱신을 누르면 새 원가로 다시 계산해요'); })
     .catch(e => toast(`올리지 못했어요: ${e.message}`));
