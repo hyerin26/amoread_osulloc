@@ -50,7 +50,6 @@
         <span class="grow"></span>
         <button class="btn sm" id="resetBtn">처음 모양으로</button>
       </div>
-      <div class="ai-keyword-controls"><button class="btn primary" id="aiKeywordExpand" type="button" disabled>AI로 키워드 확장</button><p id="aiKeywordStatus" class="cap" role="status">중심 키워드와 관련된 웹 자료를 찾아 가지를 추가해요.</p></div>
       <p id="researchContext" class="cap"></p>
       <p id="researchStatus" class="cap" role="status"></p>
       <div class="filters" role="group" aria-label="키워드 출처 필터">
@@ -60,7 +59,8 @@
         <span class="cap conn"><span id="connTxt">연결 상태 확인 중…</span> <button class="lnk" id="connBtn">연결 설정 보기</button></span>
       </div>
       <nav class="path" id="path" aria-label="지나온 길"></nav>
-      <div class="map-scroll"><svg class="map" id="map" viewBox="0 0 1100 640" role="group" aria-label="키워드 마인드맵"></svg><div class="map-tip" id="mapTip" role="tooltip" hidden></div></div>
+      <div class="map-tools"><p id="aiKeywordStatus" class="cap" role="status">지도는 네이버 검색으로 찾은 연관어예요. AI는 [AI로 더 찾기]를 누를 때만 써요.</p><button class="btn sm" id="aiKeywordExpand" type="button" disabled aria-describedby="aiKeywordCost">AI로 더 찾기</button><span class="tag ai-cost" id="aiKeywordCost">AI 사용 · 약 1분</span></div>
+      <div class="map-scroll"><svg class="map" id="map" viewBox="0 0 1100 640" role="group" aria-label="키워드 마인드맵"></svg><div class="map-tip" id="mapTip" role="tooltip" hidden></div><div class="map-empty-box" id="mapEmpty" hidden><p id="mapEmptyMsg"></p><button class="btn sm" type="button" data-ai-more>AI로 더 찾기</button><span class="tag ai-cost">AI 사용 · 약 1분</span></div></div>
       <div id="mapPagination" class="map-pagination"></div>
       <p class="cap maphint">가운데는 정해 둔 명분이에요. 오른쪽 연필을 누르면 고칠 수 있고, 고치면 새 지도를 만들어요(담아 둔 키워드와 작성한 콘셉트·카피는 유지). 키워드를 누르면 오른쪽에 출처와 추천 이유가 나오고, 왼쪽 동그라미를 누르면 브리프에 담겨요. 키보드: Enter 근거 보기 · Space 담기. ‘이 말에서 더 펼치기’로 선택한 키워드의 다음 가지를 탐색할 수 있어요.</p>
       <form id="manualForm" class="research-controls"><input type="text" id="manualKeyword" maxlength="20" aria-label="직접 추가할 키워드" placeholder="찾는 말이 없다면 직접 추가"><button class="btn sm" type="submit">키워드 추가</button></form>

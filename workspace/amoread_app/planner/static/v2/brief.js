@@ -26,7 +26,8 @@ let path = [ROOT],
 let keepFocus = null,
   titleTouched = false,
   sugPage = 0,
-  rootEditing = false;   // 가운데 노드에서 명분을 고치는 중
+  rootEditing = false,   // 가운데 노드에서 명분을 고치는 중
+  naverKeys = null;   // /api/connections: 네이버 키가 있는지 (결과가 비었을 때 안내 문구용)
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({
   '&': '&amp;',
@@ -201,7 +202,8 @@ function renderMap() {
       });
       const ex = x0 + w - 22;
       ed.append(svgEl('rect', { class: 'hit', x: ex - 14, y: y - 14, width: 28, height: 28, rx: 6 }));
-      ed.append(svgEl('path', { d: `M${ex - 5} ${y + 5}l1-4 7-7 3 3-7 7z M${ex + 1} ${y - 4}l3 3` }));   // 연필
+      // 연필 (디자인 시스템 아이콘 규격: 24 그리드 · 선 1.75 · 16px로 그림. 세트에 '고치기' 아이콘이 없어 같은 규격으로 추가)
+      ed.append(svgEl('path', { d: 'M17 3.5a2.1 2.1 0 0 1 3 3L7.5 19 3 20.5 4.5 16Z M15 5.5l3 3', transform: `translate(${ex - 8} ${y - 8}) scale(${16 / 24})` }));
       const title = svgEl('title', {});
       title.textContent = '명분 고치기';
       ed.append(title);
@@ -233,14 +235,19 @@ function renderMap() {
       d: `M${from},${CY} C${mid},${CY} ${mid},${y} ${to},${y}`
     }));
   }
-  if (!shown.length) {
-    const msg = svgEl('text', {
-      class: 'map-empty',
-      x: 550,
-      y: 420
-    });
-    msg.textContent = '네이버 검색 또는 AI로 연관 키워드를 찾아보세요';
+  // 가지가 없을 때: 네이버로 찾는 중이면 그 안내, 다 찾았는데 비었으면 그때만 AI를 권한다 (AI는 자동으로 돌지 않음)
+  const loading = LIVE.get(base)?.state === 'loading', empty = !shown.length && !rootEditing;
+  if (empty && loading) {
+    const msg = svgEl('text', { class: 'map-empty', x: CX, y: CY + 70 });
+    msg.textContent = '네이버에서 연관어를 찾고 있어요…';
     svg.append(msg);
+  }
+  const box = $('#mapEmpty');
+  if (box) {
+    box.hidden = !empty || loading || !!keywordBusy;
+    const noKey = naverKeys && !naverKeys.naver && !naverKeys.searchad;
+    $('#mapEmptyMsg').textContent = noKey ? '네이버 키가 연결되지 않아 검색 연관어를 찾지 못했어요. AI로 웹에서 찾아볼 수 있어요.'
+      : '네이버 검색에서 찾은 연관어가 없어요. AI로 웹에서 더 찾아볼 수 있어요.';
   }
   // 그린 내용에 맞게 보는 범위를 좁힌다: 고정 1100×640이면 가지가 적을 때 빈 곳이 커서 글자가 10px 남짓으로 작아짐
   try {
@@ -273,12 +280,12 @@ function renderStatus() {
     `기획 맥락 · ${period ? `${period.start} ~ ${period.end}` : '행사 기간 미정'} · ${$('#who').value.trim() || '타깃 미정'} · 최근 AI 제안과 검색 관심·타깃·상품 연결을 참고해 후보를 보여요.`;
   const count = branchWords().length;
   $('#researchStatus').textContent = rec?.state === 'loading' ? `‘${mapRoot()}’의 검색·콘텐츠 근거를 찾고 있어요…` : rec?.state === 'error' ?
-    `검색을 완료하지 못했어요: ${rec.msg}` : `${count}개 후보 · 중심 단어에서 연관 키워드가 바로 뻗어요.${count ? '' : ' AI 확장이나 직접 추가로 시작할 수 있어요.'}`;
+    `검색을 완료하지 못했어요: ${rec.msg}` : `${count}개 후보 · 중심 단어에서 연관 키워드가 바로 뻗어요.${count ? '' : ' AI로 더 찾거나 직접 추가로 시작할 수 있어요.'}`;
   const t = aiExpansions.find(e => e.parent === mapRoot())?.fetched_at || rec?.data?.fetched_at;
   $('#aiKeywordExpand').disabled = !researchReady || !!keywordBusy;
-  $('#aiKeywordExpand').textContent = keywordBusy ? '웹에서 키워드 찾는 중…' : 'AI로 키워드 확장';
-  $('#aiKeywordStatus').textContent = keywordBusy ? `‘${keywordBusy.seed}’ 관련 웹 자료를 검색하고 있어요…` : keywordMessage ||
-    `현재 중심 ‘${mapRoot()}’의 연관 키워드를 웹에서 찾아요.`;
+  $('#aiKeywordExpand').textContent = keywordBusy ? 'AI가 웹에서 찾는 중…' : 'AI로 더 찾기';
+  $('#aiKeywordStatus').textContent = keywordBusy ? `‘${keywordBusy.seed}’ 관련 웹 자료를 AI가 검색하고 있어요…` : keywordMessage ||
+    '지도는 네이버 검색으로 찾은 연관어예요. AI는 [AI로 더 찾기]를 누를 때만 써요.';
   $('#mapDemo').textContent = t ? `조회 ${formatTime(t)}` : '근거 기반 탐색';
 }
 
@@ -695,6 +702,10 @@ document.addEventListener('click', e => {
     render();
     return;
   }
+  if (t.closest('[data-ai-more]')) {   // 지도가 비었을 때의 [AI로 더 찾기] = 위쪽 버튼과 같음
+    $('#aiKeywordExpand').click();
+    return;
+  }
   const ai = t.closest('[data-ai-keyword]');
   if (ai) {
     requestAI('keyword', [ai.dataset.aiKeyword], ai);
@@ -893,6 +904,8 @@ async function requestAI(mode, words, btn) {
   }
 }
 v2api('/api/connections').then(c => {
+  naverKeys = c.keys;
+  renderMap();
   $('#connTxt').textContent = `연결: 네이버 ${c.keys.naver?'연결됨':'키 없음'} · 검색광고 ${c.keys.searchad?'연결됨':'키 없음'}`;
 }).catch(() => {
   $('#connTxt').textContent = '연결 상태를 확인하지 못했어요';
