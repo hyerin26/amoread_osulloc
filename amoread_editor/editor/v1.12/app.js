@@ -6,7 +6,7 @@ const FLOW=window.AMFlow;
 const CATALOG = window.AM_CATALOG;
 const LAYOUTS=Object.fromEntries(CATALOG.map(x=>[x.id,[x.name,x.category]]));
 const ITEM_DEFAULTS={ benefit:[['기간 할인','일부 대상 상품 할인'],['선물 포장','조건 충족 시 제공']],service:[['선물 포장','해당 상품에 제공'],['쇼핑백','해당 상품에 한해 제공']],timeline:[['행사 시작','11월 13일'],['마감일','11월 20일']],notice:[['쿠폰 안내','중복 사용 여부 확인']],story:[['기획 배경','이야기를 소개합니다'],['차별점','선택의 이유를 안내합니다']],detail:[['핵심 특징','상품 설명을 입력하세요']]};
-const LABEL_POSITIONS=[['top-left','좌측 상단'],['top-right','우측 상단'],['bottom-left','좌측 하단'],['bottom-right','우측 하단']];
+const LABEL_POSITIONS=[['top-left','왼쪽 위'],['top-right','오른쪽 위'],['bottom-left','왼쪽 아래'],['bottom-right','오른쪽 아래']];
 const CTA_DEFAULTS={custom:'outline',hero:'filled','text-cta':'text',split:'outline',benefit:'filled',service:'outline',grid2:'outline',grid3:'outline',feat:'filled','deal-banner':'wide',review:'text',notice:'text',countdown:'wide','ev-quiz':'filled','ev-share':'outline','ev-ugc':'filled','ev-stamp':'filled','ev-draw':'filled','ev-coupon':'wide'};
 const CTA_STYLES=[['filled','강조형'],['outline','테두리형'],['text','텍스트형'],['wide','전체 너비형']];
 const REVIEW_LAYOUTS=[['cards','개별 후기 카드'],['feature-left','큰 상품 사진 + 후기'],['feature-top','상단 상품 사진 + 후기'],['text','상품명 + 후기']];
@@ -37,7 +37,7 @@ function ftIssues(s){if(!ftOn(s))return [];ftStore(s);const out=[],noZone=s.ftab
  if(noZone)out.push(`Zone(PROMO_WORK 카테고리명)이 빈 탭이 ${noZone}개 있어요`);return out;}
 function productView(s){return PRODUCT_VIEW_NAMES[s.productView]?s.productView:'grid'}
 function productViewPicker(s){if(!['grid2','grid3','feat'].includes(s.layout))return '';
- return `<section class="am-ed-group am-ed-product-style-section"><div class="am-ed-group__title"><h3>상품 배치 방식</h3><span class="am-ed-tag">${E(PRODUCT_VIEW_NAMES[productView(s)])}</span></div><p class="am-ed-group__description">같은 상품·카드 요소를 그대로 유지한 채 진열 방식만 전환합니다.</p><div class="am-ed-product-layouts">${PRODUCT_VIEWS.map(([id,label,description])=>`<button type="button" class="am-ed-product-layout-option" data-product-style="${id}" aria-pressed="${productView(s)===id}"><span class="am-ed-layout-visual am-ed-layout-${id}" aria-hidden="true"><i></i><i></i><i></i><i></i></span><b>${label}</b><small>${description}</small></button>`).join('')}</div></section>`;
+ return `<section class="am-ed-group am-ed-product-style-section"><div class="am-ed-group__title"><h3>상품 배치 방식</h3><span class="am-ed-tag">${E(PRODUCT_VIEW_NAMES[productView(s)])}</span></div><p class="am-ed-group__description">상품과 카드 내용은 그대로 두고 진열 모양만 바꿔요.</p><div class="am-ed-product-layouts">${PRODUCT_VIEWS.map(([id,label,description])=>`<button type="button" class="am-ed-product-layout-option" data-product-style="${id}" aria-pressed="${productView(s)===id}"><span class="am-ed-layout-visual am-ed-layout-${id}" aria-hidden="true"><i></i><i></i><i></i><i></i></span><b>${label}</b><small>${description}</small></button>`).join('')}</div></section>`;
 }
 
 // Visual column picker applies only where a multi-column layout improves the content.
@@ -62,7 +62,7 @@ function masonryRatioPicker(s){
  }).join('');
  const ratios=products.map((p,i)=>masonryRatio(s,p.id,i));
  const warning=products.length===1?'상품이 1개여서 메이슨리의 높낮이 차이가 드러나지 않습니다.':products.length>1&&new Set(ratios).size===1?'현재 모든 이미지의 비율이 같아 메이슨리의 높낮이 차이가 사라집니다. 일부 상품을 자동 비율로 바꾸거나 그리드를 선택해 주세요.':'';
- return `<section class="am-ed-group am-ed-image-ratio am-ed-masonry-ratios" data-masonry-ratio-control="1"><div class="am-ed-group__title"><h3>상품별 이미지 비율</h3><span class="am-ed-tag">메이슨리 전용</span></div><p class="am-ed-group__description">메이슨리는 서로 다른 높이의 이미지가 특징입니다. 기본값은 상품마다 비율을 섞어서 보여주며, 필요한 상품만 개별 변경할 수 있습니다. 다른 상품 배치의 공통 이미지 비율은 보존됩니다.</p>${warning?`<div class="am-ed-note am-ed-note--warning" role="status">${E(warning)}</div>`:''}<button type="button" class="am-ed-button am-ed-button--subtle am-ed-button--sm" data-masonry-reset="1">모든 이미지 높이 자동 조합으로 복원</button>${rows||'<p class="am-ed-note">상품을 선택하면 비율 설정이 나타납니다.</p>'}</section>`;
+ return `<section class="am-ed-group am-ed-image-ratio am-ed-masonry-ratios" data-masonry-ratio-control="1"><div class="am-ed-group__title"><h3>상품별 이미지 비율</h3><span class="am-ed-tag">메이슨리 전용</span></div><p class="am-ed-group__description">메이슨리는 서로 다른 높이의 이미지가 특징입니다. 기본값은 상품마다 비율을 섞어서 보여주며, 필요한 상품만 개별 변경할 수 있습니다. 다른 상품 배치의 공통 이미지 비율은 보존됩니다.</p>${warning?`<div class="am-ed-note am-ed-note--warning" role="status">${E(warning)}</div>`:''}<button type="button" class="am-ed-button am-ed-button--subtle am-ed-button--sm" data-masonry-reset="1">모든 이미지 높이 자동 조합으로 복원</button>${rows||'<p class="am-ed-note">상품을 넣으면 비율을 고를 수 있어요.</p>'}</section>`;
 }
 
 function imageRatio(s){const allowed=IMAGE_RATIOS.some(([id])=>id===s.imageRatio);return allowed?s.imageRatio:(['grid2','grid3','feat'].includes(s.layout)?'1:1':'4:3');}
@@ -77,17 +77,17 @@ function columnSettings(s){
  if(['benefit','service','story','detail','timeline'].includes(layout)){
   if(layout==='service'&&s.config?.presentation==='accordion')return null; // Accordion is intrinsically one column; retain saved config.columns for plain mode.
   const fallback=['benefit','service'].includes(layout)?2:1;
-  return {path:'config.columns',options:COLUMN_LIMITS[layout],selected:Number(s.config?.columns||fallback),description:'항목 내용에 맞게 가로 배치를 정합니다. 원래 항목과 순서는 유지됩니다.'};
+  return {path:'config.columns',options:COLUMN_LIMITS[layout],selected:Number(s.config?.columns||fallback),description:'한 줄에 몇 개씩 놓을지 정해요.'};
  }
  if(['grid2','grid3','feat'].includes(layout)){
   const view=productView(s);
   if(view==='list'||view==='card')return null; // These are intentionally always one column. Keep old saved number.
   const carousel=view==='carousel';
-  return {path:'layoutColumns.'+layout,options:carousel?[1,2,3,4]:COLUMN_LIMITS[layout],selected:Number(s.layoutColumns?.[layout]||PRODUCT_COLUMN_DEFAULTS[layout]),label:carousel?'한 화면에 보이는 카드 수':'화면 열 배치',unit:carousel?'장':'열',description:carousel?'넘기는 카드의 한 화면 노출 개수를 선택합니다. 좌우로 스크롤되는 구조는 유지됩니다.':'한 줄에 보일 카드 수를 선택합니다. 메이슨리는 지정한 열 수만큼 세로로 쌓입니다.'};
+  return {path:'layoutColumns.'+layout,options:carousel?[1,2,3,4]:COLUMN_LIMITS[layout],selected:Number(s.layoutColumns?.[layout]||PRODUCT_COLUMN_DEFAULTS[layout]),label:carousel?'한 화면에 보이는 카드 수':'화면 열 배치',unit:carousel?'장':'열',description:carousel?'한 화면에 보일 카드 수예요. 나머지는 옆으로 넘겨 봐요.':'한 줄에 보일 카드 수예요.'};
  }
  if(layout==='review'){
   if(s.rv?.layout==='feature-left')return null;
-  return {path:'rv.columns',options:s.rv?.layout==='cards'?[1,2,3]:[1,2],selected:Number(s.rv?.columns||2),description:'후기 내용의 가독성을 고려해 열을 선택합니다. 선택한 후기와 상품 연결은 그대로 유지됩니다.'};
+  return {path:'rv.columns',options:s.rv?.layout==='cards'?[1,2,3]:[1,2],selected:Number(s.rv?.columns||2),description:'한 줄에 보일 후기 수예요. 글이 길면 1열이 읽기 편해요.'};
  }
  return null;
 }
@@ -195,29 +195,29 @@ function customPanel(s){
  const c=ensureCustom(s);
  const field=(key,label,opts={})=>F('custom.'+key,label,c[key],opts);
  const currentImage=safeRefImage(c.imageData);
- return G('구좌 위치와 구성 단계','분류하기 어려운 기획도 우선 위치를 확보할 수 있어요. 참고용 자료는 고객 화면과 분리해 표시합니다.',
+ return G('구좌 위치와 구성 단계','모양이 아직 정해지지 않은 구좌도 자리부터 잡아 둘 수 있어요. 참고 자료는 고객 화면과 따로 보여요.',
  `<div class="am-ed-field"><span class="am-ed-label">현재 작업 방식</span>${Choices('custom.mode',[['sketch','빈 구조 · 영역 확보'],['reference','레퍼런스 이미지 보기'],['blocks','블록 직접 구성']],c.mode)}</div>`+
  `<div class="am-ed-field"><span class="am-ed-label">프레임 높이 프리셋</span>${Choices('custom.height',[['auto','콘텐츠 맞춤'],['short','짧게'],['medium','기본'],['tall','길게']],c.height)}</div>`+
  `<div class="am-ed-field am-custom-height-field"><label class="am-ed-label" for="customHeightInput">프레임 최소 높이 (px)</label><div class="am-ed-inline"><input id="customHeightInput" class="am-ed-input" data-custom-height-input type="number" inputmode="numeric" min="${CUSTOM_SIZE_MIN}" max="${CUSTOM_SIZE_MAX}" step="${CUSTOM_SIZE_STEP}" placeholder="프리셋 · ${customPresetHeight(c)}px" value="${customManualHeight(c)??''}"><button type="button" class="am-ed-button am-ed-button--subtle am-ed-button--sm" data-custom-fit>자동 맞춤</button></div><small class="am-ed-field-meta">구좌 하단 손잡이를 드래그해도 변경할 수 있어요. ${CUSTOM_SIZE_MIN}~${CUSTOM_SIZE_MAX}px · 20px 단위. 콘텐츠가 높이보다 길면 잘리지 않고 자동으로 늘어납니다.</small></div>`+
  `<div class="am-ed-field"><span class="am-ed-label">작업 상태</span>${Choices('custom.status',[['idea','아이디어'],['review','검토 필요'],['ready','인계 준비']],c.status)}</div>`+
  field('purpose','이 구좌를 넣는 이유 · 고객에게 전달할 것',{max:400,area:true,rows:3,optional:true})
- )+G('레퍼런스 첨부','이 이미지는 레이아웃 참고용이고 고객용 확정 비주얼이 아닙니다.',
+ )+G('레퍼런스 첨부','배치를 참고하는 이미지예요. 고객 화면에는 나가지 않아요.',
  field('referenceTitle','레퍼런스 이름',{max:120,optional:true})+
- field('referenceUrl','원본 URL (선택)',{max:500,optional:true,help:'http/https URL만 참조 링크로 취급합니다. 실제 이미지를 원격에서 자동 로드하지 않습니다.'})+
- `<div class="am-ed-field"><label class="am-ed-label" for="customImageUpload">레퍼런스 이미지 첨부</label><input id="customImageUpload" class="am-ed-input" type="file" accept="image/png,image/jpeg,image/webp"><small class="am-ed-field-meta">이미지는 최대 1000px WebP로 축소해 이 브라우저의 기획안에 보관합니다. 외부 서버로 전송하지 않습니다.</small></div>`+
- (currentImage?`<div class="am-custom-attach-preview"><img src="${E(currentImage)}" alt="첨부된 레퍼런스"><div><b>${E(c.imageName||'첨부 이미지')}</b><button type="button" class="am-ed-button am-ed-button--subtle am-ed-button--sm" data-custom-remove-image>이미지 제거</button></div></div>`:'<div class="am-ed-note">레퍼런스를 아직 첨부하지 않았어요. URL이나 이미지만으로도 위치를 확보할 수 있어요.</div>')+
+ field('referenceUrl','원본 주소 (선택)',{max:500,optional:true,help:'https://로 시작하는 주소만 받아요. 주소만 저장하고 열어 보지는 않아요.'})+
+ `<div class="am-ed-field"><label class="am-ed-label" for="customImageUpload">레퍼런스 이미지 첨부</label><input id="customImageUpload" class="am-ed-input" type="file" accept="image/png,image/jpeg,image/webp"><small class="am-ed-field-meta">이미지는 줄여서 이 기획안에 함께 저장해요. 다른 곳으로 보내지 않아요.</small></div>`+
+ (currentImage?`<div class="am-custom-attach-preview"><img src="${E(currentImage)}" alt="첨부된 레퍼런스"><div><b>${E(c.imageName||'첨부 이미지')}</b><button type="button" class="am-ed-button am-ed-button--subtle am-ed-button--sm" data-custom-remove-image>이미지 제거</button></div></div>`:'<div class="am-ed-note">아직 첨부한 레퍼런스가 없어요. 링크나 이미지 하나만 있어도 돼요.</div>')+
  field('referenceNotes','참고할 배치 · 색감 · 요소',{max:800,area:true,rows:4,optional:true})
- )+G('디자이너에게 넘길 동작','실제 모션이나 운영 실행이 아닌 요구사항 문서로 기록합니다.',
+ )+G('디자이너에게 넘길 동작','원하는 움직임을 적으면 디자인 요청에 같이 들어가요.',
  field('interactionNotes','버튼·스크롤·스와이프·상태 변화 등',{max:800,area:true,rows:4,optional:true})+
- `<div class="am-ed-note">이 구좌에도 왼쪽 ‘요소’에서 상품 카드·텍스트·이미지·CTA·그룹을 붙일 수 있습니다. 구좌 위치와 크기, 참고 자료는 유지됩니다.</div>`);
+ `<div class="am-ed-note">왼쪽 [＋ 요소]로 상품 카드, 글, 이미지, 버튼, 묶음을 더 넣을 수 있어요.</div>`);
 }
 function customQualityPanel(s){const c=ensureCustom(s);const warnings=[];
  if(!c.purpose.trim())warnings.push('구좌의 기획 의도가 비어 있습니다.');
  if(!c.referenceUrl.trim()&&!c.imageData&&!AMBlocks.slot(s,'section:after').length)warnings.push('레퍼런스 이미지·URL·구성 블록 중 하나를 추가하면 인계가 명확해집니다.');
- if(c.referenceUrl.trim()&&!safeReferenceUrl(c.referenceUrl))warnings.push('레퍼런스 URL은 http/https 형식으로 작성해야 합니다.');
+ if(c.referenceUrl.trim()&&!safeReferenceUrl(c.referenceUrl))warnings.push('레퍼런스 주소는 https://로 시작해야 해요.');
  if(c.status==='ready'&&!c.interactionNotes.trim()&&!s.notes.trim())warnings.push('인계 준비 상태지만 디자이너 요청·상태 설명이 없습니다.');
  if(c.heightPx!=null&&customManualHeight(c)==null)warnings.push('지정한 프레임 높이가 허용 범위를 벗어납니다. 160~1600px로 설정하세요.');
- return G('자유 기획 검수','미구현 인터랙션이나 참고 자료를 고객 화면의 확정 요소로 오인하지 않도록 확인합니다.', warnings.length?warnings.map(w=>`<div class="am-ed-note am-ed-note--warning">${E(w)}</div>`).join(''):'<div class="am-ed-note">기획 의도와 참고 정보 검수를 통과했습니다.</div>');
+ return G('자유 기획 검수','참고 자료가 고객 화면 요소로 잘못 들어가지 않았는지 확인해요.', warnings.length?warnings.map(w=>`<div class="am-ed-note am-ed-note--warning">${E(w)}</div>`).join(''):'<div class="am-ed-note">확인할 것이 없어요.</div>');
 }
 function defaults(){const a=[makeSection('hero','s1','봄을 전하는 차 한 잔','이번 시즌을 위한 선물 제안'),makeSection('benefit','s2','이번 프로모션 혜택','놓치지 말아야 할 혜택'),makeSection('grid2','s3','선물 취향별 추천','선물받는 분의 취향에 따라 골라보세요'),makeSection('service','s4','선물 포장 서비스','마음을 전하는 포장'),makeSection('ev-ugc','s5','티타임 사진 인증','댓글 또는 사진으로 참여하세요'),makeSection('review','s6','구매자가 먼저 전하는 이야기','선택에 도움이 되는 후기')];a[1].items=[{label:'시즌 할인',text:'일부 대상 상품 할인'},{label:'선물 포장',text:'조건 충족 시 제공'}];a[2].num=false;a[2].scope='선물 세트';a[2].cat='';a[2].lines=[{text:'취향별로 가볍게 둘러보세요'}];a[2].ctaOn=true;a[2].cta='상품 더 보기';a[2].ctaTo='선물 상품 목록';a[3].items=[{label:'선물 포장',text:'선물할 때 이용 가능한 옵션'},{label:'쇼핑백',text:'해당 제품에 한해 제공'}];a[4].ev={how:'티타임 사진 또는 댓글 등록',reward:'포인트',rewardText:'추첨 제공',pick:'추첨',count:'50',when:'행사 기간 내',login:true,notice:'자세한 조건 확인 필요'};return a}
 let cbRailMode='sections',cbSelected=null,cbEditStart=null,canvasTarget=null,cbCardOpenField=null,cbCardOpenNode=null,cbCardDetailsOpen=false;
@@ -251,7 +251,7 @@ function saveDemo(){
 }
 function loadDemo(){if(externalPersistence)return;try{let t=localStorage.getItem('amoread-lab-v09');if(!t)return;let x=JSON.parse(t);if(Array.isArray(x.sections)&&x.sections.every(s=>LAYOUTS[s.layout])){sections=x.sections;current=x.current;tab=x.tab;}}catch(_){}}
 
-function tabs(s){if(s.layout==='custom')return [['copy','문구'],['items','자유 구성 · 레퍼런스'],['refs','레퍼런스'],['notes','디자인 요청']];const cat=LAYOUTS[s.layout][1];if(cat==='상품')return [['copy','문구'],['shape','카드 모양'],['products','상품'],['refs','레퍼런스'],['notes','디자인 요청']];if(cat==='이벤트')return [['copy','문구'],['event','운영 조건'],['refs','레퍼런스'],['notes','디자인 요청']];if(cat==='후기')return [['copy','문구'],['review','후기'],['refs','레퍼런스'],['notes','디자인 요청']];if(s.layout==='hero')return [['copy','문구'],['refs','레퍼런스'],['notes','디자인 요청']];return [['copy','문구'],['items','구성 요소 (신규안)'],['refs','레퍼런스'],['notes','디자인 요청']];}
+function tabs(s){if(s.layout==='custom')return [['copy','문구'],['items','자유 구성'],['refs','레퍼런스'],['notes','디자인 요청']];const cat=LAYOUTS[s.layout][1];if(cat==='상품')return [['copy','문구'],['shape','카드 모양'],['products','상품'],['refs','레퍼런스'],['notes','디자인 요청']];if(cat==='이벤트')return [['copy','문구'],['event','운영 조건'],['refs','레퍼런스'],['notes','디자인 요청']];if(cat==='후기')return [['copy','문구'],['review','후기'],['refs','레퍼런스'],['notes','디자인 요청']];if(s.layout==='hero')return [['copy','문구'],['refs','레퍼런스'],['notes','디자인 요청']];return [['copy','문구'],['items','구성 요소'],['refs','레퍼런스'],['notes','디자인 요청']];}
 
 function iaTreeBlock(node,sid,depth=0){
  const name=node.type==='productCard'?PRODUCTS.find(p=>p.id===node.props?.productId)?.name||'연결 상품 미선택':node.type==='text'?(node.props?.text||'텍스트').slice(0,22):IA_BLOCK_NAMES[node.type]||node.type;
@@ -278,9 +278,24 @@ function iaTreeChildren(s){
  }
  return out;
 }
+// 상품 구좌의 칸 수: 02 구좌 구성에서 정한 수(slotCount) → 없으면 진열 기본(2열 4칸·3열 6칸). 넣은 상품이 더 많으면 그 수
+// 탭 구좌는 빈 칸을 저장하지 않으므로(plans/30 §3-2) slotCount를 보지 않고 탭마다 기본 칸 수로 센다
+function productSlotTotal(s,cols,ids=s.productIds){const c=cols||PRODUCT_COLUMN_DEFAULTS[s.layout]||2;return Math.max((ftOn(s)?0:Number(s.slotCount))||(s.layout==='feat'?Math.max(2,c):c*2),(ids||[]).length);}
+function productSlotsLeft(s,n,cols){return Math.max(0,productSlotTotal(s,cols)-n);}
+// 목록 줄의 채움 상태: 상품 구좌는 '상품 2/4', 후기 구좌는 '후기 n개' (빈 곳이 있으면 is-need → 주의 색)
+function fillState(s){
+ if(['grid2','grid3','feat'].includes(s.layout)){
+  if(ftOn(s)){   // 탭 구좌: 모든 탭을 더한 수 (지금 보는 탭의 상품은 s.productIds에 있다)
+   const cur=ftCur(s),per=s.ftabs.map(t=>t===cur?s.productIds:t.productIds||[]),n=per.reduce((a,x)=>a+x.length,0),t=per.reduce((a,x)=>a+productSlotTotal(s,0,x),0);
+   return {text:`상품 ${n}/${t} (탭 ${s.ftabs.length}개)`,need:per.some(x=>!x.length)};
+  }
+  const n=(s.productIds||[]).length,t=productSlotTotal(s);return {text:`상품 ${n}/${t}`,need:n<t};}
+ if(s.layout==='review'){const n=(s.rv?.selected||[]).length;return {text:n?`후기 ${n}개`:'후기 없음',need:!n};}
+ return null;
+}
 function renderList(){ $('section-list').innerHTML=sections.map((s,i)=>{
  const expanded=true, children=iaTreeChildren(s);   // 2026-11-15: 접기 없이 늘 펼침 (plans/27 §9)
- return `<div class="ia-tree-section"><div class="outline-entry" draggable="true" data-drag-id="${E(s.id)}"><button type="button" class="ia-tree-toggle" data-ia-toggle="${E(s.id)}" aria-label="${E(s.name)} 구성 ${expanded?'접기':'펼치기'}" aria-expanded="${expanded}">${AMEditorKit.icon('chevron-right')}</button><button type="button" class="outline-item" data-section="${E(s.id)}" aria-current="${current===s.id&&!cbSelected}"><span>${String(i+1).padStart(2,'0')} · ${E(s.name)}</span><small>${E(LAYOUTS[s.layout][0])}</small></button><div class="outline-entry-actions"><button type="button" data-list-action="up:${E(s.id)}" aria-label="위로" ${i===0?'disabled':''}>${AMEditorKit.icon('arrow-up','am-kit-icon--sm')}</button><button type="button" data-list-action="down:${E(s.id)}" aria-label="아래로" ${i===sections.length-1?'disabled':''}>${AMEditorKit.icon('arrow-down','am-kit-icon--sm')}</button><button type="button" data-list-action="clone:${E(s.id)}" aria-label="복제">${AMEditorKit.icon('copy','am-kit-icon--sm')}</button><button type="button" data-list-action="delete:${E(s.id)}" aria-label="삭제" ${sections.length===1?'disabled':''}>${AMEditorKit.icon('trash','am-kit-icon--sm')}</button></div></div>${expanded?`<div class="ia-tree-children">${children||'<small class="ia-tree-empty">이 구좌에는 아직 별도 요소가 없어요.</small>'}</div>`:''}</div>`
+ return `<div class="ia-tree-section"><div class="outline-entry" draggable="true" data-drag-id="${E(s.id)}"><button type="button" class="ia-tree-toggle" data-ia-toggle="${E(s.id)}" aria-label="${E(s.name)} 구성 ${expanded?'접기':'펼치기'}" aria-expanded="${expanded}">${AMEditorKit.icon('chevron-right')}</button><button type="button" class="outline-item" data-section="${E(s.id)}" aria-current="${current===s.id&&!cbSelected}"><span>${String(i+1).padStart(2,'0')} · ${E(s.name)}</span><small>${E(LAYOUTS[s.layout][0])}${(f=>f?`, <em class="ia-fill${f.need?' is-need':''}">${E(f.text)}</em>`:'')(fillState(s))}</small></button><div class="outline-entry-actions"><button type="button" data-list-action="up:${E(s.id)}" aria-label="위로" ${i===0?'disabled':''}>${AMEditorKit.icon('arrow-up','am-kit-icon--sm')}</button><button type="button" data-list-action="down:${E(s.id)}" aria-label="아래로" ${i===sections.length-1?'disabled':''}>${AMEditorKit.icon('arrow-down','am-kit-icon--sm')}</button><button type="button" data-list-action="clone:${E(s.id)}" aria-label="복제">${AMEditorKit.icon('copy','am-kit-icon--sm')}</button><button type="button" data-list-action="delete:${E(s.id)}" aria-label="삭제" ${sections.length===1?'disabled':''}>${AMEditorKit.icon('trash','am-kit-icon--sm')}</button></div></div>${expanded?`<div class="ia-tree-children">${children||'<small class="ia-tree-empty">이 구좌에는 아직 별도 요소가 없어요.</small>'}</div>`:''}</div>`
  }).join('');}
 
 
@@ -392,7 +407,11 @@ function demoInner(s){
 
  if(['grid2','grid3','feat'].includes(s.layout)){
   const chosen=s.productIds.map(id=>PRODUCTS.find(p=>p.id===id)).filter(Boolean);
-  return `${ftPills(s)}<div class="mock-products am-cols-${[1,2,3,4].includes(Number(s.layoutColumns?.[s.layout]))?Number(s.layoutColumns[s.layout]):PRODUCT_COLUMN_DEFAULTS[s.layout]} am-product-view-${productView(s)} ${s.layout==='feat'?'mock-products--featured':''}">${chosen.map((p,i)=>`<div class="mock-product" data-card-product="${E(p.id)}">${renderProductCardElements(s,p,{masonryIndex:i,nativeCard:true})}</div>`).join('')}</div>`;
+  const cols=[1,2,3,4].includes(Number(s.layoutColumns?.[s.layout]))?Number(s.layoutColumns[s.layout]):PRODUCT_COLUMN_DEFAULTS[s.layout];
+  // 02 구좌 구성에서 정한 칸 수(slotCount)만큼 진열 모양이 보이게: 넣은 상품 카드 + 남은 빈 카드 자리. 탭 구좌는 지금 보는 탭 기준
+  const left=productSlotsLeft(s,chosen.length,cols),slot='<div class="mock-product mock-product--slot" aria-hidden="true"><span class="mock-slot-img"></span><i></i><i></i></div>';
+  if(!chosen.length)return `${ftPills(s)}<div class="mock-products am-cols-${cols} mock-products--slots ${s.layout==='feat'?'mock-products--featured':''}" aria-label="상품 ${left}개 자리">${slot.repeat(left)}</div><p class="mock-slot-note">상품을 넣으면 이 자리에 카드가 들어가요</p>`;
+  return `${ftPills(s)}<div class="mock-products am-cols-${cols} am-product-view-${productView(s)} ${s.layout==='feat'?'mock-products--featured':''}">${chosen.map((p,i)=>`<div class="mock-product" data-card-product="${E(p.id)}">${renderProductCardElements(s,p,{masonryIndex:i,nativeCard:true})}</div>`).join('')}${slot.repeat(left)}</div>`;
  }
  if(s.layout.startsWith('ev-'))return eventPreview(s);
  if(s.layout==='review')return reviewPreview(s);
@@ -431,12 +450,12 @@ function renderPage(){
  if(cbSelected)page.querySelector('[data-cb-node="'+CSS.escape(cbSelected)+'"]')?.classList.add('cb-selected');
  renderCanvasSelection();
 }
-function lineItems(s){return s.lines.map((l,i)=>Rep('lines',i,l.text||'추가 문구',`고객 노출 · ${i+1}번째 줄`,F('lines.'+i+'.text','추가 문구',l.text,{max:120,area:true,rows:2,help:'Enter를 눌러도 한 항목 안에서 줄바꿈됩니다. 위아래 버튼은 항목 순서를 변경합니다.'}),s.lines.length)).join('')+B('+ 추가 문구','data-action="add:lines"','am-ed-button--subtle am-ed-button--sm')}
+function lineItems(s){return s.lines.map((l,i)=>Rep('lines',i,l.text||'추가 문구',`고객에게 보이는 ${i+1}번째 줄`,F('lines.'+i+'.text','추가 문구',l.text,{max:120,area:true,rows:2,help:'줄을 바꿔도 한 항목 안에 있어요. ↑↓로 순서를 바꿔요.'}),s.lines.length)).join('')+B('+ 추가 문구','data-action="add:lines"','am-ed-button--subtle am-ed-button--sm')}
 function ctaChoices(s){return `<div class="am-ed-cta-shapes" role="group" aria-label="CTA 모양 선택">${CTA_STYLES.map(([v,n])=>`<button type="button" class="am-ed-cta-option" data-cta-style="${v}" aria-pressed="${s.ctaStyle===v}"><span class="shape-demo ${v}">${v==='text'?'자세히 보기 →':v==='wide'?'프로모션 확인':'자세히 보기'}</span><small>${n}${(CTA_DEFAULTS[s.layout]||'outline')===v?' · 권장':''}</small></button>`).join('')}</div>`;}
-function ctaDestination(s){let target='';if(s.ctaTargetType==='section')target=`<div class="am-ed-field"><label for="ed-destination" class="am-ed-label">이동할 구좌</label><select id="ed-destination" class="am-ed-input" data-target="section"><option value="">이동할 구좌 선택</option>${sections.filter(x=>x.id!==s.id).map(x=>`<option value="${E(x.id)}" ${s.ctaTarget===x.id?'selected':''}>${E(x.name)}</option>`).join('')}</select></div>`;if(s.ctaTargetType==='product')target=`<div class="am-ed-field"><label for="ed-destination" class="am-ed-label">연결할 상품</label><select id="ed-destination" class="am-ed-input" data-target="product"><option value="">상품 선택</option>${PRODUCTS.map(x=>`<option value="${E(x.id)}" ${s.ctaTarget===x.id?'selected':''}>${E(x.name)} (${E(x.id)})</option>`).join('')}</select></div>`;if(s.ctaTargetType==='url')target=F('ctaTarget','목적지 URL',s.ctaTarget,{max:260,optional:true,help:'기획안 인계용입니다. 미리보기 버튼을 클릭해 이동하지는 않습니다.'});return `<div class="am-ed-destination"><div class="am-ed-label">버튼 목적지 · 선택</div>${Choices('ctaTargetType',[['none','미지정'],['section','다른 구좌'],['product','상품'],['url','외부/내부 URL']],s.ctaTargetType)}${target}${F('ctaTo','기존 연결 대상 메모',s.ctaTo,{max:60,optional:true,help:'기존 사내 필드를 유지합니다. 목적지 유형과 별도로 저장됩니다.'})}</div>`;}
-function copyPanel(s){const hero=s.layout==='hero';return G('고객에게 보이는 글','페이지의 실제 노출 순서에 맞게 편집합니다.',F('name',hero?'메인 카피':'제목',s.name,{max:60,area:true,rows:2,help:'Enter로 줄바꿈하면 중앙 기획안에도 그대로 반영됩니다.'})+F('role','설명',s.role,{max:200,area:true,rows:2,optional:true,help:'제목 아래에 한두 줄로 표시됩니다.'})+`<div class="am-ed-field"><span class="am-ed-label">추가 문구</span>${lineItems(s)}</div>`)+G('CTA 버튼','모든 구좌에서 표시 여부를 동일한 렌더링 규칙으로 제어합니다.',T('ctaOn','CTA 표시',s.ctaOn,'선택 구좌의 버튼을 중앙에서 확인할 수 있습니다.')+(s.ctaOn?F('cta','버튼 문구',s.cta,{max:30,help:'텍스트가 비어 있어도 미리보기에는 기본 문구가 표시됩니다.'})+`<div class="am-ed-field"><span class="am-ed-label">버튼 모양 · 미리보기로 선택</span>${ctaChoices(s)}</div>`+ctaDestination(s):''))+G('기획용 정보','고객 화면에는 노출되지 않습니다.',(hero?'':F('scope','담는 것',s.scope,{max:40,optional:true,help:'예: 선물 세트, 티백'}))+(LAYOUTS[s.layout][1]==='상품'?F('cat','엑셀 카테고리명',s.cat,{max:40,optional:true,help:'PROMO_WORK와의 연결 방식은 사내 담당자 확인 필요'}):''));}
+function ctaDestination(s){let target='';if(s.ctaTargetType==='section')target=`<div class="am-ed-field"><label for="ed-destination" class="am-ed-label">이동할 구좌</label><select id="ed-destination" class="am-ed-input" data-target="section"><option value="">이동할 구좌 선택</option>${sections.filter(x=>x.id!==s.id).map(x=>`<option value="${E(x.id)}" ${s.ctaTarget===x.id?'selected':''}>${E(x.name)}</option>`).join('')}</select></div>`;if(s.ctaTargetType==='product')target=`<div class="am-ed-field"><label for="ed-destination" class="am-ed-label">연결할 상품</label><select id="ed-destination" class="am-ed-input" data-target="product"><option value="">상품 선택</option>${PRODUCTS.map(x=>`<option value="${E(x.id)}" ${s.ctaTarget===x.id?'selected':''}>${E(x.name)} (${E(x.id)})</option>`).join('')}</select></div>`;if(s.ctaTargetType==='url')target=F('ctaTarget','갈 주소',s.ctaTarget,{max:260,optional:true,help:'디자이너에게 넘길 주소예요. 미리보기에서 눌러도 이동하지 않아요.'});return `<div class="am-ed-destination"><div class="am-ed-label">눌렀을 때 갈 곳 (선택)</div>${Choices('ctaTargetType',[['none','미지정'],['section','다른 구좌'],['product','상품'],['url','링크 주소']],s.ctaTargetType)}${target}${F('ctaTo','갈 곳 메모',s.ctaTo,{max:60,optional:true,help:'위에서 고르기 어려우면 여기에 적어요. 예) 쿠폰함, 브랜드관'})}</div>`;}
+function copyPanel(s){const hero=s.layout==='hero';return G('고객에게 보이는 글','화면에 나오는 순서대로예요.',F('name',hero?'메인 카피':'제목',s.name,{max:60,area:true,rows:2,help:'줄을 바꾸면(Enter) 화면에서도 그대로 줄이 바뀌어요.'})+F('role','설명',s.role,{max:200,area:true,rows:2,optional:true,help:'제목 아래 한두 줄로 나와요.'})+`<div class="am-ed-field"><span class="am-ed-label">추가 문구</span>${lineItems(s)}</div>`)+G('버튼','고객이 눌러 다른 화면으로 가는 버튼(CTA)이에요.',T('ctaOn','이 구좌에 버튼 넣기',s.ctaOn,s.ctaOn?'켜면 미리보기에 버튼이 보여요.':'버튼 없이 둬요. 언제든 다시 켤 수 있어요.')+(s.ctaOn?F('cta','버튼 문구',s.cta,{max:30,help:'비워 두면 미리보기에는 기본 문구가 보여요.'})+`<div class="am-ed-field"><span class="am-ed-label">버튼 모양</span>${ctaChoices(s)}</div>`+ctaDestination(s):''))+G('기획용 정보','고객 화면에는 나오지 않아요.',(hero?'':F('scope','담는 것',s.scope,{max:40,optional:true,help:'예: 선물 세트, 티백'}))+(LAYOUTS[s.layout][1]==='상품'?F('cat','할인 엑셀의 구좌(Zone) 이름',s.cat,{max:40,optional:true,help:'행사 엑셀에서 이 구좌 상품을 묶는 이름이에요. 예) 2만원대'}):''));}
 
-function itemPanel(s){if(s.layout==='custom')return customPanel(s);const content=s.items.map((it,i)=>Rep('items',i,it.label||'새 항목',LAYOUTS[s.layout][0]+' · 반복 콘텐츠',F('items.'+i+'.label','항목 제목',it.label,{max:80})+F('items.'+i+'.text','설명 / 제공 조건',it.text,{max:180,area:true,rows:2})+FLOW.itemFields(s,i),s.items.length)).join('');return columnPicker(s)+G('구좌 구성 요소','원본 info 구좌에는 없던 신규 편집 모델의 예시입니다. 저장 스키마 검증 전에는 프로덕션 기능이 아닙니다.',content+B('+ 구성 요소 추가','data-action="add:items"','am-ed-button--subtle'))+G('배치와 간격','기존 v0.6의 정렬·간격 변경을 복원한 공통 실험 옵션입니다.',`<div class="am-ed-field"><span class="am-ed-label">정렬</span>${Choices('align',[['left','왼쪽'],['center','가운데'],['right','오른쪽']],s.align||'left')}</div><div class="am-ed-field"><span class="am-ed-label">항목 간격</span>${Choices('gap',[['compact','좁게'],['normal','기본'],['relaxed','넉넉하게']],s.gap||'normal')}</div><div class="am-ed-note am-ed-note--warning">실제 저장 스키마 확정 전까지는 실험용 속성입니다. 구좌별 의미 필드 분리가 필요합니다.</div>`)+FLOW.infoPanel(s)}
+function itemPanel(s){if(s.layout==='custom')return customPanel(s);const content=s.items.map((it,i)=>Rep('items',i,it.label||'새 항목',LAYOUTS[s.layout][0]+' 항목',F('items.'+i+'.label','항목 제목',it.label,{max:80})+F('items.'+i+'.text','설명과 제공 조건',it.text,{max:180,area:true,rows:2})+FLOW.itemFields(s,i),s.items.length)).join('');return columnPicker(s)+G('구좌 구성 요소','항목을 더하거나 순서를 바꿔요. 미리보기에 바로 보여요.',content+B('+ 구성 요소 추가','data-action="add:items"','am-ed-button--subtle'))+G('배치와 간격','글 정렬과 항목 사이 간격이에요.',`<div class="am-ed-field"><span class="am-ed-label">정렬</span>${Choices('align',[['left','왼쪽'],['center','가운데'],['right','오른쪽']],s.align||'left')}</div><div class="am-ed-field"><span class="am-ed-label">항목 간격</span>${Choices('gap',[['compact','좁게'],['normal','기본'],['relaxed','넉넉하게']],s.gap||'normal')}</div>`)+FLOW.infoPanel(s)}
 // Per-product visibility overrides keep native cards independent while the
 // original shared 16-element schema remains the section's default.
 function nativeSelectedProductId(s){
@@ -465,29 +484,84 @@ function shapePanel(s){
   const head=`<div class="am-ed-element-row ${s.card.on[k]?'':'off'}"><label><input type="checkbox" data-element="${E(k)}" ${s.card.on[k]?'checked':''} ${disabled?'disabled':''}><span class="name">${E(title)}</span></label><span class="am-ed-tag am-ed-tag--source">${E(disabled?'연결 예정':source)}</span>${UI.icon('↑','위로 이동','element:'+i+':-1',i===0||k==='label')}${UI.icon('↓','아래로 이동','element:'+i+':1',i===s.card.order.length-1||k==='label')}</div>`;
   let detail='';
   if(s.card.on[k]&&['label','tag','copy','btn'].includes(k))detail=`<div class="am-ed-element-detail">${F('card.def.'+k,'구좌 공통 '+title,s.card.def[k],{max:k==='copy'?60:30,area:k==='copy',rows:2,help:'상품 카드에 바로 반영됩니다.'})}</div>`;
-  if(s.card.on[k]&&k==='label')detail+=`<div class="am-ed-element-detail"><span class="am-ed-label">모서리 라벨 위치</span>${Choices('card.def.labelPosition',LABEL_POSITIONS,s.card.def.labelPosition||'top-left')}<div class="am-ed-note">상품 이미지 위에 겹쳐지는 배지입니다. 알약 문구와 별도 요소이며 이미지가 없으면 위치를 적용할 수 없습니다.</div></div>`;
-  if(s.card.on[k]&&k==='pill')detail=`<div class="am-ed-element-detail"><div class="am-ed-field"><span class="am-ed-label">알약 표현 유형</span>${Choices('card.def.pill',[['직접 쓰기','직접 입력'],['오늘만','오늘만'],['남은 기간','남은 기간'],['가격 오름 예고','가격 오름 예고']],s.card.def.pill)}</div>${s.card.def.pill==='직접 쓰기'?F('card.def.pillText','알약에 표시할 문구',s.card.def.pillText,{max:30,help:'고객에게 보이는 짧은 문구'}):`<div class="am-ed-note">${s.card.def.pill==='남은 기간'?'실제 종료일 연결 전에는 기간을 임의 계산하지 않습니다.':s.card.def.pill==='가격 오름 예고'?'행사 후 판매가가 확인되어야 실제 안내 문구로 사용할 수 있습니다.':'행사 기간 설정 여부를 사내에서 확인해야 합니다.'}</div>`}</div>`;
-  if(s.card.on[k]&&k==='appeal')detail='<div class="am-ed-element-detail am-ed-note">소구문구는 상품별 값입니다. 「상품」 탭의 상품별 소구문구에서 입력하세요.</div>';
-  if(disabled)detail='<div class="am-ed-element-detail am-ed-note">실제 AI 후기 요약 연결 전까지 활성화할 수 없습니다.</div>';
+  if(s.card.on[k]&&k==='label')detail+=`<div class="am-ed-element-detail"><span class="am-ed-label">모서리 라벨 위치</span>${Choices('card.def.labelPosition',LABEL_POSITIONS,s.card.def.labelPosition||'top-left')}<div class="am-ed-note">상품 사진 위에 얹는 배지예요. 사진을 끄면 위치를 고를 수 없어요.</div></div>`;
+  if(s.card.on[k]&&k==='pill')detail=`<div class="am-ed-element-detail"><div class="am-ed-field"><span class="am-ed-label">알약 표현 유형</span>${Choices('card.def.pill',[['직접 쓰기','직접 입력'],['오늘만','오늘만'],['남은 기간','남은 기간'],['가격 오름 예고','가격 오름 예고']],s.card.def.pill)}</div>${s.card.def.pill==='직접 쓰기'?F('card.def.pillText','알약에 표시할 문구',s.card.def.pillText,{max:30,help:'고객에게 보이는 짧은 문구'}):`<div class="am-ed-note">${s.card.def.pill==='남은 기간'?'행사 종료일이 정해지면 남은 기간이 채워져요.':s.card.def.pill==='가격 오름 예고'?'행사 뒤 가격이 정해져야 쓸 수 있어요.':'행사 기간이 정해졌는지 확인해 주세요.'}</div>`}</div>`;
+  if(s.card.on[k]&&k==='appeal')detail='<div class="am-ed-element-detail am-ed-note">소구문구는 상품마다 달라요. [내용]의 상품별 소구문구에서 적어 주세요.</div>';
+  if(disabled)detail='<div class="am-ed-element-detail am-ed-note">AI 후기 요약은 아직 준비 중이에요.</div>';
   return head+detail;
  }).join('');
- return nativeCardVisibilityPanel(s)+productViewPicker(s)+columnPicker(s)+G('카드 표시 요소 · 16개','프리셋 없이 각 요소의 표시 여부·순서·문구를 직접 편집합니다. 변경 사항은 중앙 모든 상품 카드에 즉시 반영됩니다.',rows)+G('데이터 표시 기준',CATALOG_NOTE?'상품·가격·후기는 이 기획안의 상품·할인 값이에요.':'예시 화면이라 상품·가격·후기는 가상 데이터예요.',`<div class="am-ed-note">상품명·정가·할인가·할인율·별점·후기는 자동으로 채워져요. 가격을 바꾸려면 상품·할인 단계에서 고쳐 주세요.</div>`);
+ return nativeCardVisibilityPanel(s)+productViewPicker(s)+columnPicker(s)+G('카드에 보일 것','카드에 무엇을 어떤 순서로 보일지 정해요. 이 구좌의 모든 상품 카드에 같이 적용돼요.',rows)+G('데이터 표시 기준',CATALOG_NOTE?'상품, 가격, 후기는 이 기획안의 상품·할인 값이에요.':'예시 화면이라 상품, 가격, 후기는 가상 데이터예요.',`<div class="am-ed-note">상품명, 정가, 할인가, 할인율, 별점, 후기는 자동으로 채워져요. 가격을 바꾸려면 상품·할인 단계에서 고쳐 주세요.</div>`);
+}
+// ── 전체 상품에서 찾아 넣기 (2026-11-16): 앱(host)이 setProductFinder로 찾기·넣기를 준다. 넣은 상품은 이 기획안 상품이 되고 이 구좌(탭 구좌면 지금 탭)에 들어간다
+let PRODUCT_FINDER=null,PROD_Q='',PROD_HITS=[],PROD_BUSY=null,PROD_T=0;
+function prodHitsHtml(s){
+ if(!PROD_Q.trim())return '<p class="am-ed-note">상품 이름이나 SEQ로 찾아요. 넣은 상품은 상품·할인의 후보 상품에도 들어가요.</p>';
+ if(PROD_HITS===null)return '<p class="ia-data-wait" role="status">찾는 중이에요.</p>';
+ if(PROD_HITS==='err')return '<p class="ia-data-wait" role="status">상품을 찾지 못했어요. 잠시 뒤 다시 찾아 주세요.</p>';
+ if(!PROD_HITS.length)return `<p class="ia-data-wait" role="status">‘${E(PROD_Q.trim())}’ 상품이 없어요.</p>`;
+ return PROD_HITS.map(p=>{const here=s.productIds.includes(p.id),busy=PROD_BUSY===p.id;
+  return `<div class="en-prod-hit"><div class="en-prod-txt"><b>${E(p.name)}</b><small>${E(p.id)}, 정가 ${MONEY(p.price)}${p.active?'':', 최근 판매 없음'}${p.inPlan&&!here?', 이 기획안에 있음':''}</small>${discHint(p.info)}</div>${here?'<span class="en-prod-in">넣음</span>':`<div class="en-prod-act"><label class="en-rate"><input type="number" inputmode="numeric" min="0" max="80" step="1" data-prod-rate="${E(p.id)}" placeholder="할인" aria-label="${E(p.name)} 이번 할인율 (비우면 후보로)"><span>%</span></label><button type="button" class="am-ed-button am-ed-button--subtle am-ed-button--sm" data-prod-add="${E(p.id)}" ${busy?'disabled':''}>${busy?'넣는 중':'넣기'}</button></div>`}</div>`;}).join('')+'<p class="am-ed-note">할인율을 비우고 넣으면 상품·할인의 후보 상품으로, 적고 넣으면 그 할인율로 할인 상품에 들어가요.</p>';
+}
+// 지난 행사·기준 안 최대 (서버 판정, 원가는 오지 않음)
+function discHint(i){if(!i)return '';const bits=[];if(i.last&&i.last.rate!=null)bits.push(`지난 행사 ${i.last.promo||''} ${Math.round(i.last.rate*100)}%`.replace('  ',' '));if(i.max_rate!=null)bits.push(`기준 안 최대 ${i.max_rate}%`);return bits.length?`<small class="en-disc-hint">${E(bits.join(', '))}</small>`:'';}
+let DISC_INFO={},DISC_WAIT='';
+function discountPanel(s){
+ if(!PRODUCT_FINDER||!PRODUCT_FINDER.setRate||!s.productIds.length)return '';
+ const ids=s.productIds.filter(id=>PRODUCTS.some(p=>p.id===id)),need=ids.filter(id=>!(id in DISC_INFO)),key=need.join(',');
+ if(need.length&&DISC_WAIT!==key){DISC_WAIT=key;Promise.resolve(PRODUCT_FINDER.info(need)).then(m=>{need.forEach(id=>{DISC_INFO[id]=(m&&m[id])||null;});DISC_WAIT='';if(section()?.id===s.id&&tab==='products'){const f=document.activeElement?.id;renderPanel();if(f)document.getElementById(f)?.focus();}},()=>{DISC_WAIT='';});}
+ const rows=ids.map(id=>{const p=PRODUCTS.find(x=>x.id===id),i=DISC_INFO[id],r=Math.round((p.rate||0)*100),cls=i?` is-${i.verdict}`:'';
+  return `<div class="en-disc-row"><div class="en-prod-txt"><b>${E(p.name)}</b><small>정가 ${MONEY(p.listPrice)}${r?`, ${r}% 할인 ${MONEY(p.firstPrice)}`:', 할인 없음'}</small>${discHint(i)}</div><div class="en-prod-act"><label class="en-rate"><input type="number" inputmode="numeric" min="0" max="80" step="1" value="${r||''}" data-prod-setrate="${E(id)}" placeholder="0" aria-label="${E(p.name)} 이번 할인율"><span>%</span></label>${i&&i.verdict!=='none'?`<span class="en-verdict${cls}">${E(i.label)}</span>`:''}</div></div>`;}).join('');
+ return G('이번 할인',`이 기획안에만 저장돼요. 상품·할인의 할인 상품과 같은 값이라 어느 쪽에서 고쳐도 같아요. 판정은 1단 할인 기준이에요.`,rows||'<div class="am-ed-note">이 기획안 상품 정보를 불러오는 중이에요.</div>');
+}
+async function setFoundRate(id,raw){
+ const v=String(raw).trim();if(v!==''&&!(Number(v)>=0&&Number(v)<=80)){toast('할인율은 0에서 80 사이로 적어 주세요');return;}
+ const rate=v===''?0:Math.round(Number(v))/100,p=PRODUCTS.find(x=>x.id===id);
+ if(p&&Math.round((p.rate||0)*100)===Math.round(rate*100))return;
+ try{const info=await PRODUCT_FINDER.setRate(id,rate);DISC_INFO[id]=info;renderPanel();renderPage();toast(rate?`${Math.round(rate*100)}%로 정했어요. 상품·할인에도 같이 들어가요.`:'할인 없이 두었어요.');}
+ catch(e){toast(`할인율을 저장하지 못했어요. ${e&&e.message||''}`.trim());}
+}
+function productFinder(s){
+ if(!PRODUCT_FINDER)return '';
+ const where=ftOn(s)?`'${ftCur(s).label||'탭'}' 탭에`:'이 구좌에';
+ return G('전체 상품에서 찾기',`이 기획안에 없는 상품도 찾아 ${where} 바로 넣을 수 있어요.`,`<input type="search" class="am-ed-input" id="prodQ" value="${E(PROD_Q)}" placeholder="예) 웨딩 티 컬렉션, 1461" aria-label="전체 상품에서 찾기" autocomplete="off"><div class="en-prod-hits" id="prodHits" aria-live="polite">${prodHitsHtml(s)}</div>`);
+}
+function paintProdHits(){const el=document.getElementById('prodHits');if(el)el.innerHTML=prodHitsHtml(section());}
+function searchProducts(q){
+ PROD_Q=q;clearTimeout(PROD_T);
+ if(!q.trim()){PROD_HITS=[];paintProdHits();return;}
+ PROD_HITS=null;paintProdHits();
+ PROD_T=setTimeout(()=>{const ask=q;Promise.resolve(PRODUCT_FINDER.search(ask)).then(list=>{if(ask===PROD_Q){PROD_HITS=Array.isArray(list)?list:[];paintProdHits();}},()=>{if(ask===PROD_Q){PROD_HITS='err';paintProdHits();}});},200);
+}
+async function addFoundProduct(id){
+ const s=section();if(!s||PROD_BUSY)return;
+ const box=document.querySelector(`[data-prod-rate="${CSS.escape(id)}"]`),raw=box?String(box.value).trim():'';
+ if(raw!==''&&!(Number(raw)>=0&&Number(raw)<=80)){toast('할인율은 0에서 80 사이로 적어 주세요');box?.focus();return;}
+ PROD_BUSY=id;paintProdHits();
+ try{await PRODUCT_FINDER.add(id,raw===''?null:Math.round(Number(raw))/100);}
+ catch(e){PROD_BUSY=null;paintProdHits();toast(`넣지 못했어요. ${e&&e.message||''}`.trim());return;}
+ PROD_BUSY=null;
+ const t=section();if(!t||t.id!==s.id)return;   // 그사이 다른 구좌로 옮겼으면 넣지 않는다
+ if(!PRODUCTS.some(p=>p.id===id)){toast('상품 정보를 불러오지 못했어요');paintProdHits();return;}
+ if(!t.productIds.includes(id)){const before=capture();t.productIds.push(id);mark(before);}
+ PROD_HITS=(PROD_HITS||[]).map(p=>p.id===id?{...p,inPlan:true}:p);
+ renderAll();toast(ftOn(t)?`'${ftCur(t).label||'탭'}' 탭에 넣었어요. 할인은 상품·할인에서 정해요.`:'이 구좌에 넣었어요. 할인은 상품·할인에서 정해요.');
+ document.getElementById('prodQ')?.focus();
 }
 function productPanel(s){
  const content=PRODUCTS.map(p=>`<label class="am-ed-product-row"><div class="thumb">IMG</div><div class="txt"><b>${E(p.name)}</b><small>${E(p.id)} · ${E(p.priceNote||'최종가')} ${MONEY(priced(p).sale)}</small></div><input type="checkbox" data-product="${E(p.id)}" ${s.productIds.includes(p.id)?'checked':''}></label>`).join('');
  const appeals=s.productIds.map(id=>PRODUCTS.find(p=>p.id===id)).filter(Boolean).map(p=>F('appeals.'+p.id,p.name+' · 상품별 소구문구',s.appeals[p.id]||'',{max:80,area:true,rows:2,help:'한 상품에 하나의 소구문구. 카드 요소를 켜면 미리보기에 반영됩니다.'})).join('');
  const where=ftOn(s)?` '${ftCur(s).label||'탭'}' 탭에 담겨요.`:' 이 구좌에 보여요.';
- return ftabPanel(s)+nativeCardVisibilityPanel(s)+G('상품 선택',(CATALOG_NOTE?'이 기획안에 담은 상품이에요. 체크하면':'예시 상품이에요. 체크하면')+where,content)+G('상품별 소구문구','카드 모양 탭의 소구문구 표시 요소와 연결됩니다.',appeals||'<div class="am-ed-note">상품을 먼저 선택해주세요.</div>')+G('다른 곳에서 하는 것','할인율·판정 근거는 상품·할인 단계에서 고쳐요. 카드별 라벨은 아직 준비 중이에요.','');
+ return productFinder(s)+ftabPanel(s)+nativeCardVisibilityPanel(s)+G('상품 선택',(CATALOG_NOTE?'이 기획안에 담은 상품이에요. 체크하면':'예시 상품이에요. 체크하면')+where,content||(PRODUCT_FINDER?'<div class="am-ed-note">이 기획안에 담은 상품이 아직 없어요. 위에서 찾아 넣거나 상품·할인에서 담아 주세요.</div>':''))+discountPanel(s)+G('상품별 소구문구','상품마다 카드에 넣을 한 줄 문구예요. [배치·표시]에서 소구문구를 켜야 보여요.',appeals||'<div class="am-ed-note">상품을 먼저 넣어 주세요.</div>')+G('다른 곳에서 하는 것','할인율과 판정 근거는 상품·할인 단계에서 고쳐요. 카드별 라벨은 아직 준비 중이에요.','');
 }
 // 탭(필터) 구좌 묶음 (plans/28): 탭 이름·Zone은 data-bind(ftabs.i.label/zone)라 입력·실행 취소가 다른 칸과 같다
 function ftabPanel(s){
  if(!FTAB_LAYOUTS.includes(s.layout))return '';
- const help='가격대·취향처럼 상품을 탭으로 나눠 보여 줘요. 탭 하나가 PROMO_WORK 칸(Zone) 하나예요.';
+ const help='가격대나 취향처럼 상품을 탭으로 나눠 보여 줘요. 탭 하나가 할인 엑셀의 구좌(Zone) 하나예요.';
  if(!ftOn(s))return G('탭',help,B('탭으로 나누기','data-ftab-op="split"','am-ed-button--sm'));
  const cur=ftCur(s),n=s.ftabs.length;
  const ic=(sym,label,attr,off)=>`<button type="button" class="am-ed-icon-btn" ${attr} title="${E(label)}" aria-label="${E(label)}" ${off?'disabled':''}>${window.AMEditorKit?.icon(sym,'am-kit-icon--sm')||E(sym)}</button>`;
  const rows=s.ftabs.map((t,i)=>{const on=t===cur,name=t.label||'이름 없는 탭',id=`data-ftab-id="${E(t.id)}"`;
-  return `<div class="am-ed-repeat am-ftab-row${on?' is-current':''}"><div class="am-ed-repeat__header"><span class="am-ed-tag">${i+1}</span><div class="am-ed-repeat__main"><strong>${E(name)}</strong><small>상품 ${(on?s.productIds:t.productIds).length}개${on?' · 지금 보는 탭':''}</small></div>
+  return `<div class="am-ed-repeat am-ftab-row${on?' is-current':''}"><div class="am-ed-repeat__header"><span class="am-ed-tag">${i+1}</span><div class="am-ed-repeat__main"><strong>${E(name)}</strong><small>상품 ${(on?s.productIds:t.productIds).length}개${on?', 지금 보는 탭':''}</small></div>
    ${on?'':B('보기',`data-ftab-op="view" ${id} aria-label="${E(name)} 탭 상품 보기"`,'am-ed-button--subtle am-ed-button--sm')}
    ${ic('arrow-up',name+' 탭 위로',`data-ftab-op="up" ${id}`,i===0)}${ic('arrow-down',name+' 탭 아래로',`data-ftab-op="down" ${id}`,i===n-1)}${ic('trash',n<=FTAB_MIN?'탭은 2개 이상이어야 해요':name+' 탭 지우기',`data-ftab-op="del" ${id}`,n<=FTAB_MIN)}</div>
    <div class="am-ed-repeat__body">${F(`ftabs.${i}.label`,'탭 이름',t.label,{max:40})}${F(`ftabs.${i}.zone`,'Zone (PROMO_WORK 카테고리명)',t.zone,{max:40,optional:true,help:'할인 행의 카테고리명과 같게 적어요'})}</div></div>`;}).join('');
@@ -510,20 +584,91 @@ function eventPanel(s){
   custom=F('ev.ui.couponValue','쿠폰 핵심 혜택',ui.couponValue,{max:70,help:'금액·할인율 등 확정된 문구만 기재하세요.'})+F('ev.ui.couponCondition','쿠폰 사용·발급 조건',ui.couponCondition,{max:130,area:true,rows:2});
  }
  if(s.layout!=='ev-quiz')custom += FLOW.otherPanel(s);
- return G('유형별 화면 콘텐츠','현재 선택한 이벤트 구좌의 실제 와이어프레임에 반영됩니다. '+LAYOUTS[s.layout][0]+' 전용 항목입니다.',custom||'<div class="am-ed-note">추가 입력이 필요하지 않습니다.</div>')
-  +G('공통 운영 조건','기존 사내 eventTab()의 운영 항목을 유지합니다.',F('ev.how','참여 방법',e.how,{max:400,area:true,rows:2})+`<div class="am-ed-field"><div class="am-ed-label">보상 유형</div>${Choices('ev.reward',[['포인트','포인트'],['쿠폰','쿠폰'],['경품','경품'],['없음','없음']],e.reward)}</div>`+F('ev.rewardText','보상 내용',e.rewardText,{max:160,optional:true})+`<div class="am-ed-field"><div class="am-ed-label">당첨 방식</div>${Choices('ev.pick',[['선착순','선착순'],['추첨','추첨'],['참여자 전원','전원']],e.pick)}</div>`+F('ev.count','인원',e.count,{max:40,optional:true})+F('ev.when','기간·시간',e.when,{max:120})+T('ev.login','로그인 필요',e.login,'운영 조건 확인 후 확정')+F('ev.notice','유의사항',e.notice,{max:1000,area:true,rows:4,optional:true,help:'법무·운영 담당 검토 필요'}))
-  +G('디자인 및 구현 경계','이벤트 UI는 디자이너용 시안입니다.',`<div class="am-ed-note am-ed-note--warning">퀴즈 결과 계산, 공유 연동, 실제 사진 업로드, 출석 저장, 추첨 확률, 쿠폰 발급은 이 Lab에서 실행되지 않습니다. 운영 데이터 확정과 실서비스 개발이 별도로 필요합니다.</div>`);
+ return G('이벤트 화면 내용','적으면 미리보기에 바로 보여요.'+LAYOUTS[s.layout][0]+' 전용 항목입니다.',custom||'<div class="am-ed-note">더 적을 것이 없어요.</div>')
+  +G('운영 조건','참여 방법, 경품, 기간처럼 이벤트마다 정해야 하는 것이에요.',F('ev.how','참여 방법',e.how,{max:400,area:true,rows:2})+`<div class="am-ed-field"><div class="am-ed-label">보상 유형</div>${Choices('ev.reward',[['포인트','포인트'],['쿠폰','쿠폰'],['경품','경품'],['없음','없음']],e.reward)}</div>`+F('ev.rewardText','보상 내용',e.rewardText,{max:160,optional:true})+`<div class="am-ed-field"><div class="am-ed-label">당첨 방식</div>${Choices('ev.pick',[['선착순','선착순'],['추첨','추첨'],['참여자 전원','전원']],e.pick)}</div>`+F('ev.count','인원',e.count,{max:40,optional:true})+F('ev.when','기간과 시간',e.when,{max:120})+T('ev.login','로그인 필요',e.login,'운영 조건 확인 후 확정')+F('ev.notice','유의사항',e.notice,{max:1000,area:true,rows:4,optional:true,help:'법무와 운영 검토 필요'}))
+  +G('개발이 따로 필요한 것','여기 그린 이벤트 화면은 디자인 시안이에요.',`<div class="am-ed-note am-ed-note--warning">퀴즈 결과 계산, 공유, 사진 올리기, 출석, 추첨, 쿠폰 발급은 실제 페이지에서 따로 개발해야 해요. 여기서는 화면만 미리 봐요.</div>`);
 }
 function reviewPanel(s){
  const rv=s.rv,filtered=rv.productId==='all'?REVIEWS:REVIEWS.filter(r=>r.productId===rv.productId),selected=rv.order.filter(id=>rv.selected.includes(id));
  const productSelect=`<div class="am-ed-field"><label class="am-ed-label" for="rv-product">후기를 가져올 상품</label><select class="am-ed-input" id="rv-product" data-review-product><option value="all" ${rv.productId==='all'?'selected':''}>모든 상품</option>${PRODUCTS.map(p=>`<option value="${E(p.id)}" ${rv.productId===p.id?'selected':''}>${E(p.name)} (${E(p.id)})</option>`).join('')}</select><div class="am-ed-field-meta"><span class="am-ed-support">상품 SEQ로 연결해요.${CATALOG_NOTE?'':' 예시 상품 목록이에요.'}</span></div></div>`;
  const layoutChoices=`<div class="am-ed-review-layouts">${REVIEW_LAYOUTS.map(([id,label])=>`<button type="button" class="am-ed-review-layout-option" data-review-layout="${id}" aria-pressed="${rv.layout===id}"><span class="review-layout-visual ${id==='cards'?'as-cards':id==='text'?'as-text':id==='feature-top'?'as-top':''}">${id==='text'?'<em></em><em></em><em></em>':id==='feature-top'?'<i></i><em></em>':'<i></i><em></em>'}</span><b>${label}</b></button>`).join('')}</div>`;
  const reviews=filtered.map(r=>{const pos=selected.indexOf(r.id);const selectedIndex=pos>=0;return `<div class="am-ed-review-row"><label class="am-ed-inline"><input type="checkbox" data-reviewpick="${E(r.id)}" ${selectedIndex?'checked':''}><span><strong>${E(r.title)}</strong><small>${E(PRODUCT_FOR_REVIEW(r.productId)?.name||r.productId)} · ${E(r.productId)} · ${E(r.sourceLabel||(r.source==='demo'?'가상 후기':'로컬 CSV'))}</small></span></label><p>${E(r.text)}</p>${selectedIndex?`<div class="am-ed-review-actions"><button type="button" data-review-step="${E(r.id)}:-1" ${pos===0?'disabled':''} aria-label="후기 위로">↑</button><button type="button" data-review-step="${E(r.id)}:1" ${pos===selected.length-1?'disabled':''} aria-label="후기 아래로">↓</button></div>${F('rv.titles.'+r.id,'별도 한 줄 제목',rv.titles[r.id]||'',{max:40,optional:true,help:'본문 원문은 수정하지 않습니다.'})}`:''}</div>`}).join('');
- return G('후기 데이터 불러오기','상품을 먼저 선택하고, 그 상품의 후기 중 노출할 항목을 고르세요.',productSelect+`<div class="am-ed-review-source"><strong>현재 소스: ${CATALOG_NOTE?E(CATALOG_NOTE):`가상 후기 ${REVIEWS.filter(r=>r.source==='demo').length}건 · 로컬 후기 ${REVIEWS.filter(r=>r.source==='csv').length}건`}</strong><span>${CATALOG_NOTE?'후기 원문 전체가 아니라 앱이 제공하는 상품별 요약 발췌입니다.':'예시 화면이에요. 불러온 CSV는 이 화면에서만 쓰고 저장하지 않아요.'}</span><label class="am-ed-label" for="reviewsCsv">후기 CSV 불러오기 (선택)</label><input class="am-ed-file-input" type="file" id="reviewsCsv" accept=".csv,text/csv"><small>CSV 헤더: seq, title, text, rating / UTF-8. 원문은 수정하지 않습니다.</small></div>`)+G('후기 배치와 표시','상품별 묶음과 시각적 배치는 독립된 설정입니다.',`<div class="am-ed-field"><span class="am-ed-label">후기 묶음</span>${Choices('rv.shape',[['per','상품별로 묶기'],['mix','선택 순서대로']],rv.shape)}</div><div class="am-ed-field"><span class="am-ed-label">배치 구조 · 시각적 선택</span>${layoutChoices}</div>${['img','name','price'].map(k=>T('rv.show.'+k,{img:'상품 이미지',name:'상품명',price:'가격'}[k],rv.show[k])).join('')}${rv.layout==='text'?'<div class="am-ed-note">텍스트형에서는 상품 이미지를 표시하지 않습니다. 다른 배치로 돌아가면 위 이미지 설정이 다시 적용됩니다.</div>':''}`)+columnPicker(s)+G('후기 고르기·순서 변경',`해당 상품과 연결된 후기 ${filtered.length}건. 선택한 후기만 결과물에 표시됩니다.`,(reviews||'<div class="am-ed-note">선택한 상품의 후기가 아직 없습니다.</div>')+`<div class="am-ed-note">후기 본문·별점은 원천 데이터를 그대로 표시합니다. 상업적 이용 승인 여부는 사내 검수 대상입니다.</div>`);
+ return G('후기 불러오기','상품을 고르고, 그 상품 후기 중 보여 줄 것을 골라요.',productSelect+`<div class="am-ed-review-source"><strong>현재 소스: ${CATALOG_NOTE?E(CATALOG_NOTE):`가상 후기 ${REVIEWS.filter(r=>r.source==='demo').length}건, 불러온 후기 ${REVIEWS.filter(r=>r.source==='csv').length}건`}</strong><span>${CATALOG_NOTE?'후기 전문이 아니라 상품별로 골라 둔 일부예요.':'예시 화면이에요. 불러온 CSV는 이 화면에서만 쓰고 저장하지 않아요.'}</span><label class="am-ed-label" for="reviewsCsv">후기 CSV 불러오기 (선택)</label><input class="am-ed-file-input" type="file" id="reviewsCsv" accept=".csv,text/csv"><small>CSV 첫 줄: seq, title, text, rating (UTF-8)</small></div>`)+G('후기 배치와 표시','후기를 어떤 모양으로 보여 줄지 정해요.',`<div class="am-ed-field"><span class="am-ed-label">후기 묶음</span>${Choices('rv.shape',[['per','상품별로 묶기'],['mix','선택 순서대로']],rv.shape)}</div><div class="am-ed-field"><span class="am-ed-label">배치 모양</span>${layoutChoices}</div>${['img','name','price'].map(k=>T('rv.show.'+k,{img:'상품 이미지',name:'상품명',price:'가격'}[k],rv.show[k])).join('')}${rv.layout==='text'?'<div class="am-ed-note">글만 보이는 배치라 상품 사진은 나오지 않아요. 다른 배치로 바꾸면 다시 나와요.</div>':''}`)+columnPicker(s)+G('후기 고르고 순서 정하기',`이 상품 후기 ${filtered.length}건이에요. 고른 후기만 화면에 나와요.`,(reviews||'<div class="am-ed-note">고른 상품의 후기가 아직 없어요.</div>')+`<div class="am-ed-note">후기는 고객이 쓴 그대로 나와요. 페이지에 쓰기 전에 사용 승인을 확인해 주세요.</div>`);
 }
 
-function refsPanel(s){return G('구좌 레퍼런스','참고할 레퍼런스를 붙이고 메모를 남겨요.',s.refs.map((r,i)=>`<div class="am-ed-ref"><div class="thumb">REF</div><div class="am-ed-stack"><div><strong>${E(r.name)}</strong><small>${E(r.from)}</small></div>${T('refs.'+i+'.attached','참고로 붙이기',r.attached)}${r.attached?F('refs.'+i+'.note','참고할 것',r.note,{max:120,optional:true,help:'구도, 레이아웃, 이미지 톤 등'}):''}</div></div>`).join(''))+G('느낌 레퍼런스','무엇을 참고할지 골라요 (여러 개).',`<div class="am-ed-choice">${['색감','구도','소품','글씨체','카피 톤'].map(p=>`<button type="button" data-mood="${E(p)}" aria-pressed="${s.moods.includes(p)}">${E(p)}</button>`).join('')}</div>`)}
-function notesPanel(s){return G('디자이너에게 부탁할 것','원본 자유 메모 필드를 유지합니다.',F('notes','디자인 요청',s.notes,{max:2000,area:true,rows:6,optional:true,help:'비주얼·배치·이미지 요청을 구체적으로 작성'}))+G('참고 레퍼런스','붙인 레퍼런스별 요청을 기획안에 함께 표시합니다.',s.refs.filter(r=>r.attached).length?s.refs.filter(r=>r.attached).map(r=>`<div class="am-ed-callout"><strong>${E(r.name)}</strong><span class="am-ed-dim">${E(r.note||'참고할 사항 미입력')}</span></div>`).join(''):`<div class="am-ed-note">아직 붙인 레퍼런스가 없어요. 레퍼런스 탭에서 선택할 수 있어요.</div>`)}
+// ── 레퍼런스 붙이기 (2026-11-16): 앱(host)이 setRefSource로 '이 구좌와 비슷한 사례·라이브러리' 목록을 준다.
+// [참고·인계 › 레퍼런스]에는 붙인 것 + [레퍼런스 찾아 붙이기] → 자료 연결 › 레퍼런스에서 고르거나 링크로 붙인다.
+// 저장: s.refs [{id,name,from,url,attached:true,note}] (앱이 page.sections[].v2.att로도 써서 04 미리보기·인계에 나온다)
+let REF_SOURCE=null,REF_ON_PICK=null,REF_SHOWN=[];const REF_CACHE={};
+function toggleRef(s,r,addOnly){
+ s.refs=Array.isArray(s.refs)?s.refs:[];const i=s.refs.findIndex(x=>x.id===r.id||(addOnly&&r.url&&x.url===r.url));
+ if(i>=0&&addOnly){toast('이미 붙인 레퍼런스예요');return;}
+ if(i<0&&s.refs.length>=8){toast('레퍼런스는 구좌마다 8개까지 붙일 수 있어요');return;}
+ const before=capture();
+ if(i>=0){s.refs.splice(i,1);toast('참고에서 뺐어요');}
+ else{s.refs.push({id:String(r.id).slice(0,80),name:String(r.name||'레퍼런스').slice(0,60),from:String(r.from||'').slice(0,80),url:/^https?:\/\//i.test(r.url||'')?String(r.url).slice(0,300):'',attached:true,note:''});toast('붙였어요. [참고·인계]에서 무엇을 참고할지 적을 수 있어요.');}
+ try{REF_ON_PICK&&REF_ON_PICK(r,i<0,s);}catch(_){}
+ mark(before);renderAll();
+}
+const REF_PEEK=3;
+function refGroups(){const groups=[];for(const [i,r] of REF_SHOWN.entries()){const g=r.group||'레퍼런스';let x=groups.find(y=>y[0]===g);if(!x)groups.push(x=[g,[]]);x[1].push([i,r]);}return groups;}
+function refItem(i,r,on){return `<button type="button" class="ia-data-item" data-ref-pick="${i}" aria-pressed="${on.has(r.id)}"><b>${E(r.name)}</b><small>${E([r.from,r.why].filter(Boolean).join(', ').slice(0,90))}</small><span class="ia-data-act">${on.has(r.id)?'빼기':'붙이기'}</span></button>`;}
+// [n개 모두 보기] 창: 한 묶음 전체를 찾아보며 붙이거나 뺀다. 붙인 결과는 오른쪽 칸과 같은 toggleRef
+let REF_MORE_G=null;
+function refMoreDialog(){
+ let d=document.getElementById('refMoreDialog');if(d)return d;
+ d=document.createElement('dialog');d.id='refMoreDialog';d.className='en-ref-dialog';d.setAttribute('aria-labelledby','refMoreTitle');
+ d.innerHTML='<div class="en-ref-dialog-head"><div><h2 id="refMoreTitle"></h2><p id="refMoreSub" role="status"></p></div><button type="button" class="am-ed-button am-ed-button--subtle am-ed-button--sm" data-ref-more-close>닫기</button></div><input type="search" class="am-ed-input" id="refMoreQ" placeholder="이름이나 출처로 찾기" aria-label="이 묶음에서 찾기" autocomplete="off"><div class="ia-data-results en-ref-dialog-list" id="refMoreList"></div>';
+ document.body.append(d);
+ d.addEventListener('click',e=>{
+  if(e.target===d||e.target.closest('[data-ref-more-close]')){d.close();return;}   // 바깥(어두운 곳)을 눌러도 닫힘
+  const b=e.target.closest('[data-ref-pick]');if(!b)return;
+  const r=REF_SHOWN[Number(b.dataset.refPick)];if(!r)return;
+  toggleRef(section(),r);paintRefMore();d.querySelector(`[data-ref-pick="${b.dataset.refPick}"]`)?.focus();
+ });
+ d.querySelector('#refMoreQ').addEventListener('input',paintRefMore);
+ d.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();d.close();}});   // 찾기 칸에서도 Esc 한 번에 닫힘 (검색 칸이 Esc를 먼저 먹지 않게)
+ d.addEventListener('close',()=>{const g=REF_MORE_G;REF_MORE_G=null;if(g!==null)$('data-library').querySelector(`[data-ref-more="${CSS.escape(g)}"]`)?.focus();});
+ return d;
+}
+function paintRefMore(){
+ const d=document.getElementById('refMoreDialog');if(!d||REF_MORE_G===null)return;
+ const s=section(),on=new Set((s.refs||[]).map(r=>r.id)),rs=(refGroups().find(([g])=>g===REF_MORE_G)||[,[]])[1];
+ const q=d.querySelector('#refMoreQ').value.trim().toLowerCase();
+ const hit=q?rs.filter(([,r])=>[r.name,r.from,r.why].join(' ').toLowerCase().includes(q)):rs;
+ d.querySelector('#refMoreTitle').textContent=REF_MORE_G;
+ d.querySelector('#refMoreSub').textContent=`${q?`${rs.length}개 중 ${hit.length}개`:`${rs.length}개`}예요. 이 구좌에 ${(s.refs||[]).length}/8개 붙였어요.`;
+ d.querySelector('#refMoreList').innerHTML=hit.length?hit.map(([i,r])=>refItem(i,r,on)).join(''):'<p class="ia-data-wait">찾는 레퍼런스가 없어요.</p>';
+}
+function openRefMore(g){const d=refMoreDialog();REF_MORE_G=g;d.querySelector('#refMoreQ').value='';paintRefMore();d.showModal();d.querySelector('#refMoreQ').focus();}
+function refsFinder(s){
+ const key=s.id+'|'+s.layout;let c=REF_CACHE[key];
+ if(c===undefined){REF_CACHE[key]=null;c=null;Promise.resolve().then(()=>REF_SOURCE(JSON.parse(JSON.stringify(s)))).then(list=>{REF_CACHE[key]=Array.isArray(list)?list:[];},()=>{REF_CACHE[key]='err';}).then(()=>{if(cbRailMode!=='data'||iaDataMode!=='refs'||section().id!==s.id)return;
+  // 목록이 늦게 와서 다시 그릴 때 링크 칸에 적던 글과 커서가 지워지지 않게
+  const keep=['refLinkUrl','refLinkName'].map(id=>[id,document.getElementById(id)?.value||'']),focus=document.activeElement?.id;
+  renderIaDataLibrary();
+  for(const [id,v] of keep){const el=document.getElementById(id);if(el)el.value=v;}
+  if(focus)document.getElementById(focus)?.focus();});}
+ const on=new Set((s.refs||[]).map(r=>r.id));REF_SHOWN=Array.isArray(c)?c:[];
+ // 링크로 붙이기를 맨 위에 (목록이 길어도 늘 보이게). 묶음마다 REF_PEEK개만 보이고 나머지는 [모두 보기] 창에서 고른다
+ const link=`<form class="ia-ref-link" data-ref-link novalidate><h3 class="ia-data-group">링크로 붙이기</h3><div class="ia-ref-link-row"><input class="am-ed-input" id="refLinkUrl" name="url" type="url" inputmode="url" placeholder="https://" maxlength="300" autocomplete="off" aria-label="레퍼런스 주소"><button type="submit" class="am-ed-button am-ed-button--subtle">붙이기</button></div><label class="am-ed-label" for="refLinkName">이름 (선택)</label><input class="am-ed-input" id="refLinkName" name="name" type="text" maxlength="60" placeholder="예) ○○ 봄 기획전 탭 모양" autocomplete="off"><small>주소만 저장하고 열어 보지는 않아요.</small></form>`;
+ const list=c===null?'<p class="ia-data-wait" role="status">이 구좌와 비슷한 레퍼런스를 찾는 중이에요.</p>'
+  :c==='err'?'<p class="ia-data-wait" role="status">레퍼런스 목록을 불러오지 못했어요. 위에서 링크로 붙일 수 있어요.</p>'
+  :REF_SHOWN.length?refGroups().map(([g,rs])=>{const peek=[...rs.filter(([,r])=>on.has(r.id)),...rs.filter(([,r])=>!on.has(r.id))].slice(0,REF_PEEK);   // 붙인 것을 먼저 보여 준다
+   return `<h3 class="ia-data-group">${E(g)} <small>${rs.length}</small></h3><div class="ia-data-results">${peek.map(([i,r])=>refItem(i,r,on)).join('')}</div>${rs.length>REF_PEEK?`<button type="button" class="am-ed-button am-ed-button--subtle am-ed-button--sm ia-ref-more" data-ref-more="${E(g)}" aria-haspopup="dialog">${rs.length}개 모두 보기</button>`:''}`;}).join('')
+  :'<p class="ia-data-wait">고를 레퍼런스가 아직 없어요. 레퍼런스 라이브러리에 모으거나 위에서 링크로 붙여요.</p>';
+ return link+list+`<a class="ia-ref-lib" href="/v2/library" target="_blank" rel="noopener">레퍼런스 라이브러리 새 탭으로 열기 ↗</a>`;
+}
+function refsPanel(s){
+ if(REF_SOURCE){
+  const att=s.refs||[];
+  return G('붙인 레퍼런스',att.length?'무엇을 참고할지 적으면 디자인 요청과 04 미리보기에 같이 들어가요.':'비슷한 구좌 사례, 오늘의 영감 보관함, 레퍼런스 라이브러리에서 고르거나 링크로 붙여요.',
+   att.map((r,i)=>`<div class="am-ed-ref en-ref"><div class="am-ed-stack"><div class="en-ref-head"><div><strong>${E(r.name)}</strong><small>${E(r.from||'')}</small></div><button type="button" class="am-ed-button am-ed-button--subtle am-ed-button--sm" data-ref-remove="${i}" aria-label="${E(r.name)} 빼기">빼기</button></div>${r.url?`<a class="en-ref-url" href="${E(r.url)}" target="_blank" rel="noopener noreferrer">원본 열기 ↗</a>`:''}${F('refs.'+i+'.note','참고할 것',r.note,{max:120,optional:true,help:'예) 탭 모양과 가격 위치'})}</div></div>`).join('')
+   +`<button type="button" class="am-ed-button am-ed-button--primary en-ref-find" data-ref-find>＋ 레퍼런스 찾아 붙이기</button>`)
+   +G('느낌 레퍼런스','이 구좌에서 무엇을 참고할지 골라요 (여러 개).',`<div class="am-ed-choice">${['색감','구도','소품','글씨체','카피 톤'].map(p=>`<button type="button" data-mood="${E(p)}" aria-pressed="${s.moods.includes(p)}">${E(p)}</button>`).join('')}</div>`);
+ }
+ return G('구좌 레퍼런스','참고할 레퍼런스를 붙이고 메모를 남겨요.',s.refs.map((r,i)=>`<div class="am-ed-ref"><div class="thumb">REF</div><div class="am-ed-stack"><div><strong>${E(r.name)}</strong><small>${E(r.from)}</small></div>${T('refs.'+i+'.attached','참고로 붙이기',r.attached)}${r.attached?F('refs.'+i+'.note','참고할 것',r.note,{max:120,optional:true,help:'구도, 레이아웃, 이미지 톤 등'}):''}</div></div>`).join(''))+G('느낌 레퍼런스','무엇을 참고할지 골라요 (여러 개).',`<div class="am-ed-choice">${['색감','구도','소품','글씨체','카피 톤'].map(p=>`<button type="button" data-mood="${E(p)}" aria-pressed="${s.moods.includes(p)}">${E(p)}</button>`).join('')}</div>`)}
+function notesPanel(s){return G('디자이너에게 부탁할 것','적은 내용은 인계용 HTML과 04 미리보기의 디자인 요청에 들어가요.',F('notes','디자인 요청',s.notes,{max:2000,area:true,rows:6,optional:true,help:'예) 첫 카드는 돗자리 위 연출 컷이면 좋겠어요'}))+G('참고 레퍼런스','레퍼런스마다 적은 요청이 기획안에 같이 들어가요.',s.refs.filter(r=>r.attached).length?s.refs.filter(r=>r.attached).map(r=>`<div class="am-ed-callout"><strong>${E(r.name)}</strong><span class="am-ed-dim">${E(r.note||'참고할 사항 미입력')}</span></div>`).join(''):`<div class="am-ed-note">아직 붙인 레퍼런스가 없어요. 레퍼런스 탭에서 선택할 수 있어요.</div>`)}
 const panelRender={copy:copyPanel,items:itemPanel,shape:shapePanel,products:productPanel,event:eventPanel,review:reviewPanel,refs:refsPanel,notes:notesPanel,check:(s)=>(s.layout==='custom'?customQualityPanel(s):FLOW.qualityPanel(s))+(AMBlocks.issues(s,blockContext()).length?'<div class="am-ed-group"><h3>추가 블록 누락 검수</h3>'+AMBlocks.issues(s,blockContext()).map(v=>'<p class="am-ed-note">'+E(v)+'</p>').join('')+'</div>':'')};
 const tabsBase=tabs;
 tabs=function(s){
@@ -533,7 +678,7 @@ tabs=function(s){
  if(IMAGE_LAYOUTS.has(s.layout)&&!base.some(([k])=>['shape','items','review'].includes(k)))base.splice(1,0,['media','이미지 비율']);
  return [...base,['check','검수']];
 };
-panelRender.media=(s)=>'<div class="am-ed-note">선택한 이미지 비율이 중앙 와이어프레임에 반영됩니다. 별도 이미지가 없는 구좌는 비율 설정이 나타나지 않습니다.</div>'+(s.layout==='hero'?FLOW.infoPanel(s):'');
+panelRender.media=(s)=>'<div class="am-ed-note">고른 비율이 미리보기에 바로 보여요.</div>'+(s.layout==='hero'?FLOW.infoPanel(s):'');
 panelRender.status=(s)=>FLOW.infoPanel(s);
 function iaPathMarkup(s, block){
  const index=sections.indexOf(s)+1;
@@ -582,6 +727,9 @@ function renderPanel(){
  iaGroup=IA_TAB_GROUP[tab]||'content';
  $('tabbar').innerHTML=iaGroupedTabs(s,ts);
  $('panel-body').innerHTML=(iaGroup==='layout'?imageRatioPicker(s):'')+panelRender[tab](s);
+ // 꼭 채워야 하는 자료(상품 구좌의 상품, 후기 구좌의 후기)가 비었으면 [내용] 맨 위에 알리고 바로 고르러 가게 한다
+ const need=fillState(s),needTab=s.layout==='review'?'review':'products';
+ if(need&&need.need&&iaGroup==='content'&&tab!==needTab)$('panel-body').insertAdjacentHTML('afterbegin',`<div class="en-need" role="status"><div><strong>${E(need.text)}</strong><small>${s.layout==='review'?'보여 줄 후기를 아직 고르지 않았어요.':'이 구좌에 넣을 상품을 골라 주세요. 빈 자리는 미리보기에 점선으로 보여요.'}</small></div><button type="button" class="am-ed-button am-ed-button--primary" data-need-tab="${needTab}">${s.layout==='review'?'후기 고르기':'상품 고르기'}</button></div>`);
   if(canvasTarget&&canvasTarget.sectionId===s.id&&!['block','block-attribute'].includes(canvasTarget.kind)){
    const label=canvasTargetLabel(canvasTarget);
    $('panel-body').insertAdjacentHTML('afterbegin','<div class="am-canvas-native-actions"><span><strong>선택: '+E(label)+'</strong><small>가운데 미리보기에서 선택됨 · 해당 요소만 변경</small></span><button type="button" data-canvas-panel-delete="1" aria-label="선택한 '+E(label)+' 삭제">'+AMEditorKit.icon('trash','am-kit-icon--sm')+' 삭제</button></div>');
@@ -611,6 +759,7 @@ function renderIaDataLibrary(){
  let body='<div class="ia-data-note">고른 구좌나 요소에 연결할 자료예요. 새 상품 카드는 [요소 추가]에서 넣어요. '+(CATALOG_NOTE?'현재 목록은 이 기획안의 앱 데이터예요.':'현재 목록은 예시 상품이에요.')+'</div>';
  if(prod)body+='<div class="ia-data-results">'+PRODUCTS.map(p=>`<button type="button" class="ia-data-item" data-ia-bind-product="${E(p.id)}"><b>${E(p.name)}</b><small>${E(p.id)} · 선택한 요소/구좌에 연결</small></button>`).join('')+'</div>';
  else if(review)body+='<div class="ia-data-results">'+REVIEWS.slice(0,60).map(r=>`<button type="button" class="ia-data-item" data-ia-bind-review="${E(r.id)}"><b>★ ${E(String(r.rating||'·'))} · ${E(r.productId||'상품 미정')}</b><small>${E(String(r.text||'후기 내용').slice(0,56))}</small></button>`).join('')+'</div>';
+ else if(ref&&REF_SOURCE)body=`<div class="ia-data-note">‘${E(s.name)}’에 붙일 레퍼런스예요. 붙이면 디자인 요청과 04 미리보기에 같이 들어가요.</div>`+refsFinder(s);
  else if(ref)body+='<div class="ia-data-results">'+(s.refs||[]).map((r,i)=>`<button type="button" class="ia-data-item" data-ia-bind-ref="${i}"><b>${E(r.name)}</b><small>${E(r.from||'참고자료')} · 이 구좌에 첨부</small></button>`).join('')+'</div>';
  $('data-library').innerHTML=`<div class="ia-library-choose">${modes.map(([k,l])=>`<button type="button" data-ia-data-mode="${k}" aria-pressed="${iaDataMode===k}">${l}</button>`).join('')}</div>`+body;
 }
@@ -1390,7 +1539,7 @@ function renderPicker(){
  $('selectedType').textContent=x?.name||'선택해 주세요';$('selectedDesc').textContent=x?.description||'';
  if(x){const mock=pickerMock(x,'sample');$('selectedPreview').innerHTML=`<div class="am-ed-detail-frame"><div class="am-ed-detail-canvas">${preview(mock)}</div></div>`;}else $('selectedPreview').innerHTML='';
  requestAnimationFrame(fitPickerPreviews);
- $('impactNote').textContent=pickerMode==='change'?'기존 제목·설명·CTA·후기 선택·상품 연결·레퍼런스를 보존합니다. 같은 후기 구좌 안에서는 배치 설정만 변경합니다.':'현재 선택한 구좌의 바로 뒤에 삽입합니다. 후기 배치는 생성 후에도 후기 탭에서 바꿀 수 있어요.';
+ $('impactNote').textContent=pickerMode==='change'?'제목, 설명, 버튼, 상품, 후기, 레퍼런스는 그대로 두고 모양만 바꿔요.':'고른 구좌 바로 아래에 넣어요.';
 }
 function openPicker(mode){
  pickerMode=mode;pickerCategory='전체';$('pickerSearch').value='';pickerSelected=mode==='change'?pickerIdFor(section()):'benefit';
@@ -1452,7 +1601,7 @@ $('pickerApply').addEventListener('click',()=>{
  toast((pickerMode==='add'?'구좌를 추가했어요': '구좌 구성을 변경했어요')+ftNote);
 });
 $('undo').addEventListener('click',undo);$('redo').addEventListener('click',redo);
-$('exportDemo').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({notice:'UX 프로토타입 전용 JSON. 사내 API 입력 금지.',...serialize()},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='amoread-lab-demo.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)});
+$('exportDemo').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({notice:'AMOREAD 구좌 편집기 기록용 JSON (자사몰 설정에 바로 넣지 않아요)',...serialize()},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='amoread-lab-demo.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)});
 $('exportHandoff').addEventListener('click',()=>{const css=document.querySelector('link[href="tokens.demo.css"]');window.AM_CB_STATIC_EXPORT=true;const markup=sections.map(s=>{
   FLOW.ensure(s);
   if(s.layout!=='ev-quiz')return preview(s);
@@ -1464,7 +1613,7 @@ $('exportHandoff').addEventListener('click',()=>{const css=document.querySelecto
   if(oldSimulation)FLOW.simulation.set(s.id,oldSimulation);
   return pages;
  }).join('');window.AM_CB_STATIC_EXPORT=false;const safeTitle='AMOREAD 디자이너 인계용 기획안 초안';const content='<!doctype html><html lang="ko"><meta charset="utf-8"><title>'+safeTitle+'</title><style>body{font-family:system-ui, sans-serif;margin:30px auto;max-width:540px;line-height:1.5}section{margin:18px 0;padding:22px;border:1px solid #dcdcdc;border-radius:12px}h3,p{white-space:pre-wrap}small{display:block} .mock-event,.mock-product,.mock-review-card,.mock-item{padding:15px;border:1px solid #ddd;margin:8px 0} .mock-image,.am-flow-img-ghost{background:#f1f3f0;padding:30px;text-align:center} .mock-ev-answer,.mock-cta{display:block;padding:10px;border:1px solid #ddd;margin:6px 0} .mock-ev-wheel{border:2px solid #aaa;border-radius:100px;min-height:150px} .mock-ev-wheel-label{display:inline-block;padding:8px} .mock-product-media{position:relative;overflow:hidden;border-radius:8px} .mock-product-media .mock-product-image{min-height:90px;background:#eee;display:grid;place-items:center} .mock-card-label--corner{position:absolute;background:#141414;color:#fff;padding:4px 6px;border-radius:4px;font-size:10px} .mock-card-label--corner.top-left{top:6px;left:6px}.mock-card-label--corner.top-right{top:6px;right:6px}.mock-card-label--corner.bottom-left{bottom:6px;left:6px}.mock-card-label--corner.bottom-right{bottom:6px;right:6px} .am-custom-frame{border:1px dashed #a1aaa4;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:9px;background:#fafafa;min-height:var(--am-custom-height,0)}.am-custom-frame--medium{min-height:var(--am-custom-height,210px)}.am-custom-frame--short{min-height:var(--am-custom-height,160px)}.am-custom-frame--auto{min-height:var(--am-custom-height,0)}.am-custom-art-placeholder{min-height:130px;border:1px dashed #bbb;background:#f2f2f2;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:12px}.am-custom-frame--tall{min-height:var(--am-custom-height,350px)}.am-custom-reference-image{width:100%;max-height:630px;object-fit:contain}.am-custom-ref-link{color:#007a46;overflow-wrap:anywhere}.am-custom-chip{font-size:10px;border:1px solid #ddd;border-radius:4px;padding:3px 6px}.am-custom-meta{display:flex;gap:7px}.am-custom-annotation{border:1px solid #eee;padding:8px;background:white}.am-custom-annotation p,.am-custom-intent{white-space:pre-wrap}.cb-node{padding:10px;border:1px solid #d5dad6;margin:8px 0;border-radius:7px}.cb-image{background:#f1f3f0;padding:30px;text-align:center}.cb-cta{padding:10px;border:1px solid #222;text-align:center}.cb-group{display:grid;gap:10px}.cb-direction-row,.cb-direction-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cb-text{white-space:pre-line}.cb-review,.cb-benefit{padding:8px}.am-flow-issue{padding:5px;border-bottom:1px solid #ccc}@media print{section{break-inside:avoid}}</style><h1>'+safeTitle+'</h1><p>AMOREAD 구좌 기획 미리보기예요. 실제 자사몰 화면이 아니며 가격·후기는 기획안 기준 값이에요.</p>'+markup+'</html>';const imageStyle=(()=>{try{const sheet=[...document.styleSheets].find(x=>x.href&&x.href.endsWith('/image-layout-v110.css'));return sheet?[...sheet.cssRules].map(x=>x.cssText).join('\n'):''}catch{return ''}})();const handoffHtml=content.replace('</style>',imageStyle+'</style>');const blob=new Blob([handoffHtml],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='amoread-demo-handoff.html';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)});
-$('reset').addEventListener('click',()=>{const before=capture();sections=defaults();current='s3';tab='copy';cbSelected=null;cbRailMode='sections';iaSelectedChild=null;iaGroup='content';REVIEWS=JSON.parse(seedReviews);mark(before);renderAll();toast('가상 예시로 초기화했어요')});
+$('reset').addEventListener('click',()=>{const before=capture();sections=defaults();current='s3';tab='copy';cbSelected=null;cbRailMode='sections';iaSelectedChild=null;iaGroup='content';REVIEWS=JSON.parse(seedReviews);mark(before);renderAll();toast('예시로 되돌렸어요')});
 document.addEventListener('keydown',e=>{
  // Selecting a card attribute in the canvas moves focus to its own visibility toggle in the inspector
  // (.am-inspector-target). Delete there still means "remove the canvas selection", which is the same as unchecking it.
@@ -1481,8 +1630,35 @@ document.addEventListener('keydown',e=>{
 });
 // Production-facing data injection contract. The host must normalize records
 // and decide authentication, authorization, API transport, and save semantics.
+// 레퍼런스 붙이기 동작 (refsPanel·refsFinder 참고)
+$('data-library').addEventListener('click',e=>{
+ const m=e.target.closest('[data-ref-more]');if(m){openRefMore(m.dataset.refMore);return;}
+ const b=e.target.closest('[data-ref-pick]');if(!b)return;
+ const r=REF_SHOWN[Number(b.dataset.refPick)];if(r)toggleRef(section(),r);
+});
+$('data-library').addEventListener('submit',e=>{
+ const f=e.target.closest('[data-ref-link]');if(!f)return;e.preventDefault();
+ const url=f.elements.url.value.trim(),name=f.elements.name.value.trim();
+ if(!/^https?:\/\/[^\s/$.?#][^\s]*$/i.test(url)){toast('https://로 시작하는 주소를 넣어 주세요');f.elements.url.focus();return;}
+ let host='';try{host=new URL(url).hostname.replace(/^www\./,'');}catch(_){}
+ toggleRef(section(),{id:'link-'+Date.now().toString(36),name:name||host||'링크',from:'링크'+(host?', '+host:''),url},true);
+});
+$('panel-body').addEventListener('input',e=>{if(e.target.id==='prodQ'&&PRODUCT_FINDER)searchProducts(e.target.value);});
+$('panel-body').addEventListener('change',e=>{const t=e.target.closest('[data-prod-setrate]');if(t&&PRODUCT_FINDER)setFoundRate(t.dataset.prodSetrate,t.value);});
+$('panel-body').addEventListener('keydown',e=>{if(e.key!=='Enter')return;const r=e.target.closest('[data-prod-rate]');if(r){e.preventDefault();addFoundProduct(r.dataset.prodRate);}});
+$('panel-body').addEventListener('click',e=>{
+ const pa=e.target.closest('[data-prod-add]');if(pa&&PRODUCT_FINDER){addFoundProduct(pa.dataset.prodAdd);return;}
+ const nt=e.target.closest('[data-need-tab]');
+ if(nt){tab=nt.dataset.needTab;renderPanel();$('panel-body').querySelector('input,button,select')?.focus();return;}
+ if(e.target.closest('[data-ref-find]')){cbRailMode='data';iaDataMode='refs';renderAll();$('data-library').querySelector('[data-ref-pick],#refLinkUrl')?.focus();return;}
+ const rm=e.target.closest('[data-ref-remove]');
+ if(rm){const s=section(),r=(s.refs||[])[Number(rm.dataset.refRemove)];if(r)toggleRef(s,r);}
+});
 window.AMOREAD_EDITOR_API=Object.freeze({
  version:'1.12',
+ // 레퍼런스 목록 공급: fn(section 복사본) → Promise<[{id,name,from,url,why,group}]>. onPick(ref, added, section)은 붙이거나 뺄 때
+ setProductFinder(f){PRODUCT_FINDER=f&&typeof f.search==='function'&&typeof f.add==='function'?f:null;PROD_Q='';PROD_HITS=[];renderAll();},
+ setRefSource(fn,opts={}){REF_SOURCE=typeof fn==='function'?fn:null;REF_ON_PICK=typeof opts.onPick==='function'?opts.onPick:null;for(const k of Object.keys(REF_CACHE))delete REF_CACHE[k];renderAll();},
  exportSnapshot:()=>JSON.parse(capture()),
  importSnapshot(input){
   const value=typeof input==='string'?JSON.parse(input):input;
@@ -1512,7 +1688,7 @@ window.AMOREAD_EDITOR_API=Object.freeze({
    s.notes=str(x.designNotes,2000);s.scope=str(v.scope,200);s.num=!!v.num;
    s.lines=(Array.isArray(v.lines)?v.lines:[]).slice(0,10).map(l=>({text:str(l?.text,120)}));
    const seqs=[...new Set((Array.isArray(x.slots)?x.slots:[]).map(sl=>String(sl?.seq??'')))].filter(seq=>PRODUCTS.some(p=>p.id===seq));
-   if(['grid2','grid3','feat','deal-banner'].includes(layout))s.productIds=seqs;
+   if(['grid2','grid3','feat','deal-banner'].includes(layout)){s.productIds=seqs;s.slotCount=Math.min(40,(Array.isArray(x.slots)?x.slots:[]).filter(sl=>sl&&!(Array.isArray(sl.items)&&sl.items.length)).length);}
    // 탭(필터) 구좌: 탭마다 상품을 나눠 둔다 (plans/28). 칸의 tabId가 없거나 없는 탭이면 첫 탭. 같은 상품이 여러 탭에 있어도 된다
    const ftIn=(Array.isArray(x.tabs)?x.tabs:[]).filter(t=>t&&/^[A-Za-z0-9_-]{1,40}$/.test(t.tabId||'')).slice(0,12);
    if(FTAB_LAYOUTS.includes(layout)&&ftIn.length){
@@ -1520,7 +1696,10 @@ window.AMOREAD_EDITOR_API=Object.freeze({
     s.ftabs=ftIn.map(t=>({id:t.tabId,label:str(t.label,40),zone:str(t.zone_tag,40),
      productIds:[...new Set((Array.isArray(x.slots)?x.slots:[]).filter(sl=>tabOf(sl)===t.tabId).map(sl=>String(sl?.seq??'')))].filter(seq=>PRODUCTS.some(p=>p.id===seq))}));
     s.ftabCur=s.ftabs[0].id;s.productIds=s.ftabs[0].productIds.slice();   // 처음엔 첫 탭을 본다
+    s.slotCount=0;   // 탭 구좌는 빈 칸을 저장하지 않는다 → 탭마다 기본 칸 수로 그린다 (plans/30 §3-2)
    }
+   // 붙인 레퍼런스(v2.att: 예전 편집기와 같은 형식) → 편집기의 refs
+   s.refs=(Array.isArray(v.att)?v.att:[]).slice(0,8).filter(a=>a&&a.ref).map(a=>({id:str(a.ref,80),name:str(a.name||'레퍼런스',60),from:str([a.from,a.page].filter(Boolean).join(', '),80),url:/^https?:\/\//.test(a.url||'')?str(a.url,300):'',attached:true,note:str(a.note,120)}));
    const card=v.card;
    if(card&&Array.isArray(card.order)&&card.order.length===ORDER.length&&ORDER.every(k=>card.order.includes(k)))s.card.order=card.order.slice();
    if(card&&card.on&&typeof card.on==='object')for(const k of ORDER)if(k in card.on)s.card.on[k]=card.on[k]?1:0;

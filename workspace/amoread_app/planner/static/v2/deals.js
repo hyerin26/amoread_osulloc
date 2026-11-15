@@ -69,7 +69,10 @@ function loadPlan(doc, prods) {
   keepCands = (doc.deal_plan?.candidates || []).filter(x => !(x.seq && P[x.seq]));
   slotsPerDay = doc.deal_plan?.slots || 4;
   sel = items[0]?.seq || null; tab = 'items'; LIVE = true;
-  document.querySelector('.head h1').textContent = doc.title;
+  document.querySelector('.head [data-plan-title]').textContent = doc.title;
+  $('#planWord').hidden = /기획안\s*$/.test(doc.title || '');   // '대설 기획안'처럼 이미 '기획안'으로 끝나면 한 번만
+  const per = $('#dealsPeriod');   // 어느 기획안·기간의 할인인지 (할인율은 기획안마다 따로 저장)
+  if (per) { per.textContent = doc.brief?.period ? `기간 ${md(PERIOD[0])} ~ ${md(PERIOD[1])}` : '기간 미정'; per.hidden = false; }
   document.querySelector('.demo').innerHTML = '<b>이 기획안의 실제 상품이에요.</b> 정가·원가·평소 판매·마지막 행사·이미 잡힌 행사는 실제 값이고, 고치면 이 기획안에 저장돼요. 반응·예상 매출·지난 행사 할인 기준은 지난 실적 관찰값이에요 (원인으로 단정하지 않아요). 놓인 곳은 구좌 편집의 카드에서 와요.';
   lastSaved = snapshot();
 }
@@ -274,7 +277,7 @@ function evidence() {
     <div><h4>같은 기간 이미 잡힌 행사 <span class="hint">PROMO_WORK</span></h4>${overlap.length ? `<ul class="mini">${overlap.map(o => `<li><span class="tag">겹침</span>${esc(o)}</li>`).join('')}</ul>` : '<p class="hint">겹치는 행사가 없어요</p>'}</div>
     <label class="f"><span>소구문구 <em>엑셀 소구문구 · 카드에도 같은 값</em></span><input type="text" data-appeal="${i.seq}" maxlength="80" value="${esc(i.appeal)}" placeholder="예) 세작, 우전, 홍우전까지 포함한">
       ${['면역', '다이어트', '치료', '개선'].some(w => i.appeal.includes(w)) ? '<span class="warnline">효능으로 읽힐 수 있는 표현이 있어요</span>' : ''}</label>
-    <div class="f"><span>기간</span><div class="chips-row"><input type="text" data-period="${i.seq}" value="${md(i.s)}~${md(i.e)}" aria-label="기간" maxlength="11"><span class="hint">기획안 기간 3/2~3/15</span></div></div>
+    <div class="f"><span>기간</span><div class="chips-row"><input type="text" data-period="${i.seq}" value="${md(i.s)}~${md(i.e)}" aria-label="기간" maxlength="11"><span class="hint">기획안 기간 ${md(PERIOD[0])}~${md(PERIOD[1])}</span></div></div>
     <label class="ck"><input type="checkbox" data-clear="${i.seq}" ${i.clear ? 'checked' : ''}> 재고 털이 (원가율 기준 넘어도 허용)</label>`;
 }
 function dealsTab() {

@@ -491,6 +491,55 @@ def production_schedule(open: str, kind: str = "이벤트"):
 # ----------------------------------------------------------------------
 # 레퍼런스 라이브러리 (2026-11-10): 직접 추가·즐겨찾기·핀터레스트 공개 보드 구독. 저장 = planner/data/references/
 # ----------------------------------------------------------------------
+# ── 할인 판정 (2026-11-16): 03 구좌 편집에서 할인율을 정할 때 상품·할인과 같은 기준으로 판정한다.
+# 원가는 화면(편집기)에 보내지 않고 판정 결과와 기준 안 최대 할인율, 지난 행사 할인만 돌려준다. 1단 할인 기준(추가 혜택 전)
+class DiscountAsk(BaseModel):
+    seq: str = Field(pattern=r"^\d{1,12}$")
+    rate: float = Field(default=0, ge=0, le=0.9)
+
+
+class DiscountCheckReq(BaseModel):
+    items: list[DiscountAsk] = Field(max_length=100)
+
+
+def _r10(v: float) -> int:
+    return int(v / 10 + 0.5) * 10   # 화면(deals.js r10 = Math.round)과 같은 반올림
+
+
+def discount_verdict(p: dict, rate: float, target: float) -> dict:
+    """상품 하나의 1단 할인 판정. deals.js judge·maxRate와 같은 셈: 원가율 = 원가 / (할인가 / 1.1)."""
+    price, cost = float(p.get("price") or 0), float(p.get("cost") or 0)
+    sale = _r10(price * (1 - rate)) if price > 0 else 0
+    ok = lambda r: cost / (_r10(price * (1 - r / 100)) / 1.1) <= target   # noqa: E731
+    if not price:
+        verdict, label = "none", "가격 없음"
+    elif rate <= 0:
+        verdict, label = "none", "할인 없음"
+    elif not cost:
+        verdict, label = "none", "원가 없음"
+    elif rate >= 0.8:
+        verdict, label = "err", "확인 필요"
+    else:
+        verdict, label = ("warn", "주의") if cost / (sale / 1.1) > target else ("ok", "괜찮음")
+    max_rate = next((r for r in range(80, -1, -1) if ok(r)), 0) if price > 0 and cost > 0 else None
+    return {"seq": str(p.get("seq")), "name": p.get("name") or "", "list": int(price), "rate": rate, "sale": sale,
+            "verdict": verdict, "label": label, "max_rate": max_rate,
+            "last": {"promo": p.get("last_promo") or "", "type": p.get("last_promo_type") or "",
+                     "start": p.get("last_promo_start") or "", "rate": p.get("last_promo_rate")} if p.get("last_promo") else None}
+
+
+@router.post("/discount/check")
+def discount_check(req: DiscountCheckReq):
+    from planner import config as pconfig, engine
+    engine.DATA.ensure()
+    out = []
+    for it in req.items:
+        p = engine.DATA.products.get(it.seq)
+        if p:
+            out.append(discount_verdict(p, it.rate, pconfig.TARGET_COST_RATIO))
+    return {"items": out, "target": pconfig.TARGET_COST_RATIO, "basis": "1단 할인 기준 (추가 혜택 전)"}
+
+
 from . import references   # noqa: E402
 
 Txt = Annotated[str, Field(max_length=60)]
