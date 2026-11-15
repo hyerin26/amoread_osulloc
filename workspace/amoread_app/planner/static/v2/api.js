@@ -36,7 +36,8 @@ async function v2api(path, body) {
 }
 // 원가·실적 데이터가 없는 PC: 화면마다 잠깐 뜨는 알림만으로는 왜 예시가 보이는지, 어디서 고치는지 알 수 없었다 → 맨 위에 계속 보이는 안내 + 설정으로 가는 링크 (화면당 한 번)
 function v2noData() {
-  if (document.getElementById('v2nodata') || location.pathname.endsWith('/settings')) return;
+  // 설정 화면(데이터 상태가 거기 있음)과 신규 구좌편집기(세 칸 격자라 끼우면 칸이 밀림 · 도구 줄에 자체 안내가 있음)에는 띄우지 않는다
+  if (document.getElementById('v2nodata') || location.pathname.endsWith('/settings') || document.body.classList.contains('en-host')) return;
   const bar = document.createElement('div'); bar.id = 'v2nodata'; bar.className = 'v2notice'; bar.setAttribute('role', 'status');
   bar.innerHTML = '<span>상품·원가·실적 데이터가 아직 없어서 상품과 일정 일부가 <b>예시</b>로 보여요.</span><a href="/v2/settings#data">설정 › 데이터 상태에서 [데이터 갱신] 하기</a>';
   const main = document.querySelector('main'); if (main) main.prepend(bar); else document.body.prepend(bar);

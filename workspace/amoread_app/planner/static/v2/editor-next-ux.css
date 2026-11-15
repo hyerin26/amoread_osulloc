@@ -336,6 +336,9 @@
 .en-host .en-ref-head strong { font-size: var(--fs-sm); font-weight: var(--fw-strong); overflow-wrap: anywhere; }
 .en-host .en-ref-head small { font-size: var(--fs-cap); color: var(--mute); overflow-wrap: anywhere; }
 .en-host .en-ref-url { display: inline-block; margin-top: 4px; font-size: var(--fs-cap); color: var(--accent); }
+.en-host .en-ref-links { display: flex; flex-wrap: wrap; gap: 12px; }
+.en-host .ia-ref-row { display: flex; flex-direction: column; gap: 2px; }
+.en-host .ia-ref-row .ia-ref-open { align-self: flex-end; font-size: var(--fs-cap); color: var(--accent); padding: 0 4px 4px; }
 .en-host .en-ref-find { width: 100%; margin-top: 12px; min-height: var(--control-md); }
 .en-host .ia-data-group { display: flex; align-items: baseline; gap: 6px; margin: 16px 0 8px; font-size: var(--fs-sm); font-weight: var(--fw-strong); color: var(--ink); }
 .en-host .ia-data-group small { font-size: var(--fs-cap); color: var(--mute); font-weight: var(--fw-regular, 400); }

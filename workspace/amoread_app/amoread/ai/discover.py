@@ -92,7 +92,8 @@ async def _scan_async(m: dict) -> list[dict]:
     out: dict[str, dict] = {}
     async with async_playwright() as p:
         try:
-            br = await p.chromium.launch(channel="chrome", headless=True)
+            # 회사에서 확장 프로그램을 관리하는 Chrome은 --disable-extensions(Playwright 기본값)를 받으면 바로 종료된다
+            br = await p.chromium.launch(channel="chrome", headless=True, ignore_default_args=["--disable-extensions"])
         except Exception:
             raise intake.IntakeError("Chrome을 열 수 없어요 (이 PC에 Chrome이 설치돼 있어야 해요)")
         try:

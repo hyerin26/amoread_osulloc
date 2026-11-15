@@ -40,7 +40,12 @@ const pagesOf = c => [...new Set(srcList(c).map(([p]) => p))];
 let n = 3;          // 목업 보기용: 2개 / 3개
 let pair = 'AB';    // 목업 보기용: 2개일 때 어떤 두 안 (실제로는 추천이 고름, 고정하지 않음)
 let chosen = null;  // 고른 구성안 id ('blank'은 빈 페이지)
-let rows = [];      // 고른 구성: { id, name, layout, why, kind?, tabs?(탭 구좌일 때), gk?(묶음 열쇠), gname?(묶음 이름, 따로 둘 때) }
+let rows = [];      // 고른 구성: { id, name, layout, why, kind?, tabs?: [{tabId, label}](탭 구좌일 때), tnote?(탭 출처 안내), gk?(묶음 열쇠), gname?(묶음 이름, 따로 둘 때), carry?(나누기·합치기로 이어 받을 상품 칸) }
+// 탭 구좌 (plans/28): 탭은 tabId로 다룬다 → 이름·순서를 바꾸거나 지워도 상품 칸(slots[].tabId)이 제 탭에 붙어 있다
+const TAB_LAYOUTS = ['grid2', 'grid3', 'feat'], TAB_MIN = 2, TAB_MAX = 12;
+const tid = () => `t${Date.now().toString(36)}${++uidN}`;
+const newTabs = (labels = ['탭 1', '탭 2']) => labels.map(label => ({ tabId: tid(), label: String(label).slice(0, 40) }));
+function dropTabs(r) { delete r.tabs; delete r.kind; delete r.gk; delete r.tnote; }
 let sel = null;     // 고른 구좌 (미리보기에 테두리)
 let uidN = 0;
 const uid = () => `s${++uidN}`;
@@ -60,10 +65,10 @@ function wire(secs, big = false) {
     if (ly === 'text-cta') return `${b}${b}<span class="btnb"></span>`;
     return b;   // benefit
   };
-  const pills = s => s.tabs ? `<span class="pills">${s.tabs.map((t, i) => `<span class="${i ? '' : 'on'}">${big ? esc(t) : ''}</span>`).join('')}</span>` : '';
+  const pills = s => s.tabs ? `<span class="pills">${s.tabs.map((t, i) => `<span class="${i ? '' : 'on'}">${big ? esc(t.label ?? t) : ''}</span>`).join('')}</span>` : '';
   return `<div class="wf ${big ? 'big' : ''}" aria-hidden="true">${secs.map(s => `<div class="s ${s.layout} ${big && s.id === sel ? 'on' : ''}"><span class="nm">${esc(s.name)}</span>${pills(s)}${inner(s.layout, s.name)}</div>`).join('')}</div>`;
 }
-const toRows = c => c.secs.map(([name, layout, why, g]) => ({ id: uid(), name, layout, why, ...(g?.tabs ? { kind: g.kind, tabs: [...g.tabs], gk: uid() } : {}) }));
+const toRows = c => c.secs.map(([name, layout, why, g]) => ({ id: uid(), name, layout, why, ...(g?.tabs ? { kind: g.kind, tabs: newTabs(g.tabs), gk: uid(), tnote: g.note || '추천에서 옴' } : {}) }));
 function cardLine(c, [nm, ly, , g]) {
   const shape = g?.tabs ? `탭 ${g.tabs.length} · ${LAYOUTS[ly]}` : LAYOUTS[ly];
   let src = '';
@@ -112,12 +117,14 @@ const shown = () => n === 3 ? CANDS : CANDS.filter(c => pair.includes(c.id));
 // 탭 구좌 ↔ 따로 구좌: 탭 하나로 = 탭 하나가 PROMO_WORK Zone 하나 / 따로 = 탭마다 구좌 하나 (같은 묶음 열쇠 gk로 다시 묶을 수 있음)
 function splitGroup(id) {
   const i = rows.findIndex(r => r.id === id), g = rows[i]; if (!g?.tabs) return;
-  rows.splice(i, 1, ...g.tabs.map(t => ({ id: uid(), name: t, layout: g.layout, why: '', kind: g.kind, gk: g.gk, gname: g.name })));
+  // 탭마다 구좌 하나: 그 탭의 상품 칸은 새 구좌로 간다 (carry)
+  rows.splice(i, 1, ...g.tabs.map(t => ({ id: uid(), name: t.label, layout: g.layout, why: '', kind: g.kind, gk: g.gk, gname: g.name, carry: [{ sid: g.id, tabId: t.tabId }] })));
 }
 function mergeGroup(gk) {
-  const parts = rows.filter(r => r.gk === gk && !r.tabs); if (parts.length < 2) return;
-  const at = rows.indexOf(parts[0]);
-  const merged = { id: uid(), name: parts[0].gname || `${parts[0].kind}별 추천`, layout: parts[0].layout, why: '', kind: parts[0].kind, tabs: parts.map(p => p.name), gk };
+  const parts = rows.filter(r => r.gk === gk && !r.tabs); if (parts.length < 2 || parts.length > TAB_MAX) return;
+  const at = rows.indexOf(parts[0]), tabs = parts.map(p => ({ tabId: tid(), label: String(p.name).slice(0, 40) }));
+  const merged = { id: uid(), name: parts[0].gname || `${parts[0].kind}별 추천`, layout: parts[0].layout, why: '', kind: parts[0].kind, tabs, gk,
+    carry: parts.map((p, j) => ({ sid: p.id, toTab: tabs[j].tabId })) };   // 구좌마다 탭 하나: 그 구좌의 상품 칸은 그 탭으로
   rows = rows.filter(r => !parts.includes(r)); rows.splice(at, 0, merged);
 }
 
@@ -157,20 +164,26 @@ function renderEdit() {
       <select data-f="layout" aria-label="${i + 1}번 구좌 종류">${Object.entries(LAYOUTS).map(([k, v]) => `<option value="${k}" ${r.layout === k ? 'selected' : ''}>${v}</option>`).join('')}${r.layout === 'custom' ? '<option value="custom" selected>레퍼런스 구조</option>' : ''}</select>
       <input type="text" class="why-in" data-f="why" value="${esc(r.why)}" maxlength="80" placeholder="이 구좌를 넣은 이유 (선택)" aria-label="${i + 1}번 구좌를 넣은 이유">
       <span class="tools"><button class="ib" data-mv="-1" ${i ? '' : 'disabled'} aria-label="위로">↑</button><button class="ib" data-mv="1" ${i < rows.length - 1 ? '' : 'disabled'} aria-label="아래로">↓</button>
+        ${TAB_LAYOUTS.includes(r.layout) && !r.tabs && !r.gk ? `<button class="ib wide" data-tsplit aria-label="${esc(r.name)} 탭으로 나누기" title="가격대·취향처럼 상품을 탭으로 나눠요">탭 나누기</button>` : ''}
         <button class="ib" data-del aria-label="${esc(r.name)} 삭제">✕</button></span>${groupLine(r, i)}</li>`).join('')}</ol>
-    <div class="addrow"><button class="btn sm" id="addBtn">+ 구좌 추가</button><span class="cap">${rows.length}개 구좌</span></div>`;
+    <div class="addrow"><button class="btn sm" id="addBtn">+ 구좌 추가</button><button class="btn sm" id="addTabBtn">+ 탭 구좌 추가</button><span class="cap">${rows.length}개 구좌</span></div>
+    <datalist id="kindList"><option value="가격대"><option value="취향·테마"><option value="카테고리"><option value="탭"></datalist>`;
   $('#pv').innerHTML = rows.length ? wire(rows, true) : '<p class="cap">구좌가 없어요</p>';
 }
-// 묶음 줄: 탭 구좌면 탭 이름들 + 바꾸기 / 따로 둔 묶음은 첫 구좌에만 바꾸기 (진열 유형은 보기만, 고치기는 구좌 편집에서)
+// 묶음 줄: 탭 구좌면 진열 유형·탭 이름 고치기·추가·지우기·없애기 + [탭 하나로|따로 구좌로] / 따로 둔 묶음은 첫 구좌에만 바꾸기
 function groupLine(r, i) {
   if (!r.gk) return '';
   const first = !r.tabs && rows.findIndex(x => x.gk === r.gk) === i, parts = rows.filter(x => x.gk === r.gk && !x.tabs).length;
   if (!r.tabs && !first) return `<div class="grp"><span class="tag">${esc(r.kind)}</span><span class="cap">'${esc(r.gname)}' 묶음에서 나눈 구좌</span></div>`;
   const seg = `<span class="gseg" role="group" aria-label="${esc(r.tabs ? r.name : r.gname)} 보여주는 방식">
-      <button data-group="tab" data-gk="${r.gk}" aria-pressed="${!!r.tabs}" ${!r.tabs && parts < 2 ? 'disabled title="남은 구좌가 하나라 묶을 수 없어요"' : ''}>탭 하나로</button>
+      <button data-group="tab" data-gk="${r.gk}" aria-pressed="${!!r.tabs}" ${!r.tabs && parts < 2 ? 'disabled title="남은 구좌가 하나라 묶을 수 없어요"' : !r.tabs && parts > TAB_MAX ? `disabled title="탭은 ${TAB_MAX}개까지예요"` : ''}>탭 하나로</button>
       <button data-group="split" data-gk="${r.gk}" data-gid="${r.id}" aria-pressed="${!r.tabs}">따로 구좌로</button></span>`;
-  return `<div class="grp"><span class="tag">${esc(r.kind)}</span>${seg}
-    <span class="cap">${r.tabs ? `탭 ${r.tabs.length}개: ${r.tabs.map(esc).join(' · ')} · 탭 하나가 PROMO_WORK 칸 하나` : `'${esc(r.gname)}' 묶음을 구좌 ${parts}개로 나눴어요`} · 지난 행사에서 추정</span></div>`;
+  if (!r.tabs) return `<div class="grp"><span class="tag">${esc(r.kind)}</span>${seg}<span class="cap">'${esc(r.gname)}' 묶음을 구좌 ${parts}개로 나눴어요</span></div>`;
+  const n = r.tabs.length;
+  const chips = r.tabs.map((t, j) => `<span class="tchip"><input type="text" data-tlabel="${t.tabId}" value="${esc(t.label)}" maxlength="40" aria-label="${esc(r.name)} ${j + 1}번 탭 이름"><button class="ib" data-tdel="${t.tabId}" ${n <= TAB_MIN ? 'disabled title="탭은 2개 이상이어야 해요"' : ''} aria-label="${esc(t.label)} 탭 지우기">✕</button></span>`).join('');
+  return `<div class="grp"><input type="text" class="kind-in" data-tkind value="${esc(r.kind || '')}" list="kindList" maxlength="20" placeholder="진열 유형" aria-label="${esc(r.name)} 진열 유형">${seg}
+    <span class="tchips">${chips}</span><button class="btn xs" data-tadd ${n >= TAB_MAX ? 'disabled' : ''}>+ 탭</button><button class="btn xs" data-tdrop>탭 없애기</button>
+    <span class="cap">탭 하나가 PROMO_WORK 칸 하나${r.tnote ? ` · ${esc(r.tnote)}` : ''}</span></div>`;
 }
 function render() {
   renderCands(); renderEdit(); Cap.lazy($('#cands'));
@@ -216,14 +229,38 @@ document.addEventListener('click', e => {
     const id = r.dataset.id;
     if (t.closest('[data-mv]')) { move(id, +t.closest('[data-mv]').dataset.mv); return; }
     if (t.closest('[data-del]')) { rows = rows.filter(x => x.id !== id); dirty = true; if (sel === id) sel = null; renderEdit(); return; }
+    // 탭 구좌 (plans/28). 지운 탭·없앤 탭의 상품 칸은 저장할 때 첫 탭·한 구좌로 모인다 (toSections)
+    const row = rows.find(x => x.id === id), tb = t.closest('[data-tsplit],[data-tadd],[data-tdel],[data-tdrop]');
+    if (row && tb) {
+      if (tb.hasAttribute('data-tsplit')) { Object.assign(row, { kind: '탭', tabs: newTabs(), gk: uid() }); toast('탭 2개로 나눴어요. 탭 이름을 적어 주세요. 지금 상품은 첫 탭에 있어요'); }
+      else if (tb.hasAttribute('data-tadd')) { if (row.tabs.length >= TAB_MAX) return; row.tabs.push(...newTabs([`탭 ${row.tabs.length + 1}`])); }
+      else if (tb.dataset.tdel) { if (row.tabs.length <= TAB_MIN) return; row.tabs = row.tabs.filter(x => x.tabId !== tb.dataset.tdel); toast('탭을 지웠어요. 그 탭의 상품은 첫 탭으로 옮겨요'); }
+      else { dropTabs(row); toast('탭을 없앴어요. 모든 탭의 상품을 이 구좌에 모아요'); }
+      dirty = true; sel = id; renderEdit();
+      const focus = tb.hasAttribute('data-tadd') ? `[data-tlabel="${row.tabs[row.tabs.length - 1].tabId}"]` : tb.hasAttribute('data-tsplit') ? `[data-tlabel="${row.tabs[0].tabId}"]` : `.r[data-id="${id}"] .name-in`;
+      $(focus)?.select?.(); return;
+    }
     if (sel !== id) { sel = id; $$('.r').forEach(x => x.classList.toggle('on', x.dataset.id === id)); $('#pv').innerHTML = wire(rows, true); }
   }
   if (t.closest('#addBtn')) { const nr = { id: uid(), name: '새 구좌', layout: 'grid2', why: '' }; rows.push(nr); sel = nr.id; dirty = true; renderEdit(); $(`.r[data-id="${nr.id}"] .name-in`)?.select(); }
+  if (t.closest('#addTabBtn')) { const nr = { id: uid(), name: '탭별 추천', layout: 'grid2', why: '', kind: '탭', tabs: newTabs(), gk: uid() }; rows.push(nr); sel = nr.id; dirty = true; renderEdit(); $(`.r[data-id="${nr.id}"] .name-in`)?.select(); }
 });
 $('#blankBtn').addEventListener('click', () => choose('blank'));
 $('#editBody').addEventListener('input', e => {
-  const f = e.target.dataset.f, r = rows.find(x => x.id === e.target.closest('.r')?.dataset.id); if (!f || !r) return;
-  r[f] = e.target.value; dirty = true; $('#pv').innerHTML = wire(rows, true);
+  const el = e.target, r = rows.find(x => x.id === el.closest('.r')?.dataset.id); if (!r) return;
+  if (el.dataset.tlabel) { const tb = r.tabs?.find(x => x.tabId === el.dataset.tlabel); if (tb) tb.label = el.value.slice(0, 40); }
+  else if (el.hasAttribute('data-tkind')) r.kind = el.value.slice(0, 20);
+  else if (el.dataset.f === 'layout' && r.tabs && !TAB_LAYOUTS.includes(el.value)) {
+    // 상품 탭을 쓰지 않는 종류로 바꾸면 탭을 없앤다 (plans/28 2장)
+    if (!confirm(`'${r.name}'에는 탭이 ${r.tabs.length}개 있어요. ${LAYOUTS[el.value]}(으)로 바꾸면 탭을 없애고 상품은 한 구좌로 모아요. 바꿀까요?`)) { el.value = r.layout; return; }
+    r.layout = el.value; dropTabs(r); dirty = true; renderEdit(); return;
+  }
+  else if (el.dataset.f) {
+    r[el.dataset.f] = el.value;
+    if (el.dataset.f === 'layout') { dirty = true; renderEdit(); $(`.r[data-id="${r.id}"] select[data-f="layout"]`)?.focus(); return; }   // [탭 나누기] 보이기·숨기기
+  }
+  else return;
+  dirty = true; $('#pv').innerHTML = wire(rows, true);
 });
 $('#editBody').addEventListener('keydown', e => {
   if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
@@ -311,7 +348,7 @@ async function pastCand(doc) {
     const per = `${String(c.w.start).slice(0, 10).replace(/-/g, '.')}~${String(c.w.end).slice(5, 10).replace('-', '.')}`;
     PAGES.past = { name: c.w.promo, from: '자사몰', period: per, r: [9, 16], secs: zones.map(z => z.name), zones };
     const secs = [['메인 비주얼', 'hero', '명분과 메인 카피를 첫 화면에 크게']].concat(units.map(u => u.group
-      ? [`${u.kind}별 추천`, layoutFor(u.zones[0].count), `지난 행사에서 '${u.kind}' 진열 칸 ${u.zones.length}개를 탭으로 쓴 것 같아요 (칸마다 상품 ${u.zones[0].count}개)`, { kind: u.kind, tabs: u.zones.map(z => z.name.slice(0, 40)) }]
+      ? [`${u.kind}별 추천`, layoutFor(u.zones[0].count), `지난 행사에서 '${u.kind}' 진열 칸 ${u.zones.length}개를 탭으로 쓴 것 같아요 (칸마다 상품 ${u.zones[0].count}개)`, { kind: u.kind, tabs: u.zones.map(z => z.name.slice(0, 40)), note: '지난 행사에서 추정' }]
       : [u.zones[0].name.slice(0, 40), layoutFor(u.zones[0].count), `지난 행사 진열 칸 · 상품 ${u.zones[0].count}개`]));
     return { id: 'B', type: 'single', page: 'past', title: `지난 '${c.w.promo}'처럼`, why: `PROMO_WORK 지난 상시 할인 '${c.w.promo}'의 진열 칸(카테고리명)을 행 순서대로 옮겼어요`,
       match: [[c.hit ? `같은 말: ${c.hit}` : '같은 명분 단어', !!c.hit], ['비슷한 시기', c.md <= 1], [`할인 행 ${c.w.rows}개`, true]], secs: secs.slice(0, 12) };
@@ -369,11 +406,28 @@ let lastJ = null;
 function toSections(prev) {
   const old = Object.fromEntries(((prev && prev.sections) || []).map(x => [x.sectionId, x]));
   const firstHero = rows.find(r => r.layout === 'hero');
+  // 나누기·합치기로 새로 생긴 구좌는 원래 구좌의 상품 칸을 이어 받는다 (carry: 나눈 탭의 칸 / 합친 구좌의 칸 → 새 탭)
+  const carried = carry => carry.flatMap(c => {
+    const s = old[c.sid]; if (!s) return [];
+    const f = s.tabs?.[0]?.tabId;
+    return (s.slots || []).filter(sl => !c.tabId || (sl.tabId || f) === c.tabId).map(sl => ({ ...sl, tabId: c.toTab }));
+  });
   return rows.map((r, i) => {
-    const o = old[r.id] || {};
-    const tabs = r.tabs ? r.tabs.map((label, j) => ({ ...(o.tabs?.[j] || {}), tabId: o.tabs?.[j]?.tabId || `${r.id}t${j + 1}`, label: String(label).slice(0, 40), zone_tag: o.tabs?.[j]?.zone_tag || '' })) : [];
+    const o = old[r.id] || (r.carry ? { slots: carried(r.carry) } : {});
+    const tabs = (r.tabs || []).slice(0, TAB_MAX).map(t => { const ot = (o.tabs || []).find(x => x.tabId === t.tabId) || {};
+      return { ...ot, tabId: t.tabId, label: String(t.label).slice(0, 40), zone_tag: ot.zone_tag || '' }; });
+    // 칸의 탭: tabId가 없으면 이전 첫 탭. 지운 탭의 칸은 첫 탭으로, 탭을 없앴으면 탭 표시를 지우고 같은 상품은 하나로
+    const ids = new Set(tabs.map(t => t.tabId)), was0 = o.tabs?.[0]?.tabId, key = c => `${c.tabId || ''}|${c.seq}`;
+    const norm = (o.slots || []).map(sl => {
+      const c = { ...sl }, was = sl.tabId || was0, stay = tabs.length ? ids.has(was) : !was;
+      if (tabs.length) c.tabId = stay ? was : tabs[0].tabId; else delete c.tabId;
+      return [c, stay];
+    });
+    // 한 탭(탭 없으면 구좌) 안에서 같은 상품은 하나: 원래 그 탭에 있던 칸을 남긴다 (탭별 문구 등이 있을 수 있음)
+    const stayKeys = new Set(norm.filter(([c, stay]) => stay && c.seq).map(([c]) => key(c))), seen = new Set();
+    const slots = norm.filter(([c, stay]) => { if (!c.seq) return true; const k = key(c); if (seen.has(k) || (!stay && stayKeys.has(k))) return false; seen.add(k); return true; }).map(([c]) => c);
     return { ...o, ...(r === firstHero ? {headline: PLAN.doc?.brief?.key_copy || ''} : {}), sectionId: r.id, order: i, name: String(r.name).slice(0, 40), layoutId: r.layout, role: String(r.why || '').slice(0, 200),
-      zone_kind: String(r.kind || '').slice(0, 20), tabs, v2: { ...(o.v2 || {}), gk: r.gk || '', gname: r.gname || '' } };
+      zone_kind: String(r.kind || '').slice(0, 20), tabs, slots, v2: { ...(o.v2 || {}), gk: r.gk || '', gname: r.gname || '', tnote: r.tnote || '' } };
   });
 }
 function saveCompose() {
@@ -394,7 +448,9 @@ PLAN.ready.then(async doc => {
   chosen = doc.v2.compose || 'blank';
   if (chosen !== 'blank' && !shown().some(c => c.id === chosen)) n = 3;
   rows = secs.map(x => ({ id: x.sectionId, name: x.name || x.headline || '구좌', layout: x.layoutId || 'hero', why: x.role || '',
-    ...(x.tabs?.length ? { kind: x.zone_kind || '탭', tabs: x.tabs.map(t => t.label), gk: x.v2?.gk || uid() } : x.v2?.gk ? { kind: x.zone_kind, gk: x.v2.gk, gname: x.v2.gname } : {}) }));
+    // 탭 출처 안내(tnote)가 없는 예전 저장본의 탭 구좌는 지난 행사(B안)에서만 생겼다
+    ...(x.tabs?.length ? { kind: x.zone_kind || '탭', tabs: x.tabs.map(t => ({ tabId: t.tabId, label: t.label || '' })), gk: x.v2?.gk || uid(), tnote: x.v2?.tnote ?? '지난 행사에서 추정' }
+      : x.v2?.gk ? { kind: x.zone_kind, gk: x.v2.gk, gname: x.v2.gname } : {}) }));
   uidN = Math.max(uidN, ...rows.map(r => +String(r.id).replace(/\D/g, '') || 0), ...rows.map(r => +String(r.gk || '').replace(/\D/g, '') || 0));
   lastJ = JSON.stringify([chosen, rows]);
   dirty = true;   // 저장된 구성을 다른 안으로 바꿀 때는 한 번 묻기

@@ -186,3 +186,34 @@ class Quality(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@unittest.skipUnless(READY, "레퍼런스 색인 없음")
+class TabRule(unittest.TestCase):
+    """A안 규칙형 탭 구좌 (plans/28 4단계): 선물 → 가격대 탭, 키워드 2개 이상 → 키워드 탭, 그 밖에는 탭 없음."""
+    def _tabbed(self, d):
+        out = compose.build(d)
+        a = out["candidates"][0]
+        self.assertEqual(a["id"], "A")
+        tabbed = [s for s in a["secs"] if len(s) > 3 and "tabs" in s[3]]
+        self.assertLessEqual(len(tabbed), 1)
+        for s in tabbed:
+            self.assertIn(s[1], compose.TAB_LAYOUTS)
+            self.assertTrue(2 <= len(s[3]["tabs"]) <= 12 and s[3]["kind"] and s[3]["note"])
+        return out, tabbed
+
+    def test_gift_gets_price_tabs(self):
+        out, t = self._tabbed(_brief("추석 선물세트", "추석", "선물 수요", ["선물"], "season"))
+        if out["type"]["id"] == "gift_curation":
+            self.assertEqual(t[0][3]["tabs"], compose.PRICE_TABS)
+
+    def test_keywords_become_tabs(self):
+        out, t = self._tabbed(_brief("봄 피크닉", "", "전환·매출", ["피크닉", "벚꽃", "말차", "냉침", "선물"], "season"))
+        if out["type"]["id"] != "gift_curation":
+            self.assertEqual(t[0][0], "테마별 추천")
+            self.assertEqual(t[0][3]["tabs"], ["피크닉", "벚꽃", "말차", "냉침"])   # 최대 4개
+
+    def test_no_tabs_without_reason(self):
+        out, t = self._tabbed(_brief("그냥 티", "", "", ["녹차"]))
+        if out["type"]["id"] != "gift_curation":
+            self.assertEqual(t, [])

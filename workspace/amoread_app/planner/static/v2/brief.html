@@ -23,11 +23,12 @@
   <span class="v2grow"></span>
   <a class="v2btn primary v2next" href="/v2/compose">다음: 구좌 구성<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
   <a class="v2tool" href="/v2/library" aria-label="레퍼런스 라이브러리" title="레퍼런스 라이브러리"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2z"/><path d="M6 21h13v-3"/><path d="M9 7h6"/></svg></a>
+  <a class="v2tool" href="/v2/inspire" aria-label="오늘의 영감" title="오늘의 영감"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1.1 1.2 1.1 2V16h5v-.2c0-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z"/></svg></a>
   <a class="v2gear" href="/v2/settings" aria-label="설정·데이터"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
 </header>
 
 <main class="page">
-  <p class="demo"><b>새 버전 시험 중이에요.</b> 키워드를 누르면 오른쪽 근거의 <b>검색·글은 네이버 실제 데이터</b>예요 (키워드만 보내요). <b>가지는 그 말이 나온 블로그 글 여러 개에 함께 나온 말</b>이에요 (뉴스는 덜 셈) (자동으로 뽑아서 엉뚱한 말이 섞일 수 있어요. 검색광고 키를 넣으면 연관 키워드가 먼저 와요). 우리 데이터는 연결 상태에 따라 표시돼요. 아래 기본 제안은 카피 틀이며, AI 제안 버튼은 Claude를 호출해요.</p>
+  <p class="demo">명분에서 키워드를 펼치고, 검색 흐름·관련 글·연결 상품을 확인해 브리프에 담으세요. 콘텐츠에서 함께 나온 말과 검색 상승 신호는 구분해서 표시해요.</p>
 
   <div class="masthead">
     <div class="grow">
@@ -45,19 +46,24 @@
     <section class="card" aria-labelledby="mapH">
       <div class="sec-head">
         <h2 id="mapH">키워드 펼치기</h2>
-        <span class="tag demo-t" id="mapDemo">예시 데이터</span>
+        <span class="tag demo-t" id="mapDemo">근거 기반 탐색</span>
         <span class="grow"></span>
         <button class="btn sm" id="resetBtn">처음 모양으로</button>
       </div>
-      <div class="filters" role="group" aria-label="종류 (고르지 않으면 전체)">
-        <span class="cap">종류</span>
+      <p id="researchStatus" class="cap" role="status"></p>
+      <div class="filters" role="group" aria-label="키워드 출처 필터">
+        <span class="cap">출처</span>
         <span id="chFilters"></span>
         <button class="btn sm" id="chClear" hidden>전체 보기</button>
         <span class="cap conn"><span id="connTxt">연결 상태 확인 중…</span> <button class="lnk" id="connBtn">연결 설정 보기</button></span>
       </div>
       <nav class="path" id="path" aria-label="지나온 길"></nav>
-      <svg class="map" id="map" viewBox="0 0 1100 640" role="group" aria-label="키워드 마인드맵"></svg>
-      <p class="cap maphint">키워드를 누르면 가지가 펼쳐지고 오른쪽에 근거가 나와요. 다시 누르면 접혀요. 키워드 왼쪽 <b>동그라미</b>를 누르면 고른 키워드에 담겨요 (여러 개 가능). 키보드: Enter 펼치기·접기, Space 고르기</p>
+      <div class="map-tools"><p id="aiKeywordStatus" class="cap" role="status">지도는 네이버 검색 결과로 만들어요. AI는 버튼을 누를 때만 써요.</p><button class="btn sm" id="aiKeywordExpand" type="button" disabled aria-describedby="aiKeywordCost">AI로 더 찾기</button><span class="tag ai-cost" id="aiKeywordCost">약 1분 걸려요</span></div>
+      <div class="map-scroll"><svg class="map" id="map" viewBox="0 0 1100 640" role="group" aria-label="키워드 마인드맵"></svg><div class="map-tip" id="mapTip" role="tooltip" hidden></div><div class="map-empty-box" id="mapEmpty" hidden><p id="mapEmptyMsg"></p><button class="btn sm" type="button" data-ai-more>AI로 더 찾기</button><span class="tag ai-cost">약 1분 걸려요</span></div></div>
+      <div id="mapPagination" class="map-pagination"></div>
+      <p class="cap maphint">가운데는 정해 둔 명분이에요. 연필을 누르면 명분을 고칠 수 있어요. 키워드를 누르면 오른쪽에서 근거를 보고, 동그라미를 누르면 브리프에 담겨요. 펼친 가지는 접기 전까지 지도에 남아요.</p>
+      <form id="manualForm" class="research-controls"><input type="text" id="manualKeyword" maxlength="20" aria-label="직접 추가할 키워드" placeholder="찾는 말이 없다면 직접 추가"><button class="btn sm" type="submit">키워드 추가</button></form>
+      <div id="hiddenKeywords" class="cap"></div>
     </section>
 
     <aside class="card side" id="side" aria-live="polite"></aside>
@@ -68,6 +74,8 @@
     <div class="rows">
       <span class="rl" id="pickedL">고른 키워드</span>
       <div class="pickbar" id="picked" aria-labelledby="pickedL"></div>
+      <span class="rl">콘셉트 후보</span>
+      <div><div class="sugbar"><button class="btn sm" id="conceptIdeas" type="button">키워드로 콘셉트 조합</button><button class="btn sm" id="aiConceptIdeas" type="button">AI 콘셉트 제안</button><span class="cap">키워드 3~5개를 담으면 방향을 비교하기 좋아요.</span></div><div id="conceptCandidates" class="sugs" aria-live="polite"></div></div>
       <label class="rl" for="concept">컨셉 한 줄</label>
       <input type="text" id="concept" maxlength="120" placeholder="예) 피크닉에서 누리는 차 한 잔의 여유">
       <label class="rl" for="who">누구에게, 어떤 때 <em>(선택)</em></label>
@@ -75,11 +83,11 @@
       <label class="rl" for="copy">메인 카피 <em>(선택)</em></label>
       <div>
         <input type="text" id="copy" maxlength="60" placeholder="페이지 첫 화면의 한 줄 · 나중에 써도 돼요">
-        <div class="sugbar"><span class="cap">제안</span><span class="tag" title="고른 키워드를 장면형·질문형 같은 카피 틀에 넣어 만든 문장이에요. 골라서 다듬어 쓰세요.">키워드로 만든 카피 틀</span><span class="cap" id="sugBasis"></span></div>
+        <div class="sugbar"><span class="cap">제안</span><span class="tag" title="고른 키워드를 장면형, 질문형 같은 카피 틀에 넣어 만든 문장이에요. 골라서 다듬어 쓰세요.">키워드로 만든 카피 틀</span><span class="cap" id="sugBasis"></span></div>
         <div id="briefAiRecommendations"></div>
         <div class="sugs" id="sugs" role="group" aria-label="메인 카피 제안"></div>
         <div class="sugbar"><button class="btn sm" id="moreSug">다른 제안 보기</button><button class="btn sm" id="aiSug">AI 제안</button>
-          <span class="cap">누르면 메인 카피 칸에 들어가요. 가격·쿠폰·효능 표현은 넣지 않아요.</span></div>
+          <span class="cap">누르면 메인 카피 칸에 들어가요. 가격, 쿠폰, 효능 표현은 넣지 않아요.</span></div>
       </div>
       <span class="rl" id="moodL">느낌 레퍼런스 <em>(선택)</em></span>
       <div aria-labelledby="moodL">
@@ -104,6 +112,7 @@
 <script src="/static/v2/plan.js"></script>
 <script src="/copy-recommender-assets/core.js"></script>
 <script src="/copy-recommender-assets/editor-plugin.js"></script>
+<script src="/static/v2/brief-keywords.js"></script>
 <script src="/static/v2/brief.js"></script>
 <script src="/copy-recommender-assets/brief-plugin.js"></script>
 </body>
