@@ -203,6 +203,7 @@ class KeywordEvidence(BaseModel):
     source: str = Field(default="manual", max_length=40)
     fetched_at: str = Field(default="", max_length=40)
     change_4w: float | None = None
+    rationale: str = Field(default="", max_length=300)
     articles: list[KeywordArticle] = Field(default_factory=list, max_length=3)
 
 
@@ -213,9 +214,16 @@ class BriefConceptCandidate(BaseModel):
     keywords: list[Annotated[str, Field(max_length=20)]] = Field(default_factory=list, max_length=5)
 
 
+class AIKeywordExpansion(BaseModel):
+    parent: str = Field(max_length=20)
+    fetched_at: str = Field(default="", max_length=40)
+    items: list[KeywordEvidence] = Field(default_factory=list, max_length=8)
+
+
 class KeywordResearch(BaseModel):
     root: str = Field(default="", max_length=20)
     hidden: list[Annotated[str, Field(max_length=20)]] = Field(default_factory=list, max_length=100)
+    ai_expansions: list[AIKeywordExpansion] = Field(default_factory=list, max_length=10)
     manual: list[KeywordEvidence] = Field(default_factory=list, max_length=30)
     evidence: list[KeywordEvidence] = Field(default_factory=list, max_length=30)
     concept_candidates: list[BriefConceptCandidate] = Field(default_factory=list, max_length=3)

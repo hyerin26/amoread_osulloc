@@ -168,11 +168,8 @@ input:not([type=checkbox]):not([type=radio]):focus, select:focus, textarea:focus
 .research-controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .research-controls input { flex:1; min-width:180px; }
 select { min-height:var(--control-lg); padding:0 10px; border:1px solid var(--line); border-radius:var(--r2); background:var(--surface); color:var(--ink); font:inherit; }
-.category-label { display:grid; gap:6px; margin-top:16px; font-size:var(--fs-sm); }
 .map-scroll { overflow-x:auto; border:1px solid var(--line-sub); border-radius:var(--r2); background:var(--bg); }
 .map { min-width:720px; }
-.map .node.group rect { fill:var(--accent-soft); stroke:var(--sel-line); }
-.map .node.group text { fill:var(--accent); }
 .map .node .node-badge { font-size:11px; font-weight:400; fill:var(--mute); }
 .map .node.focus rect { stroke:var(--accent); stroke-width:2; }
 .map .node.root.picked rect { fill:var(--ink); }
@@ -184,3 +181,10 @@ select { min-height:var(--control-lg); padding:0 10px; border:1px solid var(--li
 @media(max-width:600px) { .research-controls > .btn { width:100%; } .masthead .grow { min-width:0; } .page { padding:20px 12px 48px; } }
 
 .page [hidden], .v2drawer[hidden], .v2scrim[hidden] { display:none !important; }
+
+.ai-keyword-controls { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:14px; background:var(--accent-soft); border-radius:var(--r2); }
+.ai-keyword-controls p { flex:1; min-width:180px; }
+.map-pagination { display:flex; align-items:center; justify-content:center; gap:12px; }
+.map .map-empty { font-size:14px; text-anchor:middle; fill:var(--mute); }
+
+.map .node.keyword > text:not(.node-badge) { font-size:16px; }

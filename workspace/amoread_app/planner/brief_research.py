@@ -1,4 +1,4 @@
-"""브리프의 명시적 AI 해석/콘셉트 요청. 전달된 공개 근거만 사용하며 도구를 열지 않는다."""
+"""브리프의 명시적 AI 해석/콘셉트 요청. 카피·콘셉트는 전달된 근거만 사용하고, 키워드 확장은 웹 검색 도구를 사용한다."""
 import asyncio
 import json
 import time
@@ -80,8 +80,7 @@ async def generate(req):
     raise ValueError("no_result")
 
 
-@router.post("/recommendations")
-async def recommend(req: ResearchRequest):
+async def run_research(work, timeout=90):
     global _running
     now = time.monotonic()
     while _calls and now - _calls[0] >= 60:
@@ -91,10 +90,23 @@ async def recommend(req: ResearchRequest):
     _calls.append(now)
     _running = True
     try:
-        return await asyncio.wait_for(generate(req), timeout=90)
+        return await asyncio.wait_for(work(), timeout=timeout)
     except HTTPException as e:
         return JSONResponse({"error": e.detail}, status_code=e.status_code)
     except Exception:
-        return JSONResponse({"error": "AI 제안을 받지 못했어요. Claude 인증·모델 연결을 확인한 뒤 다시 시도해 주세요."}, status_code=503)
+        return JSONResponse({"error": "AI 제안을 받지 못했어요. Claude 인증·모델·웹 검색 연결을 확인한 뒤 다시 시도해 주세요."}, status_code=503)
     finally:
         _running = False
+
+
+@router.post("/recommendations")
+async def recommend(req: ResearchRequest):
+    return await run_research(lambda: generate(req))
+
+
+from .keyword_agent import KeywordRequest, generate_keywords
+
+
+@router.post("/keywords")
+async def expand_keywords(req: KeywordRequest):
+    return await run_research(lambda: generate_keywords(req), timeout=150)

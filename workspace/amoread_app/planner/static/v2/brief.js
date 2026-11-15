@@ -4,11 +4,16 @@ const OURS = {
 };
 const T = Object.create(null);
 const LIVE = new Map();
+const branchOrder = new Map();
 const selectedEvidence = new Map();
 let hiddenWords = new Set(),
   manualWords = [],
   conceptCandidates = [],
   conceptBasis = '';
+let aiExpansions = [],
+  mapPage = 0,
+  keywordBusy = null,
+  keywordMessage = '';
 let researchEpoch = 0,
   aiEpoch = 0,
   researchReady = false;
@@ -36,24 +41,18 @@ const svgEl = (tag, attrs) => {
 };
 const info = k => T[k] || {
   kids: [],
-  category: BK.category(k),
+  category: 'topic',
   source: 'manual'
 };
-const groupKey = k => k.startsWith('@group:') ? k.slice(7) : '';
 const mapRoot = () => path[path.length - 1];
-const sourceName = s => ({
-  searchad: '검색 연관어',
-  content: '콘텐츠 추출어',
-  manual: '직접 추가',
-  product: '실제 상품'
-} [s] || '명분');
+const sourceName = s => BK.sources[s] || '명분';
 
 function addNode(k, props = {}) {
   k = BK.clean(k);
   if (!BK.valid(k)) return null;
   const node = T[k] || (T[k] = {
     kids: [],
-    category: BK.category(k),
+    category: 'topic',
     source: 'manual'
   });
   Object.assign(node, props);
@@ -72,15 +71,19 @@ function dataFor(k) {
   return [...LIVE.values()].map(r => r.data).find(d => d?.sources?.datalab?.items?.some(t => t.keyword === k));
 }
 
-function grouped() {
-  const base = mapRoot();
-  const out = Object.fromEntries(Object.keys(BK.groups).map(c => [c, []]));
-  for (const k of info(base).kids)
-    if (!hiddenWords.has(k) && k !== base) out[info(k).category || 'topic'].push(k);
-  const audience = $('#who').value.trim();
-  const relevance = k => (BK.trend(dataFor(k), k).change >= .2 ? 2 : 0) + (audience.includes(k) ? 2 : 0) + (productsFor(k).length ? 1 : 0);
-  for (const words of Object.values(out)) words.sort((a, b) => relevance(b) - relevance(a));
-  return out;
+function branchWords() {
+  const base = mapRoot(),
+    audience = $('#who').value.trim();
+  const latest = aiExpansions.filter(e => e.parent === base).at(-1);
+  const relevance = k => (latest?.items.some(x => x.keyword === k) ? 3 : 0) + (BK.trend(dataFor(k), k).change >= .2 ? 2 : 0) + (audience
+    .includes(k) ? 2 : 0) + (productsFor(k).length ? 1 : 0);
+  const all = [...new Set(info(base).kids)].filter(k => k !== base);
+  const previous = branchOrder.get(base) || [];
+  // 근거 응답이 도착할 때마다 노드가 이동하면 클릭 대상을 놓치므로 기존 가지 순서는 유지한다.
+  const order = previous.filter(k => all.includes(k)).concat(all.filter(k => !previous.includes(k)).sort((a, b) => relevance(b) - relevance(
+    a)));
+  branchOrder.set(base, order);
+  return order.filter(k => !hiddenWords.has(k) && (!chOn.size || chOn.has(info(k).source)));
 }
 
 function productsFor(k) {
@@ -94,7 +97,7 @@ function connectProducts() {
   for (const base of new Set([ROOT, mapRoot()])) {
     const prods = [base, ...picked, ...info(base).kids.filter(k => info(k).source !== 'product')].flatMap(productsFor);
     for (const p of prods) {
-      const k = BK.clean(String(p.name || '').replace(/[^가-힣A-Za-z0-9 ]/g, ' ')).slice(0,20).trim();
+      const k = BK.clean(String(p.name || '').replace(/[^가-힣A-Za-z0-9 ]/g, ' ')).slice(0, 20).trim();
       if (k === ROOT || k === base || !BK.valid(k)) continue;
       const node = addNode(k, {
         category: 'product',
@@ -111,71 +114,80 @@ function connectProducts() {
 
 function renderMap() {
   const svg = $('#map'),
-    groups = grouped(),
-    base = mapRoot();
+    words = branchWords(),
+    base = mapRoot(),
+    size = 12;
+  const pages = Math.max(1, Math.ceil(words.length / size));
+  mapPage = Math.min(mapPage, pages - 1);
+  const shown = words.slice(mapPage * size, (mapPage + 1) * size);
   svg.replaceChildren();
-  const rows = Object.entries(groups).filter(([c]) => !chOn.size || chOn.has(c));
-  const yRoot = 320;
-  const edge = (x1, y1, x2, y2) => svg.append(svgEl('path', {
-    class: 'edge',
-    d: `M${x1},${y1} C${(x1+x2)/2},${y1} ${(x1+x2)/2},${y2} ${x2},${y2}`
-  }));
 
-  function node(k, label, x, y, kind, badge = '') {
+  function node(k, x, y, root = false) {
+    const source = info(k).source,
+      signal = BK.trend(dataFor(k), k);
+    const badge = root ? '' :
+      `${sourceName(source)}${signal.change!==null ? signal.change>=.2?' · 관심↑':signal.change<=-.2?' · 관심↓':'' : ''}`;
     const g = svgEl('g', {
-      class: `node ${kind}${picked.includes(k) ? ' picked' : ''}${focus === k ? ' focus' : ''}`,
+      class: `node ${root?'root':'keyword'}${picked.includes(k)?' picked':''}${focus===k?' focus':''}`,
       tabindex: 0,
       role: 'button',
       'data-k': k,
-      'aria-label': `${label}${badge ? ', '+badge : ''}${kind === 'keyword' || kind === 'root' ? ', Space로 브리프에 담기' : ', 전체 후보 보기'}`
+      'aria-label': `${k}${badge?', '+badge:''}, Enter로 근거 보기, Space로 브리프에 담기`
     });
-    const w = kind === 'keyword' ? 210 : kind === 'root' ? 220 : 136,
-      h = kind === 'keyword' ? 58 : 44;
+    const w = root ? 230 : 290,
+      h = root ? 50 : 64;
     g.append(svgEl('rect', {
       x: x - w / 2,
       y: y - h / 2,
       width: w,
       height: h,
-      rx: 10
+      rx: 12
     }));
     const title = svgEl('title', {});
-    title.textContent = label;
+    title.textContent = k;
     g.append(title);
-    const txt = svgEl('text', {
+    const text = svgEl('text', {
       x,
-      y: badge ? y - 9 : y
+      y: badge ? y - 10 : y
     });
-    txt.textContent = (picked.includes(k) ? '✓ ' : '') + (label.length > 13 ? label.slice(0, 12) + '…' : label);
-    g.append(txt);
+    text.textContent = (picked.includes(k) ? '✓ ' : '') + (k.length > (root ? 12 : 16) ? k.slice(0, root ? 11 : 15) + '…' : k);
+    g.append(text);
     if (badge) {
-      const b = svgEl('text', {
+      const label = svgEl('text', {
         class: 'node-badge',
         x,
-        y: y + 15
+        y: y + 16
       });
-      b.textContent = badge;
-      g.append(b);
+      label.textContent = badge;
+      g.append(label);
     }
     svg.append(g);
   }
-  for (const [i, [cat, words]] of rows.entries()) {
-    const position = Object.keys(BK.groups).indexOf(cat),
-      left = position % 2 === 0,
-      upper = position < 2;
-    const gx = left ? 330 : 770,
-      gy = upper ? 165 : 475,
-      kx = left ? 115 : 985;
-    edge(550, yRoot, gx, gy);
-    const shown = words.slice(0, 4),
-      span = 70;
-    shown.forEach((k, j) => {
-      const y = gy + (j - (shown.length - 1) / 2) * span;
-      edge(gx, gy, kx, y);
-      node(k, k, kx, y, 'keyword', info(k).source === 'product' ? '실제 상품' : BK.trend(dataFor(k), k).label);
-    });
-    node('@group:' + cat, `${BK.groups[cat]} · ${words.length}`, gx, gy, 'group');
+  for (let i = 0; i < shown.length; i++) {
+    const left = i % 2 === 0,
+      side = shown.filter((_, j) => j % 2 === i % 2),
+      row = Math.floor(i / 2);
+    const x = left ? 165 : 935,
+      y = 320 + (row - (side.length - 1) / 2) * 92;
+    svg.append(svgEl('path', {
+      class: 'edge',
+      d: `M${left?435:665},320 C${left?360:740},320 ${left?360:740},${y} ${left?310:790},${y}`
+    }));
+    node(shown[i], x, y);
   }
-  node(base, base, 550, yRoot, 'root');
+  node(base, 550, 320, true);
+  if (!shown.length) {
+    const msg = svgEl('text', {
+      class: 'map-empty',
+      x: 550,
+      y: 420
+    });
+    msg.textContent = '네이버 검색 또는 AI로 연관 키워드를 찾아보세요';
+    svg.append(msg);
+  }
+  $('#mapPagination').innerHTML = pages > 1 ?
+    `<button class="btn sm" data-map-page="${mapPage-1}" ${mapPage===0?'disabled':''}>이전 가지</button><span class="cap">${mapPage+1} / ${pages} · ${words.length}개</span><button class="btn sm" data-map-page="${mapPage+1}" ${mapPage===pages-1?'disabled':''}>다음 가지</button>` :
+    '';
   $('#hiddenKeywords').innerHTML = hiddenWords.size ? `숨긴 키워드 ${hiddenWords.size}개 <button class="lnk" data-restore-hidden>다시 보기</button>` :
     '';
 }
@@ -187,7 +199,7 @@ function renderPath() {
 }
 
 function renderFilters() {
-  $('#chFilters').innerHTML = Object.entries(BK.groups).map(([c, n]) =>
+  $('#chFilters').innerHTML = Object.entries(BK.sources).map(([c, n]) =>
     `<button class="chip" data-ch="${c}" aria-pressed="${chOn.has(c)}">${n}</button>`).join(' ');
   $('#chClear').hidden = !chOn.size;
 }
@@ -196,11 +208,15 @@ function renderStatus() {
   const rec = LIVE.get(mapRoot());
   const period = PLAN.doc?.brief?.period;
   $('#researchContext').textContent =
-    `기획 맥락 · ${period ? `${period.start} ~ ${period.end}` : '행사 기간 미정'} · ${$('#who').value.trim() || '타깃 미정'} · 검색 관심 상승·타깃 단어 일치·연결 상품이 있는 후보를 먼저 보여요.`;
-  const count = Object.values(grouped()).flat().length;
+    `기획 맥락 · ${period ? `${period.start} ~ ${period.end}` : '행사 기간 미정'} · ${$('#who').value.trim() || '타깃 미정'} · 최근 AI 제안과 검색 관심·타깃·상품 연결을 참고해 후보를 보여요.`;
+  const count = branchWords().length;
   $('#researchStatus').textContent = rec?.state === 'loading' ? `‘${mapRoot()}’의 검색·콘텐츠 근거를 찾고 있어요…` : rec?.state === 'error' ?
-    `검색을 완료하지 못했어요: ${rec.msg}` : `${count}개 후보 · 자동 분류는 오른쪽에서 바꿀 수 있어요.${count ? '' : ' 연결 설정을 확인하거나 키워드를 직접 추가해 보세요.'}`;
-  const t = rec?.data?.fetched_at;
+    `검색을 완료하지 못했어요: ${rec.msg}` : `${count}개 후보 · 중심 단어에서 연관 키워드가 바로 뻗어요.${count ? '' : ' AI 확장이나 직접 추가로 시작할 수 있어요.'}`;
+  const t = aiExpansions.find(e => e.parent === mapRoot())?.fetched_at || rec?.data?.fetched_at;
+  $('#aiKeywordExpand').disabled = !researchReady || !!keywordBusy;
+  $('#aiKeywordExpand').textContent = keywordBusy ? '웹에서 키워드 찾는 중…' : 'AI로 키워드 확장';
+  $('#aiKeywordStatus').textContent = keywordBusy ? `‘${keywordBusy.seed}’ 관련 웹 자료를 검색하고 있어요…` : keywordMessage ||
+    `현재 중심 ‘${mapRoot()}’의 연관 키워드를 웹에서 찾아요.`;
   $('#mapDemo').textContent = t ? `조회 ${formatTime(t)}` : '근거 기반 탐색';
 }
 
@@ -238,29 +254,111 @@ function livePosts(rec) {
     '<p class="cap">관련 글을 찾지 못했어요.</p>';
 }
 
+function restoreEvidence(word, ev) {
+  return addNode(word, {
+    category: ev.category || 'topic',
+    source: ev.source || 'manual',
+    ...(['ai_web', 'ai_idea'].includes(ev.source) ? {
+      aiEvidence: ev
+    } : {})
+  });
+}
+
+function restoreExpansions() {
+  for (const batch of aiExpansions) {
+    const parent = addNode(batch.parent);
+    if (!parent) continue;
+    for (const ev of batch.items || []) {
+      if (ev.keyword === batch.parent || !restoreEvidence(ev.keyword, ev)) continue;
+      if (!parent.kids.includes(ev.keyword)) parent.kids.push(ev.keyword);
+    }
+  }
+}
+
+function webKeywordEvidence(k) {
+  const ev = info(k).aiEvidence || selectedEvidence.get(k);
+  if (!ev || !['ai_web', 'ai_idea'].includes(ev.source)) return '';
+  const links = (ev.articles || []).filter(a => BK.safeURL(a.link));
+  return `<h3>${ev.source==='ai_web'?'웹 근거 기반 AI 추천':'AI 아이디어'}</h3><p>${esc(ev.rationale || '')}</p>
+    <p class="cap">${ev.fetched_at?`AI 조회 ${esc(formatTime(ev.fetched_at))} · `:''}${ev.source==='ai_web'?'웹 자료에서 도출한 제안이며 검색 상승을 뜻하지 않아요.':'웹에서 뒷받침되는 근거를 확보하지 못한 연상 아이디어예요.'}</p>
+    ${links.length?`<ul>${links.map(a=>`<li><a href="${esc(BK.safeURL(a.link))}" target="_blank" rel="noopener noreferrer">${esc(a.title)}</a><span class="cap">자료 게시일 ${esc(a.date || '미확인')}</span></li>`).join('')}</ul>`:''}`;
+}
+async function expandAIKeywords() {
+  if (keywordBusy || !researchReady) return;
+  const seed = mapRoot(),
+    token = {
+      seed,
+      epoch: researchEpoch
+    };
+  keywordBusy = token;
+  keywordMessage = '';
+  renderStatus();
+  const period = PLAN.doc?.brief?.period;
+  try {
+    const result = await v2api('/api/brief/keywords', {
+      root: ROOT,
+      seed,
+      audience: $('#who').value.trim(),
+      period: period ? `${period.start} ~ ${period.end}` : '',
+      exclude: [...new Set([ROOT, ...info(seed).kids, ...hiddenWords])].filter(BK.valid).slice(0, 80)
+    });
+    if (token.epoch !== researchEpoch) return;
+    const entries = [];
+    for (const item of result.items || []) {
+      if (!BK.valid(item.keyword) || item.keyword === seed) continue;
+      const ev = {
+        keyword: item.keyword,
+        root: ROOT,
+        category: 'topic',
+        source: item.source === 'ai_web' ? 'ai_web' : 'ai_idea',
+        fetched_at: result.fetched_at || '',
+        change_4w: null,
+        rationale: String(item.rationale || '').slice(0, 300),
+        articles: (item.sources || []).filter(x => BK.safeURL(x.link)).slice(0, 2)
+      };
+      if (ev.source === 'ai_web' && !ev.articles.length) ev.source = 'ai_idea';
+      restoreEvidence(ev.keyword, ev);
+      if (!info(seed).kids.includes(ev.keyword)) info(seed).kids.push(ev.keyword);
+      if (picked.includes(ev.keyword)) selectedEvidence.set(ev.keyword, ev);
+      entries.push(ev);
+    }
+    if (entries.length) aiExpansions.push({
+      parent: seed,
+      fetched_at: result.fetched_at || '',
+      items: entries.slice(0, 8)
+    });
+    aiExpansions = aiExpansions.slice(-10);
+    branchOrder.delete(seed);
+    mapPage = 0;
+    chOn.clear();
+    keywordMessage = result.message || (entries.length ? `‘${seed}’에서 AI 키워드 ${entries.length}개를 찾았어요. 키워드를 눌러 출처를 확인하세요.` :
+      '새 키워드를 찾지 못했어요. 중심 단어나 타깃을 구체화하고 다시 시도해 보세요.');
+    saveBrief();
+  } catch (e) {
+    if (token.epoch === researchEpoch) keywordMessage = `${e.message} 기존 키워드는 유지돼요. 다시 눌러 시도할 수 있어요.`;
+  } finally {
+    if (keywordBusy === token) keywordBusy = null;
+    if (token.epoch === researchEpoch) render();
+  }
+}
+
 function renderSide() {
   const k = focus,
-    cat = groupKey(k),
     el = $('#side');
-  if (cat) {
-    const words = grouped()[cat] || [];
-    el.innerHTML =
-      `<div class="overline">기획 관점</div><h2>${BK.groups[cat]}</h2><p class="sub">${cat==='product'?'실제 판매 중 상품의 이름과 명분·담은 키워드가 일치하는 후보예요. 상품 이름 전체는 아래에서 확인하세요.':'검색 연관어·콘텐츠 추출어를 단어 기준으로 분류했어요. 각 키워드의 근거를 확인하고 분류를 바꿀 수 있어요.'}</p><div class="group-candidates">${words.map(w=>`<button class="sug" data-focus="${esc(w)}">${esc(w)}<span class="tag">${sourceName(info(w).source)}</span></button>`).join('') || '<p class="cap">아직 후보가 없어요. 직접 키워드를 추가해 보세요.</p>'}</div>`;
-    return;
-  }
   const n = info(k),
     rec = n.source === 'product' ? null : researchReady ? live(k) : {
       state: 'loading'
     };
   const products = n.product ? [n.product] : productsFor(k);
   el.innerHTML =
-    `<div class="overline">${k===ROOT?'중심 명분':BK.groups[n.category]} · ${sourceName(n.source)}</div><h2>${esc(k)}</h2>
+    `<div class="overline">${k===ROOT?'중심 명분':'연관 키워드'} · ${sourceName(n.source)}</div><h2>${esc(k)}</h2>
     <p class="cap">${rec?.data?.fetched_at?`조회 ${esc(formatTime(rec.data.fetched_at))}${rec.data.cached?' · 저장된 조회 결과':''}`:'아직 조회된 근거가 없어요.'}</p>
+    ${webKeywordEvidence(k)}
     ${n.source==='product'?'':`<h3>관심 변화 <span class="tag">검색 데이터</span></h3>${liveSearch(rec,k)}${rec?.state==='error'?`<button class="btn sm" data-retry-keyword="${esc(k)}">근거 다시 찾기</button>`:''}<h3>관련 콘텐츠 <span class="tag">뉴스·블로그</span></h3>${livePosts(rec)}`}
     <h3>연결 상품</h3>${products.length?`<ul>${products.map(p=>`<li>${esc(p.name)} <span class="cap">상품번호 ${esc(p.seq)}</span></li>`).join('')}</ul>`:`<p class="cap">${OURS.state==='loading'?'상품을 불러오는 중…':OURS.state==='ok'?'이름이 일치하는 판매 중 상품이 없어요. 상품 연결은 별도로 검토해 주세요.':'상품 데이터 연결을 확인해 주세요.'}</p>`}
     ${(oursOf(k) || []).length ? `<h3>지난 기획·상품 근거</h3><ul>${oursOf(k).map(t=>`<li>${esc(t)}</li>`).join('')}</ul>` : ''}
     <h3>기획에 활용하기 <span class="tag">AI 해석</span></h3><div id="keywordInterpretation"><p class="cap">검색·콘텐츠 근거를 바탕으로 활용 방향을 제안해요.</p></div><button class="btn sm" data-ai-keyword="${esc(k)}">AI 활용 방향 보기</button>
-    ${k!==ROOT?`<label class="category-label">기획 관점<select data-category="${esc(k)}">${Object.entries(BK.groups).filter(([c])=>c!=='product'||n.source==='product').map(([c,t])=>`<option value="${c}" ${c===n.category?'selected':''}>${t}</option>`).join('')}</select></label>`:''}
+
     <div class="acts"><button class="btn ${picked.includes(k)?'':'primary'}" data-pick="${esc(k)}" aria-pressed="${picked.includes(k)}">${picked.includes(k)?'브리프에서 빼기':'브리프에 담기'}</button>${k!==mapRoot()&&n.source!=='product'?`<button class="btn" data-open-k="${esc(k)}">이 말에서 더 펼치기</button>`:''}${k!==ROOT?`<button class="lnk" data-hide="${esc(k)}">이 추천 숨기기</button>`:''}</div>`;
   const interpretation = aiNotes.get(k);
   if (interpretation) $('#keywordInterpretation').textContent = interpretation;
@@ -270,7 +368,7 @@ const aiNotes = new Map();
 function renderDock() {
   $('#picked').innerHTML = picked.length ? `<span class="cap">${picked.length}/30개</span>` + picked.map(k =>
     `<span class="pk"><button data-focus="${esc(k)}" aria-label="${esc(k)} 근거 보기">${esc(k)}</button><button data-unpick="${esc(k)}" aria-label="${esc(k)} 빼기">✕</button></span>`
-    ).join('') : '<span class="cap">근거를 확인한 키워드 3~5개를 담아 콘셉트로 연결해 보세요.</span>';
+  ).join('') : '<span class="cap">근거를 확인한 키워드 3~5개를 담아 콘셉트로 연결해 보세요.</span>';
   renderSugs();
   renderConcepts();
   if (typeof renderMoods === 'function') renderMoods();
@@ -313,14 +411,14 @@ function renderSugs() {
     `근거: ${picked.length?`고른 키워드(${picked.join(', ')})`:`명분(${ROOT})`}${$('#concept').value.trim()?' · 컨셉':''}${$('#who').value.trim()?' · 누구에게':''}`;
   $('#sugs').innerHTML = show.map(s =>
     `<button class="sug" data-copy="${esc(s.t.slice(0,60))}" aria-pressed="${cur===s.t}"><span class="c">${esc(s.t)}</span><span class="tag">${esc(s.m)}</span></button>`
-    ).join('');
+  ).join('');
   $('#footNote').textContent = cur.trim() ? '' : '메인 카피가 비어 있어도 넘어갈 수 있어요.';
 }
 
 function renderConcepts() {
   $('#conceptCandidates').innerHTML = conceptCandidates.map((c, i) =>
     `<button class="sug concept-candidate" data-concept="${i}"><span class="c">${esc(c.text || c)}</span><span class="cap">${esc(c.rationale || conceptBasis)}</span><span class="tag">${c.source==='ai'?'AI 해석':'키워드 조합'}</span></button>`
-    ).join('');
+  ).join('');
 }
 
 function render() {
@@ -344,7 +442,7 @@ function autoTitle() {
 }
 
 function pick(k) {
-  if (groupKey(k) || !BK.valid(k)) return;
+  if (!BK.valid(k)) return;
   if (picked.includes(k)) {
     picked = picked.filter(x => x !== k);
     selectedEvidence.delete(k);
@@ -369,11 +467,13 @@ function invalidateConcepts() {
 }
 
 function openK(k) {
-  if (groupKey(k) || info(k).source === 'product') return;
+  if (info(k).source === 'product') return;
   if (path.includes(k)) path = path.slice(0, path.indexOf(k) + 1);
   else path.push(k);
   path = path.slice(-10);
   focus = k;
+  mapPage = 0;
+  keywordMessage = '';
   live(k);
   render();
 }
@@ -449,8 +549,14 @@ $('#map').addEventListener('keydown', e => {
   }
 });
 document.addEventListener('click', e => {
-  const t = e.target,
-    b = t.closest('[data-pick],[data-unpick]');
+  const t = e.target;
+  const page = t.closest('[data-map-page]');
+  if (page) {
+    mapPage = Math.max(0, +page.dataset.mapPage);
+    renderMap();
+    return;
+  }
+  const b = t.closest('[data-pick],[data-unpick]');
   if (b) {
     pick(b.dataset.pick || b.dataset.unpick);
     return;
@@ -467,6 +573,8 @@ document.addEventListener('click', e => {
   }
   const pa = t.closest('[data-path]');
   if (pa) {
+    mapPage = 0;
+    keywordMessage = '';
     path = path.slice(0, +pa.dataset.path + 1);
     focus = mapRoot();
     render();
@@ -474,6 +582,7 @@ document.addEventListener('click', e => {
   }
   const c = t.closest('[data-ch]');
   if (c) {
+    mapPage = 0;
     chOn.has(c.dataset.ch) ? chOn.delete(c.dataset.ch) : chOn.add(c.dataset.ch);
     render();
     return;
@@ -509,7 +618,11 @@ document.addEventListener('click', e => {
     return;
   }
   const retry = t.closest('[data-retry-keyword]');
-  if (retry) { live(retry.dataset.retryKeyword,true); render(); return; }
+  if (retry) {
+    live(retry.dataset.retryKeyword, true);
+    render();
+    return;
+  }
   const ai = t.closest('[data-ai-keyword]');
   if (ai) {
     requestAI('keyword', [ai.dataset.aiKeyword], ai);
@@ -525,45 +638,48 @@ document.addEventListener('click', e => {
     $('#concept').focus();
   }
 });
-document.addEventListener('change', e => {
-  if (e.target.matches('[data-category]')) {
-    const k = e.target.dataset.category;
-    if (!manualWords.some(x => x.keyword === k) && manualWords.length >= 30) {
-      toast('직접 분류한 키워드는 30개까지 저장할 수 있어요');
-      return;
-    }
-    info(k).category = e.target.value;
-    if (picked.includes(k)) selectedEvidence.set(k, BK.evidence(k, info(k), dataFor(k), selectedEvidence.get(k)?.root || ROOT));
-    manualWords = manualWords.filter(x => x.keyword !== k).concat(BK.evidence(k, info(k), null, ROOT));
-    render();
-    saveBrief();
-  }
-});
-$('#rootForm').addEventListener('submit', e => {
-  e.preventDefault();
+
+function applyRootInput() {
   const k = BK.clean($('#rootInput').value);
   if (!BK.valid(k)) {
     $('#rootInput').setCustomValidity('한글·영문·숫자·공백 20자 이내로 입력해 주세요');
     $('#rootInput').reportValidity();
-    return;
+    return false;
   }
   researchEpoch++;
+  branchOrder.clear();
   aiNotes.clear();
   LIVE.clear();
+  keywordBusy = null;
+  keywordMessage = '';
+  mapPage = 0;
   for (const key of Object.keys(T)) delete T[key];
-  if (k !== ROOT) { manualWords = []; hiddenWords.clear(); }
-  for (const [word, ev] of selectedEvidence) addNode(word, {
-    category: ev.category,
-    source: ev.source
-  });
+  if (k !== ROOT) {
+    manualWords = [];
+    hiddenWords.clear();
+    aiExpansions = [];
+  }
+  for (const [word, ev] of selectedEvidence) restoreEvidence(word, ev);
   setRoot(k);
-  for (const ev of manualWords) { addNode(ev.keyword, {category:ev.category,source:ev.source}); if (ev.keyword !== ROOT && !info(ROOT).kids.includes(ev.keyword)) info(ROOT).kids.push(ev.keyword); }
+  for (const ev of manualWords) {
+    restoreEvidence(ev.keyword, ev);
+    if (ev.keyword !== ROOT && !info(ROOT).kids.includes(ev.keyword)) info(ROOT).kids.push(ev.keyword);
+  }
+  restoreExpansions();
   invalidateConcepts();
   autoTitle();
   saveBrief();
   live(ROOT, true);
   render();
-  toast('명분을 반영하고 키워드를 다시 찾고 있어요. 담아 둔 키워드와 작성한 내용은 유지했어요');
+  return true;
+}
+$('#rootForm').addEventListener('submit', e => {
+  e.preventDefault();
+  if (applyRootInput()) toast('명분을 반영하고 키워드를 다시 찾고 있어요. 작성한 내용은 유지했어요');
+});
+$('#aiKeywordExpand').addEventListener('click', () => {
+  if (BK.clean($('#rootInput').value) !== ROOT && !applyRootInput()) return;
+  expandAIKeywords();
 });
 $('#rootInput').addEventListener('input', () => $('#rootInput').setCustomValidity(''));
 $('#manualForm').addEventListener('submit', e => {
@@ -578,7 +694,7 @@ $('#manualForm').addEventListener('submit', e => {
     return;
   }
   addNode(k, {
-    category: $('#manualCategory').value,
+    category: 'topic',
     source: 'manual'
   });
   if (k !== mapRoot() && !info(mapRoot()).kids.includes(k)) info(mapRoot()).kids.push(k);
@@ -591,12 +707,14 @@ $('#manualForm').addEventListener('submit', e => {
 });
 $('#chClear').addEventListener('click', () => {
   chOn.clear();
+  mapPage = 0;
   render();
 });
 $('#resetBtn').addEventListener('click', () => {
   path = [ROOT];
   focus = ROOT;
   chOn.clear();
+  mapPage = 0;
   render();
 });
 $('#connBtn').addEventListener('click', () => {
@@ -610,6 +728,7 @@ $('#concept').addEventListener('input', () => {
   renderSugs();
 });
 $('#who').addEventListener('input', () => {
+  branchOrder.clear();
   invalidateConcepts();
   renderConcepts();
   renderSugs();
@@ -654,6 +773,12 @@ $('#aiConceptIdeas').addEventListener('click', e => {
   }
   requestAI('concept', picked.slice(0, 5), e.currentTarget);
 });
+
+function keywordTitles(k) {
+  const articles = [...(info(k).aiEvidence?.articles || []), ...(LIVE.get(k)?.data?.sources?.naver_search?.items || []), ...(
+    selectedEvidence.get(k)?.articles || [])];
+  return [...new Set(articles.map(x => x.title).filter(Boolean))].slice(0, 3);
+}
 async function requestAI(mode, words, btn) {
   const epoch = aiEpoch,
     root = ROOT,
@@ -672,8 +797,7 @@ async function requestAI(mode, words, btn) {
         evidence: words.map(k => ({
           keyword: k,
           search_signal: BK.trend(dataFor(k), k).label,
-          titles: (LIVE.get(k)?.data?.sources?.naver_search?.items || selectedEvidence.get(k)?.articles || []).slice(0, 3).map(
-            x => x.title)
+          titles: keywordTitles(k)
         }))
       });
     if (epoch !== aiEpoch || root !== ROOT) return;
@@ -843,6 +967,7 @@ function saveBrief() {
       root: ROOT,
       hidden: [...hiddenWords].slice(0, 100),
       manual: manualWords.slice(0, 30),
+      ai_expansions: aiExpansions.slice(-10),
       evidence: picked.map(k => selectedEvidence.get(k) || BK.evidence(k, info(k), dataFor(k), ROOT)),
       concept_candidates: conceptCandidates.map(c => ({
         text: (c.text || c).slice(0, 120),
@@ -901,6 +1026,7 @@ PLAN.ready.then(doc => {
   } // 상품·지난 기획 연결
   if (!doc) {
     live(ROOT);
+    render();
     return;
   }
   researchEpoch++;
@@ -913,21 +1039,17 @@ PLAN.ready.then(doc => {
   for (const ev of research.evidence || []) {
     if (picked.includes(ev.keyword)) {
       selectedEvidence.set(ev.keyword, ev);
-      addNode(ev.keyword, {
-        category: ev.category,
-        source: ev.source
-      });
+      restoreEvidence(ev.keyword, ev);
     }
   }
   if (research.root === ROOT) {
     hiddenWords = new Set(research.hidden || []);
     manualWords = research.manual || [];
     for (const ev of manualWords) {
-      if (addNode(ev.keyword, {
-          category: ev.category,
-          source: ev.source
-        })) info(ROOT).kids.push(ev.keyword);
+      if (restoreEvidence(ev.keyword, ev)) info(ROOT).kids.push(ev.keyword);
     }
+    aiExpansions = research.ai_expansions || [];
+    restoreExpansions();
     conceptCandidates = research.concept_candidates || [];
     conceptBasis = research.concept_basis || '';
   }
