@@ -189,11 +189,45 @@ class Extra(BaseModel):
     e: str = Field(default="", max_length=10)
 
 
+class KeywordArticle(BaseModel):
+    title: str = Field(default="", max_length=120)
+    kind: str = Field(default="", max_length=20)
+    date: str = Field(default="", max_length=40)
+    link: str = Field(default="", max_length=2000)
+
+
+class KeywordEvidence(BaseModel):
+    keyword: str = Field(max_length=20)
+    root: str = Field(default="", max_length=20)
+    category: Literal["situation", "need", "topic", "product"] = "topic"
+    source: str = Field(default="manual", max_length=40)
+    fetched_at: str = Field(default="", max_length=40)
+    change_4w: float | None = None
+    articles: list[KeywordArticle] = Field(default_factory=list, max_length=3)
+
+
+class BriefConceptCandidate(BaseModel):
+    text: str = Field(max_length=120)
+    rationale: str = Field(default="", max_length=300)
+    source: Literal["ai", "combination"] = "combination"
+    keywords: list[Annotated[str, Field(max_length=20)]] = Field(default_factory=list, max_length=5)
+
+
+class KeywordResearch(BaseModel):
+    root: str = Field(default="", max_length=20)
+    hidden: list[Annotated[str, Field(max_length=20)]] = Field(default_factory=list, max_length=100)
+    manual: list[KeywordEvidence] = Field(default_factory=list, max_length=30)
+    evidence: list[KeywordEvidence] = Field(default_factory=list, max_length=30)
+    concept_candidates: list[BriefConceptCandidate] = Field(default_factory=list, max_length=3)
+    concept_basis: str = Field(default="", max_length=500)
+
+
 class V2Meta(BaseModel):
     """새 버전(/v2) 화면만 쓰는 값. 예전 화면은 보내지 않으므로, 안 보내면 저장된 값을 그대로 둔다 (store.save)."""
     cls: Literal["", "season", "brand", "launch", "collab", "clear"] = ""   # 분류 5종 (plans/20 §4-1)
     seed: str = Field(default="", max_length=20)       # 홈 [시작]에서 고른 출발점 (명분이 아닌 분류의 씨앗)
     keywords: list[Annotated[str, Field(max_length=20)]] = Field(default_factory=list, max_length=30)   # 브리프에서 고른 키워드
+    keyword_research: KeywordResearch = Field(default_factory=KeywordResearch)
     stage: Literal["brief", "compose", "editor", "preview", "deals"] = "brief"   # 마지막으로 연 단계 (홈 목록 '지금 단계')
     compose: Literal["", "A", "B", "C", "blank"] = ""   # 구좌 구성에서 고른 추천안 (구성은 page.sections)
     extras: list[Extra] = Field(default_factory=list, max_length=20)   # 추가 혜택 (상품·할인 = 구좌 편집 같은 값)
