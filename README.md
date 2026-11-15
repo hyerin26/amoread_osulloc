@@ -145,121 +145,26 @@ $env:PLANNER_PORT = "9751"
 
 ## 7. AI 기능별 추가 설정
 
+- **네이버 검색·트렌드·연관 키워드**: `.env.example`을 복사해 `.env`로 이름을 바꾸고 키를 넣습니다. 키 받는 법은 `.env.example` 안 설명과 `plans/22_키워드소재_창구_조사와_API키.md` §3 참고.
+  - **키는 `.env`에만** 둡니다. 코드·문서·커밋·채팅에 쓰지 마세요. `.env`는 git에 올라가지 않습니다.
+  - 키가 없으면 해당 기능만 비어 있고 나머지는 동작합니다.
+- **AI 기능**(기획안 만들기·수정 대화): 그 PC에 Claude Code가 설치·로그인돼 있어야 동작합니다. 없으면 AI 기능만 꺼집니다.
+
 | 기능 | 필요한 설정 |
 |---|---|
 | 구좌 구성·레퍼런스 추천 | 기본 설치와 포함된 레퍼런스 데이터로 사용. 이 추천 자체에는 Claude 인증이 필요하지 않음 |
 | AI 카피 추천·설명 다듬기 | 조직에서 승인한 Claude Agent SDK 인증과 모델 접근 설정 필요 |
-| 기존 기획안 생성·수정 대화 | Claude Agent SDK 인증과 모델 접근 설정(아래 7-4) |
+| 기존 기획안 생성·수정 대화 | 담당자 PC의 Claude Code 설치·로그인 필요 |
 | 신규 프로모션 찾기·화면 수집 | Playwright 설치 및 담당자 PC의 Chrome 필요 |
-| 네이버 검색·트렌드·연관 키워드 | 아래 7-1~7-3에 따라 `.env`에 API 설정 |
-| AI 키워드 웹 확장·콘셉트 제안 | 아래 7-4의 Claude 인증·모델 설정. 웹 확장은 웹 도구 사용 가능 여부도 확인 |
+| 네이버 검색·트렌드·연관 키워드 | `.env.example`의 안내에 따라 `.env`에 API 설정 필요 |
 
 **Python 패키지 설치만으로 Claude 인증까지 완료되지는 않습니다.** AI 카피 추천은 실제 인증과 모델 권한이 있어야 성공합니다. 브라우저에 API 키를 입력하지 마세요. 관련 기능 설정이 없는 경우에도 나머지 기능은 확인할 수 있습니다.
 
 - AI 카피 추천: 저장된 기획안에서 **구좌 편집 → 문구 → AI 카피 추천**
 - 설명 다듬기: 구좌 편집의 설명란 아래 **AI로 문구 다듬기**
 - 브리프 메인 카피: 브리프의 **AI 제안**
-- 브리프 키워드·콘셉트: **AI로 키워드 확장 / AI 콘셉트 제안 / AI 활용 방향 보기**
 
 세부 안내: [AI 추천 모듈](https://gitlab.com/amoread2/osulloc/-/blob/ai/amoread-ai-module/workspace/amoread_app/amoread/ai/README.md), [멘트 추천 기능](https://gitlab.com/amoread2/osulloc/-/blob/ai/amoread-ai-module/멘트추천기능/README.md).
-
-### 7-1. API 키를 넣는 파일 만들기
-
-설정 파일은 **현재 실행할 저장소의 `workspace\amoread_app\.env`**입니다. 저장소 최상위나 다른 브랜치 사본의 `.env`를 수정하면 이 앱에는 반영되지 않습니다. 아래 명령은 **`workspace\amoread_app` 폴더의 PowerShell**에서 실행하세요.
-
-```powershell
-# 기존 .env가 없을 때만 빈 양식을 복사합니다.
-if (-not (Test-Path .env)) { Copy-Item .env.example .env }
-notepad .env
-```
-
-메모장에서 사용할 항목의 `=` 뒤에 발급받은 값을 넣고 저장하세요. Claude 항목은 기본 `.env.example`에 없으므로 필요한 경우 아래 두 줄을 직접 추가합니다. 사용하지 않는 서비스는 비워 두면 됩니다.
-
-```dotenv
-# 네이버 API HUB: 뉴스·블로그 검색, 검색어 트렌드
-NAVER_CLIENT_ID=
-NAVER_CLIENT_SECRET=
-
-# 네이버 검색광고: 연관 키워드
-NAVER_AD_API_KEY=
-NAVER_AD_SECRET=
-NAVER_AD_CUSTOMER_ID=
-
-# Claude Agent SDK: AI 카피·콘셉트·웹 키워드 확장
-ANTHROPIC_API_KEY=
-# 조직에서 사용할 수 있는 모델 ID. 비우면 앱 기본 모델을 사용합니다.
-PLANNER_CLAUDE_MODEL=
-```
-
-파일 이름은 `.env.txt`가 아닌 **`.env`**여야 합니다. 실제 키는 이 로컬 파일에만 넣고 `.env.example`, README, Git 커밋, 공유 ZIP에는 넣지 마세요. `.env`는 저장소의 `.gitignore`에서 제외합니다. 이 앱은 시작 시 `.env`를 읽으며, 같은 이름의 환경변수가 이미 설정되어 있으면 그 환경변수가 우선합니다.
-
-### 7-2. 네이버 API HUB — 뉴스·블로그와 검색어 트렌드
-
-1. [네이버 클라우드 콘솔](https://console.ncloud.com/)에 로그인해 **NAVER API HUB → Application**으로 이동합니다.
-2. Application을 등록하면서 **검색**과 **검색어 트렌드**를 선택합니다.
-3. 해당 Application의 **인증 정보**에서 Client ID와 Client Secret을 확인합니다.
-4. `.env`의 `NAVER_CLIENT_ID`와 `NAVER_CLIENT_SECRET`에 각각 넣습니다.
-
-현재 앱은 NAVER API HUB 주소와 인증 헤더를 사용하므로, 이 Application에서 받은 인증 정보를 넣어야 합니다. 일반 Ncloud IAM Access Key나 예전 개발자센터 키와 혼동하지 마세요. 사용 API와 한도·요금은 콘솔에서 확인합니다. 발급 화면의 상세 순서는 [NAVER API HUB 공식 안내](https://api.ncloud-docs.com/docs/naver-api-hub-overview)를 참고하세요.
-
-이 설정으로 **01 브리프의 관련 뉴스·블로그와 검색 흐름**을 조회합니다. 검색광고 연관 키워드는 아래 별도 설정이 필요합니다.
-
-### 7-3. 네이버 검색광고 — 연관 키워드
-
-1. [네이버 검색광고](https://searchad.naver.com/)에 로그인하고 사용할 광고계정을 선택합니다.
-2. **도구 → API 사용 관리**에서 API를 신청·발급합니다.
-3. 다음 세 값을 `.env`에 넣습니다.
-
-| 발급 화면의 값 | `.env` 항목 |
-|---|---|
-| 액세스 라이선스(API License) | `NAVER_AD_API_KEY` |
-| 비밀키(Secret Key) | `NAVER_AD_SECRET` |
-| 광고계정 번호(CUSTOMER_ID) | `NAVER_AD_CUSTOMER_ID` |
-
-세 값이 모두 필요하며, API HUB의 Client ID/Secret을 대신 넣으면 안 됩니다. 공식 발급 안내는 [검색광고 API 문서](https://naver.github.io/searchad-apidoc/)에 있습니다. 이 설정으로 브리프 마인드맵의 **검색 연관어** 후보를 가져옵니다.
-
-### 7-4. Claude — AI 카피·콘셉트·웹 키워드 확장
-
-기본 설정 방법은 조직에서 승인한 **Claude API 키**를 사용하는 것입니다.
-
-1. [Claude Console](https://platform.claude.com/)에서 사용할 프로젝트의 API 키를 발급받거나 관리자에게 요청합니다.
-2. `.env`에 `ANTHROPIC_API_KEY=발급받은_값`을 추가합니다.
-3. 모델을 지정해야 하면 `PLANNER_CLAUDE_MODEL`에 해당 계정에서 사용 가능한 모델 ID를 넣습니다.
-4. 패키지가 없거나 오래된 경우 앱 가상환경에서 다음 명령을 실행합니다.
-
-```powershell
-.\.venv\Scripts\python.exe -m pip install --upgrade claude-agent-sdk
-```
-
-조직에서 별도 제공자 인증을 운영한다면 관리자가 정한 SDK 인증 설정을 사용하세요. Claude SDK는 실행 프로세스의 환경변수를 읽으며, 이 앱은 시작할 때 `.env`를 로드합니다. 인증 방법은 [Claude Agent SDK 공식 설정 안내](https://code.claude.com/docs/en/agent-sdk/quickstart)를 따릅니다. **Claude Code 로그인만으로 모든 계정·배포 환경에서 이용할 수 있다고 가정하지 마세요.**
-
-- **AI 제안 / AI 콘셉트 제안 / AI 활용 방향 보기:** Claude 인증과 모델 접근 권한이 필요합니다.
-- **AI로 키워드 확장:** 위 설정에 더해 해당 실행 환경에서 `WebSearch`와 `WebFetch` 사용이 가능해야 합니다. 별도의 네이버 키 없이도 Claude 웹 확장을 요청할 수 있지만, 네이버 검색 흐름·연관어는 각각의 네이버 설정이 있어야 조회됩니다.
-
-### 7-5. 설정 반영과 실제 연결 확인
-
-1. `.env`를 저장한 뒤 기존 서버 창에서 **Ctrl+C**로 종료합니다.
-2. 같은 `workspace\amoread_app` 폴더에서 서버를 다시 실행합니다.
-
-```powershell
-$env:PYTHONUTF8 = "1"
-$env:PLANNER_PORT = "9751"
-.\.venv\Scripts\python.exe -m planner.server
-```
-
-3. [설정·데이터 → 외부 연결](http://127.0.0.1:9751/v2/settings#conn)에서 네이버 키 상태를 확인합니다. 여기의 ‘연결됨’ 표시는 키 입력 여부와 로컬 사용량을 바탕으로 하므로, 실제 API 인증 성공 여부는 다음 단계에서 확인하세요.
-4. 저장된 기획안의 **01 브리프**에서 명분을 입력하고 **이 명분으로 키워드 찾기**를 누릅니다. 마인드맵의 검색 연관어와 오른쪽의 검색 흐름·관련 글을 확인합니다.
-5. **AI로 키워드 확장**을 눌러 AI 가지가 추가되는지 확인하고, 키워드를 눌러 출처·추천 이유를 확인합니다. 웹 근거가 확보된 제안과 근거 없는 ‘AI 아이디어’는 구분해서 표시됩니다.
-
-| 증상 | 확인할 내용 |
-|---|---|
-| 키를 넣어도 ‘키 없음’ | 실행 중인 사본의 `.env`인지, `.env.txt`로 저장되지 않았는지, 서버를 재시작했는지 확인 |
-| 키는 있는데 네이버 인증 실패 | API HUB와 검색광고 키를 구분했는지, 필요한 API를 신청했는지, 키·Secret을 잘못 복사하지 않았는지 확인 |
-| 검색광고만 인증 실패 | 액세스 라이선스·비밀키·CUSTOMER_ID 세 값과 PC 시간 설정 확인 |
-| Claude 인증·모델 오류 | API 키가 실행 프로세스에 반영되었는지, 해당 프로젝트의 모델 접근 권한과 사용량·결제 상태 확인 |
-| AI 카피는 되지만 웹 키워드 확장 실패 | SDK 버전, 해당 환경의 웹 도구 지원·권한, 사내 네트워크의 외부 접속 상태 확인 |
-| API 자체 한도 안내 | 설정 화면과 제공자 콘솔에서 사용량을 확인하고 해당 한도 초기화 후 재시도 |
-
 
 ## 8. 문제가 생기면
 
@@ -331,7 +236,7 @@ python setup_env.py --snapshot "C:\실제경로\amoread_snapshot_날짜_시각.z
 ### 9-5. AI 카피 추천
 
 - 오른쪽 **내용 › 문구**의 설명 입력칸 아래. 제목·설명 함께 / 제목만 / 설명만 / 지금 설명 다듬기, 말투 3가지 → 후보 3개 → 고른 것만 입력칸에 들어갑니다 (실행 취소 가능).
-- 서버 모듈은 저장소 루트 `멘트추천기능/` (`ai/amoread-ai-module` 브랜치에서 모듈만 가져옴). 서버가 Claude Agent SDK로 호출하며, 위 7-4의 인증·모델 설정을 사용합니다. 원가·매출·후기는 보내지 않습니다.
+- 서버 모듈은 저장소 루트 `멘트추천기능/` (`ai/amoread-ai-module` 브랜치에서 모듈만 가져옴). 서버가 Claude Agent SDK로 호출하며, 그 PC에 Claude Code가 로그인돼 있어야 실제 추천이 됩니다. 원가·매출·후기는 보내지 않습니다.
 
 ### 9-6. 개발자용
 
