@@ -161,7 +161,7 @@ function renderEdit() {
       <button class="handle" aria-label="${esc(r.name)} 옮기기 (Alt+↑↓)" title="끌어서 옮기기">⋮⋮</button>
       <span class="no">${i + 1}</span>
       <input type="text" class="name-in" data-f="name" value="${esc(r.name)}" maxlength="40" aria-label="${i + 1}번 구좌 이름">
-      <select data-f="layout" aria-label="${i + 1}번 구좌 종류">${Object.entries(LAYOUTS).map(([k, v]) => `<option value="${k}" ${r.layout === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+      <select data-f="layout" aria-label="${i + 1}번 구좌 종류">${Object.entries(LAYOUTS).map(([k, v]) => `<option value="${k}" ${r.layout === k ? 'selected' : ''}>${v}</option>`).join('')}${r.layout === 'custom' ? '<option value="custom" selected>레퍼런스 구조</option>' : ''}</select>
       <input type="text" class="why-in" data-f="why" value="${esc(r.why)}" maxlength="80" placeholder="이 구좌를 넣은 이유 (선택)" aria-label="${i + 1}번 구좌를 넣은 이유">
       <span class="tools"><button class="ib" data-mv="-1" ${i ? '' : 'disabled'} aria-label="위로">↑</button><button class="ib" data-mv="1" ${i < rows.length - 1 ? '' : 'disabled'} aria-label="아래로">↓</button>
         ${TAB_LAYOUTS.includes(r.layout) && !r.tabs && !r.gk ? `<button class="ib wide" data-tsplit aria-label="${esc(r.name)} 탭으로 나누기" title="가격대·취향처럼 상품을 탭으로 나눠요">탭 나누기</button>` : ''}

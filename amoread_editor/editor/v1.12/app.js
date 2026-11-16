@@ -547,8 +547,18 @@ async function addFoundProduct(id){
  renderAll();toast(ftOn(t)?`'${ftCur(t).label||'탭'}' 탭에 넣었어요. 할인은 상품·할인에서 정해요.`:'이 구좌에 넣었어요. 할인은 상품·할인에서 정해요.');
  document.getElementById('prodQ')?.focus();
 }
+// 상품 고르기 (2026-11-16 스크롤 줄이기): 고른 상품을 맨 위, 8개가 넘으면 찾기 칸. 찾는 말은 다시 그려도 유지(PICK_Q · 전체 상품 찾기의 PROD_Q와 다름)
+let PICK_Q='',PROD_ALL=false,PROD_SEC=null,CARD_FOLD_OPEN=false;
+const prodMatch=p=>{const q=PICK_Q.trim().toLowerCase();return !q||String(p.name).toLowerCase().includes(q)||String(p.id).includes(q);};
 function productPanel(s){
- const content=PRODUCTS.map(p=>`<label class="am-ed-product-row"><div class="thumb">IMG</div><div class="txt"><b>${E(p.name)}</b><small>${E(p.id)} · ${E(p.priceNote||'최종가')} ${MONEY(priced(p).sale)}</small></div><input type="checkbox" data-product="${E(p.id)}" ${s.productIds.includes(p.id)?'checked':''}></label>`).join('');
+ if(PROD_SEC!==s.id){PROD_SEC=s.id;PROD_ALL=false;PICK_Q='';}   // 다른 구좌로 옮기면 찾기·모두 보기는 처음부터
+ const ordered=[...PRODUCTS].sort((a,b)=>(s.productIds.includes(b.id)?1:0)-(s.productIds.includes(a.id)?1:0));
+ const finder=PRODUCTS.length>8?`<input type="search" class="am-ed-input en-prod-q" data-prod-q value="${E(PICK_Q)}" placeholder="상품 이름·SEQ로 찾기 (${PRODUCTS.length}개)" aria-label="상품 찾기" autocomplete="off">`:'';
+ // 찾는 말이 없으면 고른 상품 + 앞 10개만 (나머지는 [상품 모두 보기]) → 73개를 늘 펼쳐 5,000px 넘게 내려가던 것을 줄임
+ let extra=0;const show=p=>{if(s.productIds.includes(p.id))return true;if(PICK_Q.trim())return prodMatch(p);if(PROD_ALL)return true;return extra++<10;};
+ const vis=new Map(ordered.map(p=>[p.id,show(p)])),rest=ordered.filter(p=>!vis.get(p.id)).length;
+ const more=!PICK_Q.trim()&&rest?`<button type="button" class="am-ed-button am-ed-button--subtle en-prod-more" data-prod-all>상품 모두 보기 (${rest}개 더)</button>`:'';
+ const content=finder+ordered.map(p=>`<label class="am-ed-product-row"${vis.get(p.id)?'':' hidden'} data-prod-name="${E(String(p.name).toLowerCase())} ${E(p.id)}"><div class="thumb">IMG</div><div class="txt"><b>${E(p.name)}</b><small>${E(p.id)} · ${E(p.priceNote||'최종가')} ${MONEY(priced(p).sale)}</small></div><input type="checkbox" data-product="${E(p.id)}" ${s.productIds.includes(p.id)?'checked':''}></label>`).join('')+more;
  const appeals=s.productIds.map(id=>PRODUCTS.find(p=>p.id===id)).filter(Boolean).map(p=>F('appeals.'+p.id,p.name+' · 상품별 소구문구',s.appeals[p.id]||'',{max:80,area:true,rows:2,help:'한 상품에 하나의 소구문구. 카드 요소를 켜면 미리보기에 반영됩니다.'})).join('');
  const where=ftOn(s)?` '${ftCur(s).label||'탭'}' 탭에 담겨요.`:' 이 구좌에 보여요.';
  return productFinder(s)+ftabPanel(s)+nativeCardVisibilityPanel(s)+G('상품 선택',(CATALOG_NOTE?'이 기획안에 담은 상품이에요. 체크하면':'예시 상품이에요. 체크하면')+where,content||(PRODUCT_FINDER?'<div class="am-ed-note">이 기획안에 담은 상품이 아직 없어요. 위에서 찾아 넣거나 상품·할인에서 담아 주세요.</div>':''))+discountPanel(s)+G('상품별 소구문구','상품마다 카드에 넣을 한 줄 문구예요. [배치·표시]에서 소구문구를 켜야 보여요.',appeals||'<div class="am-ed-note">상품을 먼저 넣어 주세요.</div>')+G('다른 곳에서 하는 것','할인율과 판정 근거는 상품·할인 단계에서 고쳐요. 카드별 라벨은 아직 준비 중이에요.','');
@@ -612,7 +622,7 @@ function toggleRef(s,r,addOnly){
 }
 const REF_PEEK=3;
 function refGroups(){const groups=[];for(const [i,r] of REF_SHOWN.entries()){const g=r.group||'레퍼런스';let x=groups.find(y=>y[0]===g);if(!x)groups.push(x=[g,[]]);x[1].push([i,r]);}return groups;}
-function refItem(i,r,on){return `<button type="button" class="ia-data-item" data-ref-pick="${i}" aria-pressed="${on.has(r.id)}"><b>${E(r.name)}</b><small>${E([r.from,r.why].filter(Boolean).join(', ').slice(0,90))}</small><span class="ia-data-act">${on.has(r.id)?'빼기':'붙이기'}</span></button>`;}
+function refItem(i,r,on){return `<div class="ia-ref-row"><button type="button" class="ia-data-item" data-ref-pick="${i}" aria-pressed="${on.has(r.id)}"><b>${E(r.name)}</b><small>${E([r.from,r.why].filter(Boolean).join(', ').slice(0,90))}</small><span class="ia-data-act">${on.has(r.id)?'빼기':'붙이기'}</span></button>${/^\/v2\/library#/.test(r.lib||'')?`<a class="ia-ref-open" href="${E(r.lib)}" target="_blank" rel="noopener">라이브러리에서 보기 ↗</a>`:''}</div>`;}
 // [n개 모두 보기] 창: 한 묶음 전체를 찾아보며 붙이거나 뺀다. 붙인 결과는 오른쪽 칸과 같은 toggleRef
 let REF_MORE_G=null;
 function refMoreDialog(){
@@ -663,7 +673,7 @@ function refsPanel(s){
  if(REF_SOURCE){
   const att=s.refs||[];
   return G('붙인 레퍼런스',att.length?'무엇을 참고할지 적으면 디자인 요청과 04 미리보기에 같이 들어가요.':'비슷한 구좌 사례, 오늘의 영감 보관함, 레퍼런스 라이브러리에서 고르거나 링크로 붙여요.',
-   att.map((r,i)=>`<div class="am-ed-ref en-ref"><div class="am-ed-stack"><div class="en-ref-head"><div><strong>${E(r.name)}</strong><small>${E(r.from||'')}</small></div><button type="button" class="am-ed-button am-ed-button--subtle am-ed-button--sm" data-ref-remove="${i}" aria-label="${E(r.name)} 빼기">빼기</button></div>${r.url?`<a class="en-ref-url" href="${E(r.url)}" target="_blank" rel="noopener noreferrer">원본 열기 ↗</a>`:''}${F('refs.'+i+'.note','참고할 것',r.note,{max:120,optional:true,help:'예) 탭 모양과 가격 위치'})}</div></div>`).join('')
+   att.map((r,i)=>`<div class="am-ed-ref en-ref"><div class="am-ed-stack"><div class="en-ref-head"><div><strong>${E(r.name)}</strong><small>${E(r.from||'')}</small></div><button type="button" class="am-ed-button am-ed-button--subtle am-ed-button--sm" data-ref-remove="${i}" aria-label="${E(r.name)} 빼기">빼기</button></div><div class="en-ref-links">${r.url?`<a class="en-ref-url" href="${E(r.url)}" target="_blank" rel="noopener noreferrer">원본 열기 ↗</a>`:''}${String(r.id).startsWith('link-')?'':`<a class="en-ref-url" href="/v2/library#open=${encodeURIComponent(r.id)}" target="_blank" rel="noopener">라이브러리에서 보기 ↗</a>`}</div>${F('refs.'+i+'.note','참고할 것',r.note,{max:120,optional:true,help:'예) 탭 모양과 가격 위치'})}</div></div>`).join('')
    +`<button type="button" class="am-ed-button am-ed-button--primary en-ref-find" data-ref-find>＋ 레퍼런스 찾아 붙이기</button>`)
    +G('느낌 레퍼런스','이 구좌에서 무엇을 참고할지 골라요 (여러 개).',`<div class="am-ed-choice">${['색감','구도','소품','글씨체','카피 톤'].map(p=>`<button type="button" data-mood="${E(p)}" aria-pressed="${s.moods.includes(p)}">${E(p)}</button>`).join('')}</div>`);
  }
@@ -728,6 +738,14 @@ function renderPanel(){
  $('tabbar').innerHTML=iaGroupedTabs(s,ts);
  $('panel-body').innerHTML=(iaGroup==='layout'?imageRatioPicker(s):'')+panelRender[tab](s);
  // 꼭 채워야 하는 자료(상품 구좌의 상품, 후기 구좌의 후기)가 비었으면 [내용] 맨 위에 알리고 바로 고르러 가게 한다
+ // '카드에 보일 것'(16개 요소, 약 1,300px)은 접어 두고 켠 개수만 한 줄로 (2026-11-16 스크롤 줄이기). 펼친 상태는 다시 그려도 유지
+ const cardG=[...$('panel-body').querySelectorAll(':scope > .am-ed-group')].find(g=>g.querySelector('h3')?.textContent.startsWith('카드에 보일 것'));
+ if(cardG&&s.card){
+  const on=ORDER.filter(k=>s.card.on[k]).length,d=document.createElement('details');d.className='en-fold';d.open=CARD_FOLD_OPEN;
+  d.innerHTML=`<summary><strong>카드에 보일 것</strong><small>${on}개 켬 · ${ORDER.length}개 중</small></summary>`;
+  cardG.querySelector('.am-ed-group__title')?.remove();cardG.replaceWith(d);d.append(cardG);
+  d.addEventListener('toggle',()=>{CARD_FOLD_OPEN=d.open;});
+ }
  const need=fillState(s),needTab=s.layout==='review'?'review':'products';
  if(need&&need.need&&iaGroup==='content'&&tab!==needTab)$('panel-body').insertAdjacentHTML('afterbegin',`<div class="en-need" role="status"><div><strong>${E(need.text)}</strong><small>${s.layout==='review'?'보여 줄 후기를 아직 고르지 않았어요.':'이 구좌에 넣을 상품을 골라 주세요. 빈 자리는 미리보기에 점선으로 보여요.'}</small></div><button type="button" class="am-ed-button am-ed-button--primary" data-need-tab="${needTab}">${s.layout==='review'?'후기 고르기':'상품 고르기'}</button></div>`);
   if(canvasTarget&&canvasTarget.sectionId===s.id&&!['block','block-attribute'].includes(canvasTarget.kind)){
@@ -1646,8 +1664,16 @@ $('data-library').addEventListener('submit',e=>{
 $('panel-body').addEventListener('input',e=>{if(e.target.id==='prodQ'&&PRODUCT_FINDER)searchProducts(e.target.value);});
 $('panel-body').addEventListener('change',e=>{const t=e.target.closest('[data-prod-setrate]');if(t&&PRODUCT_FINDER)setFoundRate(t.dataset.prodSetrate,t.value);});
 $('panel-body').addEventListener('keydown',e=>{if(e.key!=='Enter')return;const r=e.target.closest('[data-prod-rate]');if(r){e.preventDefault();addFoundProduct(r.dataset.prodRate);}});
+// 상품 고르기 목록 안에서 찾기(이 기획안 상품): 다시 그리지 않고 줄만 숨긴다 (입력 중 커서 유지). 고른 상품은 늘 보인다
+$('panel-body').addEventListener('input',e=>{
+ const q=e.target.closest('[data-prod-q]');if(!q)return;e.stopPropagation();PICK_Q=q.value;const w=PICK_Q.trim().toLowerCase();
+ let n=0;   // 찾는 말을 지우면 다시 '고른 것 + 앞 10개'
+ $('panel-body').querySelectorAll('.am-ed-product-row').forEach(r=>{const on=!!r.querySelector('input:checked');r.hidden=w?!r.dataset.prodName.includes(w)&&!on:!on&&!PROD_ALL&&n++>=10;});
+ const more=$('panel-body').querySelector('[data-prod-all]');if(more)more.hidden=!!w;
+},true);
 $('panel-body').addEventListener('click',e=>{
  const pa=e.target.closest('[data-prod-add]');if(pa&&PRODUCT_FINDER){addFoundProduct(pa.dataset.prodAdd);return;}
+ if(e.target.closest('[data-prod-all]')){PROD_ALL=true;renderPanel();return;}
  const nt=e.target.closest('[data-need-tab]');
  if(nt){tab=nt.dataset.needTab;renderPanel();$('panel-body').querySelector('input,button,select')?.focus();return;}
  if(e.target.closest('[data-ref-find]')){cbRailMode='data';iaDataMode='refs';renderAll();$('data-library').querySelector('[data-ref-pick],#refLinkUrl')?.focus();return;}
@@ -1689,6 +1715,8 @@ window.AMOREAD_EDITOR_API=Object.freeze({
    s.lines=(Array.isArray(v.lines)?v.lines:[]).slice(0,10).map(l=>({text:str(l?.text,120)}));
    const seqs=[...new Set((Array.isArray(x.slots)?x.slots:[]).map(sl=>String(sl?.seq??'')))].filter(seq=>PRODUCTS.some(p=>p.id===seq));
    if(['grid2','grid3','feat','deal-banner'].includes(layout)){s.productIds=seqs;s.slotCount=Math.min(40,(Array.isArray(x.slots)?x.slots:[]).filter(sl=>sl&&!(Array.isArray(sl.items)&&sl.items.length)).length);}
+   // 붙인 레퍼런스(v2.att: 예전 편집기와 같은 형식) → 편집기의 refs
+   s.refs=(Array.isArray(v.att)?v.att:[]).slice(0,8).filter(a=>a&&a.ref).map(a=>({id:str(a.ref,80),name:str(a.name||'레퍼런스',60),from:str([a.from,a.page].filter(Boolean).join(', '),80),url:/^https?:\/\//.test(a.url||'')?str(a.url,300):'',attached:true,note:str(a.note,120)}));
    // 탭(필터) 구좌: 탭마다 상품을 나눠 둔다 (plans/28). 칸의 tabId가 없거나 없는 탭이면 첫 탭. 같은 상품이 여러 탭에 있어도 된다
    const ftIn=(Array.isArray(x.tabs)?x.tabs:[]).filter(t=>t&&/^[A-Za-z0-9_-]{1,40}$/.test(t.tabId||'')).slice(0,12);
    if(FTAB_LAYOUTS.includes(layout)&&ftIn.length){
@@ -1698,8 +1726,6 @@ window.AMOREAD_EDITOR_API=Object.freeze({
     s.ftabCur=s.ftabs[0].id;s.productIds=s.ftabs[0].productIds.slice();   // 처음엔 첫 탭을 본다
     s.slotCount=0;   // 탭 구좌는 빈 칸을 저장하지 않는다 → 탭마다 기본 칸 수로 그린다 (plans/30 §3-2)
    }
-   // 붙인 레퍼런스(v2.att: 예전 편집기와 같은 형식) → 편집기의 refs
-   s.refs=(Array.isArray(v.att)?v.att:[]).slice(0,8).filter(a=>a&&a.ref).map(a=>({id:str(a.ref,80),name:str(a.name||'레퍼런스',60),from:str([a.from,a.page].filter(Boolean).join(', '),80),url:/^https?:\/\//.test(a.url||'')?str(a.url,300):'',attached:true,note:str(a.note,120)}));
    const card=v.card;
    if(card&&Array.isArray(card.order)&&card.order.length===ORDER.length&&ORDER.every(k=>card.order.includes(k)))s.card.order=card.order.slice();
    if(card&&card.on&&typeof card.on==='object')for(const k of ORDER)if(k in card.on)s.card.on[k]=card.on[k]?1:0;

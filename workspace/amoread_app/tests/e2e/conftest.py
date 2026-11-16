@@ -35,8 +35,10 @@ class Server:
         self.port = _free_port()
         self.base = f"http://127.0.0.1:{self.port}"
         env = {**os.environ, "PYTHONUTF8": "1", "PLANNER_PORT": str(self.port), **(extra_env or {})}
+        # E2E_SERVER_LOG=파일경로 를 주면 서버 출력(오류 추적 포함)을 그 파일에 남긴다 (실패 원인 찾기용)
+        log = open(os.environ["E2E_SERVER_LOG"], "ab") if os.environ.get("E2E_SERVER_LOG") else subprocess.DEVNULL
         self.proc = subprocess.Popen([sys.executable, "-m", "planner.server", "--no-browser"], cwd=APP, env=env,
-                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                     stdout=log, stderr=subprocess.STDOUT if log is not subprocess.DEVNULL else subprocess.DEVNULL)
         for _ in range(240):
             try:
                 html = urllib.request.urlopen(self.base + "/v2/home", timeout=2).read().decode("utf-8")

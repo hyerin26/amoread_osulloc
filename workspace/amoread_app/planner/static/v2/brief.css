@@ -208,3 +208,31 @@ select { min-height:var(--control-lg); padding:0 10px; border:1px solid var(--li
 .map .node.open rect { stroke: var(--line-strong); stroke-width: 1; }   /* 펼친 키워드: 진한 1px 선 (덧칠 없음) */
 /* 칩 글자는 왼쪽 정렬로 쌓는다 (가운데 정렬 + 보정값 대신 정해진 간격) */
 .map .node text.lbl { text-anchor: start; }
+
+.map-status { margin: 0 0 var(--s2); }
+.sec-head .ai-cost { margin-left: -4px; }
+#researchStatus:empty { display: none; }
+
+/* 느낌 레퍼런스: 11개가 두세 줄로 쌓여 약 450px → 한 줄 가로 넘김 (스크롤 줄이기, 2026-11-16) */
+.moods { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x proximity; }
+.moods > .mwrap { flex: none; scroll-snap-align: start; }
+.mood .fr { height: 104px; }
+.mood .mn { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+
+/* ── 마인드맵 가지 (2026-11-16): 괄호형 선 · 굵기 1단 1px / 하위 0.75px · 고른 길 초록 1.25px. 노드 모양은 손대기 전 그대로 ── */
+.map .edge { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.map .edge.d1 { stroke: var(--line-sub); stroke-width: 1; }
+.map .edge.d2 { stroke: var(--line-sub); stroke-width: .75; }
+.map .edge.on { stroke: var(--accent); stroke-width: 1.25; }
+/* 누를 때 생기던 검정 초점 테두리(브라우저 기본 outline) 없앰 — 키를 누르면 다시 그리며 초점을 되돌려 놓아 테두리가 붙었다.
+   키보드로 옮길 때만 초록 테두리로 위치 표시 (2026-11-16) */
+.map:focus, .map .node:focus, .map .node:focus-visible, .map .root-edit-btn:focus, .map .ck:focus { outline: none; }
+.map .node:focus-visible rect { stroke: var(--accent); stroke-width: 2; }
+/* 고르기 동그라미의 누르는 영역(보이지 않는 네모)에 노드 테두리 규칙(hover·focus·open)이 같이 걸려 진한 네모가 생겼다 → 늘 투명 */
+.map .node .ck rect.hit, .map .root-edit-btn rect.hit { stroke: none !important; }
+.map .node .ck rect.hit { fill: transparent !important; }
+/* 라디오(고르기)·가지는 노드 테두리와 같은 색(--line-sub), 연필은 그 연필이 있는 가운데 노드 테두리와 같은 색(초록) — 2026-11-16 */
+.map .node .ck:not(.on) circle { stroke: var(--line-sub); }
+.map .root-edit-btn path, .map .root-edit-btn:hover path { stroke: var(--accent); }
+/* 가운데 노드가 선택 상태가 아니면 테두리가 회색 → 연필도 같은 회색 (연필 g는 가운데 노드 바로 다음 형제) */
+.map .node.root:not(.focus) + .root-edit-btn path { stroke: var(--line-strong); }

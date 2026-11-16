@@ -167,6 +167,43 @@ function enToLegacy(snapshot, prevSections, knownSeqs) {
     };
   });
 }
+// ── 레퍼런스 고를 목록 (2026-11-16): ① AI 추천 모듈이 수집본에서 찾은 '이 구좌와 비슷한 사례' ② 레퍼런스 라이브러리(직접 모은 것·핀터레스트)
+// 둘 중 하나가 실패해도 나머지는 보여 준다. 둘 다 실패하면 편집기가 '불러오지 못했어요 · 링크로 붙이기'를 보여 준다
+let enLibWait = null;
+function enLibRefs() {
+  if (!enLibWait) enLibWait = v2api('/api/am/references').then(d => {
+    const fav = new Set(d.favorites || []);
+    return (d.items || []).map(x => ({ id: String(x.id), name: x.name || '레퍼런스', from: x.source === 'Pinterest' ? 'Pinterest' : '라이브러리 · 직접 추가',
+      url: x.link || '', why: fav.has(x.id) ? '★ 즐겨찾기' : '', group: '레퍼런스 라이브러리', fav: fav.has(x.id) }))
+      .sort((a, b) => b.fav - a.fav);
+  });
+  enLibWait.catch(() => { enLibWait = null; });   // 실패하면 다음에 다시 시도
+  return enLibWait;
+}
+async function enRefSource(doc, s) {
+  const d = PLAN.doc || doc;
+  const [rec, lib, box] = await Promise.allSettled([
+    v2api('/api/am/ai/references', { section: { layoutId: s.layout, name: String(s.name || '').slice(0, 40), purpose: String(s.role || '').slice(0, 20) }, n: 8,
+      doc: { id: d.id || '', title: d.title || '', brief: d.brief || {}, v2: { cls: (d.v2 && d.v2.cls) || '', seed: (d.v2 && d.v2.seed) || '', keywords: (d.v2 && d.v2.keywords) || [] } } }),
+    enLibRefs(),
+    v2api('/api/am/ai/inspire/saved')]);   // ③ 오늘의 영감 보관함에 저장한 구좌 (통합 브랜치 editor-next-refs.js에서 옮김, 2026-11-16)
+  if (rec.status === 'rejected' && lib.status === 'rejected' && box.status === 'rejected') throw rec.reason;
+  const out = [], seen = new Set();
+  const lib1 = id => `/v2/library#open=${encodeURIComponent(id)}`;   // 레퍼런스 화면에서 그 구좌를 바로 연다
+  if (rec.status === 'fulfilled' && rec.value && rec.value.mode === 'ai')
+    for (const it of rec.value.items || []) { seen.add(String(it.id)); out.push({ id: String(it.id), name: it.title || '레퍼런스', from: [it.from, it.campaign].filter(Boolean).join(' · '), url: it.url || '', why: it.why || it.reason || '', group: '이 구좌와 비슷한 사례', live: true, lib: lib1(it.id) }); }
+  if (box.status === 'fulfilled')
+    for (const x of ((box.value && box.value.items) || []).filter(v => v && v.ref && !seen.has(String(v.ref))).slice(0, 12))
+      out.push({ id: String(x.ref), name: x.psec || x.title || '레퍼런스', from: [x.brand, x.campaign].filter(Boolean).join(' · '), url: x.url || '', why: x.memo ? `메모 · ${x.memo}` : (x.kind_name || ''), group: '오늘의 영감 보관함', live: true, lib: lib1(x.ref) });
+  if (lib.status === 'fulfilled') out.push(...lib.value);
+  return out;
+}
+// 담당자가 사례를 붙이거나 뺐을 때 AI 모듈에 기록 → 다음 추천 순서에 반영 (화면 변화 없음, id만 보냄)
+const enRefPicked = doc => (r, added, s) => {
+  if (!r || !r.live) return;
+  v2api('/api/am/ai/feedback', { event: added ? 'pick_ref' : 'drop_ref', doc_id: doc.id || '', ref_id: String(r.id).slice(0, 80), section: String(s.layout || '').slice(0, 40) }).catch(() => {});
+};
+
 // 편집기의 탭 구좌 값 (plans/28). null = 탭을 모르던 저장본 → 이전 tabs를 그대로 둔다 / [] = 탭을 없앰 (productIds = 합친 상품)
 // 편집기에서 s.productIds는 지금 보는 탭(s.ftabCur, 없으면 첫 탭)의 상품이고, 다른 탭 상품은 s.ftabs[].productIds에 있다
 const EN_FTAB_LAYOUTS = ['grid2', 'grid3', 'feat'];   // app.js FTAB_LAYOUTS와 같게
@@ -176,47 +213,6 @@ function enFtabs(s) {
   const cur = tabs.find(t => t.id === s.ftabCur) || tabs[0];
   return tabs.map(t => ({ ...t, productIds: [...new Set(((t === cur ? s.productIds : t.productIds) || []).map(String))] }));
 }
-// ── 레퍼런스 고를 목록 (2026-11-16, plans/30 §3-1): ① AI 추천 모듈이 수집본에서 찾은 '이 구좌와 비슷한 사례'
-// ② 오늘의 영감 보관함에 저장한 구좌 ③ 레퍼런스 라이브러리(직접 모은 것, 핀터레스트)
-// 하나가 실패해도 나머지는 보여 준다. 모두 실패하면 편집기가 '불러오지 못했어요'와 링크로 붙이기를 보여 준다
-let enLibWait = null, enBoxWait = null;
-function enLibRefs() {
-  if (!enLibWait) enLibWait = v2api('/api/am/references').then(d => {
-    const fav = new Set(d.favorites || []);
-    return (d.items || []).map(x => ({ id: String(x.id), name: x.name || '레퍼런스', from: x.source === 'Pinterest' ? 'Pinterest' : '라이브러리에 직접 추가',
-      url: x.link || '', why: fav.has(x.id) ? '즐겨찾기' : '', group: '레퍼런스 라이브러리', fav: fav.has(x.id) }))
-      .sort((a, b) => b.fav - a.fav);
-  });
-  enLibWait.catch(() => { enLibWait = null; });   // 실패하면 다음에 다시 시도
-  return enLibWait;
-}
-function enBoxRefs() {   // 오늘의 영감에서 저장한 것 중 수집 구좌(ref)가 있는 것. 수집본 id라 AI 모듈에 고른 기록을 남긴다(live)
-  if (!enBoxWait) enBoxWait = v2api('/api/am/ai/inspire/saved').then(d => (d.items || []).filter(x => x && x.ref).slice(0, 12).map(x => ({
-    id: String(x.ref), name: x.psec || x.title || '레퍼런스', from: [x.brand, x.campaign].filter(Boolean).join(', '), url: x.url || '',
-    why: x.memo ? `메모: ${x.memo}` : x.kind_name || '', group: '오늘의 영감 보관함', live: true })));
-  enBoxWait.catch(() => { enBoxWait = null; });
-  return enBoxWait;
-}
-async function enRefSource(doc, s) {
-  const d = PLAN.doc || doc;
-  const [rec, box, lib] = await Promise.allSettled([
-    v2api('/api/am/ai/references', { section: { layoutId: s.layout, name: String(s.name || '').slice(0, 40), purpose: String(s.role || '').slice(0, 20) }, n: 8,
-      doc: { id: d.id || '', title: d.title || '', brief: d.brief || {}, v2: { cls: (d.v2 && d.v2.cls) || '', seed: (d.v2 && d.v2.seed) || '', keywords: (d.v2 && d.v2.keywords) || [] } } }),
-    enBoxRefs(), enLibRefs()]);
-  if ([rec, box, lib].every(x => x.status === 'rejected')) throw rec.reason;
-  const out = [];
-  if (rec.status === 'fulfilled' && rec.value && rec.value.mode === 'ai')
-    for (const it of rec.value.items || []) out.push({ id: String(it.id), name: it.title || '레퍼런스', from: [it.from, it.campaign].filter(Boolean).join(', '), url: it.url || '', why: it.why || it.reason || '', group: '이 구좌와 비슷한 사례', live: true });
-  const seen = new Set(out.map(x => x.id));   // 추천에 이미 있는 보관함 구좌는 한 번만
-  if (box.status === 'fulfilled') out.push(...box.value.filter(x => !seen.has(x.id)));
-  if (lib.status === 'fulfilled') out.push(...lib.value);
-  return out;
-}
-// 담당자가 사례를 붙이거나 뺐을 때 AI 모듈에 기록 → 다음 추천 순서에 반영 (화면 변화 없음, id만 보냄)
-const enRefPicked = doc => (r, added, s) => {
-  if (!r || !r.live) return;
-  v2api('/api/am/ai/feedback', { event: added ? 'pick_ref' : 'drop_ref', doc_id: doc.id || '', ref_id: String(r.id).slice(0, 80), section: String(s.layout || '').slice(0, 40) }).catch(() => {});
-};
 // page.sections가 이 편집기 밖(02 구좌 구성 등)에서 바뀌었는지 알아보는 지문 (구좌 id·유형·제목·설명·상품 SEQ, 탭 구좌면 탭과 칸의 탭)
 // 탭이 없는 구좌는 예전 지문과 같다 → 업데이트 뒤 처음 열 때 쓸데없이 '다시 맞춤'이 생기지 않음
 function enLegacyMark(sections) {

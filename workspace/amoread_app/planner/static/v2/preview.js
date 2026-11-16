@@ -35,7 +35,7 @@ let SECS = [
   { name: '봄맞이 혜택', layout: 'benefit', num: false, cta: ['혜택 받기', '쿠폰 받기'], refs: [], moods: [], notes: '' },
   { name: '유의사항', layout: 'notice', num: false, cta: null, refs: [], moods: [], notes: '' },
 ];
-const LNAME = { hero: '메인 비주얼', feat: '대표 1 + 2열', grid2: '2열 상품', grid3: '3열 상품', 'deal-banner': '날짜별 특가', review: '후기 모음', 'text-cta': '텍스트와 버튼', split: '좌우 분할', benefit: '혜택 총정리', story: '스토리', service: '포장·서비스 안내', detail: '상품 상세', timeline: '배송·일정 안내', countdown: '카운트다운', notice: '유의사항',
+const LNAME = { custom: '레퍼런스 구조', hero: '메인 비주얼', feat: '대표 1 + 2열', grid2: '2열 상품', grid3: '3열 상품', 'deal-banner': '날짜별 특가', review: '후기 모음', 'text-cta': '텍스트와 버튼', split: '좌우 분할', benefit: '혜택 총정리', story: '스토리', service: '포장·서비스 안내', detail: '상품 상세', timeline: '배송·일정 안내', countdown: '카운트다운', notice: '유의사항',
   'ev-quiz': '이벤트 · 퀴즈·테스트', 'ev-share': '이벤트 · 공유 유도', 'ev-ugc': '이벤트 · 댓글·사진 인증', 'ev-stamp': '이벤트 · 출석·스탬프', 'ev-draw': '이벤트 · 뽑기·룰렛', 'ev-coupon': '이벤트 · 쿠폰 받기' };
 
 // 문구 칸 합치기 (구좌 편집과 같음): 제목 = 구좌 이름 + 구좌 제목, 설명 = 역할 한 줄 + 서브 카피

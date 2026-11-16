@@ -19,8 +19,12 @@ from pathlib import Path
 from . import labeling, refs, rules
 
 
+KURLY_FILTER = re.compile(r"필터 초기화.*?낮은 가격순", re.S)   # 컬리 컬렉션의 필터·정렬 UI 문구 (카테고리·가격·브랜드 목록, 정렬 안내)
+
+
 def clean(t: str) -> str:
     t = re.sub(r"(마켓 뷰티\s*)+", " ", t or "")           # 컬리 화면의 내비게이션 문구가 글에 섞여 있음
+    t = KURLY_FILTER.sub(" ", t)
     t = re.sub(r"\b(\w+)( \1\b)+", r"\1", t)               # 'BENEFIT BENEFIT' 같은 반복
     return re.sub(r"\s+", " ", t).strip()
 

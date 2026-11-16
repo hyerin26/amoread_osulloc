@@ -136,7 +136,7 @@ function connectProducts() {
 }
 
 // 지도: 가운데는 늘 명분. 펼친 키워드(opened)의 가지는 바깥쪽 줄에 함께 그리고, 접기 전까지 남는다 (탐색한 키워드로 돌아가도 유지)
-const MAX_DEPTH = 3, KIDS_MAX = 8, ROW = 38, GAP = 44;
+const MAX_DEPTH = 3, KIDS_MAX = 8, ROW = 50, GAP = 64;   // 가지 사이 간격 (2026-11-16: 38·44는 너무 붙어 보였음)
 const parentOf = new Map();   // 지도에 그린 키워드 → 부모 (펼치기·접기·탐색 경로용)
 function chainOf(k) {
   const out = [k];
@@ -241,6 +241,16 @@ function renderMap() {
     gN.append(fo);
   } else rootHalf = node(ROOT, CX, CY, true).w / 2;
   const at = new Map([[ROOT, { y: CY, outer: { '-1': CX - rootHalf, '1': CX + rootHalf } }]]);
+  // 가지 (2026-11-16, 사용자가 남기기로 한 것): 괄호형 — 부모에서 가로로 나와 세로 기둥(부모와 자식 사이 가운데)을 같이 쓰고 꺾이는 곳만 반지름 8.
+  // 같은 부모의 자식은 같은 세로줄이라 세로선이 한 줄로 겹친다. 가운데 → 지금 보고 있는 키워드까지의 길은 초록으로, 회색 선 위에 그린다
+  const onPath = new Set(chainOf(focus)), onEdges = [];
+  const edge = (x1, y1, x2, y2, depth, on) => {
+    const mx = (x1 + x2) / 2, sx = Math.sign(x2 - x1) || 1, sy = Math.sign(y2 - y1), r = Math.min(8, Math.abs(y2 - y1) / 2, Math.abs(x2 - x1) / 2);
+    const d = Math.abs(y2 - y1) < 1 ? `M${x1},${y1} H${x2}`
+      : `M${x1},${y1} H${mx - sx * r} Q${mx},${y1} ${mx},${y1 + sy * r} V${y2 - sy * r} Q${mx},${y2} ${mx + sx * r},${y2} H${x2}`;
+    const el = svgEl('path', { class: `edge d${Math.min(depth, 2)}${on ? ' on' : ''}`, d });
+    on ? onEdges.push(el) : gE.append(el);
+  };
   const edgeX = { '-1': CX - rootHalf - GAP, '1': CX + rootHalf + GAP };
   for (let depth = 1; depth <= MAX_DEPTH; depth++) {
     const widest = { '-1': 0, '1': 0 };
@@ -248,12 +258,13 @@ function renderMap() {
       const { w, cx } = node(s.k, edgeX[s.side], s.y, false, s.side < 0 ? 'r' : 'l');
       widest[s.side] = Math.max(widest[s.side], w);
       const p = at.get(parentOf.get(s.k)), from = p.outer ? p.outer[s.side] : p.outerX,
-        to = s.side < 0 ? cx + w / 2 : cx - w / 2, mid = (from + to) / 2;
-      gE.append(svgEl('path', { class: 'edge', d: `M${from},${p.y} C${mid},${p.y} ${mid},${s.y} ${to},${s.y}` }));
+        to = s.side < 0 ? cx + w / 2 : cx - w / 2;
+      edge(from, p.y, to, s.y, depth, onPath.has(s.k) && focus !== ROOT);
       at.set(s.k, { y: s.y, outerX: s.side < 0 ? cx - w / 2 : cx + w / 2 });
     }
     for (const side of ['-1', '1']) edgeX[side] += (+side) * (widest[side] + GAP);
   }
+  gE.append(...onEdges);
   // 가지가 없을 때: 네이버로 찾는 중이면 그 안내, 다 찾았는데 비었으면 그때만 AI를 권한다 (AI는 자동으로 돌지 않음)
   const loading = LIVE.get(ROOT)?.state === 'loading', empty = !shown.length && !rootEditing;
   if (empty && loading) {
@@ -283,6 +294,7 @@ function renderMap() {
 }
 
 function renderPath() {
+  $('#path').hidden = path.length < 2;   // 명분 하나뿐이면 '탐색한 키워드 수능'은 가운데 노드와 같은 말이라 뺀다
   $('#path').innerHTML = '<span class="cap">탐색한 키워드</span>' + path.map((k, i) =>
       `${i ? '<span class="sep">›</span>' : ''}<button data-path="${i}" ${i===path.length-1?'aria-current="true"':''}>${esc(k)}</button>`)
     .join('');
@@ -303,8 +315,10 @@ function renderStatus() {
   const t = aiExpansions.find(e => e.parent === mapRoot())?.fetched_at || rec?.data?.fetched_at;
   $('#aiKeywordExpand').disabled = !researchReady || !!keywordBusy;
   $('#aiKeywordExpand').textContent = keywordBusy ? 'AI가 찾는 중' : 'AI로 더 찾기';
-  $('#aiKeywordStatus').textContent = keywordBusy ? `AI가 ‘${keywordBusy.seed}’ 관련 웹 자료를 찾고 있어요.` : keywordMessage ||
-    '지도는 네이버 검색 결과로 만들어요. AI는 버튼을 누를 때만 써요.';
+  // 평소 안내 문장은 뺐다 (스크롤 줄이기, 2026-11-16). AI가 찾는 중이거나 결과 메시지가 있을 때만 한 줄
+  const aiMsg = keywordBusy ? `AI가 ‘${keywordBusy.seed}’ 관련 웹 자료를 찾고 있어요.` : keywordMessage;
+  $('#aiKeywordStatus').textContent = aiMsg;
+  $('#aiKeywordStatus').hidden = !aiMsg;
   $('#mapDemo').textContent = t ? `조회 ${formatTime(t)}` : '근거 기반 탐색';
 }
 
@@ -456,7 +470,7 @@ const aiNotes = new Map();
 function renderDock() {
   $('#picked').innerHTML = picked.length ? `<span class="cap">${picked.length}/30개</span>` + picked.map(k =>
     `<span class="pk"><button data-focus="${esc(k)}" aria-label="${esc(k)} 근거 보기">${esc(k)}</button><button data-unpick="${esc(k)}" aria-label="${esc(k)} 빼기">✕</button></span>`
-  ).join('') : '<span class="cap">근거를 확인한 키워드 3~5개를 담아 콘셉트로 연결해 보세요.</span>';
+  ).join('') : '<span class="cap">지도에서 동그라미를 누르면 여기 담겨요</span>';
   renderSugs();
   renderConcepts();
   if (typeof renderMoods === 'function') renderMoods();
@@ -970,7 +984,7 @@ function renderMoods() {
   const keys = [ROOT, ...picked], score = m => m.tags.filter(t => keys.includes(t)).length + (m.fav ? 0.5 : 0);
   const own = MOODS.filter(m => m.own), lib = MOODS.filter(m => m.lib).sort((a, b) => score(b) - score(a)).slice(0, 8), demo = MOODS.filter(m => m.demo).sort((a, b) => score(b) - score(a)).slice(0, lib.length ? 3 : 5);
   const list = own.concat(lib, demo);   // 직접 붙인 것 → 라이브러리 → 예시
-  $('#moodBasis').textContent = `명분 '${ROOT}'${picked.length ? `과 고른 키워드(${picked.join(', ')})` : ''}에 맞는 것을 앞에 두었어요.${libState === 'err' ? ' 라이브러리를 불러오지 못해 예시만 보여요.' : ''}`;
+  $('#moodBasis').textContent = libState === 'err' ? '라이브러리를 불러오지 못해 예시만 보여요.' : '';   // 정렬 설명은 뺌 (스크롤 줄이기)
   const tag = $('#moodSrcTag'); if (tag) { tag.textContent = lib.length ? `라이브러리 ${lib.length}개, 예시 ${demo.length}개` : '예시'; tag.className = `tag ${lib.length ? 'real' : 'demo-t'}`; }
   $('#moods').innerHTML = list.map(m => `<div class="mwrap"><button class="mood" data-mood="${m.id}" aria-pressed="${moodSel.has(m.id)}" title="${esc(m.src)}"><span class="fr">${moodPic(m)}</span><span class="mn">${m.fav ? '★ ' : ''}${esc(m.name)}</span><span class="cap">${esc(m.src)}${m.demo ? ' · 예시' : ''}</span></button>
     <button class="mdet" type="button" data-mdet="${m.id}" aria-label="${esc(m.name)} 자세히 보기">자세히</button></div>`).join('');

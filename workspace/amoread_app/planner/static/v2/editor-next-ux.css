@@ -314,6 +314,40 @@
 .en-host .mock-product--slot i + i { width: 60%; }
 .en-host .mock-slot-note { margin: 8px 0 0; font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); }
 
+/* ---------- 보조 설명 빼기 (2026-11-16, "스크롤이 너무 많다" 피드백) ----------
+   묶음 설명·입력칸 도움말·켜고 끄기 설명은 화면에서 빼고, 마우스를 올리면 보이는 말풍선(title)으로만 둔다 (components.js).
+   남기는 것: 글자 수, 노란 알림·빈 상태 안내(할 일을 알려 줌), 경고 */
+.en-host .am-ed-group__description { display: none; }
+.en-host .am-ed-field-meta > .am-ed-support:not([data-counter-for]) { display: none; }
+.en-host .am-ed-field-meta { justify-content: flex-end; min-height: 0; }
+.en-host .am-ed-toggle > span > small { display: none; }
+.en-host .am-ed-group__title h3[title] { cursor: help; }
+/* 묶음 사이 간격: 위 24 → 16 */
+.en-host .inspector .am-ed-group { padding-top: 16px; padding-bottom: 8px; }
+/* 상품 고르기: 한 줄 약 115px → 48px (사진 자리 'IMG'는 앱 데이터에 사진이 없어 뺌) */
+.en-host .am-ed-stack:has(> .am-ed-product-row) { gap: 4px; }
+.en-host .am-ed-product-row { min-height: 0; padding: 6px 12px; gap: 10px; }
+.en-host .am-ed-product-row[hidden] { display: none; }
+.en-host .am-ed-product-row .thumb { display: none; }
+.en-host .am-ed-product-row .txt { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.en-host .am-ed-product-row .txt b { font-size: var(--fs-sm); line-height: var(--lh-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.en-host .am-ed-product-row .txt small { font-size: var(--fs-cap); line-height: var(--lh-cap); }
+.en-host .en-prod-q { margin-bottom: 4px; }
+/* 접어 둔 묶음 (카드에 보일 것) */
+.en-host .en-fold { border-top: 1px solid var(--line-sub); margin-top: 8px; }
+.en-host .en-fold > summary { display: flex; align-items: baseline; gap: 8px; padding: 14px 0; cursor: pointer; list-style: none; }
+.en-host .en-fold > summary::-webkit-details-marker { display: none; }
+.en-host .en-fold > summary::after { content: ''; margin-left: auto; width: 7px; height: 7px; border-right: 1.6px solid var(--mute); border-bottom: 1.6px solid var(--mute); transform: translateY(-2px) rotate(45deg); transition: transform .15s; }
+.en-host .en-fold[open] > summary::after { transform: translateY(2px) rotate(-135deg); }
+.en-host .en-fold > summary strong { font-size: var(--fs-h3, 15px); font-weight: var(--fw-strong); }
+.en-host .en-fold > summary small { font-size: var(--fs-cap); color: var(--mute); }
+.en-host .en-fold > .am-ed-group { padding-top: 0; border-top: 0; }
+/* 상품 배치 방식: 2열 큰 타일 → 3열 작은 타일 */
+.en-host .am-ed-product-layouts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.en-host .am-ed-product-layout-option { padding: 8px; gap: 4px; }
+.en-host .am-ed-product-layout-option small { display: none; }   /* 설명은 이름으로 충분 (마우스를 올리면 이름이 같은 뜻) */
+.en-host .am-ed-product-layout-option .am-ed-layout-visual { height: 32px; }
+
 /* ---------- 채워야 할 자료 (2026-11-16) ----------
    목록 줄: '2열 상품 · 상품 0/4' (비었으면 주의 색). 오른쪽 [내용] 맨 위: 비었다는 알림 + [상품 고르기] */
 .en-host .outline-item small .ia-fill { font-style: normal; color: var(--mute); }
@@ -336,6 +370,9 @@
 .en-host .en-ref-head strong { font-size: var(--fs-sm); font-weight: var(--fw-strong); overflow-wrap: anywhere; }
 .en-host .en-ref-head small { font-size: var(--fs-cap); color: var(--mute); overflow-wrap: anywhere; }
 .en-host .en-ref-url { display: inline-block; margin-top: 4px; font-size: var(--fs-cap); color: var(--accent); }
+.en-host .en-ref-links { display: flex; flex-wrap: wrap; gap: 12px; }
+.en-host .ia-ref-row { display: flex; flex-direction: column; gap: 2px; }
+.en-host .ia-ref-row .ia-ref-open { align-self: flex-end; font-size: var(--fs-cap); color: var(--accent); padding: 0 4px 4px; }
 .en-host .en-ref-find { width: 100%; margin-top: 12px; min-height: var(--control-md); }
 .en-host .ia-data-group { display: flex; align-items: baseline; gap: 6px; margin: 16px 0 8px; font-size: var(--fs-sm); font-weight: var(--fw-strong); color: var(--ink); }
 .en-host .ia-data-group small { font-size: var(--fs-cap); color: var(--mute); font-weight: var(--fw-regular, 400); }
@@ -416,3 +453,5 @@
 .en-host .en-verdict { font-size: var(--fs-cap); font-weight: var(--fw-semibold, 600); padding: 2px 6px; border-radius: 6px; }
 .en-host .en-verdict.is-ok { color: var(--accent); background: var(--accent-soft); }
 .en-host .en-verdict.is-warn, .en-host .en-verdict.is-err { color: var(--warn); background: var(--warn-soft); }
+.en-host .en-prod-more { width: 100%; margin-top: 4px; }
+.en-host .en-prod-more[hidden] { display: none; }

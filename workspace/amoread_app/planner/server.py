@@ -62,7 +62,8 @@ class Guard(BaseHTTPMiddleware):
 
 
 app.add_middleware(Guard)
-from .brief_research import router as brief_research_router
+# 01 브리프 키워드 탐색 (근거 기반 마인드맵·AI 키워드 확장, /api/brief/*) — merge/2026-11-15
+from .brief_research import router as brief_research_router  # noqa: E402
 app.include_router(brief_research_router)
 # 큰 JSON(레퍼런스 목록 650KB, 수집 화면 450KB)을 줄여 보낸다. 레퍼런스가 늘어도 화면이 느려지지 않게
 from starlette.middleware.gzip import GZipMiddleware  # noqa: E402
@@ -103,7 +104,7 @@ def favicon():
 
 # 새 버전 (plans/20 재설계 화면). 예전 화면(/)은 그대로 두고 /v2/ 아래에 따로. 정해진 이름만 열어 준다
 V2_PAGES = {"home", "brief", "compose", "editor", "preview", "deals", "library", "settings", "inspire"}
-# 신규 구좌편집기 (기존 /v2/editor는 그대로 두고 따로). 끄면 화면 404 + 화면 안 <!--editor-next-->…<!--/editor-next--> 진입 버튼을 뺀다
+# 신규 구좌편집기 = 03 구좌 편집 (/v2/editor는 이리로 넘김). 끄면(AMOREAD_EDITOR_NEXT=0) 화면 404 + 예전 편집기가 /v2/editor에 열림
 EDITOR_NEXT_ON = config.EDITOR_NEXT and (config.EDITOR_NEXT_DIR / "app.js").is_file()
 _EDITOR_NEXT_BLOCK = re.compile(r"<!--editor-next-->.*?<!--/editor-next-->", re.S)
 _EDITOR_NEXT_FILE = re.compile(r"^[A-Za-z0-9_.-]+\.(js|css)$")   # 편집기 폴더의 js·css만 (테스트·문서·하위 폴더는 열지 않음)
@@ -178,7 +179,7 @@ from amoread.api import router as amoread_router  # noqa: E402
 app.include_router(amoread_router)
 
 # 멘트추천기능 (AI 카피 추천): 같은 app·Guard를 쓰는 선택 모듈 (새 서버 없음).
-# 폴더(저장소 루트/멘트추천기능)가 없으면 건너뛴다. 화면 쪽은 v2/editor-next-ai.js(신규 편집기), copy-recommender-assets(브리프·예전 편집기)
+# 폴더(저장소 루트/멘트추천기능)가 없으면 건너뛴다. 화면 쪽은 v2/editor-next-ai.js
 from importlib.util import spec_from_file_location, module_from_spec  # noqa: E402
 _copy_dir = Path(__file__).resolve().parents[3] / "멘트추천기능"
 if (_copy_dir / "__init__.py").is_file():

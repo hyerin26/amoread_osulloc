@@ -11,8 +11,8 @@
   const S = new Map();   // 구좌 id → 상태 (다른 구좌로 옮겨도 결과를 보관)
   const st = id => { if (!S.has(id)) S.set(id, { target: 'both', tone: '브랜드 기본', busy: false, result: null, error: '', stale: false, run: 0, job: null, fp: null, applied: null }); return S.get(id); };
   let doc = null, avail = null;   // avail: null=확인 중, {available:bool}
+  // v2fetch(api.js): 토큰을 붙이고, 서버를 다시 켜 토큰이 바뀌었으면 새로 받아 한 번 더 보낸다
   async function api(path, body) {
-    // v2fetch: 서버를 다시 켜 토큰이 바뀌어도 새 토큰을 받아 한 번 더 보낸다 (api.js)
     const r = await v2fetch('/api/am/copy' + path, { method: body === undefined ? 'GET' : 'POST',
       headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body) });
