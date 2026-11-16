@@ -51,3 +51,31 @@ def test_api_model_limits_editor_next_size():
     with pytest.raises(ValueError):
         ProjectReq(editor_next={"x": "가" * 1_600_000})
     assert ProjectReq(editor_next={"x": 1}, base_updated_at="2026-01-01 00:00:01").editor_next == {"x": 1}
+
+
+# ---- 2026-11-17 리뷰에서 고친 것 ----
+def test_unreadable_file_is_not_overwritten(monkeypatch):
+    """파일은 있는데 못 읽으면(백신·동기화가 잡고 있음, 반쪽 파일) 새 기획안처럼 덮어쓰지 않는다 → 확정본·편집기 값이 지켜진다."""
+    monkeypatch.setattr(store.time, "sleep", lambda s: None)
+    a = store.save({"title": "a", "editor_next": {"snapshot": {"sections": []}}})
+    store._path(a["id"]).write_text("{반쪽", encoding="utf-8")
+    with pytest.raises(store.Unreadable):
+        store.save({"id": a["id"], "title": "b", "base_updated_at": a["updated_at"]})
+    assert store._path(a["id"]).read_text(encoding="utf-8") == "{반쪽"
+
+
+def test_deleted_plan_is_not_revived_by_a_late_autosave():
+    a = store.save({"title": "a"})
+    store.delete(a["id"])
+    with pytest.raises(store.Conflict):
+        store.save({"id": a["id"], "title": "늦게 온 자동 저장", "base_updated_at": a["updated_at"]})
+    assert not store._path(a["id"]).exists()
+
+
+def test_update_keeps_edits_saved_meanwhile():
+    """확정(update)은 지금 파일 위에 snapshot·status만 얹는다 → 확정 계산 중 다른 탭이 저장한 수정이 남는다."""
+    a = store.save({"title": "a"})
+    store.save({"id": a["id"], "title": "다른 탭 수정", "base_updated_at": a["updated_at"]})
+    d = store.update(a["id"], {"snapshot": {"rows": []}, "status": "confirmed"})
+    assert d["title"] == "다른 탭 수정" and d["status"] == "confirmed" and d["snapshot"] == {"rows": []}
+    assert not list(store.PROJECTS_DIR.glob("*.tmp")), "임시 파일이 남지 않는다"

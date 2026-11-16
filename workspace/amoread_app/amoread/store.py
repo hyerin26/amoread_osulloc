@@ -7,8 +7,10 @@
 - 원천 파일(PROMO_WORK 등)에는 쓰지 않는다.
 """
 import json
+import os
 import re
 import threading
+import time
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -40,6 +42,41 @@ def _read(path: Path):
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return None
+
+
+class Unreadable(Exception):
+    """기획안 파일은 있는데 읽지 못함 (백신·OneDrive가 잠깐 잡고 있음, 쓰다 끊긴 파일). 이때 '없는 기획안'으로 보고 저장하면
+    충돌 확인 없이 덮어써 확정본·신규 편집기 값이 지워졌다 (2026-11-17 리뷰) → 저장을 멈추고 화면이 다시 시도하게 한다."""
+
+
+def _read_strict(path: Path):
+    """없으면 None, 있는데 못 읽으면 잠깐 기다려 3번까지 다시 읽고 그래도 안 되면 Unreadable."""
+    for i in range(3):
+        if not path.exists():
+            return None
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            time.sleep(0.2 * (i + 1))
+    raise Unreadable(path.name)
+
+
+def _write(path: Path, doc: dict):
+    """끊겨도 반쪽 파일이 남지 않게: 이 저장만의 임시 파일에 다 쓰고(디스크까지) 한 번에 바꿔 끼운다.
+    Windows에서 다른 요청이 그 파일을 읽는 순간에는 바꿔 끼우기가 실패하므로 잠깐 기다려 다시 한다."""
+    tmp = path.with_name(f"{path.stem}.{uuid.uuid4().hex[:8]}.tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write(json.dumps(doc, ensure_ascii=False, indent=1))
+        f.flush()
+        os.fsync(f.fileno())
+    for i in range(5):
+        try:
+            os.replace(tmp, path)
+            return
+        except PermissionError:
+            time.sleep(0.1 * (i + 1))
+    tmp.unlink(missing_ok=True)
+    raise Unreadable(path.name)
 
 
 def summary(d: dict) -> dict:
@@ -90,7 +127,7 @@ class Conflict(Exception):
         self.updated_at = updated_at
 
 
-_SAVE_LOCK = threading.Lock()   # 확인(prev 읽기)과 쓰기 사이에 다른 저장이 끼지 않게
+_SAVE_LOCK = threading.Lock()   # 확인(prev 읽기)과 쓰기 사이에 다른 저장이 끼지 않게. 확정(update)·삭제도 이 잠금 안에서
 
 
 def save(doc: dict) -> dict:
@@ -104,9 +141,12 @@ def save(doc: dict) -> dict:
 def _save(doc: dict) -> dict:
     PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
     pid = doc.get("id") if valid_id(doc.get("id")) else uuid.uuid4().hex
-    prev = _read(_path(pid)) or {}
+    prev = _read_strict(_path(pid))   # 있는데 못 읽으면 Unreadable (덮어쓰지 않음)
     base = doc.get("base_updated_at")
-    if base and prev and prev.get("updated_at") != base:
+    if base and prev is None:
+        raise Conflict(None)   # 화면은 저장된 기획안을 열었는데 파일이 없음 = 그사이 지워짐 → 되살리지 않고 화면이 묻게 한다
+    prev = prev or {}
+    if base and prev.get("updated_at") != base:
         raise Conflict(prev.get("updated_at"))
     out = {
         "schema_version": SCHEMA_VERSION, "id": pid,
@@ -126,25 +166,28 @@ def _save(doc: dict) -> dict:
         "rationale": str(doc.get("rationale") or "")[:20000],
         "created_at": prev.get("created_at") or _now(), "updated_at": _now(),
     }
-    tmp = _path(pid).with_suffix(".tmp")
-    tmp.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
-    tmp.replace(_path(pid))
+    _write(_path(pid), out)
     return out
 
 
-def write_raw(doc: dict) -> dict:
-    """확정처럼 서버가 만든 값(snapshot, status)을 그대로 저장. 저장 형식은 save와 같고 updated_at만 갱신."""
-    doc["updated_at"] = _now()
-    tmp = _path(doc["id"]).with_suffix(".tmp")
-    tmp.write_text(json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8")
-    tmp.replace(_path(doc["id"]))
-    return doc
+def update(pid: str, fields: dict) -> dict:
+    """확정처럼 서버가 만든 값(snapshot, status)만 바꿔 저장. 저장 잠금 안에서 지금 파일을 다시 읽어 그 위에 얹는다
+    (전에는 확정 계산 전에 읽은 기획안을 통째로 써서, 계산하는 사이 다른 탭이 저장한 수정이 사라졌다)."""
+    with _SAVE_LOCK:
+        doc = _read_strict(_path(pid))
+        if doc is None:
+            raise FileNotFoundError(pid)
+        doc.update(fields)
+        doc["updated_at"] = _now()
+        _write(_path(pid), doc)
+        return doc
 
 
 def delete(pid: str) -> None:
     p = _path(pid)
-    if p.exists():
-        p.unlink()
+    with _SAVE_LOCK:
+        if p.exists():
+            p.unlink()
 
 
 def from_legacy(plan: dict) -> dict:

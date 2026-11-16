@@ -109,6 +109,19 @@ const EN_PRODUCT_LAYOUTS = ['grid2', 'grid3', 'feat', 'deal-banner'];
 window.EN_AI_META = window.EN_AI_META || {};   // 구좌별 AI 카피 적용 기록 → v2.copyRecommendation (editor-next-ai.js가 채움)
 const enCut = (v, n) => String(v ?? '').slice(0, n);
 const enSlotId = () => `slot-${Math.random().toString(36).slice(2, 10)}`;
+// 편집기 후기 값 {selected, order, titles, show, shape, author} → 예전 형식 {shape, groups:[{seq, picks:[{id,title,titleSrc}]}], order, show, author}
+// 앱 후기 id는 '상품SEQ-q번호' (enCatalog) → 상품별로 묶는다
+function enReviewV2(r, prev) {
+  const sel = Array.isArray(r.selected) ? r.selected.map(String) : null;
+  const order = (Array.isArray(r.order) && r.order.length ? r.order : sel || []).map(String).filter(id => !sel || sel.includes(id)).slice(0, 30);
+  const groups = [];
+  for (const id of order) {
+    const seq = id.includes('-q') ? id.split('-q')[0] : '';
+    let g = groups.find(x => x.seq === seq); if (!g) groups.push(g = { seq, picks: [] });
+    g.picks.push({ id, title: enCut((r.titles || {})[id], 120), titleSrc: '직접' });
+  }
+  return { ...(prev && typeof prev === 'object' ? prev : {}), shape: enCut(r.shape || 'mix', 20), groups, order, show: r.show || {}, author: enCut(r.author || 'hide', 20) };
+}
 function enToLegacy(snapshot, prevSections, knownSeqs) {
   const prev = new Map((Array.isArray(prevSections) ? prevSections : []).filter(x => x && x.sectionId).map(x => [x.sectionId, x]));
   return (snapshot.sections || []).slice(0, 40).map((s, i) => {
@@ -116,7 +129,8 @@ function enToLegacy(snapshot, prevSections, knownSeqs) {
     const pSlots = Array.isArray(p.slots) ? p.slots : [], firstTab = (p.tabs && p.tabs[0] && p.tabs[0].tabId) || null;
     const bySeq = new Map(pSlots.filter(x => x && x.seq).map(x => [String(x.seq), x]));
     // 편집기가 모르는 칸(카탈로그에 없는 SEQ, 묶음 상품)은 지우지 않고 남긴다
-    const foreign = pSlots.filter(x => x && ((x.items && x.items.length) || (x.seq && !knownSeqs.has(String(x.seq)))));
+    // knownSeqs = null: 이 PC에 상품 데이터가 없어 편집기가 상품을 모름 → 상품 칸은 저장된 그대로 둔다 (아래 맨 끝)
+    const foreign = pSlots.filter(x => x && ((x.items && x.items.length) || (x.seq && !(knownSeqs && knownSeqs.has(String(x.seq))))));
     let slots = pSlots;
     const ft = EN_FTAB_LAYOUTS.includes(s.layout) ? enFtabs(s) : null;
     if (ft) {
@@ -148,11 +162,17 @@ function enToLegacy(snapshot, prevSections, knownSeqs) {
         const cols = Number(s.layoutColumns && s.layoutColumns[s.layout]) || { grid2: 2, grid3: 3, feat: 2 }[s.layout] || 2;
         const total = Math.max(Number(s.slotCount) || (s.layout === 'feat' ? Math.max(2, cols) : cols * 2), ids.length);
         const prevEmpty = pSlots.filter(x => x && !x.seq && !(x.items && x.items.length));   // 아직 안 고른 자리는 원래 칸(id)을 다시 쓴다
-        empty = Array.from({ length: Math.max(0, total - ids.length) }, (_, k) => prevEmpty[k] || { slotId: enSlotId(), tabId: firstTab, seq: null, items: null, placeholderStatus: 'UNDECIDED', customCopy: '' });
+        const kept = foreign.filter(x => !picked.includes(x)).length;   // 편집기가 모르는 칸(카탈로그 밖 SEQ·묶음)도 칸 수에 넣는다 (전에는 다시 맞출 때마다 빈 칸이 늘었다)
+        empty = Array.from({ length: Math.max(0, total - ids.length - kept) }, (_, k) => prevEmpty[k] || { slotId: enSlotId(), tabId: firstTab, seq: null, items: null, placeholderStatus: 'UNDECIDED', customCopy: '' });
       } else if (!ids.length) empty = pSlots.filter(x => x && !x.seq && !(x.items && x.items.length));
       slots = [...picked, ...foreign.filter(x => !picked.includes(x)), ...empty].slice(0, 40);
     }
+    if (knownSeqs === null && (ft || EN_PRODUCT_LAYOUTS.includes(s.layout))) slots = pSlots;
     const lines = (s.lines || []).slice(0, 10).map((l, k) => ({ id: (pv.lines && pv.lines[k] && pv.lines[k].id) || `l${k + 1}`, text: enCut(l && l.text, 120) }));
+    // 후기·이벤트 (2026-11-17): 03에서 고른 후기와 운영 조건이 04에 안 나갔다 → 예전 편집기와 같은 v2.rv / v2.ev 형식으로 쓴다
+    const rv = s.layout === 'review' && s.rv ? enReviewV2(s.rv, pv.rv) : null;
+    const ev = String(s.layout || '').startsWith('ev-') && s.ev ? { ...(pv.ev || {}), how: enCut(s.ev.how, 400), reward: enCut(s.ev.reward, 40), rewardText: enCut(s.ev.rewardText, 120),
+      pick: enCut(s.ev.pick, 40), count: enCut(s.ev.count, 40), when: enCut(s.ev.when, 120), login: s.ev.login !== false, notice: enCut(s.ev.notice, 2000) } : null;
     const ai = window.EN_AI_META[s.id] || pv.copyRecommendation;
     // 붙인 레퍼런스 → v2.att (예전 편집기와 같은 형식: 04 미리보기·인계가 이 값을 읽는다)
     const att = (s.refs || []).filter(r => r && r.id && r.attached !== false).slice(0, 8).map(r => ({
@@ -163,7 +183,7 @@ function enToLegacy(snapshot, prevSections, knownSeqs) {
       cta: enCut(s.cta, 40), layoutId: s.layout, zone_tag: enCut(s.cat, 40), designNotes: enCut(s.notes, 2000), slots,
       ...(ft ? { zone_kind: p.zone_kind || (ft.length ? '탭' : ''), tabs: ft.map(t => ({ ...((p.tabs || []).find(x => x && x.tabId === t.id) || {}), tabId: t.id, label: enCut(t.label, 40), zone_tag: enCut(t.zone, 40) })) } : {}),
       v2: { ...pv, scope: enCut(s.scope, 200), num: !!s.num, ctaOn: !!s.ctaOn, ctaTo: enCut(s.ctaTo, 60), lines, att,
-        ...(s.card ? { card: { order: s.card.order, on: s.card.on, def: s.card.def } } : {}), ...(ai ? { copyRecommendation: ai } : {}) },
+        ...(s.card ? { card: { order: s.card.order, on: s.card.on, def: s.card.def } } : {}), ...(rv ? { rv } : {}), ...(ev ? { ev } : {}), ...(ai ? { copyRecommendation: ai } : {}) },
     };
   });
 }
@@ -237,8 +257,8 @@ async function enConnect() {
     enNotice('예시 기획안이에요 · 저장하지 않아요', { detail: '상품·후기는 편집기에 들어 있는 가상 데이터예요. 홈에서 기획안을 열면 그 기획안의 상품·할인과 저장이 연결돼요.' });
     return;
   }
-  let cat, catError = '';
-  try { cat = await enCatalog(doc); } catch (e) { cat = { products: [], reviews: [], failed: 0 }; catError = e.message; }
+  let cat, catError = '', noData = false;
+  try { cat = await enCatalog(doc); } catch (e) { cat = { products: [], reviews: [], failed: 0 }; catError = e.message; noData = e.code === 'no_data' || e.status === 409; }
   API.setCatalog({ products: cat.products, reviews: cat.reviews, note: `앱 후기 요약 발췌 ${cat.reviews.length}건 (상품 ${cat.products.length}개)` });
   const known = new Set(cat.products.map(p => p.id));
   if (API.setRefSource) API.setRefSource(s => enRefSource(doc, s), { onPick: enRefPicked(doc) });
@@ -299,7 +319,9 @@ async function enConnect() {
   //               ③ 저장본이 없으면 page.sections에서 가져옴
   let start, how;
   try {
-    if (en && en.snapshot && (!en.synced || en.synced === enLegacyMark(legacy) || !legacy.length)) {
+    // 상품 데이터 없이 저장된 편집기 값(catalog:false)은 상품을 모른 채 저장됐다 → 지금 상품을 불러왔으면 page.sections에서 다시 맞춘다
+    // 02에서 구좌를 다 지웠으면(legacy 없음) 예전 저장본을 되살리지 않는다 (2026-11-17)
+    if (en && en.snapshot && (!en.synced || en.synced === enLegacyMark(legacy)) && !(en.catalog === false && !catError)) {
       // 탭을 모르던 때의 저장본이면 탭은 page.sections에서 채운다 (plans/28)
       const leg = new Map(API.fromLegacyPage(doc.page).sections.filter(f => f.ftabs).map(f => [f.id, f]));
       start = { ...en.snapshot, sections: (en.snapshot.sections || []).map(s => {
@@ -354,6 +376,15 @@ async function enConnect() {
     enNotice(`저장하지 못한 작성 내용(${draft.at.slice(0, 16)})이 이 브라우저에 남아 있어요.`, { error: true, action: { label: '임시 저장본 불러오기', run: () => { API.importSnapshot(draft.snapshot); enNotice('임시 저장본을 불러왔어요. 저장 중이에요.'); push(draft.snapshot); } } });
   }
 
+  // 상품 목록을 못 불러온 날은 저장하지 않는다 (2026-11-17): 편집기가 상품을 모르는 채로 저장하면 상품 칸이 빈 칸으로 바뀌고,
+  // 다음에 상품을 불러온 날 그 칸이 지워졌다. 볼 수는 있고, 새로고침해서 상품을 불러오면 다시 저장된다
+  //  · 이 PC에 상품 데이터가 아예 없음(no_data): 저장은 하되 상품 칸은 저장된 그대로 둔다 (known = null)
+  //  · 잠깐 못 불러옴(서버·네트워크): 저장하지 않는다
+  if (catError && !noData) {
+    enNotice(`상품·후기를 불러오지 못해 이번에는 저장하지 않아요 (상품 칸이 지워지지 않게): ${catError}. 새로고침하거나 프로그램(서버 창)을 확인해 주세요.`, { error: true });
+    return;
+  }
+  const knownArg = catError ? null : known;
   PLAN.sendEditorNext = true;
   let last = null, failing = false;
   const push = snapshot => {
@@ -361,9 +392,9 @@ async function enConnect() {
     // 저장이 막힌 동안(다른 창에서 바뀜·서버 꺼짐)에는 plan.js가 보내지 않고 기다리므로, 고칠 때마다 임시 보관본을 새로 쓴다
     if (failing) enDraft.write(doc.id, snapshot);
     PLAN.save(d => {
-      const sections = enToLegacy(snapshot, d.page && d.page.sections, known);
+      const sections = enToLegacy(snapshot, d.page && d.page.sections, knownArg);
       d.page = { ...(d.page || {}), sections };
-      d.editor_next = { schema: EN_SCHEMA, version: 1, editor: API.version, snapshot, synced: enLegacyMark(sections) };
+      d.editor_next = { schema: EN_SCHEMA, version: 1, editor: API.version, snapshot, synced: enLegacyMark(sections), catalog: !catError };
     });
   };
   window.EN_PUSH_NOW = () => push(API.exportSnapshot());   // AI 카피 적용 기록처럼 편집기 밖 값이 바뀌었을 때
@@ -371,7 +402,7 @@ async function enConnect() {
   // 처음 열었을 때 page.sections가 편집기 값과 다르면(처음 가져옴·다시 맞춤·옛 저장본) 한 번 맞춰 둔다
   //  → 고치지 않고 바로 04 미리보기나 AI 추천으로 가도 같은 내용
   const now = API.exportSnapshot();
-  if (how !== 'empty' && (how !== 'saved' || !en.synced || enLegacyMark(enToLegacy(now, legacy, known)) !== enLegacyMark(legacy))) push(now);
+  if (how !== 'empty' && (how !== 'saved' || !en.synced || enLegacyMark(enToLegacy(now, legacy, knownArg)) !== enLegacyMark(legacy))) push(now);
   addEventListener('plan:saved', e => {
     failing = !e.detail.ok;
     if (e.detail.ok) { enDraft.clear(doc.id); return; }

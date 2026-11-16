@@ -334,6 +334,8 @@ def save_project(req: ProjectReq):
         return store.save(doc)
     except store.Conflict as e:
         return JSONResponse({"error": "다른 창에서 이 기획안이 바뀌었어요.", "code": "stale", "updated_at": e.updated_at}, status_code=409)
+    except store.Unreadable:   # 파일을 잠깐 못 읽음 (백신·동기화 프로그램). 덮어쓰지 않고 화면이 5초 뒤 다시 저장한다
+        return JSONResponse({"error": "기획안 파일을 잠깐 읽지 못했어요. 잠시 뒤 다시 저장해요.", "code": "busy"}, status_code=503)
 
 
 @router.post("/projects/{pid}/confirm")
@@ -343,6 +345,8 @@ def confirm_project(pid: str):
         return results.confirm(pid)
     except (ValueError, FileNotFoundError):
         return _not_found()
+    except store.Unreadable:
+        return JSONResponse({"error": "기획안 파일을 잠깐 읽지 못했어요. 잠시 뒤 다시 눌러 주세요.", "code": "busy"}, status_code=503)
 
 
 @router.get("/projects/{pid}/result")
@@ -643,5 +647,10 @@ from .ai.api import router as _ai_router  # noqa: E402
 router.include_router(_ai_router)
 
 # ---------- 트렌드 키워드 (지금 뜨는 것·공개 출처 탐색): /api/am/trend/* — amoread/trend/README.md ----------
-from .trend.api import router as _trend_router  # noqa: E402
-router.include_router(_trend_router)
+# 선택 기능: 필요한 패키지(httpx)가 아직 안 깔린 PC에서도 서버는 켜지게 한다 (run_planner.bat이 다음 실행 때 깔아 줌)
+try:
+    from .trend.api import router as _trend_router  # noqa: E402
+    router.include_router(_trend_router)
+except ImportError as _e:   # noqa: F841
+    import logging
+    logging.getLogger("planner").warning("트렌드 키워드를 불러오지 못했어요 (패키지 설치 필요): %s", _e)

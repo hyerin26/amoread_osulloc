@@ -456,7 +456,16 @@ function render() {
 // ================= 동작 =================
 // 한 번에 낮추기 (지금 툴과 같음): 원가율 기준을 넘는 행을 기준 안 가장 깊은 할인(5% 단위 내림)으로. 재고 털이·5% 미만이면 빼요. 바로 반영하지 않고 '바꿈'으로 모음
 const fixable = () => items.filter(i => i.type !== '할인 없음' && !i.clear && judge(i.seq).lv === 'warn' && floor5(maxRate(i.seq)) >= 5);
-const parsePeriod = (txt, s0, e0) => { const m = txt.match(/^(\d{1,2})\/(\d{1,2})~(\d{1,2})\/(\d{1,2})$/); if (!m) return null; const f = (a, b) => `2026-${String(a).padStart(2, '0')}-${String(b).padStart(2, '0')}`; const s = f(m[1], m[2]), e = f(m[3], m[4]); return s <= e ? [s, e] : null; };
+// 기간 '3/2~3/8' → 날짜. 연도는 이 기획안의 기간(PERIOD)에서 (전에는 2026으로 고정돼 2027 기획이 2026으로 저장됐음 · 2026-11-17)
+// 기획 시작 달보다 반년 넘게 앞선 달은 다음 해로 (12월 기획의 '1/5'), 끝이 시작보다 앞이면 끝을 다음 해로 (12/21~1/3)
+const parsePeriod = txt => {
+  const m = txt.match(/^(\d{1,2})\/(\d{1,2})~(\d{1,2})\/(\d{1,2})$/); if (!m) return null;
+  const [m1, d1, m2, d2] = m.slice(1).map(Number); if (![m1, m2].every(x => x >= 1 && x <= 12) || ![d1, d2].every(x => x >= 1 && x <= 31)) return null;
+  const by = Number(String(PERIOD[0] || '').slice(0, 4)) || new Date().getFullYear(), bm = Number(String(PERIOD[0] || '').slice(5, 7)) || m1;
+  const y1 = m1 < bm - 6 ? by + 1 : by, y2 = (m2 < m1 || (m2 === m1 && d2 < d1)) ? y1 + 1 : y1;
+  const f = (y, a, b) => `${y}-${String(a).padStart(2, '0')}-${String(b).padStart(2, '0')}`;
+  return [f(y1, m1, d1), f(y2, m2, d2)];
+};
 document.addEventListener('click', e => {
   const t = e.target, d = k => t.closest(`[data-${k}]`), v = k => d(k)?.dataset[k];
   if (d('pd')) { openDrawer({ kind: 'product', seq: v('pd') }); return; }

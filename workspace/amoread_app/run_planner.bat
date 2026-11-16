@@ -12,6 +12,16 @@ if not exist .venv\Scripts\python.exe (
     .venv\Scripts\python.exe -m pip install -q -r planner\requirements.txt
 )
 
+rem Reinstall packages when planner\requirements.txt changed (e.g. a new package after git pull). Without this the server stops with ModuleNotFoundError.
+for /f %%h in ('.venv\Scripts\python.exe -c "import hashlib;print(hashlib.sha1(open(r'planner\requirements.txt','rb').read()).hexdigest())"') do set REQ_HASH=%%h
+set OLD_HASH=
+if exist .venv\requirements.sha1 set /p OLD_HASH=<.venv\requirements.sha1
+if not "%REQ_HASH%"=="%OLD_HASH%" (
+    echo Updating packages for the new version. This may take a minute...
+    .venv\Scripts\python.exe -m pip install -q -r planner\requirements.txt
+    if not errorlevel 1 (echo %REQ_HASH%)> .venv\requirements.sha1
+)
+
 if not exist planner\data\planner_data.json (
     echo Building planner data for the first time...
     .venv\Scripts\python.exe -W ignore -m planner.build

@@ -34,9 +34,7 @@ def confirm(pid: str) -> dict:
         "rows": [{k: r.get(k) for k in SNAP_FIELDS} | {"items": r.get("items")} for r in chk["rows"] if r.get("kind") in ("기존", "신규조합")],
         "all_keys": [list(_key(r)) + [r.get("rate")] for r in (doc.get("promo_rows") or [])],
     }
-    doc["status"] = "confirmed"
-    store.write_raw(doc)
-    return doc
+    return store.update(pid, {"snapshot": doc["snapshot"], "status": "confirmed"})   # 계산 중 다른 탭이 저장한 수정을 지우지 않게 지금 파일 위에 얹는다
 
 
 def changes_since(doc: dict) -> dict:

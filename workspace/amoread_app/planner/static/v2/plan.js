@@ -65,7 +65,7 @@ const PLAN = (() => {
   // 저장이 안 되면(서버 꺼짐·다른 창에서 바뀜) 화면 아래에 계속 보이는 띠로 알리고, 고친 내용은 창에 그대로 둔다 (2026-11-14)
   //   · 서버 꺼짐·오류: 5초마다 자동으로 다시 시도 + [지금 다시 시도]. 서버를 다시 켜서 토큰이 바뀐 경우는 api.js가 새 토큰을 받아 그대로 저장된다
   //   · 다른 창에서 바뀜(서버가 409 stale): 실제로 달라진 게 없으면(단계 표시만 바뀜) 조용히 저장, 달라졌으면 [새로 불러오기] / [내 것으로 저장]을 고르게 한다
-  let timer = null, chain = Promise.resolve(), failed = false, stale = false, retryT = null, base = null;
+  let timer = null, chain = Promise.resolve(), failed = false, stale = false, retryT = null, base = null, inflight = 0;   // inflight: 보내고 답을 기다리는 저장 수
   // 내용 비교용 글: 저장 시각·단계 표시는 빼고, 키 순서와 상관없이 같게 (서버가 돌려준 것과 이 창의 것을 비교)
   const sorted = v => (Array.isArray(v) ? v.map(sorted) : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map(k => [k, sorted(v[k])])) : v);
   const norm = d => { const c = JSON.parse(JSON.stringify(d || {})); delete c.updated_at; c.v2 = { cls: '', seed: '', keywords: [], ...(c.v2 || {}) }; delete c.v2.stage; return JSON.stringify(sorted(c)); };
@@ -87,6 +87,7 @@ const PLAN = (() => {
   const ok = d => { st.doc.updated_at = d.updated_at; base = norm(d); failed = stale = false; clearTimeout(retryT); bar(''); say(`저장했어요 ${String(d.updated_at).slice(11, 16)}`); st.progress(); saved({ ok: true }); };
   const run = force => {
     timer = null; clearTimeout(retryT);
+    inflight++;
     chain = chain.then(() => send(force).then(ok).catch(async e => {
       if (e.code === 'stale') {
         let cur = null; try { cur = await v2api(`/api/am/projects/${st.id}`); } catch { /* 아래에서 묻는다 */ }
@@ -103,8 +104,8 @@ const PLAN = (() => {
       const off = !e.status;   // 응답 자체가 없음 = 서버가 꺼졌거나 연결이 끊김
       bar(off ? '저장하지 못했어요. 프로그램(서버 창)이 꺼져 있는 것 같아요. 이 창을 닫지 말고 프로그램을 다시 켜 주세요 — 켜지면 자동으로 저장해요.' : `저장하지 못했어요 (${e.message}). 고친 내용은 이 창에 남아 있어요.`,
         [['지금 다시 시도', () => run(false), true]]);
-      retryT = setTimeout(() => { if (failed && !timer) run(false); }, 5000);
-    }));
+      if (off || e.status >= 500) retryT = setTimeout(() => { if (failed && !timer) run(false); }, 5000);   // 4xx(보낸 값 문제)는 다시 보내도 똑같이 실패 → [지금 다시 시도]만
+    }).finally(() => { inflight--; }));
   };
   st.save = (mutate, now = false) => {
     if (!st.doc) return;
@@ -119,13 +120,16 @@ const PLAN = (() => {
   // 탭 닫기·새로고침·주소 이동처럼 링크가 아닌 길로 떠날 때도 고친 내용을 잃지 않게 (2026-11-10)
   // 기다리는 저장이 있으면 keepalive 요청으로 마지막 상태를 보낸다. 너무 크면(64KB 제한) 브라우저의 '떠날까요?' 확인을 띄움.
   // 저장에 실패한 상태면 보내 봐야 또 실패하므로 '떠날까요?'를 띄운다
+  // 2026-11-17 고침: ① 크기를 글자 수가 아니라 바이트로 잰다 (한글은 1자 = 3바이트라 글자 수로는 64KB를 넘겨도 통과해 조용히 실패했다)
+  //                 ② 앞 저장이 아직 답을 기다리는 중이면 보낼 기준 시각이 낡아 409로 버려진다 → 보내지 않고 '떠날까요?'를 띄운다
   addEventListener('beforeunload', e => {
-    if (!st.doc || (!timer && !failed && !stale)) return;
-    if (timer && !failed && !stale) {
+    if (!st.doc || (!timer && !failed && !stale && !inflight)) return;
+    if (timer && !failed && !stale && !inflight) {
       clearTimeout(timer); timer = null;
       const body = JSON.stringify(st.body(false));
-      if (body.length < 60000) {
-        try { fetch('/api/am/projects', { method: 'POST', keepalive: true, headers: { 'x-planner-token': V2_TOKEN, 'Content-Type': 'application/json' }, body }); return; } catch { /* 아래 확인으로 */ }
+      if (new Blob([body]).size < 60000) {
+        fetch('/api/am/projects', { method: 'POST', keepalive: true, headers: { 'x-planner-token': V2_TOKEN, 'Content-Type': 'application/json' }, body }).catch(() => {});
+        return;
       }
     }
     e.preventDefault(); e.returnValue = '';
@@ -133,7 +137,7 @@ const PLAN = (() => {
   // 저장이 기다리는 중에 다른 화면 링크를 누르면, 저장을 마친 뒤 이동 (고친 내용이 사라지지 않게)
   document.addEventListener('click', e => {
     const a = e.target.closest('a[href^="/v2/"]');
-    if (!a || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    if (!a || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button !== 0 || (a.target && a.target !== '_self')) return;   // 새 탭으로 여는 링크는 이 창을 옮기지 않는다
     if (failed || stale) { e.preventDefault(); say('저장이 안 돼서 이동하지 않았어요 · 아래 안내를 봐 주세요'); document.getElementById('v2savebar')?.querySelector('button')?.focus(); return; }
     if (!timer) return;
     e.preventDefault();

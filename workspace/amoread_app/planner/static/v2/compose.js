@@ -194,6 +194,8 @@ function render() {
 
 // ---------------- 동작 ----------------
 let dirty = false;   // 고른 구성을 고쳤는지 (다른 안을 고를 때 덮어쓰기 확인)
+// 기획안의 저장된 구성과 실제 추천을 다 불러왔는지. 그 전에 예시 후보를 고르면 저장된 구성이 예시 구좌로 바뀌었다 (2026-11-17) → 다 불러온 뒤에만 고르고 저장
+let liveReady = !new URLSearchParams(location.search).get('id');
 function choose(id) {
   if (chosen && chosen !== id && dirty && !confirm('고친 구성이 있어요. 다른 구성안으로 바꿀까요? (고친 내용은 사라져요)')) return;
   if (AI_LIVE && id !== 'blank') v2api('/api/am/ai/feedback', { event: 'pick_cand', doc_id: PLAN.id || '', cand_id: id }).catch(() => {});   // 어떤 추천안을 골랐는지 기록 (화면 변화 없음)
@@ -215,7 +217,7 @@ document.addEventListener('click', e => {
     if (chosen && chosen !== 'blank' && !shown().some(c => c.id === chosen)) { chosen = null; rows = []; }
     render(); return;
   }
-  const ch = t.closest('[data-choose]'); if (ch) { choose(ch.dataset.choose); return; }
+  const ch = t.closest('[data-choose]'); if (ch) { if (!liveReady) { toast('이 기획안의 구성과 추천을 불러오는 중이에요. 잠시 뒤 골라 주세요'); return; } choose(ch.dataset.choose); return; }
   const og = t.closest('[data-orig]'); if (og) { openOrig(og.dataset.orig, og.dataset.mark); return; }
   const sr = t.closest('[data-src]'); if (sr) { openSources(sr.dataset.src); return; }
   const gb = t.closest('[data-group]');
@@ -431,7 +433,7 @@ function toSections(prev) {
   });
 }
 function saveCompose() {
-  if (!PLAN.doc || !chosen) return;   // 고른 안이 없으면 저장하지 않음 (보기 전환으로 잠깐 비어도 지우지 않게)
+  if (!PLAN.doc || !chosen || !liveReady) return;   // 다 불러오기 전에는 저장하지 않음. 고른 안이 없으면 저장하지 않음 (보기 전환으로 잠깐 비어도 지우지 않게)
   const j = JSON.stringify([chosen, rows]);
   if (j === lastJ) return;
   lastJ = j;
@@ -441,8 +443,8 @@ const renderEditBase = renderEdit;
 renderEdit = function () { renderEditBase(); saveCompose(); };
 document.addEventListener('input', () => setTimeout(saveCompose));
 PLAN.ready.then(async doc => {
-  if (!doc) return;
-  await buildLive(doc);
+  if (!doc) { liveReady = true; return; }
+  try { await buildLive(doc); } finally { liveReady = true; }   // 추천을 못 받아도 고를 수는 있게
   const secs = (doc.page?.sections || []).slice().sort((a, b) => a.order - b.order);
   if (!secs.length) { render(); return; }
   chosen = doc.v2.compose || 'blank';

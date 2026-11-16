@@ -175,6 +175,10 @@ def _scan_pages(m: dict) -> list[dict]:
 def scan_and_save(key: str) -> int:
     """마켓 하나를 확인해 결과를 discover.json에 저장하고 찾은 개수를 돌려준다 (버튼 작업과 매일 자동 실행이 함께 쓴다)."""
     found = _scan_pages(MARKETS[key])
+    if not found:
+        # 목록 페이지를 하나도 못 열었거나(막힘·시간 초과) 주소·화면이 바뀌어 하나도 못 찾았다. 전에는 이걸 '0개 성공'으로 저장해
+        # 그 마켓의 기록(first_seen)을 지웠고, 다음 날 예전 프로모션이 전부 '오늘 올라옴'으로 다시 떴다 (2026-11-17 리뷰) → 실패로 알리고 기록은 그대로 둔다
+        raise intake.IntakeError("목록 페이지에서 프로모션을 하나도 찾지 못했어요. 사이트가 막혔거나 화면이 바뀌었을 수 있어요 (이전 결과는 그대로 둬요)")
     db = _load()
     prev = {collect.normalize(x["url"]): x for x in db.get(key, {}).get("items", [])}
     today = datetime.now().strftime("%Y-%m-%d")
