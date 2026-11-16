@@ -14,8 +14,9 @@ const ICON = {
   copy: '<path d="M9 7H5v6h4v-2H7V9h2zM19 7h-4v6h4v-2h-2V9h2zM5 17h14"/>',
   struct: '<path d="M5 4h14v4H5zM5 10h14v4H5zM5 16h14v4H5z"/>',
   design: '<path d="M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5"/><circle cx="9" cy="9" r="1.4"/>',
+  trend: '<path d="M3 17l6-6 4 4 8-8M15 7h6v6"/>',
 };
-const KIND_SAY = { mech: '할인 말고 다른 방법으로 파는 방식', copy: '참고할 만한 문장', struct: '혜택을 나눠 보여 주는 짜임', design: '화면 구성·분위기' };
+const KIND_SAY = { mech: '할인 말고 다른 방법으로 파는 방식', copy: '참고할 만한 문장', struct: '혜택을 나눠 보여 주는 짜임', design: '화면 구성·분위기', trend: '요즘 뉴스·쇼츠에서 막 뜨는 것' };
 const icon = k => `<svg class="kic" viewBox="0 0 24 24" aria-hidden="true">${ICON[k] || ICON.design}</svg>`;
 
 // ---------- 카드 한 장 ----------
@@ -28,6 +29,12 @@ function headline(c) {
   return c.title;
 }
 function lead(c) {
+  if (c.kind === 'trend') {   // 트렌드 카드 (amoread/trend '지금 뜨는 것'): 단계 · 무엇인지 · 기간별 기사 수 · 아이디어
+    const n = c.counts || {}, i = c.idea;
+    return `<p class="body"><b>${esc(c.stage)}</b>${c.desc ? ` · ${esc(c.desc)}` : ''}</p>
+      <p class="also">최근 14일 기사 ${n.recent ?? '-'}건 · 15~45일 전 ${n.mid ?? '-'}건 · 46일~1년 전 ${n.old ?? '-'}건${c.change ? ` · 지난주 대비 ${esc(c.change)}` : ''}</p>
+      ${i && i.what ? `<p class="body">${esc(i.what)}</p>${i.phrase || i.needs_check ? `<p class="also">${i.phrase ? `문구 예 <b>${esc(i.phrase)}</b>` : ''}${i.needs_check ? `${i.phrase ? ' · ' : ''}확인 필요: ${esc(i.needs_check)}` : ''}</p>` : ''}` : ''}`;
+  }
   if (c.kind === 'mech') {
     const hs = c.hits || [], more = hs.slice(1).map(h => h.name);
     return `${c.desc ? `<p class="body">${esc(c.desc)}</p>` : ''}
@@ -49,6 +56,12 @@ function signals(c) {
 }
 // 왼쪽: 실제 페이지. 사진이 있으면 그 사진을 그대로(안에서 위아래로 넘겨 볼 수 있음), 없으면 수집본을 다시 그린 화면(이미지 없음), 그것도 없으면 안내
 function shot(c, live = true) {
+  if (c.kind === 'trend') {   // 트렌드는 페이지가 아니라 기사로 확인한다
+    const ev = (c.evidence || []).slice(0, 5);
+    return `<div class="shot tshot"><div class="tcap">근거 기사 <span>${esc(c.first_seen || '')} 기준</span></div>
+      <ol class="tnews">${ev.map(e => `<li>${e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener noreferrer">${esc(e.title)}</a>` : esc(e.title)}<span>${esc([e.publisher, e.day].filter(Boolean).join(' · '))}</span></li>`).join('') || '<li>근거 기사가 없어요</li>'}</ol>
+      <p class="shotnote">검색 결과 안의 서로 다른 기사 수예요. 검색량·SNS 반응·판매량이 아니에요.</p></div>`;
+  }
   const cap = `<div class="shotcap"><span>실제 페이지</span>${c.shot || c.page ? `<button class="lnk" data-whole="${esc(c.id)}">크게 보기</button>` : ''}</div>`;
   if (c.shot) return `<div class="shot">${cap}<div class="phone scroll" ${live ? `data-shot="${esc(c.id)}"` : ''} tabindex="0" aria-label="실제 페이지 화면 (위아래로 넘겨 볼 수 있어요)"><div class="pgimg tiles">${live ? tilesHtml(c) : ''}</div></div></div>`;
   if (c.page) return `<div class="shot">${cap}<div class="phone"><span class="crop"${live ? ' data-spot' : ''}></span></div><p class="shotnote">이미지 없이 다시 그린 화면이에요</p></div>`;
@@ -71,7 +84,7 @@ function markSpot(wrap, c, pad = 4) {
   wrap.append(hl);
 }
 function metaLine(c) {
-  const fresh = isNew(c) ? dayLabel(c.first_seen) : '모아 둔 구좌';
+  const fresh = c.kind === 'trend' ? `${c.category ? `${c.category} · ` : ''}매주 새로 찾아요` : isNew(c) ? dayLabel(c.first_seen) : '모아 둔 구좌';
   return `<p class="metaline"><b>${esc(c.brand)}</b>${fresh ? `<span>${fresh}</span>` : ''}<span class="ttl" title="${esc(c.title)}">${esc(c.campaign && c.campaign !== c.title ? c.campaign : c.title)}</span></p>`;
 }
 function cardHtml(c, cls = '') {

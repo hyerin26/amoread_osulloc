@@ -76,7 +76,9 @@ class Common(unittest.TestCase):
 
     def test_run_now_does_not_start_twice(self):
         started = []
-        with mock.patch.object(autostart.daily, "run", side_effect=lambda force=False: started.append(1)), mock.patch.object(autostart.threading, "Thread") as th:
+        no_lock = mock.Mock(exists=lambda: False)   # 이 PC에서 실제 자동 확인이 돌고 있어도(잠금 파일) 시험 결과가 바뀌지 않게
+        with mock.patch.object(autostart.daily, "run", side_effect=lambda force=False: started.append(1)), mock.patch.object(autostart.threading, "Thread") as th, \
+                mock.patch.object(autostart.daily, "_lock_path", return_value=no_lock):
             autostart._running["on"] = False
             a = autostart.run_now(); b = autostart.run_now()
             autostart._running["on"] = False

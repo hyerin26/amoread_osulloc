@@ -8,6 +8,17 @@ from unittest import mock
 
 from amoread.ai import api, inspire
 
+# 이 파일의 덱 테스트는 페이지 카드만 본다. 트렌드 카드(이 PC의 주간 결과를 읽음)는 tests/test_trend.py 에서 따로 본다
+_no_trend = mock.patch.object(inspire, "trend_cards", lambda: [])
+
+
+def setUpModule():
+    _no_trend.start()
+
+
+def tearDownModule():
+    _no_trend.stop()
+
 
 def cand(i, kind="mech", brand="A", mech=("미니게임·뽑기",), src="new"):
     return {"id": f"c{i}", "src": src, "brand": brand, "title": f"카드 {i}", "url": f"https://x.test/{i}", "text": "글", "first_seen": "2026-11-13", "score": 60, "low": False,

@@ -78,3 +78,42 @@ class Period(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class InspireTrendCards(unittest.TestCase):
+    """오늘의 영감에 섞이는 트렌드 카드: 지금 뜨는 것만, 하루 TREND_DECK장, 저장·넘기기 뒤에는 다시 안 나옴."""
+
+    def setUp(self):
+        from amoread.ai import inspire
+        self.inspire = inspire
+        self.tmp = tempfile.TemporaryDirectory()
+        rising = Path(self.tmp.name) / "rising"; rising.mkdir()
+        (rising / "2026-11-16_category.json").write_text(json.dumps({"date": "2026-11-16", "items": [
+            {"term": "쫀득 모찌 밀크티", "stage": "초기 급상승", "reason": "r1", "field": "차"},
+            {"term": "호지차 초콜릿", "stage": "확산 중", "reason": "r2", "field": "차"},
+            {"term": "약과", "stage": "이미 대중화", "reason": "r3", "field": "티푸드"},
+            {"term": "말차 라떼", "stage": "반응 포착", "reason": "r4", "field": "차"}], "moves": {}}, ensure_ascii=False), encoding="utf-8")
+        self.ps = [mock.patch.object(weekly, "DIR", rising), mock.patch.object(inspire, "DIR", Path(self.tmp.name) / "inspire"),
+                   mock.patch.object(inspire, "candidates", lambda: [])]
+        for p in self.ps:
+            p.start()
+
+    def tearDown(self):
+        for p in self.ps:
+            p.stop()
+        self.tmp.cleanup()
+
+    def test_only_live_items_and_deck_limit(self):
+        names = [c["title"] for c in self.inspire.trend_cards()]
+        self.assertNotIn("약과", names, "이미 대중화된 것은 카드로 내지 않는다")
+        cards = [c for c in self.inspire.deck()["cards"] if c["kind"] == "trend"]
+        self.assertEqual(len(cards), self.inspire.TREND_DECK)
+        self.assertEqual(cards[0]["note"]["why"], "r1", "왜 볼 만한가 = 단계를 그렇게 본 이유")
+
+    def test_saved_card_does_not_come_back_and_undo_restores(self):
+        first = [c for c in self.inspire.deck()["cards"] if c["kind"] == "trend"][0]
+        self.assertTrue(self.inspire.swipe(first["id"], "save")["ok"])
+        self.assertEqual([x["title"] for x in self.inspire.saved()["items"]], [first["title"]])
+        self.assertNotIn(first["id"], [c["id"] for c in self.inspire.deck()["cards"]])
+        self.inspire.swipe(first["id"], "undo")
+        self.assertEqual(self.inspire.saved()["items"], [])

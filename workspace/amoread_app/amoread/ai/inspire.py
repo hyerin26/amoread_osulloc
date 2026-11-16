@@ -34,7 +34,8 @@ EXPLORE = 2        # 그중 취향과 상관없이 고르는 장수
 MAX_SAVED = 1000
 _lock = threading.Lock()
 
-KIND_KO = {"mech": "판매 기법·이벤트", "copy": "워딩", "struct": "구조", "design": "디자인"}
+KIND_KO = {"mech": "판매 기법·이벤트", "copy": "워딩", "struct": "구조", "design": "디자인", "trend": "트렌드"}
+TREND_DECK = 2   # 하루 덱에 넣는 트렌드 카드 수 (amoread/trend 의 '지금 뜨는 것'. 페이지 화면 대신 근거 기사로 보여 준다)
 # 판매 기법·이벤트 낱말 규칙. 흔한 낱말(리뷰 수, 공유 버튼)에 걸리지 않게 '이벤트로 쓰인' 표현만 잡는다
 MECH = {
     "미니게임·뽑기": r"룰렛|뽑기|가챠|스크래치|복권|랜덤\s*(박스|쿠폰|혜택|뽑)|미니\s*게임|게임\s*(참여|이벤트|하고|에\s*참여)",
@@ -566,6 +567,9 @@ def deck(n: int = DECK, today: date | None = None) -> dict:
     """오늘 볼 카드 n장 (안 본 것, 화면에서 근거가 확인된 것만). 점수순으로 고르되 같은 브랜드·분류가 몰리지 않게 하고, 몇 장은 취향과 상관없이 넣는다."""
     today = today or date.today()
     state = _load()
+    tr = [c for c in trend_cards() if c["id"] not in state["seen"]]   # 트렌드 카드 (아래에서 2번째·6번째 자리에 끼움)
+    n_tr = min(TREND_DECK, len(tr)) if n >= 4 else 0
+    n -= n_tr   # 덱 크기는 그대로: 트렌드 카드가 그 자리를 차지한다
     cands = candidates()
     # 우리 페이지는 '써 본 방식' 판단에만 쓰고 카드로는 내지 않는다 (영감은 밖에서)
     fresh = [c for c in cands if c["id"] not in state["seen"] and not c.get("own")]
@@ -612,7 +616,11 @@ def deck(n: int = DECK, today: date | None = None) -> dict:
             if c not in picked and not (lead_of(c) and lead_of(c) in mech_seen):
                 picked.append(c); mech_seen.add(lead_of(c))
     cards = [_card(c) for c in picked]
-    return {"cards": cards, "left": len(pool) - len(picked), "total": len(cands), "taste": taste(state), "saved_n": len(state["saved"]),
+    # 트렌드 카드: 안 본 것 중 n_tr장 (차 주변 분야 먼저, 취향 점수로 조금 조정). 2번째·6번째 자리에 끼운다 (한꺼번에 몰리지 않게)
+    tr.sort(key=lambda c: (c["brand"] != "차 주변 분야에서 뜨는 것") - w.get("kind:trend", 0))
+    for i, c in enumerate(tr[:n_tr]):
+        cards.insert(min(len(cards), 1 + i * 4), _trend_card(c))
+    return {"cards": cards, "left": len(pool) - len(picked) + len(tr) - n_tr, "total": len(cands), "taste": taste(state), "saved_n": len(state["saved"]),
             "kinds": KIND_KO, "today": today.isoformat(), "pending": pending, "no_screen": 0}
 
 
@@ -851,7 +859,40 @@ def prefetch_status() -> dict:
     return dict(_job)
 
 
+def trend_cards() -> list[dict]:
+    """트렌드 카드: 주간 '지금 뜨는 것'(amoread/trend) 중 지금 뜨는 단계인 것. 화면 사진 대신 근거 기사(뉴스 헤드라인)로 보여 준다.
+    id는 이름으로 정해 같은 아이템은 몇 주가 지나도 한 번만 보인다 (넘기거나 저장하면 다시 안 나옴)."""
+    try:
+        from ..trend import service
+        d = service.latest()
+    except Exception:
+        return []
+    out = []
+    for kind, label in (("category", "차 주변 분야에서 뜨는 것"), ("general", "지금 뜨는 것")):
+        for it in d.get(kind, {}).get("items", []):
+            if not it.get("live"):
+                continue
+            idea = it.get("idea") or {}
+            c = it.get("counts") or {}
+            out.append({
+                "id": "t" + hashlib.sha1(f"{kind}|{it['term']}".encode("utf-8")).hexdigest()[:12], "src": "trend", "kind": "trend", "kinds": ["trend"], "mech": [],
+                "brand": label, "title": it["term"], "campaign": it.get("what") or "", "url": next((e["url"] for e in it.get("evidence") or [] if e.get("url")), ""),
+                "first_seen": d.get(kind, {}).get("date") or "", "stage": it.get("stage", ""), "reason": it.get("reason", ""), "category": it.get("field") or it.get("category") or "",
+                "age": it.get("age", ""), "counts": c, "change": it.get("change", ""), "evidence": it.get("evidence") or [], "idea": idea or None,
+                "desc": it.get("what") or "", "phrases": [], "struct": "", "steps": [], "hits": [],
+                "note": {"why": it.get("reason") or it.get("stage", ""),   # 단계를 그렇게 본 이유 (기사 수는 위에서 이미 말함)
+                         "do": idea.get("title") or "", "facts": []},
+            })
+    return out
+
+
+def _trend_card(c: dict) -> dict:
+    return dict(c, kind_name=KIND_KO["trend"], tags=[], grade_name="", page="", cap=False, spot=None, claim="")
+
+
 def _find(cid: str) -> dict | None:
+    if cid.startswith("t"):
+        return next((c for c in trend_cards() if c["id"] == cid), None)
     return next((c for c in candidates() if c["id"] == cid), None)
 
 
@@ -871,7 +912,7 @@ def swipe(cid: str, act: str) -> dict:
             return {"ok": False, "error": "없는 카드예요 (목록이 바뀌었을 수 있어요)"}
         state["seen"][cid] = {"act": act, "at": _now(), "f": feats(c)}
         if act == "save":
-            state["saved"][cid] = {**_card(c), "memo": "", "saved_at": _now()}
+            state["saved"][cid] = {**(_trend_card(c) if c.get("kind") == "trend" else _card(c)), "memo": "", "saved_at": _now()}
             if len(state["saved"]) > MAX_SAVED:
                 for k in sorted(state["saved"], key=lambda k: state["saved"][k]["saved_at"])[:len(state["saved"]) - MAX_SAVED]:
                     state["saved"].pop(k)
