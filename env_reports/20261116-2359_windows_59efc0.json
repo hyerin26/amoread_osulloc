@@ -1,0 +1,286 @@
+{
+ "at": "20261116-2359",
+ "pc": "59efc0",
+ "rows": [
+  {
+   "area": "기본",
+   "name": "운영체제",
+   "ok": null,
+   "say": "Windows 11",
+   "detail": ""
+  },
+  {
+   "area": "기본",
+   "name": "파이썬",
+   "ok": true,
+   "say": "3.15.2",
+   "detail": ""
+  },
+  {
+   "area": "기본",
+   "name": "프로그램 환경(.venv)",
+   "ok": true,
+   "say": "있음",
+   "detail": ""
+  },
+  {
+   "area": "기본",
+   "name": "패키지 fastapi",
+   "ok": true,
+   "say": "설치됨 (서버)",
+   "detail": ""
+  },
+  {
+   "area": "기본",
+   "name": "패키지 playwright",
+   "ok": true,
+   "say": "설치됨 (화면 수집)",
+   "detail": ""
+  },
+  {
+   "area": "기본",
+   "name": "패키지 httpx",
+   "ok": true,
+   "say": "설치됨 (트렌드 수집)",
+   "detail": ""
+  },
+  {
+   "area": "기본",
+   "name": "패키지 claude_agent_sdk",
+   "ok": true,
+   "say": "설치됨 (AI 기능)",
+   "detail": ""
+  },
+  {
+   "area": "네트워크",
+   "name": "프록시(환경변수·시스템)",
+   "ok": null,
+   "say": "설정 없음",
+   "detail": ""
+  },
+  {
+   "area": "네트워크",
+   "name": "프록시(WinHTTP)",
+   "ok": null,
+   "say": "설정 없음",
+   "detail": ""
+  },
+  {
+   "area": "접속",
+   "name": "www.osulloc.com",
+   "ok": true,
+   "say": "접속됨 (HTTP 200, 0.2초)",
+   "detail": "마켓 수집"
+  },
+  {
+   "area": "접속",
+   "name": "www.kurly.com",
+   "ok": true,
+   "say": "접속됨 (HTTP 200, 0.2초)",
+   "detail": "마켓 수집"
+  },
+  {
+   "area": "접속",
+   "name": "www.29cm.co.kr",
+   "ok": true,
+   "say": "접속됨 (HTTP 200, 0.2초)",
+   "detail": "마켓 수집"
+  },
+  {
+   "area": "접속",
+   "name": "m.oliveyoung.co.kr",
+   "ok": true,
+   "say": "응답 옴 (HTTP 403)",
+   "detail": "마켓 수집"
+  },
+  {
+   "area": "접속",
+   "name": "zigzag.kr",
+   "ok": true,
+   "say": "접속됨 (HTTP 200, 0.0초)",
+   "detail": "마켓 수집"
+  },
+  {
+   "area": "접속",
+   "name": "news.google.com",
+   "ok": true,
+   "say": "접속됨 (HTTP 200, 0.5초)",
+   "detail": "트렌드: 뉴스"
+  },
+  {
+   "area": "접속",
+   "name": "trends.google.com",
+   "ok": true,
+   "say": "접속됨 (HTTP 200, 0.7초)",
+   "detail": "트렌드: 검색 급상승"
+  },
+  {
+   "area": "접속",
+   "name": "maily.so",
+   "ok": true,
+   "say": "접속됨 (HTTP 200, 0.2초)",
+   "detail": "트렌드: 뉴스레터"
+  },
+  {
+   "area": "접속",
+   "name": "www.youtube.com",
+   "ok": true,
+   "say": "접속됨 (HTTP 200, 0.3초)",
+   "detail": "트렌드: 유튜브"
+  },
+  {
+   "area": "접속",
+   "name": "www.googleapis.com",
+   "ok": true,
+   "say": "응답 옴 (HTTP 404)",
+   "detail": "트렌드: 유튜브 API"
+  },
+  {
+   "area": "접속",
+   "name": "wikimedia.org",
+   "ok": true,
+   "say": "접속됨 (HTTP 200, 0.9초)",
+   "detail": "트렌드: 위키백과"
+  },
+  {
+   "area": "접속",
+   "name": "www.marieclairekorea.com",
+   "ok": true,
+   "say": "접속됨 (HTTP 200, 0.1초)",
+   "detail": "트렌드: 매거진"
+  },
+  {
+   "area": "접속",
+   "name": "www.vogue.co.kr",
+   "ok": true,
+   "say": "접속됨 (HTTP 200, 0.0초)",
+   "detail": "트렌드: 매거진"
+  },
+  {
+   "area": "접속",
+   "name": "www.elle.co.kr",
+   "ok": true,
+   "say": "접속됨 (HTTP 200, 0.3초)",
+   "detail": "트렌드: 매거진"
+  },
+  {
+   "area": "접속",
+   "name": "openapi.naver.com",
+   "ok": true,
+   "say": "접속됨 (HTTP 200, 0.1초)",
+   "detail": "브리프: 네이버 검색"
+  },
+  {
+   "area": "접속",
+   "name": "naverapihub.apigw.ntruss.com",
+   "ok": true,
+   "say": "응답 옴 (HTTP 404)",
+   "detail": "브리프: 네이버 데이터랩"
+  },
+  {
+   "area": "접속",
+   "name": "api.searchad.naver.com",
+   "ok": true,
+   "say": "응답 옴 (HTTP 404)",
+   "detail": "브리프: 네이버 검색광고"
+  },
+  {
+   "area": "접속",
+   "name": "api.anthropic.com",
+   "ok": true,
+   "say": "응답 옴 (HTTP 404)",
+   "detail": "AI: Claude"
+  },
+  {
+   "area": "접속",
+   "name": "claude.ai",
+   "ok": true,
+   "say": "응답 옴 (HTTP 403)",
+   "detail": "AI: Claude 로그인"
+  },
+  {
+   "area": "접속",
+   "name": "pypi.org",
+   "ok": true,
+   "say": "접속됨 (HTTP 200, 0.0초)",
+   "detail": "설치: 파이썬 패키지"
+  },
+  {
+   "area": "접속",
+   "name": "files.pythonhosted.org",
+   "ok": true,
+   "say": "응답 옴 (HTTP 404)",
+   "detail": "설치: 파이썬 패키지"
+  },
+  {
+   "area": "접속",
+   "name": "gitlab.com",
+   "ok": true,
+   "say": "접속됨 (HTTP 200, 0.4초)",
+   "detail": "코드 받기"
+  },
+  {
+   "area": "Chrome",
+   "name": "Chrome 켜기 (수정된 방식)",
+   "ok": true,
+   "say": "켜짐 · 29CM 열림 (모든 취향 곁에, 29CM)",
+   "detail": ""
+  },
+  {
+   "area": "Chrome",
+   "name": "Chrome 켜기 (기본 방식)",
+   "ok": false,
+   "say": "켜지지 않음",
+   "detail": "TargetClosedError: BrowserType.launch: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-b"
+  },
+  {
+   "area": "예약 실행",
+   "name": "예약 작업 만들기",
+   "ok": true,
+   "say": "됨",
+   "detail": "SUCCESS: The scheduled task \"AMOREAD_envcheck_test\" has successfully been created.\nWARNING: Task may not run because /ST is earlier than current time.\n"
+  },
+  {
+   "area": "예약 실행",
+   "name": "매일 아침 자동 확인 등록",
+   "ok": false,
+   "say": "등록 안 됨 (설정 화면에서 켜기)",
+   "detail": ""
+  },
+  {
+   "area": "PowerShell",
+   "name": "스크립트 실행 정책",
+   "ok": null,
+   "say": "MachinePolicy Undefined / UserPolicy Undefined / Process Undefined / CurrentUser Undefined / LocalMachine Undefined",
+   "detail": ""
+  },
+  {
+   "area": "PowerShell",
+   "name": "스크립트 실행 (자동 실행 등록에 씀)",
+   "ok": true,
+   "say": "됨",
+   "detail": "ok\n"
+  },
+  {
+   "area": "PowerShell",
+   "name": "프로그램 실행 제한(AppLocker)",
+   "ok": null,
+   "say": "규칙 묶음 0개",
+   "detail": ""
+  },
+  {
+   "area": "AI",
+   "name": "Claude Code",
+   "ok": false,
+   "say": "설치 안 됨 (AI 기능·트렌드 아이디어에 필요)",
+   "detail": ""
+  },
+  {
+   "area": "자동 확인 기록",
+   "name": "daily.json",
+   "ok": null,
+   "say": "기록 없음 (한 번도 안 돌았음)",
+   "detail": ""
+  }
+ ]
+}
