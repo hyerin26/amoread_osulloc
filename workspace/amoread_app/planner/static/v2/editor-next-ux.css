@@ -263,6 +263,13 @@
 .en-host .inspector .cb-inspector-actions [data-cb-action="delete"] { color: var(--err); background: transparent; }
 .en-host .inspector .cb-inspector-actions [data-cb-action="delete"]:hover { background: var(--err-soft); }
 .en-host .inspector .panel-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 4px var(--en-pad) 32px; }
+/* 오른쪽 칸은 통째로 한 번에 스크롤 (2026-11-16): 위 165px(이름·유형·탭)이 늘 고정돼 편집 칸이 좁았다.
+   이름·유형은 스크롤하면 올라가고, 탭 줄(45px)만 붙어 있어 내려가서도 탭을 바꿀 수 있다 */
+@media (min-width: 821px) {
+  .en-host .workspace.cb-has-rail > .inspector { overflow-y: auto; overscroll-behavior: contain; }
+  .en-host .inspector .panel-body, .en-host .inspector .en-mode-body { flex: none; overflow: visible; min-height: auto; }
+  .en-host .inspector .tabbar { position: sticky; top: 0; z-index: 3; background: var(--surface); }
+}
 /* 묶음 사이 선이 두 줄(앞 묶음 아래선 + 뒤 묶음 위선)로 겹쳐 보이던 것 → 아래선 하나 */
 .en-host .inspector .am-ed-group + .am-ed-group { border-top: 0; }
 /* 입력칸 아래 도움말 | 글자 수: 글자 수(6/60)가 좁은 패널에서 두 줄로 쪼개지던 것 */
@@ -299,6 +306,49 @@
 .en-host .en-ai-cand summary { cursor: pointer; }
 .en-host .en-ai-cand details ul, .en-host .en-ai-warn { margin: 4px 0 0; padding-left: 18px; font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); }
 
+/* ---------- 미리보기: 상품을 아직 안 넣은 상품 구좌 = 빈 카드 자리 (와이어프레임) ----------
+   02 구좌 구성에서 가져온 구좌는 상품이 비어 제목만 보였다 → 고른 진열(2열·3열)의 카드 자리를 점선으로 그린다 */
+.en-host .mock-product--slot { display: flex; flex-direction: column; gap: 6px; padding: 8px; background: transparent; border: 1px dashed var(--line-strong); border-radius: var(--r2); box-shadow: none; }
+.en-host .mock-product--slot .mock-slot-img { display: block; aspect-ratio: 1 / 1; border-radius: 4px; background: var(--sunken); }
+.en-host .mock-product--slot i { display: block; height: 8px; border-radius: 4px; background: var(--sunken); }
+.en-host .mock-product--slot i + i { width: 60%; }
+.en-host .mock-slot-note { margin: 8px 0 0; font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--mute); }
+
+/* ---------- 채워야 할 자료 (2026-11-16) ----------
+   목록 줄: '2열 상품 · 상품 0/4' (비었으면 주의 색). 오른쪽 [내용] 맨 위: 비었다는 알림 + [상품 고르기] */
+.en-host .outline-item small .ia-fill { font-style: normal; color: var(--mute); }
+.en-host .outline-item small .ia-fill.is-need { padding: 0 4px; border-radius: 4px; background: var(--warn-soft); color: var(--warn); font-weight: var(--fw-medium); }   /* 주의는 노랑 바탕 + 중립 글자 (Green UI 규칙) */
+.en-host .en-need { display: flex; align-items: center; gap: 12px; margin: 12px 0 4px; padding: 12px 14px; border-radius: var(--r2); background: var(--warn-soft); }
+.en-host .en-need > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
+.en-host .en-need strong { font-size: var(--fs-sm); font-weight: var(--fw-strong); color: var(--ink); }
+.en-host .en-need small { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--ink2); }
+.en-host .en-need .am-ed-button { flex: none; min-height: var(--hit); padding: 0 12px; white-space: nowrap; }
+/* 자료 연결: 해도 되고 안 해도 되는 글자 버튼처럼 보였다 → 테두리 있는 버튼 */
+.en-host .en-ins-title .cb-rail [data-cb-rail=data] { border: 1px solid var(--line-strong); color: var(--ink); font-weight: var(--fw-strong); padding: 0 10px; }
+.en-host .en-ins-title .cb-rail [data-cb-rail=data]:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+/* ---------- 레퍼런스 (참고·인계 › 레퍼런스, 자료 연결 › 레퍼런스) ---------- */
+.en-host .en-ref { display: block; padding: 12px 0; border: 0; border-bottom: 1px solid var(--line-sub); border-radius: 0; background: transparent; }
+.en-host .en-ref .am-ed-stack { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.en-host .en-ref-head small, .en-host .ia-data-item[data-ref-pick] small { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.en-host .en-ref-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.en-host .en-ref-head > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.en-host .en-ref-head strong { font-size: var(--fs-sm); font-weight: var(--fw-strong); overflow-wrap: anywhere; }
+.en-host .en-ref-head small { font-size: var(--fs-cap); color: var(--mute); overflow-wrap: anywhere; }
+.en-host .en-ref-url { display: inline-block; margin-top: 4px; font-size: var(--fs-cap); color: var(--accent); }
+.en-host .en-ref-find { width: 100%; margin-top: 12px; min-height: var(--control-md); }
+.en-host .ia-data-group { display: flex; align-items: baseline; gap: 6px; margin: 16px 0 8px; font-size: var(--fs-sm); font-weight: var(--fw-strong); color: var(--ink); }
+.en-host .ia-data-group small { font-size: var(--fs-cap); color: var(--mute); font-weight: var(--fw-regular, 400); }
+.en-host .ia-data-wait { margin: 12px 0; font-size: var(--fs-sm); color: var(--mute); }
+.en-host .ia-data-item[data-ref-pick] { position: relative; padding-right: 76px; }
+.en-host .ia-data-item .ia-data-act { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: var(--fs-cap); font-weight: var(--fw-strong); color: var(--accent); }
+.en-host .ia-data-item[aria-pressed=true] { border-color: var(--accent); background: var(--accent-soft); }
+.en-host .ia-data-item[aria-pressed=true] .ia-data-act { color: var(--ink2); }
+.en-host .ia-ref-link { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding-top: 4px; border-top: 1px solid var(--line-sub); }
+.en-host .ia-ref-link .am-ed-button { align-self: flex-start; margin-top: 4px; }
+.en-host .ia-ref-link small { font-size: var(--fs-cap); color: var(--mute); }
+.en-host .ia-ref-lib { display: inline-block; margin-top: 16px; font-size: var(--fs-sm); color: var(--accent); }
+
 /* ---------- 대화상자 ---------- */
 .en-host .ia-qa-dialog .ia-qa-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .en-host .ia-qa-dialog > p { color: var(--mute); font-size: var(--fs-sm); }
@@ -329,3 +379,40 @@
   .en-host .en-canvasbar .en-tools { margin-left: 0; }
   .en-host .inspector .panel-body { overflow: visible; }
 }
+
+/* 레퍼런스 붙이기 (2026-11-16, plans/30): 링크로 붙이기를 맨 위 한 줄로, 묶음마다 3개만 보이고 나머지는 [모두 보기] 창 */
+.en-host .ia-ref-link { margin-top: 0; padding-top: 0; border-top: 0; padding-bottom: 12px; border-bottom: 1px solid var(--line-sub); }
+.en-host .ia-ref-link-row { display: flex; gap: 6px; }
+.en-host .ia-ref-link-row .am-ed-input { flex: 1; min-width: 0; }
+.en-host .ia-ref-link-row .am-ed-button { margin-top: 0; flex: none; }
+.en-host .ia-ref-more { margin-top: 4px; }
+.en-host dialog.en-ref-dialog { width: min(560px, calc(100vw - 32px)); max-height: min(720px, calc(100vh - 48px)); padding: 20px; border: 0; border-radius: 12px; background: var(--card, #fff); color: var(--ink); display: none; flex-direction: column; gap: 12px; }
+.en-host dialog.en-ref-dialog[open] { display: flex; }
+.en-host dialog.en-ref-dialog::backdrop { background: rgba(20, 20, 20, .4); }
+.en-host .en-ref-dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.en-host .en-ref-dialog-head h2 { margin: 0; font-size: var(--fs-lg, 18px); }
+.en-host .en-ref-dialog-head p { margin: 4px 0 0; font-size: var(--fs-sm); color: var(--mute); }
+.en-host .en-ref-dialog-list { overflow-y: auto; min-height: 120px; }
+
+/* 전체 상품에서 찾아 넣기 (2026-11-16) */
+.en-host .en-prod-hits { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; max-height: 360px; overflow-y: auto; }
+.en-host .en-prod-hit { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: var(--r2); }
+.en-host .en-prod-hit:hover { background: var(--hover); }
+.en-host .en-prod-hit b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold, 600); }
+.en-host .en-prod-hit small { display: block; margin-top: 2px; font-size: var(--fs-cap); color: var(--mute); }
+.en-host .en-prod-hit .am-ed-button { flex: none; }
+.en-host .en-prod-in { flex: none; font-size: var(--fs-cap); color: var(--accent); font-weight: var(--fw-semibold, 600); padding: 0 6px; }
+/* 03에서 정하는 할인 (2026-11-16): 찾기 결과의 할인율 칸, [이번 할인] 목록 */
+.en-host .en-prod-txt { min-width: 0; }
+.en-host .en-disc-hint { color: var(--ink2) !important; }
+.en-host .en-prod-act { display: flex; align-items: center; gap: 6px; flex: none; }
+.en-host .en-rate { display: inline-flex; align-items: center; gap: 2px; font-size: var(--fs-sm); color: var(--mute); }
+.en-host .en-rate input { width: 56px; height: 32px; padding: 0 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--card, #fff); font: inherit; color: var(--ink); text-align: right; }
+.en-host .en-rate input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.en-host .en-disc-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line-sub); }
+.en-host .en-disc-row:last-child { border-bottom: 0; }
+.en-host .en-disc-row b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold, 600); }
+.en-host .en-disc-row small { display: block; margin-top: 2px; font-size: var(--fs-cap); color: var(--mute); }
+.en-host .en-verdict { font-size: var(--fs-cap); font-weight: var(--fw-semibold, 600); padding: 2px 6px; border-radius: 6px; }
+.en-host .en-verdict.is-ok { color: var(--accent); background: var(--accent-soft); }
+.en-host .en-verdict.is-warn, .en-host .en-verdict.is-err { color: var(--warn); background: var(--warn-soft); }

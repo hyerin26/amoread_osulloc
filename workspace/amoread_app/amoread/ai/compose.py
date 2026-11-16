@@ -12,6 +12,17 @@ from . import cases, refs, rules
 ANCHOR_AFFINITY = 0.6     # 기준 페이지 점수에 더하는 '우리 브랜드와 가까운 정도' (표준편차 단위 × 이 값, ±2σ까지만)
 ANCHOR_SEASON_MISS = 1.5  # 브리프와 페이지의 계절이 서로 알려져 있고 다르면 빼는 점수 (추석 선물에 크리스마스 페이지 방지)
 NO_REF = {"terms_notice", "share", "app_promo", "related_promotions", "section_navigation"}   # 정해진 문구·기능이라 레퍼런스를 찾지 않는다
+TAB_LAYOUTS = {"grid2", "grid3", "feat"}   # 탭(필터) 구좌를 쓸 수 있는 레이아웃 (plans/28)
+PRICE_TABS = ["1만원대", "2만원대", "3만원 이상"]
+
+
+def _tabs_for(doc: dict, plan: dict):
+    """A안 첫 상품 구좌의 탭 (plans/28 4단계). 선물 유형 → 가격대 탭, 고른 키워드 2개 이상 → 키워드 탭(최대 4). 해당 없으면 None.
+    모양은 compose.js toRows가 읽는 secs 넷째 칸 {kind, tabs, note}."""
+    if plan["type"] == "gift_curation":
+        return {"kind": "가격대", "tabs": PRICE_TABS, "note": "선물 유형 규칙"}
+    kws = [str(k).strip()[:40] for k in dict.fromkeys((doc.get("v2") or {}).get("keywords") or []) if str(k).strip()][:4]
+    return {"kind": "키워드", "tabs": kws, "note": "고른 키워드 규칙"} if len(kws) >= 2 else None
 
 
 
@@ -28,6 +39,11 @@ def build(doc: dict, per_section: int = 1) -> dict:
     basis = [f"프로모션 유형 '{plan['type_name']}' (신뢰도 {conf})", f"판단 키워드: {', '.join(plan['matched']) or '없음 — 목적·분류로 판단'}",
              "근거 사례: " + " / ".join(plan["evidence"]), "유형 규칙은 기획자 검토 전 초안"] + plan["notes"]
     secs_a = [[s["name"], s["layoutId"], s["why"]] for s in plan["sections"] if s["required"]]
+    tab = _tabs_for(doc, plan)
+    at = next((i for i, x in enumerate(secs_a) if x[1] in TAB_LAYOUTS), None) if tab else None
+    if at is not None:
+        name = "테마별 추천" if tab["kind"] == "키워드" else secs_a[at][0]   # 첫 키워드 이름('피크닉 추천')은 탭 전체를 대표하지 못함
+        secs_a[at] = [name, secs_a[at][1], f"{secs_a[at][2]} · {tab['kind']}별 탭 {len(tab['tabs'])}개로 나눠 보여 줘요", tab]
 
     pages, ref_items, secs_c = {}, {}, []
     # 1) 브리프에 가까운 페이지를 먼저 고른다: 페이지 검색 점수 + 구성안의 구좌 역할을 얼마나 가졌는가(커버리지) + 우리 브랜드

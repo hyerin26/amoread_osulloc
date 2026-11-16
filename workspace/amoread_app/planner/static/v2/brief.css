@@ -71,20 +71,13 @@ h1, h2, h3, p { margin: 0; }
 .map .node rect { fill: var(--surface); stroke: var(--line-sub); stroke-width: 1; }
 .map .node text { fill: var(--ink2); font-size: 14px; font-weight: 500; dominant-baseline: central; text-anchor: middle; }
 .map .node:hover rect { stroke: var(--line-strong); }
-.map .node.root rect { fill: var(--ink); stroke: var(--ink); }
-.map .node.root text { fill: var(--surface); font-size: 16px; font-weight: 600; }
 .map .node.open rect { stroke: var(--line-strong); stroke-width: 1.5; }
 .map .node.open text { fill: var(--ink); font-weight: 600; }
 .map .node.picked rect { fill: var(--accent-soft); stroke: var(--sel-line); }
 .map .node.picked text { fill: var(--accent); font-weight: 600; }
-.map .node.focus rect { stroke: var(--accent); stroke-width: 2; }
 .map .node:focus { outline: none; }
 .map .node:focus-visible rect { stroke: var(--accent); stroke-width: 2.5; }
 .map .node .more { fill: var(--mute); font-size: 12px; font-weight: 500; }
-.map .node .src { fill: var(--mute); font-size: 11px; font-weight: 500; text-anchor: start; }   /* 가지 출처 (반복·뜨는 중·영감) */
-.maplegend { margin-top: var(--s2); }
-/* .tag·.btn의 display가 hidden 속성을 덮어 '예시 데이터'·'전체 보기'가 늘 보였다 */
-.tag[hidden], .btn[hidden], .cap[hidden] { display: none; }
 .map .node.dim { opacity: .28; }
 .maphint { margin-top: var(--s2); }
 
@@ -159,10 +152,59 @@ input:not([type=checkbox]):not([type=radio]):focus, select:focus, textarea:focus
 .map .node .ck:hover circle { stroke: var(--accent); }
 .map .node .ck.on circle { fill: var(--accent); stroke: var(--accent); }
 .map .node .ck path { fill: none; stroke: var(--accent-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.map .node.root .ck circle { fill: var(--ink); stroke: var(--surface); }
-.map .node.root .ck.on circle { fill: var(--accent); stroke: var(--surface); }
 .map .node .fold { stroke: var(--mute); stroke-width: 2; stroke-linecap: round; }
 .map .node.picked rect { fill: var(--surface); stroke: var(--sel-line); }   /* 고름 = 동그라미 체크 + 얇은 테두리 (덧칠 없이) */
 .filters .conn { display: inline-flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
 .side .acts { display: grid; gap: var(--s2); }
-.mpick .cap em { font-style: normal; color: var(--mute); }.map .probe { visibility: hidden; }
+.mpick .cap em { font-style: normal; color: var(--mute); }
+/* 근거 기반 키워드 탐색 */
+.research-controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.research-controls input { flex:1; min-width:180px; }
+select { min-height:var(--control-lg); padding:0 10px; border:1px solid var(--line); border-radius:var(--r2); background:var(--surface); color:var(--ink); font:inherit; }
+.map-scroll { overflow-x:auto; position:relative; }   /* 예전 마인드맵처럼 카드 위에 바로 (상자 없음). 툴팁 기준 */
+.map { min-width:720px; }
+.group-candidates { display:grid; gap:8px; margin-top:16px; }
+.group-candidates .sug { justify-content:space-between; flex-wrap:wrap; }
+.concept-candidate { display:grid; gap:6px; }
+.pk button[data-focus] { width:auto; min-width:20px; }
+#researchStatus { min-height:20px; }
+@media(max-width:600px) { .research-controls > .btn { width:100%; } .masthead .grow { min-width:0; } .page { padding:20px 12px 48px; } }
+
+.page [hidden], .v2drawer[hidden], .v2scrim[hidden] { display:none !important; }
+
+.map-pagination { display:flex; align-items:center; justify-content:center; gap:12px; }
+.map .map-empty { font-size:14px; text-anchor:middle; fill:var(--mute); }
+
+
+/* 마인드맵 (2026-11-16): 가운데 노드 연필로 명분 고치기, 출처는 알약 툴팁 */
+.map .root-edit-btn { cursor:pointer; }
+.map .root-edit-btn .hit { fill:transparent; }
+.map .root-edit-btn:focus { outline:none; }
+.map .root-edit-btn:focus-visible .hit { stroke:var(--accent); stroke-width:2.5; }
+.root-edit-form { display:flex; align-items:center; gap:6px; height:100%; padding:2px; }
+.root-edit-form input { flex:1; min-width:0; height:40px; font-weight:var(--fw-strong); }
+/* 네이버 찾기(기본·자동)와 AI 찾기(누를 때만)를 나눔: AI는 지도 위 보조 버튼 + 사용 표시, 결과가 비면 지도 가운데에서만 권함 */
+.map-tools { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:var(--s2); }
+.map-tools p { flex:1; min-width:200px; margin:0; }
+.tag.ai-cost { background:var(--sunken); color:var(--ink2); }
+.map-empty-box { position:absolute; left:50%; top:62%; transform:translateX(-50%); display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; max-width:440px; text-align:center; }
+.map-empty-box p { flex-basis:100%; margin:0; color:var(--ink2); font-size:var(--fs-sm); }
+/* 디자인 시스템 Green UI v2.5.1에 맞춤 (2026-11-16): 흰 바탕 유지 · 선택은 덧칠 없이 1px 그린 선 · 조작 요소 라운드 8px · 아이콘 선 1.75
+   가운데 노드(명분)는 배경을 칠하지 않고 진한 글자와 진한 선으로만 구분 (검정 면은 원래 CTA에만) */
+.map .node.root rect { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1; }
+.map .node.root text { fill: var(--ink); font-size: 16px; font-weight: var(--fw-strong); }
+.map .node.focus rect { stroke: var(--accent); stroke-width: 1; }   /* 오른쪽에 근거를 보고 있는 키워드 = 1px 그린 선 */
+.map .root-edit-btn path { fill: none; stroke: var(--ink2); stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.map .root-edit-btn:hover .hit { fill: var(--hover); }
+.map .root-edit-btn:hover path { stroke: var(--ink); }
+.map-tip { position:absolute; transform:translate(-50%,-100%); background:var(--surface); color:var(--ink); border:1px solid var(--line); font-size:var(--fs-cap); line-height:var(--lh-cap); padding:4px 8px; border-radius:var(--r2); white-space:nowrap; pointer-events:none; z-index:2; }
+/* 마인드맵 크기 (2026-11-16): 두 번 펼친 지도까지 한 화면에 들어오게 글자·알약·동그라미를 줄임. 지도는 실제 픽셀 크기로 그린다 (renderMap) */
+.map { width: auto; min-width: 0; margin: 0 auto; }
+.map .node text { font-size: 13px; }
+.map .node.keyword > text { font-size: 13px; }
+.map .node.root text { font-size: 15px; }
+.map .node .ck circle { stroke-width: 1.25; }
+.map .node .ck path { stroke-width: 1.6; }
+.map .node.open rect { stroke: var(--line-strong); stroke-width: 1; }   /* 펼친 키워드: 진한 1px 선 (덧칠 없음) */
+/* 칩 글자는 왼쪽 정렬로 쌓는다 (가운데 정렬 + 보정값 대신 정해진 간격) */
+.map .node text.lbl { text-anchor: start; }

@@ -7,7 +7,7 @@ import pytest
 
 from conftest import open_editor_next, wait_saved
 
-V2_PAGES = ["home", "brief", "compose", "editor", "preview", "deals", "library", "settings"]
+V2_PAGES = ["home", "brief", "compose", "editor", "preview", "deals", "library", "settings", "inspire"]
 
 
 def r10(n):
@@ -252,13 +252,98 @@ def test_conflict_is_blocked_and_draft_kept(page, server, plan):
     page.locator('#page [data-page="e1"]').click()
     page.locator('[data-ia-group="content"]').click()
     page.locator('#panel-body [data-bind="name"]').fill("충돌 나는 수정")
-    page.wait_for_function("() => /저장 못 했어요/.test(document.getElementById('v2saved').textContent)", timeout=15000)
+    page.wait_for_function("() => /저장 안 됨/.test(document.getElementById('v2saved').textContent)", timeout=15000)
     assert "임시로 보관" in page.locator("#enNotice").inner_text()
+    bar = page.locator("#v2savebar")   # 저장 띠: 새로 불러오기 / 내 것으로 저장 중 고르게 한다 (덮어쓰기는 담당자가 고를 때만)
+    assert bar.is_visible() and "내 것으로 저장" in bar.inner_text()
     draft = page.evaluate(f"() => localStorage.getItem('amoread.editor-next.draft.{plan['id']}')")
     assert draft and "충돌 나는 수정" in draft
     st, now = server.api(f"/api/am/projects/{plan['id']}")
     assert now["rationale"] == "다른 화면" and "충돌 나는 수정" not in json.dumps(now, ensure_ascii=False)   # 덮어쓰지 않음
     page.evaluate(f"() => localStorage.removeItem('amoread.editor-next.draft.{plan['id']}')")
+
+
+# 10-1. (2026-11-16) 02에서 정한 칸 수 = 미리보기 빈 카드 자리 + 목록 '상품 n/m' + 비었다는 알림. 저장해도 칸 수 유지
+@pytest.fixture
+def slot_plan(server, products):
+    empty = lambda sid, n: [{"slotId": f"{sid}-{k}", "seq": None, "placeholderStatus": "UNDECIDED"} for k in range(n)]
+    st, d = server.api("/api/am/projects", {"title": "E2E 칸 수", "page": {"sections": [
+        {"sectionId": "k1", "name": "2열", "headline": "2열", "layoutId": "grid2",
+         "slots": [{"slotId": "k1-a", "seq": products[0]["seq"], "placeholderStatus": "AVAILABLE"}] + empty("k1", 2)},
+        {"sectionId": "k2", "name": "후기", "headline": "후기", "layoutId": "review"}]},
+        "promo_rows": [{"promo": "E2E", "type": "상시", "seq": products[0]["seq"], "rate": 0.1, "appeal": ""}]})
+    assert st == 200, d
+    yield d
+    server.api(f"/api/am/projects/{d['id']}/delete", {})
+
+
+def test_product_slots_follow_compose(page, server, slot_plan):
+    open_editor_next(page, server, slot_plan["id"])
+    k1 = page.locator('#page [data-page="k1"]')
+    assert k1.locator(".mock-product[data-card-product]").count() == 1 and k1.locator(".mock-product--slot").count() == 2
+    rows = page.locator("#section-list .outline-item small").all_inner_texts()
+    assert rows[0].endswith("상품 1/3") and rows[1].endswith("후기 없음"), rows
+    k1.click()
+    page.locator('[data-ia-group="content"]').click()
+    assert "상품 1/3" in page.locator(".en-need").inner_text()
+    page.locator("[data-need-tab]").click()
+    assert page.locator('#panel-body input[type=checkbox]').count() >= 1   # 바로 상품 고르기
+    page.locator('#panel-body [data-bind]').first.wait_for(state="attached")
+    page.locator('[data-ia-group="content"]').click()
+    page.locator('#panel-body [data-bind="name"]').fill("2열 칸 수 확인")
+    wait_saved(page)
+    st, doc = server.api(f"/api/am/projects/{slot_plan['id']}")
+    assert len(doc["page"]["sections"][0]["slots"]) == 3
+    assert page.errors == [], page.errors
+
+
+# 10-2. 레퍼런스: [참고·인계] → 찾아 붙이기(목록 실패해도 링크로) → 메모 → page.sections v2.att(04·인계) → 다시 열어도 유지
+def test_refs_attach_and_save(page, server, plan):
+    page.route("**/api/am/ai/references", lambda r: r.abort())   # 수집 데이터 없는 PC와 같게: 목록이 안 와도 링크로 붙일 수 있어야
+    open_editor_next(page, server, plan["id"])
+    page.locator('#page [data-page="e2"]').click()
+    page.locator('[data-ia-group="handoff"]').click()
+    page.locator("[data-ref-find]").click()
+    page.wait_for_selector("#refLinkUrl")
+    page.fill("#refLinkUrl", "ftp://x"); page.locator("[data-ref-link] button[type=submit]").click()
+    page.fill("#refLinkUrl", "https://example.com/e2e"); page.fill("#refLinkName", "E2E 링크")
+    page.locator("[data-ref-link] button[type=submit]").click()
+    page.fill("#refLinkUrl", "https://example.com/e2e"); page.locator("[data-ref-link] button[type=submit]").click()   # 같은 주소 두 번
+    page.locator("[data-cb-rail=sections]").click()
+    assert page.locator("#panel-body .en-ref").count() == 1
+    page.locator('#panel-body [data-bind="refs.0.note"]').fill("E2E 탭 모양")
+    wait_saved(page)
+    st, doc = server.api(f"/api/am/projects/{plan['id']}")
+    att = doc["page"]["sections"][1]["v2"]["att"]
+    assert len(att) == 1 and att[0]["name"] == "E2E 링크" and att[0]["note"] == "E2E 탭 모양" and att[0]["url"] == "https://example.com/e2e"
+    page.goto(f"{server.base}/v2/preview?id={plan['id']}", wait_until="networkidle")
+    assert "E2E 링크" in page.locator("body").inner_text()
+    open_editor_next(page, server, plan["id"])
+    assert page.evaluate("() => window.AMOREAD_EDITOR_API.exportSnapshot().sections[1].refs.length") == 1
+    errs = [e for e in page.errors if "Failed to load resource" not in e]   # 일부러 막은 추천 목록 요청
+    assert errs == [], errs
+
+
+# 10-3. 02를 아직 안 한 기획안: 빈 메인 비주얼로 열고(02로 가기 안내) 고치기 전에는 저장하지 않음 / 없는 기획안 주소는 '열지 못했어요'
+def test_empty_and_missing_plan(page, server):
+    st, d = server.api("/api/am/projects", {"title": "E2E 구좌 없음"})
+    try:
+        page.goto(f"{server.base}/v2/editor-next?id={d['id']}", wait_until="networkidle")
+        page.wait_for_function("() => /아직 고른 구좌가 없어요/.test(document.getElementById('enNotice').textContent)")
+        assert page.locator("#enNotice button", has_text="02 구좌 구성으로").count() == 1
+        page.wait_for_timeout(1200)
+        st, now = server.api(f"/api/am/projects/{d['id']}")
+        assert not (now.get("page") or {}).get("sections") and not now.get("editor_next")
+        page.locator('#panel-body [data-bind="name"]').fill("E2E 첫 구좌")
+        wait_saved(page)
+        st, now = server.api(f"/api/am/projects/{d['id']}")
+        assert [s["headline"] for s in now["page"]["sections"]] == ["E2E 첫 구좌"]
+    finally:
+        server.api(f"/api/am/projects/{d['id']}/delete", {})
+    page.goto(f"{server.base}/v2/editor-next?id={'f' * 32}", wait_until="networkidle")
+    page.wait_for_function("() => /열지 못했어요/.test(document.getElementById('enNotice').textContent)")
+    errs = [e for e in page.errors if "Failed to load resource" not in e]   # 없는 기획안의 404는 예상한 응답
+    assert errs == [], errs
 
 
 # 11. 회귀: 앱의 다른 화면이 오류 없이 열린다

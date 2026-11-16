@@ -133,7 +133,8 @@ def capture(url: str, extra=None) -> dict:
     t0 = time.time()
     with _lock, sync_playwright() as p:   # 동시에 하나만
         try:
-            br = p.chromium.launch(channel="chrome", headless=True)
+            # 회사에서 확장 프로그램을 관리하는 Chrome은 --disable-extensions(Playwright 기본값)를 받으면 바로 종료된다
+            br = p.chromium.launch(channel="chrome", headless=True, ignore_default_args=["--disable-extensions"])
         except Exception:
             return {"ok": False, "reason": "Chrome을 열 수 없어요 (이 PC에 Chrome이 설치돼 있어야 해요)"}
         try:

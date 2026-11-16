@@ -7,7 +7,7 @@ window.AMEditorUI = (()=>{
     const input=options.area
       ? `<textarea class="am-ed-textarea" id="${id}" data-bind="${escape(key)}" maxlength="${max}" rows="${options.rows||3}">${escape(value)}</textarea>`
       : `<input class="am-ed-input" id="${id}" data-bind="${escape(key)}" maxlength="${max}" value="${escape(value)}" type="${options.type||'text'}" ${options.placeholder?`placeholder="${escape(options.placeholder)}"`:''}>`;
-    return `<div class="am-ed-field"><label for="${id}" class="am-ed-label">${escape(label)} ${options.optional?'<span class="am-ed-optional">· 선택</span>':''}</label>${input}<div class="am-ed-field-meta"><span class="am-ed-support">${escape(options.help||'')}</span>${options.count===false?'':`<span class="am-ed-support" data-counter-for="${escape(key)}">${String(value||'').length}/${max}</span>`}</div></div>`;
+    return `<div class="am-ed-field"><label for="${id}" class="am-ed-label">${escape(label)} ${options.optional?'<span class="am-ed-optional">(선택)</span>':''}</label>${input}<div class="am-ed-field-meta"><span class="am-ed-support">${escape(options.help||'')}</span>${options.count===false?'':`<span class="am-ed-support" data-counter-for="${escape(key)}">${String(value||'').length}/${max}</span>`}</div></div>`;
   };
   const group=(title,description,inner,action='')=>`<section class="am-ed-group"><div class="am-ed-group__title"><h3>${escape(title)}</h3>${action}</div>${description?`<p class="am-ed-group__description">${escape(description)}</p>`:''}<div class="am-ed-stack">${inner}</div></section>`;
   const button=(text,attr='',className='')=>`<button type="button" class="am-ed-button ${className}" ${attr}>${escape(text)}</button>`;

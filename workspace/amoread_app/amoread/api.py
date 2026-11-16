@@ -189,12 +189,53 @@ class Extra(BaseModel):
     e: str = Field(default="", max_length=10)
 
 
+class KeywordArticle(BaseModel):
+    title: str = Field(default="", max_length=120)
+    kind: str = Field(default="", max_length=20)
+    date: str = Field(default="", max_length=40)
+    link: str = Field(default="", max_length=2000)
+
+
+class KeywordEvidence(BaseModel):
+    keyword: str = Field(max_length=20)
+    root: str = Field(default="", max_length=20)
+    category: Literal["situation", "need", "topic", "product"] = "topic"
+    source: str = Field(default="manual", max_length=40)
+    fetched_at: str = Field(default="", max_length=40)
+    change_4w: float | None = None
+    rationale: str = Field(default="", max_length=300)
+    articles: list[KeywordArticle] = Field(default_factory=list, max_length=3)
+
+
+class BriefConceptCandidate(BaseModel):
+    text: str = Field(max_length=120)
+    rationale: str = Field(default="", max_length=300)
+    source: Literal["ai", "combination"] = "combination"
+    keywords: list[Annotated[str, Field(max_length=20)]] = Field(default_factory=list, max_length=5)
+
+
+class AIKeywordExpansion(BaseModel):
+    parent: str = Field(max_length=20)
+    fetched_at: str = Field(default="", max_length=40)
+    items: list[KeywordEvidence] = Field(default_factory=list, max_length=8)
+
+
+class KeywordResearch(BaseModel):
+    root: str = Field(default="", max_length=20)
+    hidden: list[Annotated[str, Field(max_length=20)]] = Field(default_factory=list, max_length=100)
+    ai_expansions: list[AIKeywordExpansion] = Field(default_factory=list, max_length=10)
+    manual: list[KeywordEvidence] = Field(default_factory=list, max_length=30)
+    evidence: list[KeywordEvidence] = Field(default_factory=list, max_length=30)
+    concept_candidates: list[BriefConceptCandidate] = Field(default_factory=list, max_length=3)
+    concept_basis: str = Field(default="", max_length=500)
+
+
 class V2Meta(BaseModel):
     """새 버전(/v2) 화면만 쓰는 값. 예전 화면은 보내지 않으므로, 안 보내면 저장된 값을 그대로 둔다 (store.save)."""
     cls: Literal["", "season", "brand", "launch", "collab", "clear"] = ""   # 분류 5종 (plans/20 §4-1)
     seed: str = Field(default="", max_length=20)       # 홈 [시작]에서 고른 출발점 (명분이 아닌 분류의 씨앗)
     keywords: list[Annotated[str, Field(max_length=20)]] = Field(default_factory=list, max_length=30)   # 브리프에서 고른 키워드
-    root_kw: str = Field(default="", max_length=20)    # 브리프 마인드맵의 중심 키워드를 고친 이름 (예: '연말정산 시즌' → '연말정산'). 비면 명분 그대로. 명분 자체는 바꾸지 않는다
+    keyword_research: KeywordResearch = Field(default_factory=KeywordResearch)
     stage: Literal["brief", "compose", "editor", "preview", "deals"] = "brief"   # 마지막으로 연 단계 (홈 목록 '지금 단계')
     compose: Literal["", "A", "B", "C", "blank"] = ""   # 구좌 구성에서 고른 추천안 (구성은 page.sections)
     extras: list[Extra] = Field(default_factory=list, max_length=20)   # 추가 혜택 (상품·할인 = 구좌 편집 같은 값)
@@ -450,6 +491,55 @@ def production_schedule(open: str, kind: str = "이벤트"):
 # ----------------------------------------------------------------------
 # 레퍼런스 라이브러리 (2026-11-10): 직접 추가·즐겨찾기·핀터레스트 공개 보드 구독. 저장 = planner/data/references/
 # ----------------------------------------------------------------------
+# ── 할인 판정 (2026-11-16): 03 구좌 편집에서 할인율을 정할 때 상품·할인과 같은 기준으로 판정한다.
+# 원가는 화면(편집기)에 보내지 않고 판정 결과와 기준 안 최대 할인율, 지난 행사 할인만 돌려준다. 1단 할인 기준(추가 혜택 전)
+class DiscountAsk(BaseModel):
+    seq: str = Field(pattern=r"^\d{1,12}$")
+    rate: float = Field(default=0, ge=0, le=0.9)
+
+
+class DiscountCheckReq(BaseModel):
+    items: list[DiscountAsk] = Field(max_length=100)
+
+
+def _r10(v: float) -> int:
+    return int(v / 10 + 0.5) * 10   # 화면(deals.js r10 = Math.round)과 같은 반올림
+
+
+def discount_verdict(p: dict, rate: float, target: float) -> dict:
+    """상품 하나의 1단 할인 판정. deals.js judge·maxRate와 같은 셈: 원가율 = 원가 / (할인가 / 1.1)."""
+    price, cost = float(p.get("price") or 0), float(p.get("cost") or 0)
+    sale = _r10(price * (1 - rate)) if price > 0 else 0
+    ok = lambda r: cost / (_r10(price * (1 - r / 100)) / 1.1) <= target   # noqa: E731
+    if not price:
+        verdict, label = "none", "가격 없음"
+    elif rate <= 0:
+        verdict, label = "none", "할인 없음"
+    elif not cost:
+        verdict, label = "none", "원가 없음"
+    elif rate >= 0.8:
+        verdict, label = "err", "확인 필요"
+    else:
+        verdict, label = ("warn", "주의") if cost / (sale / 1.1) > target else ("ok", "괜찮음")
+    max_rate = next((r for r in range(80, -1, -1) if ok(r)), 0) if price > 0 and cost > 0 else None
+    return {"seq": str(p.get("seq")), "name": p.get("name") or "", "list": int(price), "rate": rate, "sale": sale,
+            "verdict": verdict, "label": label, "max_rate": max_rate,
+            "last": {"promo": p.get("last_promo") or "", "type": p.get("last_promo_type") or "",
+                     "start": p.get("last_promo_start") or "", "rate": p.get("last_promo_rate")} if p.get("last_promo") else None}
+
+
+@router.post("/discount/check")
+def discount_check(req: DiscountCheckReq):
+    from planner import config as pconfig, engine
+    engine.DATA.ensure()
+    out = []
+    for it in req.items:
+        p = engine.DATA.products.get(it.seq)
+        if p:
+            out.append(discount_verdict(p, it.rate, pconfig.TARGET_COST_RATIO))
+    return {"items": out, "target": pconfig.TARGET_COST_RATIO, "basis": "1단 할인 기준 (추가 혜택 전)"}
+
+
 from . import references   # noqa: E402
 
 Txt = Annotated[str, Field(max_length=60)]

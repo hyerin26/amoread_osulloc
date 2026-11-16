@@ -197,3 +197,7 @@ table.t td .draft { color: var(--accent); font-size: 12px; font-weight: var(--fw
 .simrow label { display: inline-flex; gap: var(--s2); align-items: center; }
 .puts { display: flex; gap: 6px; flex-wrap: wrap; }
 @media (max-width: 560px) { .lvb { grid-template-columns: 1fr; } }
+
+/* 어느 기획안의 할인인지 (2026-11-16): 할인율은 기획안마다 따로 저장된다 */
+.head p.scope { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--ink2); }
+.head p.scope b { color: var(--ink); }

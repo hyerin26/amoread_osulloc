@@ -20,7 +20,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections import Counter
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 from . import config, scout, trends, usage
 
@@ -104,7 +104,7 @@ ARTICLE_POOL = 50   # 가지 뽑기용으로 50건씩 받음 (부르는 횟수�
 def _articles(seed):
     out = []
     for kind, label in (("news", "뉴스"), ("blog", "블로그")):
-        for it in scout._search(kind, seed, display=ARTICLE_POOL, sort="sim"):   # 근거 패널은 관련 높은 글부터
+        for it in scout._search(kind, seed, display=ARTICLE_POOL, sort="date"):   # 최신 글에서 관련어를 추출한다
             out.append({"kind": label, "title": scout._clean(it.get("title"))[:120],
                         "summary": scout._clean(it.get("description"))[:200],
                         "link": _safe_link(it.get("originallink") or it.get("link")),
@@ -114,7 +114,7 @@ def _articles(seed):
 
 def _change(vals):
     a, b = vals[-4:], vals[-8:-4]
-    if len(b) < 4 or not sum(b):
+    if len(a) < 4 or len(b) < 4 or not sum(b):
         return None
     return round(sum(a) / sum(b) - 1, 2)
 
@@ -194,16 +194,16 @@ def expand(q, refresh=False):
     seed = clean_seed(q)
     cache = _load()
     hit = cache.get(seed)
-    # "words" 없는 예전 캐시(10건씩 받던 때)는 다시 받음
-    if hit and "words" in hit["data"] and not refresh and time.time() - hit.get("t", 0) < CACHE_TTL_SEC:
+    # 최신순 수집·조회일이 없는 예전 캐시는 다시 받는다.
+    if hit and hit["data"].get("research_version") == 2 and not refresh and time.time() - hit.get("t", 0) < CACHE_TTL_SEC:
         return {**hit["data"], "cached": True}
     ad = {"name": "네이버 검색광고 키워드 도구", "basis": "연관 키워드 · 최근 30일 검색수", **_source(_related, has_ad_keys(), seed)}
     top = [seed] + [r["keyword"] for r in ad["items"][:4]]   # 데이터랩은 한 요청에 5개까지
-    data = {"seed": seed, "sources": {
+    data = {"seed": seed, "research_version": 2, "fetched_at": datetime.now(timezone.utc).isoformat(), "sources": {
         "searchad": ad,
         "datalab": {"name": "네이버 데이터랩 검색어 트렌드", "basis": "주별 검색 지수 52주 (씨앗 + 검색수 상위 연관 4개, 서로 상대값)",
                     **_source(lambda _: _trend(top), trends.has_keys(), seed)},
-        "naver_search": {"name": "네이버 검색 (뉴스·블로그)", "basis": "관련 높은 글 10건씩",
+        "naver_search": {"name": "네이버 검색 (뉴스·블로그)", "basis": "최신순 뉴스·블로그 10건씩 (검색어 관련 글)",
                          **_source(_articles, trends.has_keys(), seed)},
     }}
     ns = data["sources"]["naver_search"]

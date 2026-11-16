@@ -82,9 +82,9 @@ function select(key,label,value,opts){return '<div class="am-ed-field"><label cl
 function cardElementSettings(p,key){
  const v=p.card?.def||{},chosen=p.productId||'';
  if(key==='img')return select('imageRatio','상품 이미지 비율',p.imageRatio||'1:1',[['1:1','1:1 · 정사각형'],['4:3','4:3 · 가로'],['3:4','3:4 · 세로'],['16:9','16:9 · 와이드'],['9:16','9:16 · 긴 세로']]);
- if(key==='label')return (p.card?.on?.img?select('card.def.labelPosition','모서리 라벨 위치',v.labelPosition||'top-left',[['top-left','좌측 상단'],['top-right','우측 상단'],['bottom-left','좌측 하단'],['bottom-right','우측 하단']]):'<p class="am-ed-note">이미지 표시가 꺼져 있어 라벨이 카드 본문에 나타납니다. 이미지 표시를 켜면 모서리 위치를 설정할 수 있습니다.</p>')+field('card.def.label','라벨 문구',v.label||'');
- if(key==='pill')return select('card.def.pill','알약 표시 방식',v.pill||'직접 쓰기',[['직접 쓰기','직접 쓰기'],['오늘만','오늘만'],['남은 기간','남은 기간 (운영 연동 필요)'],['가격 오름 예고','가격 오름 예고']])+(v.pill==='직접 쓰기'||!v.pill?field('card.def.pillText','직접 입력할 문구',v.pillText||''):'<p class="am-ed-note">선택한 알약 유형의 문구가 표시됩니다. 실제 잔여 기간·가격 변동은 운영 데이터 연결이 필요합니다.</p>');
- if(key==='appeal')return chosen?field('appeals.'+chosen,'선택 상품 소구문구',p.appeals?.[chosen]||'',true):'<p class="am-ed-note">상단에서 연결 상품을 먼저 선택하세요.</p>';
+ if(key==='label')return (p.card?.on?.img?select('card.def.labelPosition','모서리 라벨 위치',v.labelPosition||'top-left',[['top-left','왼쪽 위'],['top-right','오른쪽 위'],['bottom-left','왼쪽 아래'],['bottom-right','오른쪽 아래']]):'<p class="am-ed-note">사진을 꺼 두어 라벨이 카드 글 안에 나와요. 사진을 켜면 모서리 위치를 고를 수 있어요.</p>')+field('card.def.label','라벨 문구',v.label||'');
+ if(key==='pill')return select('card.def.pill','알약 표시 방식',v.pill||'직접 쓰기',[['직접 쓰기','직접 쓰기'],['오늘만','오늘만'],['남은 기간','남은 기간 (운영 연동 필요)'],['가격 오름 예고','가격 오름 예고']])+(v.pill==='직접 쓰기'||!v.pill?field('card.def.pillText','직접 입력할 문구',v.pillText||''):'<p class="am-ed-note">고른 알약 문구가 보여요. 남은 기간과 가격 변동 숫자는 아직 자동으로 채워지지 않아요.</p>');
+ if(key==='appeal')return chosen?field('appeals.'+chosen,'선택 상품 소구문구',p.appeals?.[chosen]||'',true):'<p class="am-ed-note">위에서 상품을 먼저 골라 주세요.</p>';
  if(key==='tag')return field('card.def.tag','이름 앞 태그',v.tag||'');
  if(key==='copy')return field('card.def.copy','카드 문구',v.copy||'',true);
  if(key==='btn')return field('card.def.btn','버튼 문구',v.btn||'');
@@ -119,9 +119,9 @@ function inspector(s,id,ctx){const found=find(s,id),n=found?.item;if(!n)return '
   h+=select('gap','블록 사이 간격',p.gap||'normal',[['compact','좁게 · 8px'],['normal','기본 · 12px'],['relaxed','넉넉하게 · 20px']]);
   h+=select('padding','그룹 내부 여백',p.padding||(n.type==='productGrid'?'compact':'normal'),[['compact','좁게 · 8px'],['normal','기본 · 12px'],['relaxed','넉넉하게 · 20px']]);
   h+=select('align','블록 정렬',p.align||'stretch',[['stretch','크기 맞춰 정렬'],['start','상단 정렬'],['center','중앙 정렬']]);
-  h+='<p class="am-ed-note">좁은 모바일 구좌에서는 선택한 열 수보다 실제 표시 열 수를 줄여 카드의 가독성을 지킵니다. 변경해도 개별 블록의 문구·상품·설정은 그대로 남습니다.</p>';
+  h+='<p class="am-ed-note">폰 화면이 좁으면 열 수를 줄여 보여 줄 수 있어요. 문구와 상품은 그대로예요.</p>';
   h+='<div class="cb-inspector-header"><strong>그룹 안의 요소 '+(n.children||[]).length+'개</strong><button class="am-ed-button am-ed-button--subtle am-ed-button--sm" data-cb-action="add-child">＋ 상품 카드 추가</button></div>';
-  h+='<p class="am-ed-note">묶음을 선택한 상태에서 왼쪽 요소 라이브러리를 누르면 묶음 안에 추가할 수 있어요. 그룹 내부 요소는 가운데 화면에서 개별 선택할 수 있습니다.</p>';
+  h+='<p class="am-ed-note">묶음을 고른 채 [＋ 요소]에서 고르면 묶음 안에 들어가요. 묶음 안 요소는 미리보기에서 하나씩 고를 수 있어요.</p>';
  }
  return h;
 }
