@@ -81,6 +81,10 @@ h1, h2, h3, p { margin: 0; }
 .map .node:focus { outline: none; }
 .map .node:focus-visible rect { stroke: var(--accent); stroke-width: 2.5; }
 .map .node .more { fill: var(--mute); font-size: 12px; font-weight: 500; }
+.map .node .src { fill: var(--mute); font-size: 11px; font-weight: 500; text-anchor: start; }   /* 가지 출처 (반복·뜨는 중·영감) */
+.maplegend { margin-top: var(--s2); }
+/* .tag·.btn의 display가 hidden 속성을 덮어 '예시 데이터'·'전체 보기'가 늘 보였다 */
+.tag[hidden], .btn[hidden], .cap[hidden] { display: none; }
 .map .node.dim { opacity: .28; }
 .maphint { margin-top: var(--s2); }
 
@@ -161,4 +165,4 @@ input:not([type=checkbox]):not([type=radio]):focus, select:focus, textarea:focus
 .map .node.picked rect { fill: var(--surface); stroke: var(--sel-line); }   /* 고름 = 동그라미 체크 + 얇은 테두리 (덧칠 없이) */
 .filters .conn { display: inline-flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
 .side .acts { display: grid; gap: var(--s2); }
-.mpick .cap em { font-style: normal; color: var(--mute); }
+.mpick .cap em { font-style: normal; color: var(--mute); }.map .probe { visibility: hidden; }

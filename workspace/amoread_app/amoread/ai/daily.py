@@ -113,6 +113,13 @@ def run(force: bool = False, markets: list[str] | None = None, min_hours: float 
             _write(st)
         except Exception:
             pass
+        try:   # 트렌드 키워드 '지금 뜨는 것': 일주일에 한 번만 (몇 분 걸리고, 유튜브 할당량이 하루 1회분이라). 실패해도 신규 확인 결과에는 영향 없음
+            if _hours_since((st.get("trend") or {}).get("at")) >= 24 * 6.5:
+                from ..trend import weekly
+                st["trend"] = weekly.run()
+                _write(st)
+        except Exception:
+            pass
         try:
             from . import snapshot_pack
             snapshot_pack.auto()

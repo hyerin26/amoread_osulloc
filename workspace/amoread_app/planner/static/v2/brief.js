@@ -1,9 +1,9 @@
 // ---------------- 예시 데이터 (가상) ----------------
 const OURS = { state: 'off' };   // 우리 데이터 (기획안이 열려 있을 때 loadOurs)
 // 종류로 묶음 (plans/22 §5: 회사 이름이 아니라 무엇을 알려 주나로)
-const CH = { search: '검색', text: '글', video: '영상', ours: '우리 데이터' };
+const CH = { search: '검색', text: '글', video: '영상', ours: '우리 데이터', trend: '트렌드' };
 // 채널 설명: 연결 후보 (plans/20 3장). 지금은 모두 예시
-const CH_SRC = { search: '네이버 검색광고·데이터랩, 구글 트렌드', text: '네이버 뉴스·블로그·카페, 붙여 넣은 트렌드 기사', video: '유튜브', ours: '명분 사전 씨앗, 지난 컨셉, 리뷰 언급' };
+const CH_SRC = { search: '네이버 검색광고·데이터랩, 구글 트렌드', text: '네이버 뉴스·블로그·카페, 붙여 넣은 트렌드 기사', video: '유튜브', trend: '공개 출처 탐색(매거진·뉴스에 반복된 소비 현상), 지금 뜨는 것(매주: 뉴스·쇼츠·MZ 뉴스레터에서 급상승한 이름)', ours: '명분 사전 씨앗, 지난 컨셉, 리뷰 언급' };
 const KIND = { search: 'search', news: 'text', sns: 'text', trend: 'text', ours: 'ours' };   // 예전 채널 → 종류
 const POST_SRC = { news: '뉴스', sns: '블로그', trend: '트렌드 기사' };
 // k: 키워드, ch: 채널, flow: 검색 흐름(말로만, 숫자 없음), posts: 관련 글 제목(가상), ours: 우리 데이터(가상), kids: 다음 가지
@@ -64,7 +64,9 @@ function tree() {
 // 방사형 배치: 잎 수에 비례해 각도를 나눈다 (펼친 갈래가 자리를 더 가져감)
 function leaves(n) { return n.kids.length ? n.kids.reduce((s, c) => s + leaves(c), 0) : 1; }
 function layout(root) {
-  const R = [0, 150, 255, 345], CX = 550, CY = 320, SX = 1.42, SY = 0.86, out = [];
+  // 칸이 좁으면(휴대폰·좁은 창) 옆으로 퍼지는 대신 위아래로 퍼지게 한다 → 줄여 보여도 글자가 덜 작아짐
+  const narrow = ($('#map').parentElement.clientWidth || 800) < 600;
+  const R = [0, 150, 255, 345], CX = 550, CY = 320, SX = narrow ? 0.5 : 1.42, SY = narrow ? 1.5 : 0.86, out = [];
   (function walk(n, a0, a1) {
     const a = (a0 + a1) / 2, r = R[n.depth];
     n.x = CX + Math.cos(a) * r * SX; n.y = CY + Math.sin(a) * r * SY; out.push(n);
@@ -74,28 +76,46 @@ function layout(root) {
   return out;
 }
 
+// 가지가 어디서 왔는지 노드 안에 작은 글로 (색을 늘리지 않고 글로 구분). 범례도 지금 보이는 것만
+const SRC_MARK = { signal: '반복', rising: '뜨는 중', inspire: '영감' };
+const SRC_SAY = { signal: '반복 = 매거진·뉴스 여러 곳에 반복된 현상', rising: '뜨는 중 = 이번 주 뉴스·쇼츠에서 급상승', inspire: '영감 = 오늘의 영감에 나온 판매 기법' };
+const markOf = k => SRC_MARK[T[k]?.trend?.type] || '';
 function renderMap() {
   const svg = $('#map'); svg.innerHTML = '';
   const nodes = layout(tree()), onPath = new Set(path.slice(center));
+  // 1) 노드 크기를 먼저 잰다 (글 길이 + 출처 표시)
+  const probe = svgEl('text', { class: 'probe' }); svg.append(probe);
+  const tw = txt => { probe.textContent = txt; return probe.getComputedTextLength(); };
+  probe.setAttribute('font-size', '14'); probe.setAttribute('font-weight', '500');
+  nodes.forEach(n => {
+    n.mk = n.depth > 0 ? markOf(n.k) : '';
+    probe.setAttribute('font-size', n.depth === 0 ? '16' : '14'); n.tw = tw(n.k);
+    probe.setAttribute('font-size', '11'); n.mw = n.mk ? tw(n.mk) + 10 : 0;
+    n.w = Math.max(64, n.tw + n.mw + (n.depth === 0 ? 60 : 48)); n.h = n.depth === 0 ? 44 : 36;
+  });
+  probe.remove();
+  relax(nodes, onPath);
   const gE = svgEl('g', {}), gN = svgEl('g', {}); svg.append(gE, gN);
   nodes.forEach(n => {
     if (n.parent) {
       const on = onPath.has(n.k) && onPath.has(n.parent.k);
-      const mx = (n.x + n.parent.x) / 2, my = (n.y + n.parent.y) / 2;
+      const mx = (n.x + n.parent.x) / 2;
       gE.append(svgEl('path', { class: `edge${on ? ' on' : ''}`, d: `M${n.parent.x},${n.parent.y} Q${mx},${n.parent.y} ${n.x},${n.y}` }));
     }
     const kids = info(n.k).kids.length, isOpen = n.depth > 0 && kids > 0 && path.indexOf(n.k) > 0;   // path = 펼쳐 둔 갈래. 맨 끝 키워드도 가지가 보이므로 펼침
     const cls = ['node', n.depth === 0 ? 'root' : '', isOpen ? 'open' : '', picked.includes(n.k) ? 'picked' : '', focus === n.k ? 'focus' : '',
       n.depth > 0 && !visibleByCh(n.k) && !onPath.has(n.k) ? 'dim' : ''].filter(Boolean).join(' ');
-    // 노드 = [고르기 동그라미] [키워드] [펼침 표시]. 누르면 펼치기·접기, 동그라미를 누르면 고르기·빼기 (2026-11-10: 전에는 Space로만 고를 수 있었음)
+    // 노드 = [고르기 동그라미] [키워드] [출처] [펼침 표시]. 누르면 펼치기·접기, 동그라미를 누르면 고르기·빼기
     const isPicked = picked.includes(n.k), canOpen = n.depth === 0 ? path.length > 1 : kids > 0;
     const g = svgEl('g', { class: cls, tabindex: 0, role: 'button', 'data-k': n.k, 'aria-expanded': canOpen ? String(n.depth === 0 ? path.length > 1 : isOpen) : null,
-      'aria-label': `${n.k}${isPicked ? ', 고름' : ''}${canOpen ? (isOpen || (n.depth === 0 && path.length > 1) ? ', 펼침 · 누르면 접어요' : `, 가지 ${kids}개 · 누르면 펼쳐요`) : ''}. Space로 고르기` });
+      'aria-label': `${n.k}${n.mk ? ` (${n.mk})` : ''}${isPicked ? ', 고름' : ''}${canOpen ? (isOpen || (n.depth === 0 && path.length > 1) ? ', 펼침 · 누르면 접어요' : `, 가지 ${kids}개 · 누르면 펼쳐요`) : ''}. Space로 고르기` });
     if (!canOpen) g.removeAttribute('aria-expanded');
-    const t = svgEl('text', { x: n.x + 10, y: n.y }); t.textContent = n.k; g.append(t); gN.append(g);
-    const w = Math.max(64, t.getComputedTextLength() + (n.depth === 0 ? 60 : 48)), h = n.depth === 0 ? 44 : 36, x0 = n.x - w / 2;
-    g.insertBefore(svgEl('rect', { x: x0, y: n.y - h / 2, width: w, height: h, rx: 8 }), t);
-    // 고르기 동그라미 (누르는 자리 24px)
+    const w = n.w, h = n.h, x0 = n.x - w / 2;
+    g.append(svgEl('rect', { x: x0, y: n.y - h / 2, width: w, height: h, rx: 8 }));
+    const t = svgEl('text', { x: n.mk ? x0 + 34 + n.tw / 2 : n.x + 10, y: n.y }); t.textContent = n.k; g.append(t);
+    if (n.mk) { const m = svgEl('text', { class: 'src', x: x0 + 34 + n.tw + 8, y: n.y }); m.textContent = n.mk; g.append(m); }
+    gN.append(g);
+    // 고르기 동그라미 (누르는 자리 28px)
     const ck = svgEl('g', { class: `ck${isPicked ? ' on' : ''}`, 'data-pickk': n.k });
     ck.append(svgEl('rect', { class: 'hit', x: x0 + 2, y: n.y - 14, width: 28, height: 28, rx: 6 }));
     ck.append(svgEl('circle', { cx: x0 + 16, cy: n.y, r: 8 }));
@@ -105,6 +125,36 @@ function renderMap() {
     if (n.depth > 0 && kids && !isOpen) { const m = svgEl('text', { class: 'more', x: n.x + w / 2 + 12, y: n.y }); m.textContent = `+${kids}`; g.append(m); }
     if ((n.depth > 0 && isOpen) || (n.depth === 0 && path.length > 1)) g.append(svgEl('path', { class: 'fold', d: `M${n.x + w / 2 + 8} ${n.y}h10` }));
   });
+  fitMap(svg);
+  const kinds = [...new Set(nodes.filter(n => n.depth > 0).map(n => T[n.k]?.trend?.type).filter(Boolean))];
+  const lg = $('#mapLegend'); if (lg) { lg.hidden = !kinds.length; lg.textContent = kinds.map(k => SRC_SAY[k]).join(' · '); }
+}
+// 겹침 풀기: 가지를 펼치면 나머지 가지가 좁은 각도에 몰려 서로 겹쳤다 (2026-11-16). 겹친 두 노드를 위아래로 조금씩 밀어낸다.
+// 가운데 키워드와 펼쳐 둔 길(path)은 그대로 두고 나머지만 움직인다 (+가지 수 표시 자리까지 포함해 잰다)
+function relax(nodes, fixed) {
+  const GX = 30, GY = 8;
+  for (let it = 0; it < 120; it++) {
+    let moved = false;
+    for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+      const a = nodes[i], b = nodes[j];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      if (Math.abs(dx) >= (a.w + b.w) / 2 + GX || Math.abs(dy) >= (a.h + b.h) / 2 + GY) continue;
+      const need = (a.h + b.h) / 2 + GY - Math.abs(dy), dir = dy === 0 ? (j % 2 ? 1 : -1) : Math.sign(dy);
+      const fa = a.depth === 0 || fixed.has(a.k), fb = b.depth === 0 || fixed.has(b.k);
+      if (fa && fb) continue;
+      if (fa) b.y += dir * need; else if (fb) a.y -= dir * need; else { a.y -= dir * need / 2; b.y += dir * need / 2; }
+      moved = true;
+    }
+    if (!moved) break;
+  }
+}
+// 고정 크기(1100×640)를 통째로 줄이면 노트북 폭에서 글자가 6px까지 작아졌다 (2026-11-16) → 그린 내용의 테두리에 맞춰 보기 영역을 정한다.
+// 칸 폭보다 좁은 내용은 1:1 그대로(키우지 않음), 넓으면 그만큼만 줄인다
+function fitMap(svg) {
+  const b = svg.getBBox(); if (!b.width) return;
+  const pad = 24, cw = svg.parentElement.clientWidth || 800;
+  const w = Math.max(b.width + pad * 2, cw), h = Math.max(b.height + pad * 2, 320);
+  svg.setAttribute('viewBox', `${b.x + b.width / 2 - w / 2} ${b.y + b.height / 2 - h / 2} ${w} ${h}`);
 }
 
 function renderPath() {
@@ -119,10 +169,11 @@ function renderSide() {
   const k = focus, d = info(k), el = $('#side');
   if (k === ROOT && center === 0) {
     const rec = live(k);
-    el.innerHTML = `<div class="overline">중심 키워드 · 명분</div><h2>${esc(k)}</h2>
+    el.innerHTML = `<div class="overline">중심 키워드 · 명분</div><h2>${esc(k)}</h2>${rootEditor()}
       <p class="sub">${info(k).kids.length ? '여기서 뻗어 나간 키워드 중 마음에 드는 걸 눌러 보세요. 명분을 그대로 써도 좋으면 중심 키워드를 골라도 돼요.' : rec.state === 'loading' ? '가지를 찾는 중이에요…' : '이 말과 함께 나온 말을 찾지 못했어요. 검색광고 키를 넣으면 연관 키워드로도 찾아요.'}</p>
       <h3>검색 <span class="tag ok-t">실제</span></h3>${liveSearch(rec)}
       <h3>글 <span class="tag ok-t">실제</span></h3>${livePosts(rec)}
+      <h3>트렌드 <span class="tag ok-t">실제</span></h3>${trendRoot()}
       <div class="acts"><button class="btn" data-pick="${esc(k)}">${picked.includes(k) ? '고른 키워드에서 빼기' : '이 키워드 그대로 쓰기'}</button></div>`;
     return;
   }
@@ -132,6 +183,7 @@ function renderSide() {
   const ours = oursOf(k);
   el.innerHTML = `<div class="overline">키워드${ours ? '' : ' <span class="tag demo-t">우리 데이터는 예시</span>'}</div><h2>${esc(k)}</h2>
     <h3>어디서 왔나요</h3><div class="tags">${d.ch.map(c => `<span class="tag" title="${esc(CH_SRC[c])}">${CH[c]}</span>`).join('') || '<span class="cap">-</span>'}</div>
+    ${d.trend ? trendSide(d.trend) : ''}
     <h3>검색 <span class="tag ok-t">실제</span></h3>${liveSearch(rec)}
     <h3>글 <span class="tag ok-t">실제</span></h3>${livePosts(rec)}
     <h3>영상</h3><p class="cap">유튜브는 아직 연결 전이에요</p>
@@ -171,6 +223,7 @@ function renderSugs() {
   $('#sugs').innerHTML = show.map(s => `<button class="sug" data-copy="${esc(s.t)}" aria-pressed="${cur === s.t}"><span class="c">${esc(s.t)}</span><span class="tag">${esc(s.m)}</span></button>`).join('');
   $('#footNote').textContent = cur.trim() ? '' : '메인 카피가 비어 있어도 넘어갈 수 있어요. 구좌 구성 화면에서도 쓸 수 있어요.';
 }
+addEventListener('resize', () => { clearTimeout(window.__mapT); window.__mapT = setTimeout(renderMap, 120); });   // 넓음·좁음이 바뀌면 배치부터 다시
 let keepFocus = null;   // 다시 그린 뒤에도 키보드 위치를 잃지 않게
 function render() { renderPath(); renderFilters(); renderMap(); renderSide(); renderDock();
   if (keepFocus) { document.querySelector(`.node[data-k="${CSS.escape(keepFocus)}"]`)?.focus(); keepFocus = null; } }
@@ -227,7 +280,11 @@ document.addEventListener('click', e => {
   const pa = t.closest('[data-path]');
   if (pa) { const i = +pa.dataset.path; path = path.slice(0, i + 1); center = Math.min(center, Math.max(0, i - 1)); if (i === 0) center = 0; focus = path[i]; render(); return; }
   const c = t.closest('[data-ch]'); if (c) { chOn.has(c.dataset.ch) ? chOn.delete(c.dataset.ch) : chOn.add(c.dataset.ch); render(); return; }
-  const ed = t.closest('[data-edit]'); if (ed) { toast(`${ed.dataset.edit}은(는) 기획안을 시작할 때 정한 값이에요. 여기서 바로 고치는 기능은 준비 중이에요`); return; }
+  if (t.closest('[data-root-edit]')) { rootEdit = !rootEdit; focus = ROOT; path = [ROOT]; center = 0; render(); if (rootEdit) $('#rootIn')?.focus(); return; }
+  const rs = t.closest('[data-root-set]'); if (rs) { renameRoot(rs.dataset.rootSet); return; }
+  if (t.closest('[data-root-go]')) { renameRoot($('#rootIn')?.value || ''); return; }
+  const ed = t.closest('[data-edit]'); if (ed && ed.dataset.edit === '명분') { rootEdit = true; focus = ROOT; path = [ROOT]; center = 0; render(); $('#rootIn')?.focus(); return; }
+  if (ed) { toast(`${ed.dataset.edit}은(는) 기획안을 시작할 때 정한 값이에요. 여기서 바로 고치는 기능은 준비 중이에요`); return; }
 });
 $('#chClear').addEventListener('click', () => { chOn.clear(); render(); });
 // AI는 필요한 자리에 버튼으로만 (찻잎이 대화창 없음). 보내는 것: 고른 키워드·컨셉·명분뿐
@@ -262,6 +319,7 @@ function applyBranches(k, d) {
   if (!kids.length) return false;
   for (const w of kids) if (!T[w]) T[w] = { ch: [ad.includes(w) ? 'search' : 'text'], flow: '', posts: [], ours: [], kids: [] };
   t.kids = kids; t.realKids = true;
+  if (k === ROOT) addTrendKids(false);
   return true;
 }
 const trendWords = t => t.change_4w == null ? '' : t.change_4w >= 0.2 ? '요즘 오르는 중' : t.change_4w <= -0.2 ? '요즘 줄어드는 중' : '꾸준해요';
@@ -289,6 +347,133 @@ function livePosts(rec) {
   // 링크는 서버에서 http·https만 남긴 것. 새 탭으로, 이 화면 주소는 넘기지 않음
   const li = x => `<li>${x.link ? `<a href="${esc(x.link)}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a>` : esc(x.title)}<span class="cap">${esc(x.kind)}${x.date ? ` · ${esc(x.date)}` : ''}</span></li>`;
   return `<ul>${rows.map(li).join('')}</ul><p class="cap">네이버 검색 · 관련 높은 순${rec.data.cached ? ' · 6시간 안에 받아 둔 것' : ''}</p>`;
+}
+// ================= 트렌드 키워드 (amoread/trend) =================
+// 두 가지를 중심 키워드의 가지로 붙이고, 누르면 근거 패널에 근거를 보여 준다 (화면 모양은 그대로, 분류 '트렌드'만 늘어남)
+//  1) 공개 출처 탐색: 명분으로 매거진·뉴스를 검색해 여러 매체에 반복된 소비 현상 (기획 기간이 있으면 그 기간 기준). 15~25초, 서버 15분 캐시
+//  2) 지금 뜨는 것: 매주 한 번 뉴스·쇼츠·MZ 뉴스레터에서 급상승한 이름을 찾아 둔 것 (명분과 상관없이 전체에서. 명분과 겹치는 것을 앞에)
+// 수치는 검색 결과 안의 서로 다른 기사 수 — 검색량·SNS 반응·판매량이 아님 (패널에도 그렇게 적음)
+//  3) 오늘의 영감: 보관함에 저장한 카드(먼저)와 오늘의 카드에 나온 판매 기법 (룰렛·출석·콜라보…) — 다른 몰이 실제로 쓴 방식
+const TREND = { disc: null, rise: null, insp: null };   // disc: {state, data, msg} · rise: {state, data} · insp: {state, cards}
+const TREND_MAX = { signal: 3, rising: 3, inspire: 2 };
+function trendBranches() {   // 중심 키워드 아래 붙일 트렌드 가지 [{k, trend}]
+  const out = [], seen = new Set([ROOT]);
+  const add = (k, tr) => { const x = String(k || '').trim().slice(0, 20); if (!x || seen.has(x)) return; seen.add(x); out.push({ k: x, trend: tr }); };
+  const sig = TREND.disc?.state === 'ok' ? TREND.disc.data.signals.filter(x => x.branch) : [];
+  sig.slice(0, TREND_MAX.signal).forEach(x => add(x.label, { type: 'signal', ...x }));
+  if (TREND.rise?.state === 'ok') {
+    const d = TREND.rise.data, live = [...d.category.items, ...d.general.items].filter(x => x.live);
+    const near = x => [x.term, x.what, ...(x.evidence || []).map(e => e.title)].join(' ').includes(ROOT);
+    live.sort((a, b) => near(b) - near(a));
+    live.slice(0, TREND_MAX.rising).forEach(x => add(x.term, { type: 'rising', date: (x.kind === 'category' ? d.category : d.general).date, ...x }));
+  }
+  if (TREND.insp?.state === 'ok') {   // 판매 기법 이름별로 묶는다. 저장한 카드·명분이 들어간 카드가 있는 기법이 앞
+    const by = new Map();
+    for (const c of TREND.insp.cards) {
+      const m = c.kind === 'mech' ? (c.hits || [])[0]?.name : ''; if (!m) continue;
+      const g = by.get(m) || { name: m, cards: [], score: 0 }; by.set(m, g);
+      if (g.cards.some(x => x.id === c.id)) continue;
+      g.cards.push(c); g.score += (c.saved ? 2 : 0) + ([c.title, c.campaign, c.text].join(' ').includes(ROOT) ? 3 : 0) + 1;
+    }
+    [...by.values()].sort((a, b) => b.score - a.score).slice(0, TREND_MAX.inspire)
+      .forEach(g => add(g.name, { type: 'inspire', name: g.name, desc: g.cards[0].desc || '', cards: g.cards.slice(0, 3) }));
+  }
+  return out;
+}
+// 중심 키워드의 가지에 트렌드 가지를 더한다 (이미 있는 말은 그 가지에 '트렌드' 표시만). 펼쳐 둔 갈래는 건드리지 않음
+function addTrendKids(redraw = true) {
+  const t = T[ROOT] || (T[ROOT] = { ch: [], kids: [] }), words = trendBranches();
+  if (!words.length) return;
+  const mine = new Set(words.map(w => w.k));
+  const other = t.kids.filter(k => !mine.has(k) && !T[k]?.trend);   // 이전에 붙였던 트렌드 가지는 새 결과로 바꾼다
+  for (const w of words) {
+    const d = T[w.k] || (T[w.k] = { ch: [], flow: '', posts: [], ours: [], kids: [] });
+    d.trend = w.trend; if (!d.ch.includes('trend')) d.ch.push('trend');
+  }
+  t.kids = [...other.slice(0, 14 - words.length), ...words.map(w => w.k)];   // 가지가 많아도 트렌드 가지 자리는 남긴다
+  if (redraw) render();
+}
+function loadTrend(doc) {
+  const p = doc?.brief?.period || {};
+  const q = ROOT;
+  TREND.disc = { state: 'loading' };
+  v2api('/api/am/trend/discover', { q, start: p.start || '', end: p.end || '' })
+    .then(d => { if (q !== ROOT) return; TREND.disc = { state: 'ok', data: d }; addTrendKids(); })
+    .catch(e => { if (q !== ROOT) return; TREND.disc = { state: 'error', msg: e.message }; if (focus === ROOT) renderSide(); });
+  if (TREND.rise?.state === 'ok') { addTrendKids(); return; }   // 지금 뜨는 것·영감은 중심 키워드와 상관없이 한 번만 받는다
+  Promise.allSettled([v2api('/api/am/ai/inspire/saved'), v2api('/api/am/ai/inspire/deck')]).then(([sv, dk]) => {
+    const cards = [...(sv.value?.items || []).map(c => ({ ...c, saved: true })), ...(dk.value?.cards || [])];
+    TREND.insp = { state: 'ok', cards };
+    addTrendKids();
+  });
+  TREND.rise = { state: 'loading' };
+  v2api('/api/am/trend/rising')
+    .then(d => { TREND.rise = { state: 'ok', data: d }; addTrendKids(); })
+    .catch(e => { TREND.rise = { state: 'error', msg: e.message }; if (focus === ROOT) renderSide(); });
+}
+const evList = ev => (ev || []).length ? `<ul>${ev.map(x => `<li>${x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a>` : esc(x.title)}<span class="cap">${esc([x.publisher, x.day].filter(Boolean).join(' · '))}</span></li>`).join('')}</ul>` : '';
+const COUNT_NOTE = '<p class="cap">검색 결과 안의 서로 다른 기사 수예요. 검색량·SNS 반응·판매량이 아니에요.</p>';
+// 중심 키워드 이름 고치기: 캘린더 명분이 '연말정산 시즌'처럼 검색에 안 맞는 말을 달고 오면, 검색할 이름만 바꾼다
+// 기획안에는 v2.root_kw로 저장 (명분 자체는 그대로). 바꾸면 가지·근거·트렌드를 새 이름으로 다시 찾는다
+let rootEdit = false;
+const SEASON_TAIL = /\s*(시즌|기간|주간|위크|데이즈|행사|기획전|이벤트)$/;
+function rootEditor() {
+  const tip = SEASON_TAIL.test(ROOT) ? ROOT.replace(SEASON_TAIL, '').trim() : '';
+  if (!rootEdit) return `<div class="sugbar"><button class="btn sm" data-root-edit>검색할 이름 고치기</button>${tip ? `<button class="btn sm" data-root-set="${esc(tip)}">'${esc(tip)}'(으)로 찾기</button>` : ''}</div>`;
+  return `<div class="sugbar"><input type="text" id="rootIn" maxlength="20" value="${esc(ROOT)}" aria-label="검색할 중심 키워드"><button class="btn sm primary" data-root-go>이 이름으로 찾기</button><button class="btn sm" data-root-edit>닫기</button></div>
+    <p class="cap">검색에 쓰는 이름만 바뀌어요. 캘린더의 명분은 그대로예요.</p>`;
+}
+function renameRoot(v) {
+  const name = String(v || '').trim().slice(0, 20);
+  rootEdit = false;
+  if (!name || name === ROOT) { render(); return; }
+  setRoot(name);
+  TREND.disc = null;
+  PLAN.save(d => { d.v2.root_kw = name; });
+  loadTrend(PLAN.doc);
+  render();
+  toast(`'${name}'(으)로 다시 찾을게요`);
+}
+// 중심 키워드 패널: 트렌드 가지를 어떻게 찾았는지 한눈에
+function trendRoot() {
+  const ds = TREND.disc, rs = TREND.rise;
+  const a = !ds || ds.state === 'loading' ? '매거진·뉴스에서 찾는 중이에요 (20초쯤)…'
+    : ds.state === 'error' ? `공개 출처를 검색하지 못했어요: ${esc(ds.msg)}`
+    : (() => { const sig = ds.data.signals, br = sig.filter(x => x.branch); const p = ds.data.period;
+        return br.length ? `매거진·뉴스에 반복된 현상 ${br.length}개 중 ${Math.min(br.length, TREND_MAX.signal)}개를 가지로 붙였어요${p?.state === 'future' ? ' (기획 기간이 아직 오지 않아 최근 30일 기준)' : p ? ' (기획 기간 기준)' : ''}.`
+          : sig.length ? `여러 매체에 반복된 현상은 없었어요 (참고 신호 ${sig.length}개).` : esc(ds.data.reason || '반복된 현상을 찾지 못했어요.'); })();
+  const b = !rs || rs.state === 'loading' ? '지금 뜨는 것을 불러오는 중…'
+    : rs.state === 'error' ? `지금 뜨는 것을 불러오지 못했어요: ${esc(rs.msg)}`
+    : (() => { const d = rs.data, n = [...d.general.items, ...d.category.items].filter(x => x.live).length, at = d.general.date || d.category.date;
+        return at ? `지금 뜨는 것 ${n}개 중 ${Math.min(n, TREND_MAX.rising)}개를 가지로 붙였어요 (${esc(at)} 기준, 매주 새로 찾아요).` : '지금 뜨는 것은 아직 찾은 적이 없어요. 매일 아침 자동 확인이 일주일에 한 번 찾아요.'; })();
+  const ins = TREND.insp?.state === 'ok' ? trendBranches().filter(w => w.trend.type === 'inspire').length : 0;
+  const c = ins ? ` 오늘의 영감(보관함·오늘의 카드)에 나온 판매 기법 ${ins}개도 붙였어요.` : '';
+  return `<p>${a}</p><p class="cap">${b}${c}</p>`;
+}
+// 트렌드 가지 패널: 무엇이 얼마나 반복됐는지, 근거 기사, (지금 뜨는 것이면) 오설록 아이디어
+function trendSide(tr) {
+  if (tr.type === 'inspire') {
+    return `<h3>오늘의 영감 <span class="tag ok-t">실제</span></h3>
+      <p>${esc(tr.desc || '다른 몰이 실제로 쓴 판매 방식이에요.')}</p>
+      <ul>${tr.cards.map(c => { const nm = String(c.campaign || c.title || '').slice(0, 40) + (String(c.campaign || c.title || '').length > 40 ? '…' : ''); return `<li>${c.url ? `<a href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">${esc(nm)}</a>` : esc(nm)}<span class="cap">${esc([c.brand, c.saved ? '보관함에 저장한 카드' : '오늘의 카드'].filter(Boolean).join(' · '))}</span>${c.note?.do ? `<span class="cap">오설록이라면: ${esc(c.note.do)}</span>` : ''}</li>`; }).join('')}</ul>
+      <p class="cap"><a href="/v2/inspire">오늘의 영감에서 보기</a></p>`;
+  }
+  if (tr.type === 'signal') {
+    const ch = tr.change && tr.change.before != null ? ` · 전년 같은 기간 ${tr.change.before}건` : '';
+    return `<h3>트렌드 <span class="tag ok-t">실제</span></h3>
+      <p>${esc(tr.level)} · 서로 다른 기사 ${tr.stories}건 · 매체 ${tr.publishers}곳${ch}</p>
+      <p class="cap">명분 '${esc(ROOT)}'로 매거진·뉴스를 검색했을 때 ${tr.semantic ? '뜻이 가까운 제목끼리' : '제목에 이 말이 반복된'} 묶음이에요.</p>
+      ${evList(tr.evidence)}${COUNT_NOTE}`;
+  }
+  const c = tr.counts || {}, i = tr.idea;
+  return `<h3>지금 뜨는 것 <span class="tag ok-t">실제</span></h3>
+    <p>${esc(tr.stage)}${tr.what ? ` · ${esc(tr.what)}` : ''}</p>
+    <p class="cap">최근 14일 ${c.recent ?? '-'}건 · 15~45일 전 ${c.mid ?? '-'}건 · 46일~1년 전 ${c.old ?? '-'}건${tr.change ? ` · 지난주 대비 ${esc(tr.change)}` : ''} · ${esc(tr.date || '')} 기준</p>
+    ${evList(tr.evidence)}${COUNT_NOTE}
+    ${i ? `<h3>오설록이라면 <span class="tag">AI 제안</span></h3>
+      <p><b>${esc(i.title)}</b>${i.placement ? ` · ${esc(i.placement)}` : ''}</p>
+      ${i.link ? `<p class="cap">${esc(i.link)}</p>` : ''}<p>${esc(i.what)}</p>
+      <p class="cap">${i.phrase ? `문구 예: ${esc(i.phrase)}` : ''}${i.products.length ? ` · 상품: ${esc(i.products.join(', '))}` : ''}${i.needs_check ? ` · 확인 필요: ${esc(i.needs_check)}` : ''}</p>` : ''}`;
 }
 // 연결 상태 한 줄: 화면을 열 때 한 번 (키 값은 오지 않고 있음/없음만)
 v2api('/api/connections').then(c => {
@@ -368,6 +553,7 @@ document.addEventListener('click', e => {
   if (t.closest('[data-mclose]') || t.id === 'refScrim') { closeMoodDrawer(); return; }
   const tg = t.closest('[data-mtoggle]'); if (tg) { const id = tg.dataset.mtoggle; moodSel.has(id) ? moodSel.delete(id) : moodSel.set(id, new Set()); renderMoods(); $('#refDrawer [data-mtoggle]')?.focus(); }
 });
+document.addEventListener('keydown', e => { if (e.target.id === 'rootIn' && e.key === 'Enter' && !e.isComposing) { e.preventDefault(); renameRoot(e.target.value); } else if (e.target.id === 'rootIn' && e.key === 'Escape') { rootEdit = false; render(); } });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && drawerId) { e.preventDefault(); closeMoodDrawer(); } });
 $('#moods').addEventListener('click', e => {
   const dt = e.target.closest('[data-mdet]'); if (dt) { openMoodDrawer(dt.dataset.mdet, dt); return; }
@@ -443,10 +629,11 @@ function oursOf(k) {
   return out;
 }
 PLAN.ready.then(doc => {
+  queueMicrotask(() => loadTrend(doc));   // 명분(setRoot)이 정해진 뒤에 찾는다
   if (doc) { loadOurs(); const md0 = document.getElementById('mapDemo'); if (md0) md0.hidden = true; }   // 기획안을 열면 가지·근거는 실제 → '예시 데이터' 태그 숨김
   if (!doc) return;
   const b = doc.brief || {};
-  setRoot((b.myeongbun || doc.v2.seed || ROOT).slice(0, 20));
+  setRoot((doc.v2.root_kw || b.myeongbun || doc.v2.seed || ROOT).slice(0, 20));
   picked = (doc.v2.keywords || []).slice();
   $('#title').value = doc.title || ''; titleTouched = !!doc.title;
   $('#concept').value = b.concept || ''; $('#who').value = b.audience || ''; $('#copy').value = b.key_copy || '';

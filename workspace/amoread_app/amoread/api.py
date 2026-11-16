@@ -194,6 +194,7 @@ class V2Meta(BaseModel):
     cls: Literal["", "season", "brand", "launch", "collab", "clear"] = ""   # 분류 5종 (plans/20 §4-1)
     seed: str = Field(default="", max_length=20)       # 홈 [시작]에서 고른 출발점 (명분이 아닌 분류의 씨앗)
     keywords: list[Annotated[str, Field(max_length=20)]] = Field(default_factory=list, max_length=30)   # 브리프에서 고른 키워드
+    root_kw: str = Field(default="", max_length=20)    # 브리프 마인드맵의 중심 키워드를 고친 이름 (예: '연말정산 시즌' → '연말정산'). 비면 명분 그대로. 명분 자체는 바꾸지 않는다
     stage: Literal["brief", "compose", "editor", "preview", "deals"] = "brief"   # 마지막으로 연 단계 (홈 목록 '지금 단계')
     compose: Literal["", "A", "B", "C", "blank"] = ""   # 구좌 구성에서 고른 추천안 (구성은 page.sections)
     extras: list[Extra] = Field(default_factory=list, max_length=20)   # 추가 혜택 (상품·할인 = 구좌 편집 같은 값)
@@ -552,3 +553,7 @@ def pin_list():
 # ---------- AI 추천 (구좌 구성·레퍼런스): /api/am/ai/*  — 화면은 바꾸지 않고 서버로만 붙는다 (amoread/ai/README.md) ----------
 from .ai.api import router as _ai_router  # noqa: E402
 router.include_router(_ai_router)
+
+# ---------- 트렌드 키워드 (지금 뜨는 것·공개 출처 탐색): /api/am/trend/* — amoread/trend/README.md ----------
+from .trend.api import router as _trend_router  # noqa: E402
+router.include_router(_trend_router)
