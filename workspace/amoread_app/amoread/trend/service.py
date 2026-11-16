@@ -16,7 +16,9 @@ from datetime import date, datetime
 from . import discovery, weekly
 
 LIVE = set(weekly.LIVE)
-SIGNAL_LEVELS = ("트렌드 후보", "선행 신호 후보", "시즌 반복", "업계 보도 반복")   # 마인드맵 가지로 낼 등급 ('영감'·'과거 기간 참고'는 근거로만)
+# 마인드맵 가지로 낼 등급: 매거진 기사가 포함된 반복만. '업계 보도 반복'(뉴스에서만 반복)은 소비 취향 근거가 아니라서 뺀다
+# (2026-11-16: 명분 '수능'에서 "수능 연기 없다"·"AI 부정행위 대책" 같은 행정 뉴스가 교육부·연기·ai 가지로 붙었음). '영감'·'과거 기간 참고'도 근거로만
+SIGNAL_LEVELS = ("트렌드 후보", "선행 신호 후보", "시즌 반복")
 _run = {"on": False, "last": None}
 _lock = threading.Lock()
 

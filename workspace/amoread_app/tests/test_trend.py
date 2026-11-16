@@ -117,3 +117,10 @@ class InspireTrendCards(unittest.TestCase):
         self.assertNotIn(first["id"], [c["id"] for c in self.inspire.deck()["cards"]])
         self.inspire.swipe(first["id"], "undo")
         self.assertEqual(self.inspire.saved()["items"], [])
+
+
+class BranchLevels(unittest.TestCase):
+    def test_news_only_repetition_is_not_a_branch(self):
+        """뉴스에서만 반복된 묶음('업계 보도 반복')은 마인드맵 가지로 내지 않는다 (2026-11-16: '수능'에 교육부·연기·ai가 붙었음)."""
+        self.assertNotIn("업계 보도 반복", service.SIGNAL_LEVELS)
+        self.assertIn("트렌드 후보", service.SIGNAL_LEVELS)

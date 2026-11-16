@@ -1137,9 +1137,9 @@ function trendBranches() {
   sig.slice(0, TREND_MAX.signal).forEach(x => add(x.label, 'trend', { type: 'signal', ...x }));
   if (TREND.rise?.state === 'ok') {
     const d = TREND.rise.data, live = [...(d.category?.items || []), ...(d.general?.items || [])].filter(x => x.live);
-    const near = x => [x.term, x.what, ...(x.evidence || []).map(e => e.title)].join(' ').includes(ROOT);
-    live.sort((a, b) => near(b) - near(a));
-    live.slice(0, TREND_MAX.rising).forEach(x => add(x.term, 'trend', { type: 'rising', date: (x.kind === 'category' ? d.category : d.general)?.date, ...x }));
+    // 명분이 근거(이름·설명·기사 제목)에 들어간 것만 (관련 없는 인기 아이템으로 자리를 채우지 않음. 2026-11-16 '수능'에 밀크티가 붙었음)
+    const near = x => [x.term, x.what, ...(x.evidence || []).map(e => e.title)].join(' ').replace(/\s/g, '').includes(ROOT.replace(/\s/g, ''));
+    live.filter(near).slice(0, TREND_MAX.rising).forEach(x => add(x.term, 'trend', { type: 'rising', date: (x.kind === 'category' ? d.category : d.general)?.date, ...x }));
   }
   if (TREND.insp?.state === 'ok') {   // 판매 기법 이름별로 묶는다. 저장한 카드·명분이 들어간 카드가 있는 기법이 앞
     const by = new Map();
@@ -1147,9 +1147,10 @@ function trendBranches() {
       const m = c.kind === 'mech' ? (c.hits || [])[0]?.name : ''; if (!m) continue;
       const g = by.get(m) || { name: m, cards: [], score: 0 }; by.set(m, g);
       if (g.cards.some(x => x.id === c.id)) continue;
-      g.cards.push(c); g.score += (c.saved ? 2 : 0) + ([c.title, c.campaign, c.text].join(' ').includes(ROOT) ? 3 : 0) + 1;
+      if (![c.title, c.campaign, c.text, c.psec].join(' ').replace(/\s/g, '').includes(ROOT.replace(/\s/g, ''))) continue;   // 명분이 들어간 카드만 (관련 없는 기법은 붙이지 않음)
+      g.cards.push(c); g.score += (c.saved ? 2 : 0) + 1;
     }
-    [...by.values()].sort((a, b) => b.score - a.score).slice(0, TREND_MAX.inspire)
+    [...by.values()].filter(g => g.cards.length).sort((a, b) => b.score - a.score).slice(0, TREND_MAX.inspire)
       .forEach(g => add(g.name, 'inspire', { type: 'inspire', name: g.name, desc: g.cards[0].desc || '', cards: g.cards.slice(0, 3) }));
   }
   return out;
